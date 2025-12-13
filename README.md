@@ -1,6 +1,6 @@
 ﻿🚗 GetGo — Ride-Sharing Platform
 
-SITI — 5th Semester Joint Project (2025/2026)
+SIIT — 5th Semester Joint Project (2025/2026)
 Software Engineering & IT — University Project
 
 Overview

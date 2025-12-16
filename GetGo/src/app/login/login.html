@@ -1,0 +1,28 @@
+<form>
+  <h1>Welcome Back</h1>
+  <p class="subtitle">Please enter your credentials to continue</p>
+
+  <mat-form-field appearance="outline" floatLabel="always">
+    <mat-label>Username</mat-label>
+    <input matInput placeholder="Enter your username" />
+    <mat-icon matPrefix>person</mat-icon>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" floatLabel="always">
+    <mat-label>Password</mat-label>
+    <input matInput type="password" placeholder="Enter your password" />
+    <mat-icon matPrefix>lock</mat-icon>
+  </mat-form-field>
+
+  <div class="checkbox-container">
+    <mat-checkbox color="primary">Stay logged in</mat-checkbox>
+    <a class="forgot-password" [routerLink]="['/forgot-password']">Forgot password?</a>
+  </div>
+
+  <button mat-raised-button color="primary" type="submit">Login</button>
+
+  <div class="register-section">
+    <span>Don't have an account?</span>
+    <a [routerLink]="['/register']">Register</a>
+  </div>
+</form>

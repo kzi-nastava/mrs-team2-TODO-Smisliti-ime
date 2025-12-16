@@ -9,6 +9,6 @@ import {NavBar} from '../nav-bar/nav-bar';
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
-export class Home {
+export class HomeComponent {
 
 }

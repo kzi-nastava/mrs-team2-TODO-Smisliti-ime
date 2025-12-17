@@ -88,12 +88,11 @@
 .filter-box {
   background: #0b3a82;
   color: white;
+
   padding: 10px;
   border-radius: 14px;
   width: 220px;
-  margin: 20px 10px 10px 50px;
-
-
+  margin: 80px 10px 10px 50px;
 }
 
 .filter-title {

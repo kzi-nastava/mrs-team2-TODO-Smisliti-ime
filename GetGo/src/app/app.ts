@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import {Router, NavigationEnd, RouterOutlet} from '@angular/router';
 import { filter } from 'rxjs/operators';
-import {NavBar} from './layout/nav-bar/nav-bar';
+import {NavBar} from '../../../frontend/GetGo/src/app/layout/nav-bar/nav-bar';
 import {NgIf} from '@angular/common';
 
 @Component({

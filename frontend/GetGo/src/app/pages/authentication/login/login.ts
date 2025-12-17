@@ -7,6 +7,8 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {MatCheckbox} from '@angular/material/checkbox';
 import {RouterLink} from '@angular/router';
+import { AuthService } from '../auth-service/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -20,6 +22,8 @@ import {RouterLink} from '@angular/router';
 })
 export class LoginComponent {
 
+  constructor(private auth: AuthService, private router: Router) {}
+
   createLoginForm = new FormGroup({
     email: new FormControl('', Validators.required),
     password: new FormControl('', Validators.required),
@@ -29,4 +33,30 @@ export class LoginComponent {
     if (this.createLoginForm.valid) {
     }
   }
+
+  // login(){
+  //   if(this.createLoginForm.valid){
+  //     this.auth.loginAs('user');
+  //     this.router.navigate(['/ride']);
+  //   }
+  // }
+
+  login(){
+
+    if (this.createLoginForm.valid) {
+
+      // Trenutno je ovako ali cemo izmeniti da otvori odgovarajucu stranicu u skladu sa korisnickom rolom
+      // koja se ulogovala
+      console.log('Role before login:', this.auth.role());
+      this.auth.loginAs('user');
+
+      console.log('Role after login:', this.auth.role());
+
+      this.router.navigate(['/ride']);
+    } else {
+      console.log('Forma nije validna');
+    }
+  }
+
+
 }

@@ -1,0 +1,43 @@
+mat-toolbar {
+  display: flex;
+  align-items: center;
+  background-color: #133E87;
+}
+
+mat-toolbar button {
+  background-color: #608BC1;
+  color: white;
+}
+
+.app-title {
+  font-weight: bold;
+  font-size: 20px;
+  cursor: pointer;
+  color: white;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+button {
+  margin-left: 8px;
+}
+
+.hamburger {
+  color: white;
+  font-size: 36px;
+  width: auto;
+  height: auto;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: pointer;
+  margin: 5px 20px 5px 5px;
+}
+
+.no-bg {
+  background: none !important;
+  margin-right: 30px;
+  height: 60px;
+  margin-left: -20px;
+}

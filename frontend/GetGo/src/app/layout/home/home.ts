@@ -1,12 +1,9 @@
 import { Component } from '@angular/core';
-import {NavBar} from '../nav-bar/nav-bar';
-import {UnregisteredNavBarComponent} from '../unregistered-nav-bar/unregistered-nav-bar.component';
+// import {UnregisteredNavBarComponent} from '../unregistered-nav-bar/unregistered-nav-bar.component';
 
 @Component({
   selector: 'app-home',
-  imports: [
-    UnregisteredNavBarComponent
-  ],
+  imports: [  ],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })

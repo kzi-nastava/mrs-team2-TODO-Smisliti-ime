@@ -1,5 +1,3 @@
-<ng-container *ngIf="showNav()">
-  <app-unregistered-nav-bar></app-unregistered-nav-bar>
-</ng-container>
+<app-nav-bar *ngIf="showNav()" />
+<router-outlet />
 
-<router-outlet></router-outlet>

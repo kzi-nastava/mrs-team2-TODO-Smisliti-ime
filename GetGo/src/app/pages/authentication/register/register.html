@@ -1,0 +1,125 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <div class="form-header">
+    <div class="avatar-wrapper">
+      <button type="button" class="avatar-button">
+        <mat-icon>person</mat-icon>
+      </button>
+    </div>
+
+    <h1>Register</h1>
+    <p class="subtitle">Create your account</p>
+  </div>
+
+  <div class="form-scroll">
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label>Email</mat-label>
+      <input
+        matInput
+        type="email"
+        formControlName="email"
+        placeholder="Enter your email"
+      />
+      <mat-icon matPrefix>mail</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label>First name</mat-label>
+      <input
+        matInput
+        type="text"
+        formControlName="firstName"
+        placeholder="Enter your first name"
+      />
+      <mat-icon matPrefix>person</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label>Last name</mat-label>
+      <input
+        matInput
+        type="text"
+        formControlName="lastName"
+        placeholder="Enter your last name"
+      />
+      <mat-icon matPrefix>person</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label>Address</mat-label>
+      <input
+        matInput
+        type="text"
+        formControlName="address"
+        placeholder="Enter your address"
+      />
+      <mat-icon matPrefix>home</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label>Phone number</mat-label>
+      <input
+        matInput
+        type="tel"
+        formControlName="phoneNumber"
+        placeholder="Enter your phone number"
+      />
+      <mat-icon matPrefix>phone</mat-icon>
+    </mat-form-field>
+
+    <!-- Password -->
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label>Password</mat-label>
+      <input
+        matInput
+        [type]="hidePassword ? 'password' : 'text'"
+        formControlName="password"
+        placeholder="Enter your password"
+      />
+      <mat-icon matPrefix>lock</mat-icon>
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        (click)="hidePassword = !hidePassword"
+        [attr.aria-label]="'Toggle password visibility'"
+      >
+        <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <!-- Confirm password -->
+    <mat-form-field appearance="outline" floatLabel="always">
+      <mat-label>Confirm password</mat-label>
+      <input
+        matInput
+        [type]="hideConfirmPassword ? 'password' : 'text'"
+        formControlName="confirmPassword"
+        placeholder="Repeat your password"
+      />
+      <mat-icon matPrefix>lock</mat-icon>
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        (click)="hideConfirmPassword = !hideConfirmPassword"
+        [attr.aria-label]="'Toggle confirm password visibility'"
+      >
+        <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+    </mat-form-field>
+  </div>
+
+  <button
+    mat-raised-button
+    color="primary"
+    type="submit"
+    [disabled]="isSubmitting"
+  >
+    {{ isSubmitting ? 'Registering...' : 'Register' }}
+  </button>
+
+  <div class="register-section">
+    <span>Already have an account?</span>
+    <a [routerLink]="['/login']">Back to login</a>
+  </div>
+</form>

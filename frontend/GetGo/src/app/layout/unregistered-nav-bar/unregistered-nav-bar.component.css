@@ -1,0 +1,27 @@
+mat-toolbar {
+  display: flex;
+  align-items: center;
+  background-color: #133E87;
+}
+
+mat-toolbar button {
+  background-color: #608BC1;
+  color: white;
+}
+
+.app-title {
+  font-weight: bold;
+  font-size: 20px;
+  cursor: pointer;
+  color: white;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+button {
+  margin-left: 8px;
+}
+
+

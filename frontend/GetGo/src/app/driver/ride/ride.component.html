@@ -1,6 +1,19 @@
 <div class="ride-history-page">
 
-<div class="list">
+  <div class="filter-box">
+    <p class="filter-title">Filter by start date:</p>
+
+    <div class="date-inputs">
+      <input class="filter-field" type="number" placeholder="DD">
+      <input class="filter-field" type="number" placeholder="MM">
+      <input class="filter-field" type="number" placeholder="YYYY">
+    </div>
+
+    <button>Apply</button>
+  </div>
+
+
+  <div class="list">
   @for(ride of rides(); track ride.id){
     <div class="item">
       <p class="card-date"> <b>{{ride.startDate}}</b></p>

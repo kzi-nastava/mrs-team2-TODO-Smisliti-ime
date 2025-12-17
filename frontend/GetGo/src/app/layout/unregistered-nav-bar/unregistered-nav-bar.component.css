@@ -24,4 +24,15 @@ button {
   margin-left: 8px;
 }
 
+.hamburger {
+  color: white;
+  font-size: 36px;
+  width: auto;
+  height: auto;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: pointer;
+  margin: 5px 20px 5px 5px;
+}
+
 

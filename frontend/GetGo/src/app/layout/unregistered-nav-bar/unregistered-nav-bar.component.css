@@ -1,3 +1,11 @@
+:host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100; /* ensure navbar stays above the fullscreen image */
+}
+
 mat-toolbar {
   display: flex;
   align-items: center;

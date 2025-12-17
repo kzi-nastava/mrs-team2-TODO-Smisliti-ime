@@ -1,0 +1,8 @@
+<mat-toolbar>
+  <span [routerLink]="['/home']" class="app-title">{{ applicationName() }}</span>
+
+  <span class="spacer"></span>
+
+  <button mat-raised-button [routerLink]="['/login']">Login</button>
+  <button mat-raised-button [routerLink]="['/register']">Register</button>
+</mat-toolbar>

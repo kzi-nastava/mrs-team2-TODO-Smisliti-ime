@@ -1,0 +1,30 @@
+<div class="ride-history-page">
+
+  <div class="filter-box">
+    <p class="filter-title">Filter by start date:</p>
+
+    <div class="date-inputs">
+      <input class="filter-field" type="number" placeholder="DD">
+      <input class="filter-field" type="number" placeholder="MM">
+      <input class="filter-field" type="number" placeholder="YYYY">
+    </div>
+
+    <button>Apply</button>
+  </div>
+
+
+  <div class="list">
+  @for(ride of rides(); track ride.id){
+    <div class="item">
+      <p class="card-date"> <b>{{ride.startDate}}</b></p>
+      <h2> <img class="pin-icon" src="/map-pin.svg" alt="Pin icon"> {{ride.startLocation}}</h2>
+      <h2 class="location"> <img class="flag-icon" src="/finish-flag.svg" alt="Destination flag"> <span class="location-text">{{ride.endLocation}}</span></h2>
+
+      <p> <span class="card-time">Start time: </span> {{ride.startTime}}</p>
+      <p> <span class="card-time">End time: </span> {{ride.endTime}}</p>
+      <h1 class="card-price"><sup>$</sup>{{ride.price}}</h1>
+
+    </div>
+  }
+</div>
+</div>

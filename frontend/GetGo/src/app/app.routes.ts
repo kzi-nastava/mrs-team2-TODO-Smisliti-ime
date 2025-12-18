@@ -6,6 +6,7 @@ import {RegisterComponent} from './pages/authentication/register/register';
 import {NotFoundComponent} from './pages/not-found/not-found';
 // import {HomeComponent} from './layout/home/home';
 import {UnregisteredHomeComponent} from './layout/unregistered-home/unregistered-home.component';
+import {RideDetailsComponent} from './driver/ride-details/ride-details.component';
 
 export const routes: Routes = [
   { path: 'ride', component: RideComponent},
@@ -13,5 +14,6 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'driver/rides/:id', component: RideDetailsComponent},
   { path: '**', component: NotFoundComponent }
 ];

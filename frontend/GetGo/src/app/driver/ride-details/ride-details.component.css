@@ -1,0 +1,52 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #8FABD4;
+  padding-top: 80px;
+}
+
+.ride-details {
+  max-width: 600px;
+  margin: 80px auto;
+  padding: 20px 30px;
+  background-color: #CBDCEB;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-family: Arial, sans-serif;
+}
+
+.ride-details h1 {
+  font-size: 26px;
+  color: #133E87;
+  margin-bottom: 15px;
+}
+
+.ride-details h2 {
+  font-size: 22px;
+  color: #2C3E50;
+  margin-top: 20px;
+}
+
+.ride-details p {
+  font-size: 16px;
+  margin: 5px 0;
+  color: #555;
+}
+
+.ride-details b {
+  color: #133E87;
+}
+
+.ride-details img {
+  width: 20px;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+/* Loading template */
+p.loading {
+  text-align: center;
+  font-style: italic;
+  color: #888;
+  margin-top: 50px;
+}

@@ -1,0 +1,18 @@
+<div *ngIf="ride(); else loading" class="ride-details">
+
+  <h1>Ride #{{ ride()!.id }}</h1>
+
+  <p><b>Start:</b> {{ ride()!.startLocation }}</p>
+  <p><b>End:</b> {{ ride()!.endLocation }}</p>
+
+  <p><b>Date:</b> {{ ride()!.startDate }}</p>
+  <p><b>Start time:</b> {{ ride()!.startTime }}</p>
+  <p><b>End time:</b> {{ ride()!.endTime }}</p>
+
+  <h2>Price: ${{ ride()!.price }}</h2>
+
+</div>
+
+<ng-template #loading>
+  <p>Loading ride details...</p>
+</ng-template>

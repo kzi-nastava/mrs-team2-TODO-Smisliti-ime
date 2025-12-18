@@ -2,12 +2,13 @@
   display: block;
   min-height: 100vh;
   background-color: #8FABD4;
-  padding-top: 80px;
+  padding-top: 40px;
 }
 
 .ride-details {
   max-width: 600px;
-  margin: 80px auto;
+  width: 300px;
+  margin: 40px auto;
   padding: 20px 30px;
   background-color: #CBDCEB;
   border-radius: 12px;
@@ -19,7 +20,9 @@
   font-size: 26px;
   color: #133E87;
   margin-bottom: 15px;
+
 }
+
 
 .ride-details h2 {
   font-size: 22px;
@@ -50,3 +53,25 @@ p.loading {
   color: #888;
   margin-top: 50px;
 }
+
+
+.passenger-list {
+  /*display: block;*/
+  /*flex-wrap: wrap;*/
+  /*gap: 8px;*/
+  /*margin-top: 5px;*/
+  margin-top: 5px;
+  padding-left: 20px;
+}
+
+.passenger-chip {
+  background-color: #133E87;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin-top: 5px;
+  cursor: pointer;
+}
+
+

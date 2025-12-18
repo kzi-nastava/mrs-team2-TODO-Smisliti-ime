@@ -1,14 +1,10 @@
 import { Component, signal, computed } from '@angular/core';
 import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
-// import { UnregisteredHomeComponent} from './layout/unregistered-home/unregistered-home.component';
+import { UnregisteredHomeComponent} from './layout/unregistered-home/unregistered-home.component';
 import { CommonModule } from '@angular/common';
 
 import { AuthService } from './pages/authentication/auth-service/auth.service';
-// import { UnregisteredNavBarComponent } from './layout/unregistered-nav-bar/unregistered-nav-bar.component';
-// import { UserNavBarComponent } from './layout/user-nav-bar/user-nav-bar.component';
-// import { AdminNavBarComponent} from './layout/admin-nav-bar/admin-nav-bar.component';
-// import { DriverNavBarComponent} from './layout/driver-nav-bar/driver-nav-bar.component';
 import { NavBarComponent} from './layout/nav-bar/nav-bar.component';
 
 @Component({

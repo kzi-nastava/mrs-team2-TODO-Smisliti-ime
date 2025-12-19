@@ -6,12 +6,22 @@ import { RouterModule} from '@angular/router';
 import { FormGroup, FormControl, Validators, ReactiveFormsModule} from '@angular/forms';
 
 
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core'; // ili MatMomentDateModule ako koristiš moment
+import { MatButtonModule } from '@angular/material/button';
+
 // import {UnregisteredNavBarComponent} from '../../layout/unregistered-nav-bar/unregistered-nav-bar.component';
 
 @Component({
   selector: 'app-ride',
   standalone: true,
-  imports: [FormsModule, RouterModule, ReactiveFormsModule],
+  imports: [FormsModule, RouterModule, ReactiveFormsModule, MatFormFieldModule,
+    MatInputModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatButtonModule],
   templateUrl: './ride.component.html',
   styleUrl: './ride.component.css',
 })
@@ -19,9 +29,7 @@ export class RideComponent {
   protected rides:  Signal<Ride[]>;
 
   searchRideForm = new FormGroup({
-    day: new FormControl('', [Validators.required, Validators.min(1), Validators.max(31)]),
-    month: new FormControl('', [Validators.required, Validators.min(1), Validators.max(12)]),
-    year: new FormControl('', [Validators.required, Validators.min(2000), Validators.max(new Date().getFullYear())])
+    date: new FormControl<Date | null>(null, [Validators.required, Validators.min(2000), Validators.max(new Date().getFullYear())])
   });
 
   constructor(private service: RideService) {
@@ -29,10 +37,11 @@ export class RideComponent {
   }
 
   searchRides() {
-    if (this.searchRideForm.valid) {
-      const day = Number(this.searchRideForm.value.day);
-      const month = Number(this.searchRideForm.value.month);
-      const year = Number(this.searchRideForm.value.year);
+    if (this.searchRideForm.valid && this.searchRideForm.value.date) {
+      const selectedDate = this.searchRideForm.value.date as Date;
+      const day = selectedDate.getDate();
+      const month = selectedDate.getMonth() + 1;
+      const year = selectedDate.getFullYear();
 
       this.service.searchRidesByDate(day, month, year);
     }

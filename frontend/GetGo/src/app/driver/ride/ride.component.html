@@ -1,16 +1,19 @@
 <div class="ride-history-page">
 
-  <div class="filter-box">
+<!--  <div class="filter-box">-->
+  <form [formGroup]="searchRideForm" (ngSubmit)="searchRides()" class="filter-box">
     <p class="filter-title">Filter by start date:</p>
 
     <div class="date-inputs">
-      <input class="filter-field" type="number" placeholder="DD">
-      <input class="filter-field" type="number" placeholder="MM">
-      <input class="filter-field" type="number" placeholder="YYYY">
+      <input class="filter-field" type="number" placeholder="DD" formControlName="day">
+      <input class="filter-field" type="number" placeholder="MM" formControlName="month">
+      <input class="filter-field" type="number" placeholder="YYYY" formControlName="year">
     </div>
 
-    <button>Apply</button>
-  </div>
+    <button class="apply" type="submit">Apply</button>
+    <button type="submit" (click)="resetFilter()" )>Reset</button>
+  </form>
+<!--  </div>-->
 
 
   <div class="list">

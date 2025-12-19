@@ -46,7 +46,6 @@
   margin-right: 5px;
 }
 
-/* Loading template */
 p.loading {
   text-align: center;
   font-style: italic;
@@ -54,12 +53,7 @@ p.loading {
   margin-top: 50px;
 }
 
-
 .passenger-list {
-  /*display: block;*/
-  /*flex-wrap: wrap;*/
-  /*gap: 8px;*/
-  /*margin-top: 5px;*/
   margin-top: 5px;
   padding-left: 20px;
 }

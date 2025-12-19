@@ -4,13 +4,14 @@ import { Ride } from '../model/ride.model';
 @Injectable({
   providedIn: 'root',
 })
+
 export class RideService {
-  private _rides = signal<Ride[]>(
+  private allRides: Ride[] =
     [
       {
         id: 1,
         rideId: 101,
-        startDate: '2025-12-10',
+        startDate: '2025.12.10.',
         startTime: '08:00',
         endTime: '08:45',
         startLocation: 'Belgrade, Serbia',
@@ -24,7 +25,7 @@ export class RideService {
       {
         id: 2,
         rideId: 102,
-        startDate: '2025-12-11',
+        startDate: '2025.12.11.',
         startTime: '09:30',
         endTime: '10:15',
         startLocation: 'Belgrade, Serbia',
@@ -38,7 +39,7 @@ export class RideService {
       {
         id: 3,
         rideId: 103,
-        startDate: '2025-12-11',
+        startDate: '2025.12.11.',
         startTime: '11:00',
         endTime: '11:45',
         startLocation: 'Novi Sad, Serbia',
@@ -52,7 +53,7 @@ export class RideService {
       {
         id: 4,
         rideId: 104,
-        startDate: '2025-12-12',
+        startDate: '2025.12.12.',
         startTime: '14:00',
         endTime: '16:00',
         startLocation: 'Belgrade, Serbia',
@@ -66,7 +67,7 @@ export class RideService {
       {
         id: 5,
         rideId: 105,
-        startDate: '2025-12-12',
+        startDate: '2025.12.12.',
         startTime: '15:30',
         endTime: '16:15',
         startLocation: 'Novi Sad, Serbia',
@@ -80,7 +81,7 @@ export class RideService {
       {
         id: 6,
         rideId: 106,
-        startDate: '2025-12-13',
+        startDate: '2025.12.13.',
         startTime: '08:15',
         endTime: '09:00',
         startLocation: 'Belgrade, Serbia',
@@ -94,7 +95,7 @@ export class RideService {
       {
         id: 7,
         rideId: 107,
-        startDate: '2025-12-13',
+        startDate: '2025.12.13.',
         startTime: '10:30',
         endTime: '11:10',
         startLocation: 'Smederevo, Serbia',
@@ -108,7 +109,7 @@ export class RideService {
       {
         id: 8,
         rideId: 108,
-        startDate: '2025-12-14',
+        startDate: '2025.12.14.',
         startTime: '12:00',
         endTime: '13:20',
         startLocation: 'Belgrade, Serbia',
@@ -122,7 +123,7 @@ export class RideService {
       {
         id: 9,
         rideId: 109,
-        startDate: '2025-12-14',
+        startDate: '2025.12.14.',
         startTime: '13:15',
         endTime: '14:00',
         startLocation: 'Novi Sad, Serbia',
@@ -136,7 +137,7 @@ export class RideService {
       {
         id: 10,
         rideId: 110,
-        startDate: '2025-12-15',
+        startDate: '2025.12.15.',
         startTime: '09:00',
         endTime: '09:45',
         startLocation: 'Belgrade, Serbia',
@@ -150,7 +151,7 @@ export class RideService {
       {
         id: 11,
         rideId: 111,
-        startDate: '2025-12-15',
+        startDate: '2025.12.15.',
         startTime: '11:30',
         endTime: '12:15',
         startLocation: 'Belgrade, Serbia',
@@ -164,7 +165,7 @@ export class RideService {
       {
         id: 12,
         rideId: 112,
-        startDate: '2025-12-16',
+        startDate: '2025.12.16.',
         startTime: '08:45',
         endTime: '09:30',
         startLocation: 'Novi Sad, Serbia',
@@ -175,11 +176,28 @@ export class RideService {
         status: 'FINISHED',
         passengers: ['Marko Jovanović', 'Ivan Kovačević']
       },
-    ]
-  )
+    ];
+
+  private _rides = signal<Ride[]>(this.allRides);
+
   rides = this._rides.asReadonly()
 
   addRide(ride: Ride) {
     this._rides.update((rides) => [...rides, ride])
   }
+
+  searchRidesByDate(day: number, month: number, year: number){
+    const dateStr = `${year.toString().padStart(4, '0')}.`+
+                           `${month.toString().padStart(2, '0')}.`+
+                           `${day.toString().padStart(2, '0')}.`;
+
+    const filteredRides = this.allRides.filter(ride => ride.startDate === dateStr);
+    this._rides.set(filteredRides);
+  }
+
+  resetFilter(){
+    this._rides.set(this.allRides);
+  }
+
+
 }

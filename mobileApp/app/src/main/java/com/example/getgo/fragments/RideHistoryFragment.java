@@ -181,6 +181,18 @@ public class RideHistoryFragment extends Fragment {
 
         adapter = new RideHistoryAdapter(requireContext(), historyList);
         rideHistoryLV.setAdapter(adapter);
+
+        adapter.setOnRideClickListener(ride -> {
+            RideDetailFragment fragment =
+                    RideDetailFragment.newInstance(ride);
+
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, fragment)
+                    .addToBackStack(null)
+                    .commit();
+        });
+
         return view;
 
 //        return inflater.inflate(R.layout.fragment_ride_history, container, false);

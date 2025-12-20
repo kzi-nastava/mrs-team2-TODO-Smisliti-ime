@@ -1,7 +1,8 @@
 package com.example.getgo.model;
 
+import java.io.Serializable;
 import java.util.List;
-public class Ride {
+public class Ride implements Serializable {
     private int id;
     private String startDate;
     private String startTime;

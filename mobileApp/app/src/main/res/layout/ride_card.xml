@@ -12,7 +12,7 @@
     android:paddingBottom="8dp">
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="250dp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="12dp"
@@ -45,13 +45,13 @@
 
         <ImageView
             android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_height="26dp"
             android:src="@drawable/map_pin"
             android:contentDescription="Start location pin" />
         <TextView
             android:id="@+id/tvStartLocation"
             android:textStyle="bold"
-            android:textSize="16sp"
+            android:textSize="20sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -73,14 +73,14 @@
 
         <ImageView
             android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_height="26dp"
             android:src="@drawable/flag"
             android:contentDescription="End location flag"
             />
         <TextView
             android:id="@+id/tvEndLocation"
             android:textStyle="bold"
-            android:textSize="16sp"
+            android:textSize="20sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -101,7 +101,7 @@
     <TextView
         android:id="@+id/tvPrice"
         android:textStyle="bold"
-        android:textSize="40sp"
+        android:textSize="30sp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         />

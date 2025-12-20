@@ -15,15 +15,22 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 
 import com.example.getgo.R;
+import com.example.getgo.interfaces.OnRideClickListener;
 import com.example.getgo.model.Ride;
 
 public class RideHistoryAdapter extends ArrayAdapter<Ride> {
 
     private ArrayList<Ride> aRides;
 
+    private OnRideClickListener listener;
+
     public RideHistoryAdapter(Context context, ArrayList<Ride> rides) {
         super(context, R.layout.ride_card, rides);
         this.aRides = rides;
+    }
+
+    public void setOnRideClickListener(OnRideClickListener listener) {
+        this.listener = listener;
     }
 
     @Override
@@ -41,6 +48,8 @@ public class RideHistoryAdapter extends ArrayAdapter<Ride> {
     public long getItemId(int position) {
         return position;
     }
+
+
 
     @NonNull
     @Override
@@ -65,8 +74,13 @@ public class RideHistoryAdapter extends ArrayAdapter<Ride> {
             rideEndLocation.setText(ride.getEndLocation());
             rideStartTime.setText("Start time: " + ride.getStartTime());
             rideEndTime.setText("End time: " + ride.getEndTime());
-            ridePrice.setText(ride.getPrice() + " USD");
+            ridePrice.setText("$"+ride.getPrice());
 
+            convertView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onRideClick(ride);
+                }
+            });
 
         }
         return convertView;

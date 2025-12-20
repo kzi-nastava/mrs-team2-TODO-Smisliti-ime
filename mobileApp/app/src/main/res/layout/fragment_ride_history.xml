@@ -17,12 +17,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".fragments.RideHistoryFragment"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="#8FABD4">
 
     <ListView
         android:id="@+id/rideHistoryListView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:listitem="@layout/ride_card" />
+        tools:listitem="@layout/ride_card"
+        />
 
-        </LinearLayout>
+
+
+
+</LinearLayout>

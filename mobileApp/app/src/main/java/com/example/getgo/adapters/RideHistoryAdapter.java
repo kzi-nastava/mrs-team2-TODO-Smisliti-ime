@@ -52,14 +52,21 @@ public class RideHistoryAdapter extends ArrayAdapter<Ride> {
 
 
         TextView rideDate = convertView.findViewById(R.id.tvDate);
+        TextView rideStartLocation = convertView.findViewById(R.id.tvStartLocation);
+        TextView rideEndLocation = convertView.findViewById(R.id.tvEndLocation);
+        TextView rideStartTime = convertView.findViewById(R.id.tvStartTime);
+        TextView rideEndTime = convertView.findViewById(R.id.tvEndTime);
         TextView ridePrice = convertView.findViewById(R.id.tvPrice);
-        TextView rideStatus = convertView.findViewById(R.id.tvStatus);
 
 
         if (ride != null){
-            ridePrice.setText(ride.getPrice() + " USD");
             rideDate.setText(ride.getStartDate());
-            rideStatus.setText(ride.getStatus());
+            rideStartLocation.setText(ride.getStartLocation());
+            rideEndLocation.setText(ride.getEndLocation());
+            rideStartTime.setText("Start time: " + ride.getStartTime());
+            rideEndTime.setText("End time: " + ride.getEndTime());
+            ridePrice.setText(ride.getPrice() + " USD");
+
 
         }
         return convertView;

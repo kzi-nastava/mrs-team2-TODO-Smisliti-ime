@@ -89,6 +89,96 @@ public class RideHistoryFragment extends Fragment {
                 Arrays.asList("Ana")
         ));
 
+        historyList.add(new Ride(
+                3,
+                "2025-12-20",
+                "14:30",
+                "15:10",
+                "Belgrade",
+                "Novi Sad",
+                25.5,
+                101,
+                false,
+                null,
+                "FINISHED",
+                Arrays.asList("Marko", "Nikola")
+        ));
+
+        historyList.add(new Ride(
+                4,
+                "2025-12-18",
+                "09:00",
+                null,
+                "Novi Sad",
+                "Subotica",
+                0,
+                102,
+                false,
+                "PASSENGER",
+                "CANCELED",
+                Arrays.asList("Ana")
+        ));
+
+        historyList.add(new Ride(
+                5,
+                "2025-12-20",
+                "14:30",
+                "15:10",
+                "Belgrade",
+                "Novi Sad",
+                25.5,
+                101,
+                false,
+                null,
+                "FINISHED",
+                Arrays.asList("Marko", "Nikola")
+        ));
+
+        historyList.add(new Ride(
+                6,
+                "2025-12-18",
+                "09:00",
+                null,
+                "Novi Sad",
+                "Subotica",
+                0,
+                102,
+                false,
+                "PASSENGER",
+                "CANCELED",
+                Arrays.asList("Ana")
+        ));
+
+        historyList.add(new Ride(
+                7,
+                "2025-12-20",
+                "14:30",
+                "15:10",
+                "Belgrade",
+                "Novi Sad",
+                25.5,
+                101,
+                false,
+                null,
+                "FINISHED",
+                Arrays.asList("Marko", "Nikola")
+        ));
+
+        historyList.add(new Ride(
+                8,
+                "2025-12-18",
+                "09:00",
+                null,
+                "Novi Sad",
+                "Subotica",
+                0,
+                102,
+                false,
+                "PASSENGER",
+                "CANCELED",
+                Arrays.asList("Ana")
+        ));
+
         adapter = new RideHistoryAdapter(requireContext(), historyList);
         rideHistoryLV.setAdapter(adapter);
         return view;

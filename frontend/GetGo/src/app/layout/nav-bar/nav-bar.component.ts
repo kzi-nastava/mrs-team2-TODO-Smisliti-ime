@@ -18,17 +18,13 @@ import { AdminNavBarComponent } from '../admin-nav-bar/admin-nav-bar.component';
     UserNavBarComponent,
     AdminNavBarComponent
   ],
-  template: `
-    <ng-container [ngSwitch]="auth.role()">
-      <app-unregistered-nav-bar *ngSwitchCase="'guest'" />
-      <app-driver-nav-bar *ngSwitchCase="'driver'" />
-      <app-user-nav-bar *ngSwitchCase="'user'" />
-      <app-admin-nav-bar *ngSwitchCase="'admin'" />
-    </ng-container>
-  `,
+  templateUrl: './nav-bar.component.html',
   styleUrl: './nav-bar.component.css'
 })
 export class NavBarComponent {
   constructor(public auth: AuthService) {}
+  get role(): string {
+    return this.auth.role();
+  }
 }
 

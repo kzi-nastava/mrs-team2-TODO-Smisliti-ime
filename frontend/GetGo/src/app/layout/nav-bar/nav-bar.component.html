@@ -1,1 +1,5 @@
 <!--<p>nav-bar works!</p>-->
+<app-unregistered-nav-bar *ngIf="role === 'guest'" />
+<app-driver-nav-bar *ngIf="role === 'driver'" />
+<app-user-nav-bar *ngIf="role === 'user'" />
+<app-admin-nav-bar *ngIf="role === 'admin'" />

@@ -1,16 +1,35 @@
 <div class="ride-history-page">
 
-  <div class="filter-box">
-    <p class="filter-title">Filter by start date:</p>
+<!--  <form [formGroup]="searchRideForm" (ngSubmit)="searchRides()" >-->
+<!--    <mat-form-field appearance="fill">-->
+<!--      <mat-label>Filter by date</mat-label>-->
+<!--      <input matInput [matDatepicker]="picker" formControlName="date">-->
+<!--      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>-->
+<!--      <mat-datepicker #picker></mat-datepicker>-->
+<!--    </mat-form-field>-->
+<!--&lt;!&ndash;    <button type="submit">Apply</button>&ndash;&gt;-->
+<!--    <div class="buttons">-->
+<!--      <button mat-raised-button color="primary" type="submit">Apply</button>-->
+<!--      <button mat-raised-button color="warn" type="button" (click)="resetFilter()">Reset</button>-->
+<!--    </div>-->
 
-    <div class="date-inputs">
-      <input class="filter-field" type="number" placeholder="DD">
-      <input class="filter-field" type="number" placeholder="MM">
-      <input class="filter-field" type="number" placeholder="YYYY">
+<!--  </form>-->
+  <form [formGroup]="searchRideForm" (ngSubmit)="searchRides()" class="filter-form">
+    <mat-form-field appearance="fill" class="date-picker-field">
+      <mat-label>Filter by date</mat-label>
+      <input matInput [matDatepicker]="picker" formControlName="date">
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+
+    <div class="buttons">
+      <button mat-raised-button color="warn" type="button" (click)="resetFilter()">Reset</button>
+      <button mat-raised-button color="primary" type="submit">Apply</button>
     </div>
+  </form>
 
-    <button>Apply</button>
-  </div>
+
+
 
 
   <div class="list">

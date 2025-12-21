@@ -61,122 +61,182 @@ public class RideHistoryFragment extends Fragment {
 
         historyList.add(new Ride(
                 1,
-                "2025-12-20",
-                "14:30",
-                "15:10",
-                "Belgrade",
-                "Novi Sad",
-                25.5,
+                "2025.12.10.",
+                "08:00",
+                "08:45",
+                "Belgrade, Serbia",
+                "Novi Sad, Serbia",
+                25.50,
                 101,
                 false,
                 null,
                 "FINISHED",
-                Arrays.asList("Marko", "Nikola")
+                Arrays.asList("Ana Petrović", "Marko Jovanović")
         ));
 
         historyList.add(new Ride(
                 2,
-                "2025-12-18",
-                "09:00",
-                null,
-                "Novi Sad",
-                "Subotica",
-                0,
+                "2025.12.11.",
+                "09:30",
+                "10:15",
+                "Belgrade, Serbia",
+                "Smederevo, Serbia",
+                18.75,
                 102,
                 false,
-                "PASSENGER",
-                "CANCELED",
-                Arrays.asList("Ana")
+                null,
+                "FINISHED",
+                Arrays.asList("Jelena Ilić")
         ));
 
         historyList.add(new Ride(
                 3,
-                "2025-12-20",
-                "14:30",
-                "15:10",
-                "Belgrade",
-                "Novi Sad",
-                25.5,
-                101,
-                false,
+                "2025.12.11.",
+                "11:00",
+                "11:45",
+                "Novi Sad, Serbia",
+                "Subotica, Serbia",
+                40.00,
+                103,
+                true,
                 null,
                 "FINISHED",
-                Arrays.asList("Marko", "Nikola")
+                Arrays.asList("Ivan Kovačević", "Sara Đorđević")
         ));
 
         historyList.add(new Ride(
                 4,
-                "2025-12-18",
-                "09:00",
-                null,
-                "Novi Sad",
-                "Subotica",
-                0,
-                102,
+                "2025.12.12.",
+                "14:00",
+                "16:00",
+                "Belgrade, Serbia",
+                "Zemun, Serbia",
+                12.00,
+                104,
                 false,
-                "PASSENGER",
-                "CANCELED",
-                Arrays.asList("Ana")
+                null,
+                "IN_PROGRESS",
+                Arrays.asList("Petar Lukić")
         ));
 
         historyList.add(new Ride(
                 5,
-                "2025-12-20",
-                "14:30",
-                "15:10",
-                "Belgrade",
-                "Novi Sad",
-                25.5,
-                101,
+                "2025.12.12.",
+                "15:30",
+                "16:15",
+                "Novi Sad, Serbia",
+                "Belgrade, Serbia",
+                30.00,
+                105,
                 false,
-                null,
-                "FINISHED",
-                Arrays.asList("Marko", "Nikola")
+                "PASSENGER",
+                "CANCELED",
+                Arrays.asList("Milan Stojanović")
         ));
 
         historyList.add(new Ride(
                 6,
-                "2025-12-18",
+                "2025.12.13.",
+                "08:15",
                 "09:00",
-                null,
-                "Novi Sad",
-                "Subotica",
-                0,
-                102,
+                "Belgrade, Serbia",
+                "Novi Sad, Serbia",
+                26.50,
+                106,
                 false,
-                "PASSENGER",
-                "CANCELED",
-                Arrays.asList("Ana")
+                null,
+                "FINISHED",
+                Arrays.asList("Ana Petrović")
         ));
 
         historyList.add(new Ride(
                 7,
-                "2025-12-20",
-                "14:30",
-                "15:10",
-                "Belgrade",
-                "Novi Sad",
-                25.5,
-                101,
-                false,
+                "2025.12.13.",
+                "10:30",
+                "11:10",
+                "Smederevo, Serbia",
+                "Belgrade, Serbia",
+                19.00,
+                107,
+                true,
                 null,
                 "FINISHED",
-                Arrays.asList("Marko", "Nikola")
+                Arrays.asList("Marko Jovanović", "Jelena Ilić")
         ));
 
         historyList.add(new Ride(
                 8,
-                "2025-12-18",
-                "09:00",
-                null,
-                "Novi Sad",
-                "Subotica",
-                0,
-                102,
+                "2025.12.14.",
+                "12:00",
+                "13:20",
+                "Belgrade, Serbia",
+                "Zemun, Serbia",
+                12.00,
+                108,
                 false,
-                "PASSENGER",
+                null,
+                "IN_PROGRESS",
+                Arrays.asList("Ivan Kovačević")
+        ));
+
+        historyList.add(new Ride(
+                9,
+                "2025.12.14.",
+                "13:15",
+                "14:00",
+                "Novi Sad, Serbia",
+                "Subotica, Serbia",
+                42.00,
+                109,
+                false,
+                "DRIVER",
                 "CANCELED",
-                Arrays.asList("Ana")
+                Arrays.asList("Sara Đorđević", "Petar Lukić")
+        ));
+
+        historyList.add(new Ride(
+                10,
+                "2025.12.15.",
+                "09:00",
+                "09:45",
+                "Belgrade, Serbia",
+                "Novi Sad, Serbia",
+                27.50,
+                110,
+                false,
+                null,
+                "FINISHED",
+                Arrays.asList("Milan Stojanović")
+        ));
+
+        historyList.add(new Ride(
+                11,
+                "2025.12.15.",
+                "11:30",
+                "12:15",
+                "Belgrade, Serbia",
+                "Smederevo, Serbia",
+                20.00,
+                111,
+                true,
+                null,
+                "IN_PROGRESS",
+                Arrays.asList("Ana Petrović", "Jelena Ilić")
+        ));
+
+        historyList.add(new Ride(
+                12,
+                "2025.12.16.",
+                "08:45",
+                "09:30",
+                "Novi Sad, Serbia",
+                "Belgrade, Serbia",
+                28.00,
+                112,
+                false,
+                null,
+                "FINISHED",
+                Arrays.asList("Marko Jovanović", "Ivan Kovačević")
         ));
 
         adapter = new RideHistoryAdapter(requireContext(), historyList);

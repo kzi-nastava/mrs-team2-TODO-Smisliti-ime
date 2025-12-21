@@ -3,9 +3,9 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
 
-    <solid android:color="#CBDCEB"/> <!-- boja pozadine -->
+    <solid android:color="#CBDCEB"/>
 
-    <corners android:radius="20dp"/> <!-- radius ivica -->
+    <corners android:radius="20dp"/>
 
     <padding
         android:left="8dp"

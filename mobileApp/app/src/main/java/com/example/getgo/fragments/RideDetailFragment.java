@@ -47,20 +47,34 @@ public class RideDetailFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_ride_detail, container, false);
 
+        TextView date = view.findViewById(R.id.tvDate);
         TextView start = view.findViewById(R.id.tvStartLocation);
         TextView end = view.findViewById(R.id.tvEndLocation);
         TextView startTime = view.findViewById(R.id.tvStartTime);
         TextView endTime = view.findViewById(R.id.tvEndTime);
+        TextView tvPanicActivated = view.findViewById(R.id.tvPanicActivated);
         TextView price = view.findViewById(R.id.tvPrice);
-        TextView date = view.findViewById(R.id.tvDate);
+        TextView tvPassengers = view.findViewById(R.id.tvPassengers);
+
 
         if (ride != null) {
-            start.setText(ride.getStartLocation());
-            end.setText(ride.getEndLocation());
-            startTime.setText(ride.getStartTime());
-            endTime.setText(ride.getEndTime());
+            start.setText("Start location: " + ride.getStartLocation());
+            end.setText("End location: " + ride.getEndLocation());
+            startTime.setText("Start time: " + ride.getStartTime());
+            endTime.setText("End time: " + ride.getEndTime());
             price.setText("$" + ride.getPrice());
-            date.setText(ride.getStartDate());
+            date.setText("Date: " + ride.getStartDate());
+
+            tvPanicActivated.setText("Panic Activated: " + (ride.isPanicActivated() ? "Yes" : "No"));
+            if (ride.getPassengers() != null && !ride.getPassengers().isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                for (String p : ride.getPassengers()) {
+                    sb.append(p).append("\n");
+                }
+                tvPassengers.setText("Passengers:\n" + sb.toString().trim());
+            } else {
+                tvPassengers.setText("Passengers: None");
+            }
         }
         return view;
 //        return inflater.inflate(R.layout.fragment_ride_detail, container, false);

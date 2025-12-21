@@ -9,19 +9,14 @@ import { FormGroup, FormControl, Validators, ReactiveFormsModule} from '@angular
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core'; // ili MatMomentDateModule ako koristiš moment
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
-
-// import {UnregisteredNavBarComponent} from '../../layout/unregistered-nav-bar/unregistered-nav-bar.component';
 
 @Component({
   selector: 'app-ride',
   standalone: true,
   imports: [FormsModule, RouterModule, ReactiveFormsModule, MatFormFieldModule,
-    MatInputModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatButtonModule],
+    MatInputModule, MatDatepickerModule, MatNativeDateModule, MatButtonModule],
   templateUrl: './ride.component.html',
   styleUrl: './ride.component.css',
 })

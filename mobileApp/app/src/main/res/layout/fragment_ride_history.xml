@@ -20,6 +20,19 @@
     android:orientation="vertical"
     android:background="#8FABD4">
 
+    <TextView
+        android:id="@+id/tvFilterDate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Filter by date"
+        android:padding="12dp"
+        android:layout_margin="8dp"
+        android:background="#EEEEEE"
+        android:textSize="16sp"
+        android:clickable="true"
+        android:focusable="true"/>
+
+
     <ListView
         android:id="@+id/rideHistoryListView"
         android:layout_width="match_parent"

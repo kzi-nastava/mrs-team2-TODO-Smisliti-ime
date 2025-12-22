@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { PassengerProfileInfo } from './passenger-profile-info';
 
 describe('PassengerProfileInfo', () => {

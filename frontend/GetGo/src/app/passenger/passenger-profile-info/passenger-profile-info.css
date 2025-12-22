@@ -1,0 +1,89 @@
+.profile-container {
+  background-color: #8FABD4;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-card {
+  background-color: #CBDCEB;
+  border-radius: 15px;
+  border: 2px solid #133E87;
+  padding: 40px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-title {
+  text-align: center;
+  font-size: 28px;
+  font-weight: bold;
+  color: #000;
+  margin: 0 0 30px 0;
+}
+
+.profile-picture {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.avatar-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid #133E87;
+  object-fit: cover;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-input {
+  background-color: #F5F5F5;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 16px;
+  color: #333;
+  outline: none;
+  text-align: center;
+}
+
+.form-input:focus {
+  background-color: #fff;
+}
+
+.change-password-link {
+  color: #133E87;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+.change-password-link:hover {
+  text-decoration: underline;
+}
+
+.save-button {
+  background-color: #133E87;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 40px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 15px;
+  align-self: center;
+}
+
+.save-button:hover {
+  background-color: #0f3269;
+}

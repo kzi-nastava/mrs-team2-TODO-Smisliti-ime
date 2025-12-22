@@ -7,6 +7,7 @@ import {NotFoundComponent} from './pages/not-found/not-found';
 // import {HomeComponent} from './layout/home/home';
 import {UnregisteredHomeComponent} from './layout/unregistered-home/unregistered-home.component';
 import {RideDetailsComponent} from './driver/ride-details/ride-details.component';
+import { PassengerProfileInfo } from './passenger/passenger-profile-info/passenger-profile-info';
 
 export const routes: Routes = [
   { path: 'ride', component: RideComponent},
@@ -15,5 +16,6 @@ export const routes: Routes = [
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'driver/rides/:id', component: RideDetailsComponent},
+  { path: 'passenger/profile-info', component: PassengerProfileInfo},
   { path: '**', component: NotFoundComponent }
 ];

@@ -304,7 +304,7 @@ public class RideHistoryFragment extends Fragment {
             String selectedDate = sdf.format(new Date(selection));
 
             tvFilterDate.setText(selectedDate);
-            filterRidesByDate(selectedDate);
+//            filterRidesByDate(selectedDate);
         });
     }
 

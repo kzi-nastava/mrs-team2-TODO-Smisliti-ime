@@ -80,24 +80,45 @@
 .ride-history-page{
   background-color: #8FABD4;
   padding-top: 5px;
+  min-height: 100vh;
 }
 
+.filter-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  margin: 20px 0;
+}
 
 
 
 .filter-box {
   background: #0b3a82;
   color: white;
+}
 
+.date-picker-field {
   padding: 10px;
   border-radius: 14px;
   width: 220px;
-  margin: 10px 10px 10px 50px;
+  /*margin: 10px 10px 10px 50px;*/
+}
+
+.buttons {
+  display: flex;
+  gap: 5px;
+  width: 220px;
+  margin-top: -20px;
 }
 
 .filter-title {
   font-size: 14px;
   margin-bottom: 10px;
+}
+
+.buttons button {
+  flex: 1;
 }
 
 .date-inputs {
@@ -126,5 +147,12 @@
   background-color: #CBDCEB;
 }
 
+
+.filter-container {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  gap: 10px;
+}
 
 

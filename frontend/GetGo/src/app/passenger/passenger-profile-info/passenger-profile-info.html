@@ -1,9 +1,9 @@
 <app-user-nav-bar></app-user-nav-bar>
-
 <div class="user-info">
     <p class="profile-title">Edit Personal Information</p>
     <div class="profile-picture">
-        <img src="assets/images/pfp.png" alt="Profile Picture" class="avatar-image" />
+        <img [src]="profileImageUrl" alt="Profile Picture" class="avatar-image" (click)="onImageClick()" />
+        <input type="file" id="fileInput" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
     </div>
     <form class="profile-form">
       <input type="email" placeholder="E-mail" class="form-input" />
@@ -14,6 +14,6 @@
       
       <a href="#" class="change-password-link">Change Password</a>
       
-      <button type="submit" class="save-button">Save</button>
+      <button type="button" class="save-button" (click)="onSave()">Save</button>
     </form>
 </div>

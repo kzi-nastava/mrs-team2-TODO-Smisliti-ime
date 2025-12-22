@@ -1,22 +1,15 @@
 <div *ngIf="ride(); else loading" class="ride-details">
 
-  <h1>Ride Details</h1>
+  <h1>Ride #{{ ride()!.id }}</h1>
 
-  <p><b>Start location:</b> {{ ride()!.startLocation }}</p>
-  <p><b>End location:</b> {{ ride()!.endLocation }}</p>
+  <p><b>Start:</b> {{ ride()!.startLocation }}</p>
+  <p><b>End:</b> {{ ride()!.endLocation }}</p>
+
   <p><b>Date:</b> {{ ride()!.startDate }}</p>
   <p><b>Start time:</b> {{ ride()!.startTime }}</p>
   <p><b>End time:</b> {{ ride()!.endTime }}</p>
-  <p><b>Panic activated:</b> {{ ride()!.panicActivated ? 'Yes' : 'No' }}</p>
 
   <h2>Price: ${{ ride()!.price }}</h2>
-
-  <p><b>Passengers:</b></p>
-  <ul class="passenger-list">
-    <li class="passenger-chip" *ngFor="let passenger of ride()!.passengers">
-      {{ passenger }}
-    </li>
-  </ul>
 
 </div>
 

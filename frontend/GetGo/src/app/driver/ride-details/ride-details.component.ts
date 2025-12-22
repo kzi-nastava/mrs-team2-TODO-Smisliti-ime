@@ -16,10 +16,7 @@ export class RideDetailsComponent {
 
   ride: Signal<Ride | undefined>;
 
-  constructor(
-    private route: ActivatedRoute,
-    private rideService: RideService
-  ) {
+  constructor(private route: ActivatedRoute, private rideService: RideService) {
     this.rideId = Number(this.route.snapshot.paramMap.get('id'));
 
     this.ride = computed(() =>

@@ -1,5 +1,6 @@
 <div class="ride-history-page">
 
+  <div class="filter-containter">
   <form [formGroup]="searchRideForm" (ngSubmit)="searchRides()" class="filter-form">
     <mat-form-field appearance="fill" class="date-picker-field">
       <mat-label>Filter by date</mat-label>
@@ -13,6 +14,7 @@
       <button mat-raised-button color="primary" type="submit">Apply</button>
     </div>
   </form>
+  </div>
 
 
   <div class="list">

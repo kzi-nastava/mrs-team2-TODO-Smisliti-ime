@@ -1,12 +1,17 @@
 import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-unregistered-home',
-  imports: [
-  ],
   templateUrl: './unregistered-home.component.html',
-  styleUrl: './unregistered-home.component.css',
+  imports: [FormsModule],
+  styleUrls: ['./unregistered-home.component.css']
 })
 export class UnregisteredHomeComponent {
+  destination = '';
 
+  calculateTime() {
+    console.log('Calculate for unregistered user:', { destination: this.destination });
+    alert('Calculation triggered (check console).');
+  }
 }

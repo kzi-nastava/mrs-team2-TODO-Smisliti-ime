@@ -1,0 +1,145 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #8FABD4;
+  padding-top: 40px;
+}
+
+.home {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 24px;
+}
+
+.left {
+  flex: 1;
+  max-width: 640px;
+  background-color: #CBDCEB;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  color: #133E87;
+}
+
+.left h1 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #133E87;
+}
+
+.dest-row {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  align-items: center;
+}
+
+.dest-row input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(19,62,135,0.08);
+  background: #ffffff;
+  color: #133E87;
+}
+
+button.mini {
+  padding: 6px 10px;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 8px;
+  background: #133E87;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+button.mini:hover {
+  transform: translateY(-2px);
+}
+
+.form-group {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: #133E87;
+  margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select {
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(19,62,135,0.08);
+  background: #ffffff;
+  color: #133E87;
+}
+
+.form-actions {
+  margin: 14px 0;
+}
+
+.form-actions button {
+  background: #133E87;
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.form-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(19,62,135,0.18);
+}
+
+.right {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 320px;
+}
+
+.right img {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 880px) {
+  .home {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .right {
+    order: 2;
+    width: 100%;
+  }
+
+  .left {
+    order: 1;
+    width: 100%;
+    max-width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .right img {
+    max-width: 100%;
+  }
+}

@@ -18,6 +18,7 @@ import java.util.List;
 import com.example.getgo.adapters.RideHistoryAdapter;
 import com.example.getgo.model.Ride;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -31,6 +32,8 @@ public class RideHistoryFragment extends Fragment {
     private ArrayList<Ride> historyList;
     private TextView tvFilterDate;
     private ArrayList<Ride> fullHistoryList;
+    private MaterialButton btnReset, btnApply;
+
 
     public RideHistoryFragment() {
         // Required empty public constructor
@@ -62,6 +65,9 @@ public class RideHistoryFragment extends Fragment {
         // Inflate the layout for this fragment
 
         View view = inflater.inflate(R.layout.fragment_ride_history, container, false);
+
+        btnReset = view.findViewById(R.id.btnReset);
+        btnApply = view.findViewById(R.id.btnApply);
 
         tvFilterDate = view.findViewById(R.id.tvFilterDate);
 
@@ -254,6 +260,22 @@ public class RideHistoryFragment extends Fragment {
 
         tvFilterDate.setOnClickListener(v -> showDatePicker());
 
+        btnReset.setOnClickListener(v -> {
+            tvFilterDate.setText("Filter by date");
+            historyList.clear();
+            historyList.addAll(fullHistoryList);
+            adapter.notifyDataSetChanged();
+        });
+
+        btnApply.setOnClickListener(v -> {
+            String selectedDate = tvFilterDate.getText().toString();
+            if (!selectedDate.equals("Filter by date")) {
+                filterRidesByDate(selectedDate);
+            }
+        });
+
+
+
         adapter.setOnRideClickListener(ride -> {
             RideDetailFragment fragment =
                     RideDetailFragment.newInstance(ride);
@@ -266,8 +288,6 @@ public class RideHistoryFragment extends Fragment {
         });
 
         return view;
-
-//        return inflater.inflate(R.layout.fragment_ride_history, container, false);
     }
 
     private void showDatePicker() {

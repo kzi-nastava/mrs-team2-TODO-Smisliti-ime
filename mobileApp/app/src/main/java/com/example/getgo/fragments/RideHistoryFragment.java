@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.example.getgo.R;
 
@@ -17,6 +18,11 @@ import java.util.List;
 import com.example.getgo.adapters.RideHistoryAdapter;
 import com.example.getgo.model.Ride;
 
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.datepicker.MaterialDatePicker;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.Date;
 
 
 public class RideHistoryFragment extends Fragment {
@@ -24,6 +30,10 @@ public class RideHistoryFragment extends Fragment {
     private ListView rideHistoryLV;
     private RideHistoryAdapter adapter;
     private ArrayList<Ride> historyList;
+    private TextView tvFilterDate;
+    private ArrayList<Ride> fullHistoryList;
+    private MaterialButton btnReset, btnApply;
+
 
     public RideHistoryFragment() {
         // Required empty public constructor
@@ -55,6 +65,11 @@ public class RideHistoryFragment extends Fragment {
         // Inflate the layout for this fragment
 
         View view = inflater.inflate(R.layout.fragment_ride_history, container, false);
+
+        btnReset = view.findViewById(R.id.btnReset);
+        btnApply = view.findViewById(R.id.btnApply);
+
+        tvFilterDate = view.findViewById(R.id.tvFilterDate);
 
         rideHistoryLV = view.findViewById(R.id.rideHistoryListView);
         historyList = new ArrayList<>();
@@ -239,8 +254,27 @@ public class RideHistoryFragment extends Fragment {
                 Arrays.asList("Marko Jovanović", "Ivan Kovačević")
         ));
 
+        fullHistoryList = new ArrayList<Ride>(historyList);
         adapter = new RideHistoryAdapter(requireContext(), historyList);
         rideHistoryLV.setAdapter(adapter);
+
+        tvFilterDate.setOnClickListener(v -> showDatePicker());
+
+        btnReset.setOnClickListener(v -> {
+            tvFilterDate.setText("Filter by date");
+            historyList.clear();
+            historyList.addAll(fullHistoryList);
+            adapter.notifyDataSetChanged();
+        });
+
+        btnApply.setOnClickListener(v -> {
+            String selectedDate = tvFilterDate.getText().toString();
+            if (!selectedDate.equals("Filter by date")) {
+                filterRidesByDate(selectedDate);
+            }
+        });
+
+
 
         adapter.setOnRideClickListener(ride -> {
             RideDetailFragment fragment =
@@ -254,7 +288,37 @@ public class RideHistoryFragment extends Fragment {
         });
 
         return view;
-
-//        return inflater.inflate(R.layout.fragment_ride_history, container, false);
     }
+
+    private void showDatePicker() {
+        MaterialDatePicker<Long> datePicker =
+                MaterialDatePicker.Builder.datePicker()
+                        .setTitleText("Select date")
+                        .build();
+
+        datePicker.show(getParentFragmentManager(), "DATE_PICKER");
+
+        datePicker.addOnPositiveButtonClickListener(selection -> {
+            SimpleDateFormat sdf =
+                    new SimpleDateFormat("yyyy.MM.dd.", Locale.getDefault());
+            String selectedDate = sdf.format(new Date(selection));
+
+            tvFilterDate.setText(selectedDate);
+//            filterRidesByDate(selectedDate);
+        });
+    }
+
+    private void filterRidesByDate(String date) {
+        historyList.clear();
+
+        for (Ride ride : fullHistoryList) {
+            if (ride.getStartDate().equals(date)) {
+                historyList.add(ride);
+            }
+        }
+
+        adapter.notifyDataSetChanged();
+    }
+
+
 }

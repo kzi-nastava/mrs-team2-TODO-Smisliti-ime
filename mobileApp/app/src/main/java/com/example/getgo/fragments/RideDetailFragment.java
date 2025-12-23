@@ -11,6 +11,8 @@ import android.widget.TextView;
 
 import com.example.getgo.R;
 import com.example.getgo.model.Ride;
+import android.text.Html;
+
 
 
 public class RideDetailFragment extends Fragment {
@@ -58,25 +60,36 @@ public class RideDetailFragment extends Fragment {
 
 
         if (ride != null) {
-            start.setText("Start location: " + ride.getStartLocation());
-            end.setText("End location: " + ride.getEndLocation());
-            startTime.setText("Start time: " + ride.getStartTime());
-            endTime.setText("End time: " + ride.getEndTime());
-            price.setText("$" + ride.getPrice());
-            date.setText("Date: " + ride.getStartDate());
 
-            tvPanicActivated.setText("Panic Activated: " + (ride.isPanicActivated() ? "Yes" : "No"));
+            setStyledText(date, "Date:", ride.getStartDate());
+            setStyledText(start, "Start location:", ride.getStartLocation());
+            setStyledText(end, "End location:", ride.getEndLocation());
+            setStyledText(startTime, "Start time:", ride.getStartTime());
+            setStyledText(endTime, "End time:", ride.getEndTime());
+            setStyledText(price, "Price:", "$" + ride.getPrice());
+            setStyledText(tvPanicActivated, "Panic Activated:",
+                    ride.isPanicActivated() ? "Yes" : "No");
+
             if (ride.getPassengers() != null && !ride.getPassengers().isEmpty()) {
                 StringBuilder sb = new StringBuilder();
                 for (String p : ride.getPassengers()) {
-                    sb.append(p).append("\n");
+                    sb.append("&nbsp;&nbsp;&nbsp;&nbsp;• ").append(p).append("<br>");
                 }
-                tvPassengers.setText("Passengers:\n" + sb.toString().trim());
+                setStyledText(tvPassengers, "Passengers: <br>", sb.toString());
             } else {
-                tvPassengers.setText("Passengers: None");
+                setStyledText(tvPassengers, "Passengers:", "None");
             }
+
         }
-        return view;
-//        return inflater.inflate(R.layout.fragment_ride_detail, container, false);
+            return view;
     }
+    private void setStyledText(TextView tv, String label, String value) {
+        String html =
+                "<b><font color='#133E87'>" + label + "</font></b> " +
+                        "<font color='#757474'>" + value + "</font>";
+
+        tv.setText(Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY));
+    }
+
+
 }

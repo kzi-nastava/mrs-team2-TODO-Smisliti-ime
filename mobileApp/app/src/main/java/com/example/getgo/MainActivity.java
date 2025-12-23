@@ -31,24 +31,25 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
-//        toolbar = binding.activityHomeBase.toolbar;
-// Postavljamo toolbar kao glavnu traku za ovu aktivnost
+
+    // Postavljamo toolbar kao glavnu traku za ovu aktivnost
         setSupportActionBar(toolbar);
-// Dobavljamo referencu na glavnu traku za ovu aktivnost
+    // Dobavljamo referencu na glavnu traku za ovu aktivnost
         ActionBar actionBar;
         actionBar = getSupportActionBar();
         if(actionBar != null){
             // postavlja prikazivanje "strelice prema nazad" (back arrow)
             // kao indikatora navigacije na lijevoj strani Toolbar-a.
-            actionBar.setDisplayHomeAsUpEnabled(false);
+            actionBar.setDisplayHomeAsUpEnabled(true);
             // postavlja ikonu koja se prikazuje umjesto strelice prema nazad.
             // u ovom slučaju, postavljena je ikona hamburger iz drawable resursa (ic_hamburger).
 //            actionBar.setHomeAsUpIndicator(R.drawable.ic_hamburger);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_launcher_background);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_hamburger);
             // ovo omogućuje da se klikom na gumb 'home' na Toolbar-u
             // aktivira povratak na prethodni zaslon.
             actionBar.setHomeButtonEnabled(true);
         }
+
 
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragmentContainer, new RideHistoryFragment())

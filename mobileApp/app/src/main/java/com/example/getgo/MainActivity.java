@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
         ActionBar actionBar;
         actionBar = getSupportActionBar();
         if(actionBar != null){
+            actionBar.setTitle("GetGo");
             // postavlja prikazivanje "strelice prema nazad" (back arrow)
             // kao indikatora navigacije na lijevoj strani Toolbar-a.
             actionBar.setDisplayHomeAsUpEnabled(true);

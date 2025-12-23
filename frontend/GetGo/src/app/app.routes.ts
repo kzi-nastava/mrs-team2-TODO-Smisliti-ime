@@ -11,6 +11,7 @@ import { PassengerProfileInfo } from './passenger/passenger-profile-info/passeng
 import { DriverProfile } from './driver/driver-profile/driver-profile';
 import { AdminProfile } from './admin/admin-profile/admin-profile';
 import { DriverRegistration } from './admin/driver-registration/driver-registration';
+import { OrderRide } from './passenger/order-ride/order-ride';
 
 export const routes: Routes = [
   { path: '', component: UnregisteredHomeComponent },
@@ -24,5 +25,6 @@ export const routes: Routes = [
   { path: 'driver/driver-profile', component: DriverProfile},
   { path: 'admin/admin-profile', component: AdminProfile},
   { path: 'admin/driver-registration', component: DriverRegistration},
+  { path: 'order-ride', component: OrderRide},
   { path: '**', component: NotFoundComponent }
 ];

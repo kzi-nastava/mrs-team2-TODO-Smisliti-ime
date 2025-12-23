@@ -1,0 +1,33 @@
+<app-user-nav-bar></app-user-nav-bar>
+
+<div class="favorite-rides-container">
+  <div class="left-panel">
+    <div class="header-section">
+      <h1 class="page-title">Select Favorite Ride</h1>
+    </div>
+    
+    <div class="rides-content">
+        @for (ride of favoriteRides; track $index) {
+        <div class="ride-card">
+            <div class="ride-row">
+            <img src="assets/images/location.png" alt="Start" class="ride-icon" />
+            <p class="ride-from">{{ ride.from }}</p>
+            </div>
+            <div class="ride-row">
+            <img src="assets/images/finish.png" alt="Destination" class="ride-icon" />
+            <p class="ride-to">{{ ride.to }}</p>
+            </div>
+        </div>
+        }
+    </div>
+    
+    <div class="button-section">
+      <button class="back-button">Back</button>
+      <button class="select-button">Select</button>
+    </div>
+  </div>
+  
+  <div class="right-panel">
+    <img src="assets/images/map.jpeg" alt="Map" class="map-image" />
+  </div>
+</div>

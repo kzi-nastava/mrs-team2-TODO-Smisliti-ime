@@ -24,9 +24,29 @@
     <span>Ride history</span>
   </button>
 
-  <button mat-menu-item [routerLink]="['/login']">
+  <button mat-menu-item [routerLink]="['/passenger/passenger-profile']">
     <mat-icon>edit</mat-icon>
     <span>Profile data</span>
+  </button>
+
+  <button mat-menu-item [routerLink]="['/admin/admin-profile']">
+    <mat-icon>edit</mat-icon>
+    <span>TMP: Admin data</span>
+  </button>
+
+  <button mat-menu-item [routerLink]="['/driver/driver-profile']">
+    <mat-icon>edit</mat-icon>
+    <span>TMP: Driver profile</span>
+  </button>
+
+  <button mat-menu-item [routerLink]="['/login']">
+    <mat-icon>edit</mat-icon>
+    <span>TMP: Login</span>
+  </button>
+
+  <button mat-menu-item [routerLink]="['/register']">
+    <mat-icon>edit</mat-icon>
+    <span>TMP: Register</span>
   </button>
 
   <button mat-menu-item [routerLink]="['/login']">

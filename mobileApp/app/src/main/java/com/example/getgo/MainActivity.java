@@ -1,8 +1,12 @@
 package com.example.getgo;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -11,6 +15,9 @@ import androidx.core.view.WindowInsetsCompat;
 import com.example.getgo.fragments.DriverHomeFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import androidx.fragment.app.Fragment;
+import androidx.appcompat.widget.Toolbar;
+import androidx.appcompat.app.ActionBar;
+
 
 
 import com.example.getgo.fragments.RideHistoryFragment;
@@ -23,6 +30,25 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        Toolbar toolbar = findViewById(R.id.toolbar);
+//        toolbar = binding.activityHomeBase.toolbar;
+// Postavljamo toolbar kao glavnu traku za ovu aktivnost
+        setSupportActionBar(toolbar);
+// Dobavljamo referencu na glavnu traku za ovu aktivnost
+        ActionBar actionBar;
+        actionBar = getSupportActionBar();
+        if(actionBar != null){
+            // postavlja prikazivanje "strelice prema nazad" (back arrow)
+            // kao indikatora navigacije na lijevoj strani Toolbar-a.
+            actionBar.setDisplayHomeAsUpEnabled(false);
+            // postavlja ikonu koja se prikazuje umjesto strelice prema nazad.
+            // u ovom slučaju, postavljena je ikona hamburger iz drawable resursa (ic_hamburger).
+//            actionBar.setHomeAsUpIndicator(R.drawable.ic_hamburger);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_launcher_background);
+            // ovo omogućuje da se klikom na gumb 'home' na Toolbar-u
+            // aktivira povratak na prethodni zaslon.
+            actionBar.setHomeButtonEnabled(true);
+        }
 
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragmentContainer, new RideHistoryFragment())
@@ -49,5 +75,27 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.driver_toolbar_menu, menu);
+        return true; // vraćamo true da se meni prikaže
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.nav_settings) {
+            Toast.makeText(MainActivity.this, "Settings", Toast.LENGTH_SHORT).show();
+            return true;
+        } else if (id == R.id.nav_language) {
+            Toast.makeText(MainActivity.this, "Language", Toast.LENGTH_SHORT).show();
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
+        }
+//        navController = Navigation.findNavController(this, R.id.fragment_nav_content_main);
+//        //...
+//        return NavigationUI.onNavDestinationSelected(item, navController) || super.onOptionsItemSelected(item);
     }
 }

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item android:id="@+id/nav_settings"
+        android:title="settings"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:orderInCategory="100"
+        app:showAsAction="never" />
+
+    <item android:id="@+id/nav_language"
+        android:title="Language"
+        android:icon="@drawable/flag"
+        android:orderInCategory="300"
+        app:showAsAction="ifRoom" />
+</menu>

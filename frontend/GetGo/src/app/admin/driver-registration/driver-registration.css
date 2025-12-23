@@ -1,0 +1,136 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #CBDCEB;
+}
+
+.user-info {
+  width: 50vw;
+  min-height: 100vh;
+  background-color: #8FABD4;
+  margin: 0 auto;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.main-title {
+  text-align: center;
+  font-size: 3.5em;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 50px;
+}
+
+.info-label {
+  background-color: #CBDCEB;
+  opacity: 0.7;
+  border-radius: 30px;
+  padding: 15px;
+  margin: 0 auto 30px auto;
+  width: 50%;
+}
+
+.info-title {
+  text-align: center;
+  font-size: 2em;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+}
+
+.profile-title {
+  text-align: center;
+  font-size: 3em;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 40px;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+}
+
+.form-input {
+  width: 90%;
+  padding: 15px 20px;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 10px;
+  background-color: #E8EEF5;
+  text-align: center;
+}
+
+.form-input::placeholder {
+  color: #A0B3C8;
+  font-size: 1.6rem;
+}
+
+.checkbox-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 40px;
+  width: 90%;
+  margin: 10px 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.5rem;
+  color: #1E4A7F;
+  cursor: pointer;
+}
+
+.checkbox-input {
+  width: 25px;
+  height: 25px;
+  cursor: pointer;
+}
+
+.next-button {
+  align-self: flex-end;
+  margin-right: 3%;
+  padding: 15px 80px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  background-color: #133E87;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  width: 94%;
+  margin-top: 10px;
+}
+
+.back-button {
+  padding: 15px 80px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  background-color: #133E87;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.register-button {
+  padding: 15px 80px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  background-color: #133E87;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}

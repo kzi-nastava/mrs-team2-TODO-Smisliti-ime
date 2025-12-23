@@ -1,10 +1,10 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { UserNavBarComponent } from '../../layout/user-nav-bar/user-nav-bar.component';
+import { DriverNavBarComponent } from '../../layout/driver-nav-bar/driver-nav-bar.component';
 
 @Component({
   selector: 'app-driver-profile',
-  imports: [UserNavBarComponent, FormsModule],
+  imports: [DriverNavBarComponent, FormsModule],
   templateUrl: './driver-profile.html',
   styleUrl: './driver-profile.css',
 })

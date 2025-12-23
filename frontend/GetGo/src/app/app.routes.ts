@@ -9,6 +9,7 @@ import {UnregisteredHomeComponent} from './layout/unregistered-home/unregistered
 import {RideDetailsComponent} from './driver/ride-details/ride-details.component';
 import { PassengerProfileInfo } from './passenger/passenger-profile-info/passenger-profile-info';
 import { DriverProfile } from './driver/driver-profile/driver-profile';
+import { AdminProfile } from './admin/admin-profile/admin-profile';
 import { DriverRegistration } from './admin/driver-registration/driver-registration';
 
 export const routes: Routes = [
@@ -18,8 +19,9 @@ export const routes: Routes = [
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'driver/rides/:id', component: RideDetailsComponent},
-  { path: 'passenger/profile-info', component: PassengerProfileInfo},
-  { path: 'driver/driver-info', component: DriverProfile},
+  { path: 'passenger/passenger-profile', component: PassengerProfileInfo},
+  { path: 'driver/driver-profile', component: DriverProfile},
+  { path: 'admin/admin-profile', component: AdminProfile},
   { path: 'admin/driver-registration', component: DriverRegistration},
   { path: '**', component: NotFoundComponent }
 ];

@@ -1,0 +1,50 @@
+<app-admin-nav-bar></app-admin-nav-bar>
+<div class="user-info">
+    <p class="main-title">Register Driver</p>
+    
+    <div class="info-label">
+      @if (activeTab === 'driver') {
+        <p class="info-title">Driver Info</p>
+      }
+      @if (activeTab === 'vehicle') {
+        <p class="info-title">Vehicle Info</p>
+      }
+    </div>
+
+    @if (activeTab === 'driver') {
+      <form class="profile-form">
+        <input type="email" placeholder="E-mail" class="form-input" [(ngModel)]="driverData.email" name="email" />
+        <input type="text" placeholder="First Name" class="form-input" [(ngModel)]="driverData.firstName" name="firstName" />
+        <input type="text" placeholder="Last Name" class="form-input" [(ngModel)]="driverData.lastName" name="lastName" />
+        <input type="tel" placeholder="Phone" class="form-input" [(ngModel)]="driverData.phone" name="phone" />
+        <input type="text" placeholder="Address" class="form-input" [(ngModel)]="driverData.address" name="address" />
+        
+        <button type="button" class="next-button" (click)="goToVehicle()">Next</button>
+      </form>
+    }
+
+    @if (activeTab === 'vehicle') {
+      <form class="profile-form">
+        <input type="text" placeholder="Vehicle Model" class="form-input" [(ngModel)]="vehicleData.model" name="model" />
+        <input type="text" placeholder="Vehicle Type" class="form-input" [(ngModel)]="vehicleData.type" name="type" />
+        <input type="text" placeholder="Registration Number" class="form-input" [(ngModel)]="vehicleData.registrationNumber" name="registrationNumber" />
+        <input type="number" placeholder="Number of Seats" class="form-input" [(ngModel)]="vehicleData.seats" name="seats" />
+        
+        <div class="checkbox-container">
+          <label class="checkbox-label">
+            <input type="checkbox" class="checkbox-input" [(ngModel)]="vehicleData.allowsBabies" name="allowsBabies" />
+            <span>Allows Babies</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" class="checkbox-input" [(ngModel)]="vehicleData.allowsPets" name="allowsPets" />
+            <span>Allows Pets</span>
+          </label>
+        </div>
+        
+        <div class="button-group">
+          <button type="button" class="back-button" (click)="goToDriver()">Back</button>
+          <button type="button" class="register-button" (click)="onRegister()">Register</button>
+        </div>
+      </form>
+    }
+</div>

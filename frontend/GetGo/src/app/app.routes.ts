@@ -7,6 +7,10 @@ import {NotFoundComponent} from './pages/not-found/not-found';
 import {UnregisteredHomeComponent} from './layout/unregistered-home/unregistered-home.component';
 import {RideDetailsComponent} from './driver/ride-details/ride-details.component';
 import {RegisteredHomeComponent} from './layout/registered-home/registered-home.component';
+import { PassengerProfileInfo } from './passenger/passenger-profile-info/passenger-profile-info';
+import { DriverProfile } from './driver/driver-profile/driver-profile';
+import { AdminProfile } from './admin/admin-profile/admin-profile';
+import { DriverRegistration } from './admin/driver-registration/driver-registration';
 
 export const routes: Routes = [
   { path: '', component: UnregisteredHomeComponent },
@@ -16,5 +20,9 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'ride', component: RideComponent},
   { path: 'driver/rides/:id', component: RideDetailsComponent},
+  { path: 'passenger/passenger-profile', component: PassengerProfileInfo},
+  { path: 'driver/driver-profile', component: DriverProfile},
+  { path: 'admin/admin-profile', component: AdminProfile},
+  { path: 'admin/driver-registration', component: DriverRegistration},
   { path: '**', component: NotFoundComponent }
 ];

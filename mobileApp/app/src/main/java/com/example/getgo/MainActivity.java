@@ -7,6 +7,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -14,6 +15,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.getgo.fragments.DriverHomeFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.appcompat.widget.Toolbar;
 import androidx.appcompat.app.ActionBar;
@@ -31,23 +34,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
-
-    // Postavljamo toolbar kao glavnu traku za ovu aktivnost
         setSupportActionBar(toolbar);
-    // Dobavljamo referencu na glavnu traku za ovu aktivnost
+
         ActionBar actionBar;
         actionBar = getSupportActionBar();
         if(actionBar != null){
             actionBar.setTitle("GetGo");
-            // postavlja prikazivanje "strelice prema nazad" (back arrow)
-            // kao indikatora navigacije na lijevoj strani Toolbar-a.
             actionBar.setDisplayHomeAsUpEnabled(true);
-            // postavlja ikonu koja se prikazuje umjesto strelice prema nazad.
-            // u ovom slučaju, postavljena je ikona hamburger iz drawable resursa (ic_hamburger).
-//            actionBar.setHomeAsUpIndicator(R.drawable.ic_hamburger);
             actionBar.setHomeAsUpIndicator(R.drawable.ic_hamburger);
-            // ovo omogućuje da se klikom na gumb 'home' na Toolbar-u
-            // aktivira povratak na prethodni zaslon.
             actionBar.setHomeButtonEnabled(true);
         }
 
@@ -76,6 +70,22 @@ public class MainActivity extends AppCompatActivity {
 
             return true;
         });
+
+
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this,              // aktivnost
+                drawer,            // DrawerLayout
+                toolbar,           // Toolbar
+                R.string.drawer_open,  // tekst za accessibility
+                R.string.drawer_close  // tekst za accessibility
+        );
+
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+        toggle.getDrawerArrowDrawable().setColor(getColor(android.R.color.white));
+
 
     }
     @Override

@@ -4,16 +4,29 @@ import {LoginComponent} from './pages/authentication/login/login';
 import {ForgotPasswordComponent} from './pages/authentication/forgot-password/forgot-password';
 import {RegisterComponent} from './pages/authentication/register/register';
 import {NotFoundComponent} from './pages/not-found/not-found';
-// import {HomeComponent} from './layout/home/home';
 import {UnregisteredHomeComponent} from './layout/unregistered-home/unregistered-home.component';
 import {RideDetailsComponent} from './driver/ride-details/ride-details.component';
+import {RegisteredHomeComponent} from './layout/registered-home/registered-home.component';
+import { PassengerProfileInfo } from './passenger/passenger-profile-info/passenger-profile-info';
+import { DriverProfile } from './driver/driver-profile/driver-profile';
+import { AdminProfile } from './admin/admin-profile/admin-profile';
+import { DriverRegistration } from './admin/driver-registration/driver-registration';
+import { OrderRide } from './passenger/order-ride/order-ride';
+import { FavoriteRides } from './passenger/favorite-rides/favorite-rides';
 
 export const routes: Routes = [
-  { path: 'ride', component: RideComponent},
   { path: '', component: UnregisteredHomeComponent },
+  { path: 'home', component: RegisteredHomeComponent },
   { path: 'login', component: LoginComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'ride', component: RideComponent},
   { path: 'driver/rides/:id', component: RideDetailsComponent},
+  { path: 'passenger/passenger-profile', component: PassengerProfileInfo},
+  { path: 'driver/driver-profile', component: DriverProfile},
+  { path: 'admin/admin-profile', component: AdminProfile},
+  { path: 'admin/driver-registration', component: DriverRegistration},
+  { path: 'order-ride', component: OrderRide},
+  { path: 'favorite-rides', component:FavoriteRides},
   { path: '**', component: NotFoundComponent }
 ];

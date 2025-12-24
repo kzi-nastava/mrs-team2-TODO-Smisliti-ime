@@ -1,11 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import {FormsModule} from '@angular/forms';
 
 @Component({
   selector: 'app-registered-home',
-  imports: [],
   templateUrl: './registered-home.component.html',
-  styleUrl: './registered-home.component.css',
+  imports: [
+    FormsModule
+  ],
+  styleUrls: ['./registered-home.component.css']
 })
 export class RegisteredHomeComponent {
+  protected destination: any;
 
 }

@@ -1,4 +1,4 @@
-<form [formGroup]="createLoginForm" (ngSubmit)="login()">
+<form *ngIf="!showRoleSelector" [formGroup]="createLoginForm" (ngSubmit)="login()">
   <h1>Welcome Back</h1>
   <p class="subtitle">Please enter your credentials to continue</p>
 
@@ -21,10 +21,23 @@
     </a>
   </div>
 
-  <button mat-raised-button color="primary" type="submit">Login</button>
+  <button
+    mat-raised-button
+    color="primary"
+    type="submit"
+    (click)="login()"
+  >
+    Login
+  </button>
 
   <div class="register-section">
     <span>Don't have an account?</span>
     <a [routerLink]="['/register']">Register</a>
   </div>
 </form>
+
+<app-role-selector
+  *ngIf="showRoleSelector"
+  (selectRole)="onRoleSelected($event)"
+  (close)="showRoleSelector = false">
+</app-role-selector>

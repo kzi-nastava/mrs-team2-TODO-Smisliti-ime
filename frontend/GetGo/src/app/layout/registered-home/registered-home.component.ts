@@ -10,6 +10,4 @@ import {FormsModule} from '@angular/forms';
   styleUrls: ['./registered-home.component.css']
 })
 export class RegisteredHomeComponent {
-  protected destination: any;
-
 }

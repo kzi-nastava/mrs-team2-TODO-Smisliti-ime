@@ -1,5 +1,6 @@
-<!--<p>nav-bar works!</p>-->
-<app-unregistered-nav-bar *ngIf="role === 'guest'" />
-<app-driver-nav-bar *ngIf="role === 'driver'" />
-<app-user-nav-bar *ngIf="role === 'user'" />
-<app-admin-nav-bar *ngIf="role === 'admin'" />
+<ng-container [ngSwitch]="role()">
+  <app-unregistered-nav-bar *ngSwitchCase="UserRole.Guest"></app-unregistered-nav-bar>
+  <app-driver-nav-bar *ngSwitchCase="UserRole.Driver"></app-driver-nav-bar>
+  <app-user-nav-bar *ngSwitchCase="UserRole.Passenger"></app-user-nav-bar>
+  <app-admin-nav-bar *ngSwitchCase="UserRole.Admin"></app-admin-nav-bar>
+</ng-container>

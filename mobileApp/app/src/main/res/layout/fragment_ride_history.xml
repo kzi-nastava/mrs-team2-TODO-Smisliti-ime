@@ -33,7 +33,7 @@
         android:background="#EEEEEE"
         android:textSize="16sp"
         android:clickable="true"
-        android:focusable="true"/>
+        android:focusable="true" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -65,8 +65,9 @@
     <ListView
         android:id="@+id/rideHistoryListView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
         tools:listitem="@layout/ride_card"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         />
 
 

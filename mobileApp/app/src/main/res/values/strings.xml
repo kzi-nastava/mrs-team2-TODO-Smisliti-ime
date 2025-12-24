@@ -10,4 +10,6 @@
     <string name="ForgotPassword">Forgot Password?\n</string>
     <string name="login">LOGIN</string>
     <string name="loginButton">LOGIN\n</string>
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
 </resources>

@@ -14,6 +14,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.getgo.fragments.DriverHomeFragment;
+import com.example.getgo.model.UserRole;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -24,8 +25,10 @@ import androidx.appcompat.app.ActionBar;
 
 
 import com.example.getgo.fragments.RideHistoryFragment;
+import com.google.android.material.navigation.NavigationView;
 
 public class MainActivity extends AppCompatActivity {
+    private UserRole currentUserRole = UserRole.DRIVER; // TEST
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,8 +39,7 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        ActionBar actionBar;
-        actionBar = getSupportActionBar();
+        ActionBar actionBar = getSupportActionBar();
         if(actionBar != null){
             actionBar.setTitle("GetGo");
             actionBar.setDisplayHomeAsUpEnabled(true);
@@ -45,49 +47,29 @@ public class MainActivity extends AppCompatActivity {
             actionBar.setHomeButtonEnabled(true);
         }
 
-
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragmentContainer, new RideHistoryFragment())
-                .commit();
-
-        BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
-        bottomNav.setOnItemSelectedListener(item -> {
-            Fragment selectedFragment = null;
-            if (item.getItemId() == R.id.item_1) {
-                selectedFragment = new DriverHomeFragment();
-            } else if (item.getItemId() == R.id.item_2) {
-                selectedFragment = new RideHistoryFragment();
-            } else if (item.getItemId() == R.id.item_3) {
-                selectedFragment = new DriverHomeFragment();
-            }
-
-            if (selectedFragment != null) {
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragmentContainer, selectedFragment)
-                        .commit();
-            }
-
-            return true;
-        });
-
-
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this,              // aktivnost
-                drawer,            // DrawerLayout
-                toolbar,           // Toolbar
-                R.string.drawer_open,  // tekst za accessibility
-                R.string.drawer_close  // tekst za accessibility
+                this,
+                drawer,
+                toolbar,
+                R.string.drawer_open,
+                R.string.drawer_close
         );
 
         drawer.addDrawerListener(toggle);
         toggle.syncState();
         toggle.getDrawerArrowDrawable().setColor(getColor(android.R.color.white));
 
+        setupBottomNavigation(currentUserRole);
+        setupDrawerMenu(currentUserRole);
+        setupBottomNavListener();
+
+        // default fragment
+//        openFragment(new RideHistoryFragment());
 
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.driver_toolbar_menu, menu);
@@ -110,4 +92,111 @@ public class MainActivity extends AppCompatActivity {
 //        //...
 //        return NavigationUI.onNavDestinationSelected(item, navController) || super.onOptionsItemSelected(item);
     }
+
+    private void setupBottomNavigation(UserRole role) {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
+
+        bottomNav.getMenu().clear();
+
+        switch (role) {
+            case DRIVER:
+                bottomNav.inflateMenu(R.menu.driver_bottom_nav_menu);
+                break;
+
+            case PASSENGER:
+//                bottomNav.inflateMenu(R.menu.passenger_bottom_nav_menu);
+                break;
+
+            case ADMIN:
+//                bottomNav.inflateMenu(R.menu.admin_bottom_nav_menu);
+                break;
+        }
+    }
+
+    private void setupDrawerMenu(UserRole role) {
+        NavigationView navView = findViewById(R.id.nav_view);
+        navView.getMenu().clear();
+
+        switch (role) {
+            case DRIVER:
+                navView.inflateMenu(R.menu.driver_nav_menu);
+                break;
+
+            case PASSENGER:
+//                navView.inflateMenu(R.menu.passenger_nav_menu);
+                break;
+
+            case ADMIN:
+//                navView.inflateMenu(R.menu.admin_nav_menu);
+                break;
+        }
+    }
+
+    private void setupBottomNavListener() {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
+
+        bottomNav.setOnItemSelectedListener(item -> {
+//            Fragment fragment = null;
+//
+//            switch (item.getItemId()) {
+//                case R.id.item_1:
+//                    fragment = getHomeFragmentByRole();
+//                    break;
+//
+//                case R.id.item_2:
+//                    fragment = getSecondFragmentByRole();
+//                    break;
+//
+//                case R.id.item_3:
+//                    fragment = getThirdFragmentByRole(); // or profile/settings
+//                    break;
+//            }
+//
+//            if (fragment != null) {
+//                openFragment(fragment);
+//            }
+//
+//            return true;
+
+            // This is currently unless we implement some functions
+            Fragment selectedFragment = null;
+            if (item.getItemId() == R.id.item_1) {
+                selectedFragment = new DriverHomeFragment();
+            } else if (item.getItemId() == R.id.item_2) {
+                selectedFragment = new RideHistoryFragment();
+            } else if (item.getItemId() == R.id.item_3) {
+                selectedFragment = new DriverHomeFragment();
+            }
+
+            if (selectedFragment != null) {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragmentContainer, selectedFragment)
+                        .commit();
+            }
+
+            return true;
+        });
+    }
+
+    private Fragment getHomeFragmentByRole() {
+        switch (currentUserRole) {
+            case DRIVER:
+                return new DriverHomeFragment();
+            case PASSENGER:
+//                return new PassengerHomeFragment();
+            case ADMIN:
+//                return new AdminHomeFragment();
+            default:
+                return null;
+        }
+    }
+
+    private void openFragment(Fragment fragment) {
+        getSupportFragmentManager()
+                .beginTransaction().replace(R.id.fragmentContainer, fragment)
+                .commit();
+    }
+
+
 }

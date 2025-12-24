@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.nav_settings) {
             Toast.makeText(MainActivity.this, "Settings", Toast.LENGTH_SHORT).show();
             return true;
-        } else if (id == R.id.nav_language) {
+        } else if (id == R.id.nav_profile) {
             Toast.makeText(MainActivity.this, "Language", Toast.LENGTH_SHORT).show();
             return true;
         } else {
@@ -104,11 +104,11 @@ public class MainActivity extends AppCompatActivity {
                 break;
 
             case PASSENGER:
-//                bottomNav.inflateMenu(R.menu.passenger_bottom_nav_menu);
+                bottomNav.inflateMenu(R.menu.passenger_bottom_nav_menu);
                 break;
 
             case ADMIN:
-//                bottomNav.inflateMenu(R.menu.admin_bottom_nav_menu);
+                bottomNav.inflateMenu(R.menu.admin_bottom_nav_menu);
                 break;
         }
     }
@@ -123,11 +123,11 @@ public class MainActivity extends AppCompatActivity {
                 break;
 
             case PASSENGER:
-//                navView.inflateMenu(R.menu.passenger_nav_menu);
+                navView.inflateMenu(R.menu.passenger_nav_menu);
                 break;
 
             case ADMIN:
-//                navView.inflateMenu(R.menu.admin_nav_menu);
+                navView.inflateMenu(R.menu.admin_nav_menu);
                 break;
         }
     }
@@ -136,43 +136,18 @@ public class MainActivity extends AppCompatActivity {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
 
         bottomNav.setOnItemSelectedListener(item -> {
-//            Fragment fragment = null;
-//
-//            switch (item.getItemId()) {
-//                case R.id.item_1:
-//                    fragment = getHomeFragmentByRole();
-//                    break;
-//
-//                case R.id.item_2:
-//                    fragment = getSecondFragmentByRole();
-//                    break;
-//
-//                case R.id.item_3:
-//                    fragment = getThirdFragmentByRole(); // or profile/settings
-//                    break;
-//            }
-//
-//            if (fragment != null) {
-//                openFragment(fragment);
-//            }
-//
-//            return true;
+            Fragment fragment = null;
 
-            // This is currently unless we implement some functions
-            Fragment selectedFragment = null;
             if (item.getItemId() == R.id.item_1) {
-                selectedFragment = new DriverHomeFragment();
+                fragment = getHomeFragmentByRole();
             } else if (item.getItemId() == R.id.item_2) {
-                selectedFragment = new RideHistoryFragment();
+                fragment = getSecondFragmentByRole();
             } else if (item.getItemId() == R.id.item_3) {
-                selectedFragment = new DriverHomeFragment();
+                fragment = getThirdFragmentByRole(); // or profile/settings
             }
 
-            if (selectedFragment != null) {
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragmentContainer, selectedFragment)
-                        .commit();
+            if (fragment != null) {
+                openFragment(fragment);
             }
 
             return true;
@@ -187,6 +162,32 @@ public class MainActivity extends AppCompatActivity {
 //                return new PassengerHomeFragment();
             case ADMIN:
 //                return new AdminHomeFragment();
+            default:
+                return null;
+        }
+    }
+
+    private Fragment getSecondFragmentByRole() {
+        switch (currentUserRole) {
+            case DRIVER:
+                return new RideHistoryFragment();
+            case PASSENGER:
+//                return new PassengerSecondFragment();
+            case ADMIN:
+//                return new AdminSecondFragment();
+            default:
+                return null;
+        }
+    }
+
+    private Fragment getThirdFragmentByRole() {
+        switch (currentUserRole) {
+            case DRIVER:
+                return new DriverHomeFragment(); // currently
+            case PASSENGER:
+//                return new PassengerThirdFragment();
+            case ADMIN:
+//                return new AdminThirdFragment();
             default:
                 return null;
         }

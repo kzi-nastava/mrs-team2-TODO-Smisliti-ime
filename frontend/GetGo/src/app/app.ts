@@ -1,7 +1,6 @@
 import { Component, signal, computed } from '@angular/core';
 import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { UnregisteredHomeComponent} from './layout/unregistered-home/unregistered-home.component';
 import { CommonModule } from '@angular/common';
 
 import { AuthService } from './pages/authentication/auth-service/auth.service';
@@ -10,7 +9,6 @@ import { NavBarComponent} from './layout/nav-bar/nav-bar.component';
 @Component({
   selector: 'app-root',
   standalone: true,
-  // imports: [RouterOutlet, UnregisteredNavBarComponent, CommonModule, UserNavBarComponent, AdminNavBarComponent, DriverNavBarComponent],
   imports: [RouterOutlet, CommonModule, NavBarComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']

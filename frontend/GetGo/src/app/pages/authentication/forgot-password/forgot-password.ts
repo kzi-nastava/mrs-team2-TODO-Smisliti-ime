@@ -38,10 +38,10 @@ export class ForgotPasswordComponent implements OnInit {
     }
 
     this.isSubmitting = true;
-    // replace with real API call
+    // TODO: replace with real API call
     setTimeout(() => {
       this.isSubmitting = false;
-      // e.g. navigate or show success message
+      // navigate or show success message
       this.router.navigate(['/login']);
     }, 1000);
   }

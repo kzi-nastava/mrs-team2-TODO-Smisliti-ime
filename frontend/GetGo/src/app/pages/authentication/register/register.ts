@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
-import {FormBuilder, FormGroup, Validators, AbstractControl, ReactiveFormsModule} from '@angular/forms';
-import { User } from '../../../model/user.model';
+import {Component} from '@angular/core';
+import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {User, UserRole} from '../../../model/user.model';
 import {RouterLink} from '@angular/router';
-import {MatButton, MatIconButton} from '@angular/material/button';
-import {MatIcon} from '@angular/material/icon';
+import {MatButtonModule, MatIconButton} from '@angular/material/button';
+import {MatIconModule} from '@angular/material/icon';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 
 @Component({
@@ -12,8 +12,8 @@ import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
   styleUrls: ['./register.css'],
   imports: [
     RouterLink,
-    MatButton,
-    MatIcon,
+    MatButtonModule,
+    MatIconModule,
     MatIconButton,
     MatFormField,
     ReactiveFormsModule,
@@ -43,8 +43,8 @@ export class RegisterComponent {
   }
 
   private passwordsMatchValidator(group: AbstractControl) {
-    const password = group.get('password')?.value;
-    const confirm = group.get('confirmPassword')?.value;
+    const password : string = group.get('password')?.value;
+    const confirm : string = group.get('confirmPassword')?.value;
     if (!password || !confirm) {
       return null;
     }
@@ -69,11 +69,13 @@ export class RegisterComponent {
 
     const user: User = {
       email: this.form.value.email,
+      username: this.form.value.username,
       firstName: this.form.value.firstName,
       lastName: this.form.value.lastName,
       password: this.form.value.password,
       address: this.form.value.address,
       phoneNumber: this.form.value.phoneNumber,
+      role: this.form.value.role || UserRole.Passenger // default role
     };
 
     // TODO: call API for registration

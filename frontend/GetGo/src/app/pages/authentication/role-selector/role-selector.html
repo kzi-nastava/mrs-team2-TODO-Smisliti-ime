@@ -1,0 +1,16 @@
+<div class="role-overlay">
+  <div class="role-card">
+    <h2>Select role to continue</h2>
+
+    <mat-radio-group aria-label="Select role" [(ngModel)]="selected">
+      <mat-radio-button value="admin">Admin</mat-radio-button>
+      <mat-radio-button value="driver">Driver</mat-radio-button>
+      <mat-radio-button value="passenger">Passenger</mat-radio-button>
+    </mat-radio-group>
+
+    <div class="actions">
+      <button mat-button (click)="cancel()">Cancel</button>
+      <button mat-raised-button color="primary" (click)="confirm()">Confirm</button>
+    </div>
+  </div>
+</div>

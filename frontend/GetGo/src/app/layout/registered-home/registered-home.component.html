@@ -1,0 +1,42 @@
+<form [formGroup]="travelForm" (ngSubmit)="submit()">
+  <div class="home">
+    <div class="left">
+      <h1>Welcome, registered user</h1>
+
+      <div class="destinations" formArrayName="destinations">
+        <div *ngFor="let dest of destinations.controls; let i = index" [formGroupName]="i" class="dest-row">
+          <input type="text" formControlName="name"
+                 [placeholder]="i === 0 ? 'Starting point' : (i === destinations.length - 1 ? 'Destination' : 'Waypoint')" />
+
+          <!-- dugmad su uvek vidljiva -->
+          <button type="button" class="mini">+</button>
+          <button type="button" class="mini">-</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Order Timing</label>
+        <select>
+          <option value="now">Order now</option>
+          <option value="later">Order later</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Travel Option</label>
+        <select>
+          <option value="alone">Alone</option>
+          <option value="friends">With friends</option>
+        </select>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit">Calculate Time</button>
+      </div>
+    </div>
+
+    <div class="right">
+      <img src="/assets/images/map.jpeg" alt="Map" />
+    </div>
+  </div>
+</form>

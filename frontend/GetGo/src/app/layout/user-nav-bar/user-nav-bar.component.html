@@ -49,7 +49,7 @@
     <span>TMP: Register</span>
   </button>
 
-  <button mat-menu-item [routerLink]="['/login']">
+  <button mat-menu-item (click)="logout()">
     <mat-icon>person</mat-icon>
     <span>Log out</span>
   </button>

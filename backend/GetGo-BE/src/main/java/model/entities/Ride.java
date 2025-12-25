@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import model.enums.RideStatus;
 
 import java.time.LocalDateTime;
 
@@ -21,6 +22,7 @@ public class Ride {
     private int duration;
     private boolean isCancelled;
     private boolean isFavourite;
+    private RideStatus rideStatus;
 
     @ManyToOne
     private Driver driver;

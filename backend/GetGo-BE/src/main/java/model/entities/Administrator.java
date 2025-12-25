@@ -2,10 +2,10 @@ package model.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import model.User;
 
 @Entity
 @Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@DiscriminatorValue("ADMIN")
+@NoArgsConstructor
 public class Administrator extends User {
 }

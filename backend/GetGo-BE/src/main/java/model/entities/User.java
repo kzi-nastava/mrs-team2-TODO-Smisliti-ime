@@ -8,6 +8,7 @@ import lombok.Setter;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name = "user_type")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 public abstract class User {

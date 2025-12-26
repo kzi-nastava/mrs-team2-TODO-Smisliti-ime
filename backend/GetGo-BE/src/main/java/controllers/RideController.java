@@ -2,8 +2,16 @@ package controllers;
 
 import dtos.responses.RideEstimateResponseDTO;
 import dtos.responses.RideStatusResponseDTO;
+import dtos.ride.GetRideDTO;
+import dtos.ride.UpdateRideDTO;
+import dtos.ride.UpdatedRideDTO;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 @RestController
 @RequestMapping("/api/rides")
@@ -44,5 +52,22 @@ public class RideController {
                 new RideStatusResponseDTO(rideId, "FINISHED");
 
         return ResponseEntity.ok(response);
+    }
+
+    // 2.6.2
+    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetRideDTO> trackRide(@PathVariable("id") Long id) {
+        GetRideDTO ride = new GetRideDTO();
+
+        return new ResponseEntity<GetRideDTO>(ride, HttpStatus.OK);
+    }
+
+    // 2.7
+    @PutMapping(value = "/{id}/finish", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UpdatedRideDTO> finishRide(@RequestBody UpdateRideDTO ride, @PathVariable Long id)
+            throws Exception {
+        UpdatedRideDTO updatedRide = new UpdatedRideDTO();
+
+        return new ResponseEntity<UpdatedRideDTO>(updatedRide, HttpStatus.OK);
     }
 }

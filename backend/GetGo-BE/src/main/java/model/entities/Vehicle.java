@@ -28,4 +28,7 @@ public class Vehicle {
 
     @ManyToOne
     private Driver driver;
+
+    @OneToOne
+    private WayPoint currentLocation;
 }

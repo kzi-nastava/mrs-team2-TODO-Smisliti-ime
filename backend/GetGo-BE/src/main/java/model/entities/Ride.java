@@ -32,4 +32,7 @@ public class Ride {
 
     @ManyToOne
     private Route route;
+
+    @OneToOne
+    private WayPoint currentLocation;
 }

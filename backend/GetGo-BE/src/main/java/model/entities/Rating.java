@@ -14,6 +14,7 @@ public class Rating {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Integer score; // 1-5
 
     private String comment;
 

@@ -28,7 +28,7 @@ import com.example.getgo.fragments.RideHistoryFragment;
 import com.google.android.material.navigation.NavigationView;
 
 public class MainActivity extends AppCompatActivity {
-    private UserRole currentUserRole = UserRole.DRIVER; // TEST
+    private UserRole currentUserRole = UserRole.ADMIN; // TEST
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

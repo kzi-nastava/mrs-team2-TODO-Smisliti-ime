@@ -33,40 +33,26 @@ import java.util.Objects;
 
 public class DriverProfileInfoFragment extends Fragment {
 
-    // Profile picture
+    // Elements
     private ImageView ivProfilePicture;
     private MaterialCardView cvProfilePicture;
     private Uri selectedImageUri;
-
-    // Image picker launchers
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private ActivityResultLauncher<String> requestPermissionLauncher;
-
-    // Tab buttons
     private MaterialButton btnDriverTab, btnVehicleTab;
-
-    // Sections
     private LinearLayout layoutDriverInfo, layoutVehicleInfo;
     private TextView tvRecentHours;
-
-    // Driver info fields
     private TextInputEditText etEmail, etFirstName, etLastName, etPhone, etAddress;
-
-    // Vehicle info fields
     private TextInputEditText etVehicleModel, etRegistrationNumber, etSeatNumber;
     private AutoCompleteTextView actvVehicleType;
     private MaterialCheckBox cbAllowPets, cbAllowBabies;
-
-    // Common fields
     private TextView tvChangePassword;
     private MaterialButton btnSave;
 
-    // Current tab state
+    // States
     private boolean isDriverTabSelected = true;
 
-    public DriverProfileInfoFragment() {
-        // Required empty public constructor
-    }
+    public DriverProfileInfoFragment() {}
 
     public static DriverProfileInfoFragment newInstance() {
         return new DriverProfileInfoFragment();
@@ -138,37 +124,28 @@ public class DriverProfileInfoFragment extends Fragment {
         tvChangePassword = view.findViewById(R.id.tvChangePassword);
         btnSave = view.findViewById(R.id.btnSave);
 
-        // Setup vehicle type dropdown
-        setupVehicleTypeDropdown();
-
-        // Load data
+        // Get data from backend
+        loadVehicleTypeDropdown();
         loadDriverData();
         loadVehicleData();
-        updateRecentHours();
+        loadRecentHoursWorked();
 
-        // Profile picture click listener
+        // Set listeners
         cvProfilePicture.setOnClickListener(v -> checkPermissionAndOpenPicker());
-
-        // Tab click listeners
-        btnDriverTab.setOnClickListener(v -> switchToDriverTab());
-        btnVehicleTab.setOnClickListener(v -> switchToVehicleTab());
-
-        // Change password click listener
+        btnDriverTab.setOnClickListener(v -> showDriverTab());
+        btnVehicleTab.setOnClickListener(v -> showVehicleTab());
         tvChangePassword.setOnClickListener(v -> {
             Toast.makeText(requireContext(), "Change password not implemented yet", Toast.LENGTH_SHORT).show();
         });
-
-        // Save button click listener
         btnSave.setOnClickListener(v -> saveData());
 
         return view;
     }
 
     private void checkPermissionAndOpenPicker() {
-        // For Android 13+ (API 33+), we use READ_MEDIA_IMAGES
-        // For Android 11-12 (API 30-32), we use READ_EXTERNAL_STORAGE
         String permission;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+
+        if (Build.VERSION.SDK_INT >= 33) {
             permission = Manifest.permission.READ_MEDIA_IMAGES;
         } else {
             permission = Manifest.permission.READ_EXTERNAL_STORAGE;
@@ -176,21 +153,22 @@ public class DriverProfileInfoFragment extends Fragment {
 
         if (ContextCompat.checkSelfPermission(requireContext(), permission)
                 == PackageManager.PERMISSION_GRANTED) {
-            // Permission already granted
             openImagePicker();
         } else {
-            // Request permission (will show system dialog)
             requestPermissionLauncher.launch(permission);
         }
     }
 
     private void openImagePicker() {
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        intent.setType("image/*");
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setDataAndType(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                "image/*"
+        );
         imagePickerLauncher.launch(intent);
     }
 
-    private void switchToDriverTab() {
+    private void showDriverTab() {
         if (!isDriverTabSelected) {
             isDriverTabSelected = true;
 
@@ -205,7 +183,7 @@ public class DriverProfileInfoFragment extends Fragment {
         }
     }
 
-    private void switchToVehicleTab() {
+    private void showVehicleTab() {
         if (isDriverTabSelected) {
             isDriverTabSelected = false;
 
@@ -220,8 +198,8 @@ public class DriverProfileInfoFragment extends Fragment {
         }
     }
 
-    private void setupVehicleTypeDropdown() {
-        // TODO: Get vehicle types from backend/service
+    private void loadVehicleTypeDropdown() {
+        // TODO: Get vehicle types from backend
         String[] vehicleTypes = getVehicleTypes();
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
@@ -240,7 +218,7 @@ public class DriverProfileInfoFragment extends Fragment {
 
     @SuppressWarnings("SetTextI18n")
     private void loadDriverData() {
-        // TODO: Load actual driver data from backend/database
+        // TODO: Load actual data from backend
         etEmail.setText("driver@getgo.com");
         etFirstName.setText("John");
         etLastName.setText("Smith");
@@ -250,7 +228,7 @@ public class DriverProfileInfoFragment extends Fragment {
 
     @SuppressWarnings("SetTextI18n")
     private void loadVehicleData() {
-        // TODO: Load actual vehicle data from backend/database
+        // TODO: Load actual data from backend
         etVehicleModel.setText("Toyota Camry");
         actvVehicleType.setText("Sedan", false);
         etRegistrationNumber.setText("BG-1234-AB");
@@ -259,15 +237,15 @@ public class DriverProfileInfoFragment extends Fragment {
         cbAllowBabies.setChecked(false);
     }
 
-    private void updateRecentHours() {
-        // TODO: Get actual hours from backend/service
+    private void loadRecentHoursWorked() {
+        // TODO: Load actual data from backend
         int recentHours = getRecentActiveHours();
         tvRecentHours.setText(getString(R.string.recent_hours_format, recentHours));
     }
 
     private int getRecentActiveHours() {
-        // TODO: Replace with actual backend call
-        return 42; // Hardcoded for now
+        // TODO: Load actual data from backend
+        return 42;
     }
 
     private void saveData() {
@@ -279,7 +257,7 @@ public class DriverProfileInfoFragment extends Fragment {
     }
 
     private void saveDriverData() {
-        // Get values with null safety
+        // Get values
         String email = Objects.requireNonNull(etEmail.getText()).toString().trim();
         String firstName = Objects.requireNonNull(etFirstName.getText()).toString().trim();
         String lastName = Objects.requireNonNull(etLastName.getText()).toString().trim();
@@ -298,13 +276,12 @@ public class DriverProfileInfoFragment extends Fragment {
             return;
         }
 
-        // TODO: Upload profile picture if selectedImageUri is not null
-        // TODO: Send driver data to backend API
+        // TODO: Connect to backend
         Toast.makeText(requireContext(), "Driver profile updated successfully", Toast.LENGTH_SHORT).show();
     }
 
     private void saveVehicleData() {
-        // Get values with null safety
+        // Get values
         String vehicleModel = Objects.requireNonNull(etVehicleModel.getText()).toString().trim();
         String vehicleType = actvVehicleType.getText().toString().trim();
         String registrationNumber = Objects.requireNonNull(etRegistrationNumber.getText()).toString().trim();
@@ -331,8 +308,7 @@ public class DriverProfileInfoFragment extends Fragment {
             return;
         }
 
-        // TODO: Upload profile picture if selectedImageUri is not null
-        // TODO: Send vehicle data to backend API
+        // TODO: Connect to backend
         Toast.makeText(requireContext(), "Vehicle information updated successfully", Toast.LENGTH_SHORT).show();
     }
 }

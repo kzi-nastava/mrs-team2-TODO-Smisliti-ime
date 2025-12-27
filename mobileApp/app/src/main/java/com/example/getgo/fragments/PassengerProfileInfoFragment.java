@@ -93,24 +93,19 @@ public class PassengerProfileInfoFragment extends Fragment {
         // Load existing user data
         loadUserData();
 
-        // Profile picture click listener
+        // Setup listeners
         cvProfilePicture.setOnClickListener(v -> checkPermissionAndOpenPicker());
-
-        // Change password click listener
         tvChangePassword.setOnClickListener(v -> Toast.makeText(requireContext(),
                 "Change password not implemented yet", Toast.LENGTH_SHORT).show());
-
-        // Save button click listener
         btnSave.setOnClickListener(v -> saveUserData());
 
         return view;
     }
 
     private void checkPermissionAndOpenPicker() {
-        // For Android 13+ (API 33+), we use READ_MEDIA_IMAGES
-        // For older versions, we use READ_EXTERNAL_STORAGE
         String permission;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+
+        if (Build.VERSION.SDK_INT >= 33) {
             permission = Manifest.permission.READ_MEDIA_IMAGES;
         } else {
             permission = Manifest.permission.READ_EXTERNAL_STORAGE;
@@ -118,23 +113,24 @@ public class PassengerProfileInfoFragment extends Fragment {
 
         if (ContextCompat.checkSelfPermission(requireContext(), permission)
                 == PackageManager.PERMISSION_GRANTED) {
-            // Permission already granted
             openImagePicker();
         } else {
-            // Request permission (will show system dialog)
             requestPermissionLauncher.launch(permission);
         }
     }
 
     private void openImagePicker() {
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        intent.setType("image/*");
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setDataAndType(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                "image/*"
+        );
         imagePickerLauncher.launch(intent);
     }
 
     @SuppressWarnings("SetTextI18n")
     private void loadUserData() {
-        // TODO: Load actual user data from backend/database
+        // TODO: Load actual data from backend
         etEmail.setText("passenger@getgo.com");
         etFirstName.setText("John");
         etLastName.setText("Doe");
@@ -162,10 +158,7 @@ public class PassengerProfileInfoFragment extends Fragment {
             return;
         }
 
-        // TODO: Upload profile picture if selectedImageUri is not null
-        // Example: uploadProfilePicture(selectedImageUri);
-
-        // TODO: Send data to backend API
+        // TODO: Connect to backend
         Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show();
     }
 }

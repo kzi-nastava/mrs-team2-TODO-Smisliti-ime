@@ -33,4 +33,39 @@
     <string name="seat_number_hint">Number of Seats</string>
     <string name="allow_pets">Allow Pets</string>
     <string name="allow_babies">Allow Babies</string>
+
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="register_link"> Register</string>
+    <string name="create_account">Create account</string>
+    <string name="sign_up_subtitle">Sign up and start using the app</string>
+    <string name="username_hint">Username</string>
+    <string name="confirm_password_hint">Confirm password</string>
+    <string name="register_button">Register</string>
+    <string name="already_have_account">Already have an account?</string>
+    <string name="sign_in_link"> Sign in</string>
+
+    <!-- Ride Detail Strings -->
+    <string name="ride_details">Ride Details</string>
+    <string name="date_label">Date</string>
+    <string name="from_label">From:</string>
+    <string name="to_label">To:</string>
+    <string name="start_time_label">Start time:</string>
+    <string name="end_time_label">End time:</string>
+    <string name="panic_activated_label">Panic Activated: </string>
+    <string name="price_label">Price:</string>
+    <string name="passengers_label">Passengers: </string>
+
+    <!-- Ride History Strings -->
+    <string name="filter_by_date">Filter by date</string>
+    <string name="reset">Reset</string>
+    <string name="apply">Apply</string>
+
+    <!-- Nav Header Strings -->
+    <string name="driver_panel">Driver panel</string>
+
+    <!-- Ride Card Strings -->
+    <string name="start_location_pin">Start location pin</string>
+    <string name="end_location_flag">End location flag</string>
+    <string name="start_location_placeholder">Start Location</string>
+    <string name="end_location_placeholder">End Location</string>
 </resources>

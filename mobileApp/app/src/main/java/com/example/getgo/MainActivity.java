@@ -9,9 +9,6 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.example.getgo.fragments.AdminProfileInfoFragment;
 import com.example.getgo.fragments.DriverHomeFragment;
@@ -25,13 +22,11 @@ import androidx.fragment.app.Fragment;
 import androidx.appcompat.widget.Toolbar;
 import androidx.appcompat.app.ActionBar;
 
-
-
 import com.example.getgo.fragments.RideHistoryFragment;
 import com.google.android.material.navigation.NavigationView;
 
 public class MainActivity extends AppCompatActivity {
-    private UserRole currentUserRole = UserRole.ADMIN; // TEST
+    private UserRole currentUserRole = UserRole.DRIVER; // TEST
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

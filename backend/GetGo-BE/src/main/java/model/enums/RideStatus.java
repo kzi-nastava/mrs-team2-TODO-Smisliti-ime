@@ -1,5 +1,8 @@
 package model.enums;
 
 public enum RideStatus {
-    ACTIVE, CANCELLED, FINISHED
+    ACTIVE,
+    CANCELLED,
+    FINISHED,
+    SCHEDULED
 }

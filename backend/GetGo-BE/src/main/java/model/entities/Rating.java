@@ -14,6 +14,8 @@ public class Rating {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Integer driverRating;  // 1-5
+    private Integer vehicleRating; // 1-5
 
     private String comment;
 

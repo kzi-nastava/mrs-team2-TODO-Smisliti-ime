@@ -25,7 +25,11 @@ public class Vehicle {
     private int numberOfSeats;
     private boolean babyDriver;
     private boolean petFriendly;
+    private Boolean isAvailable;
 
     @ManyToOne
     private Driver driver;
+
+    @OneToOne
+    private WayPoint currentLocation;
 }

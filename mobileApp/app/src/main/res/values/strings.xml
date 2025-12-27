@@ -22,4 +22,15 @@
     <string name="change_password">Change Password</string>
     <string name="save">Save</string>
     <string name="profile_picture">Profile picture</string>
+
+    <string name="driver_tab">Driver</string>
+    <string name="vehicle_tab">Vehicle</string>
+    <string name="recent_hours_placeholder">Recent hours active: 0</string>
+    <string name="recent_hours_format">Recent hours active: %d</string>
+    <string name="vehicle_model_hint">Vehicle Model</string>
+    <string name="vehicle_type_hint">Vehicle Type</string>
+    <string name="registration_number_hint">Registration Number</string>
+    <string name="seat_number_hint">Number of Seats</string>
+    <string name="allow_pets">Allow Pets</string>
+    <string name="allow_babies">Allow Babies</string>
 </resources>

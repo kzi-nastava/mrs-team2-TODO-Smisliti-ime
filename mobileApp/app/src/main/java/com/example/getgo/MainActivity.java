@@ -15,6 +15,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.getgo.fragments.AdminProfileInfoFragment;
 import com.example.getgo.fragments.DriverHomeFragment;
+import com.example.getgo.fragments.DriverProfileInfoFragment;
 import com.example.getgo.fragments.PassengerProfileInfoFragment;
 import com.example.getgo.model.UserRole;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -177,6 +178,7 @@ public class MainActivity extends AppCompatActivity {
 //                return new PassengerSecondFragment();
             case ADMIN:
 //                return new AdminSecondFragment();
+                return AdminProfileInfoFragment.newInstance();
             default:
                 return null;
         }
@@ -190,7 +192,7 @@ public class MainActivity extends AppCompatActivity {
 //                return new PassengerThirdFragment();
             case ADMIN:
 //                return new AdminThirdFragment();
-                return PassengerProfileInfoFragment.newInstance();
+                return DriverProfileInfoFragment.newInstance();
             default:
                 return null;
         }

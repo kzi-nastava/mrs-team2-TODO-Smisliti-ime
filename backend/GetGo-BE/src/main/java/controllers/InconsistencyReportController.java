@@ -13,11 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/inconsistency-reports")
 public class InconsistencyReportController {
-    // 2.6.2
-    @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedInconsistencyReportDTO> createInconsistencyReport(@RequestBody CreateInconsistencyReportDTO report) throws Exception {
-        CreatedInconsistencyReportDTO savedInconsistencyReport = new CreatedInconsistencyReportDTO();
-
-        return new ResponseEntity<CreatedInconsistencyReportDTO>(savedInconsistencyReport, HttpStatus.CREATED);
-    }
+    // 2.6.2  prebacio sam u rideController
+//    @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+//    public ResponseEntity<CreatedInconsistencyReportDTO> createInconsistencyReport(@RequestBody CreateInconsistencyReportDTO report) throws Exception {
+//        CreatedInconsistencyReportDTO savedInconsistencyReport = new CreatedInconsistencyReportDTO();
+//
+//        return new ResponseEntity<CreatedInconsistencyReportDTO>(savedInconsistencyReport, HttpStatus.CREATED);
+//    }
 }

@@ -20,7 +20,7 @@ import java.util.Collection;
 @RequestMapping("/api/vehicles")
 public class VehicleController {
 
-    // 2.1.1
+    // 2.1.1 Display information
     @GetMapping(value = "/active", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetVehicleDTO>> getActiveVehicles(){
         Collection<GetVehicleDTO> activeVehicles = new ArrayList<>();

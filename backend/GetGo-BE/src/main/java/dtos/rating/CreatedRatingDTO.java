@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CreatedRatingDTO {
-    private Long id;            // ID ocene koji sistem generiše
+    private Long id;
     private Long rideId;
     private Long driverId;
     private Long vehicleId;

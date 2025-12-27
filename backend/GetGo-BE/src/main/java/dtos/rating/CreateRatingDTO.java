@@ -7,11 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CreateRatingDTO {
-    private Long rideId;
-    private Long driverId;
-    private Long vehicleId;
     private Integer driverRating;
     private Integer vehicleRating;
     private String comment;
-
 }

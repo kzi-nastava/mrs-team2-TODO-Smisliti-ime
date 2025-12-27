@@ -1,8 +1,11 @@
 package controllers;
 
+import dtos.inconsistencyReport.CreateInconsistencyReportDTO;
+import dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
 import dtos.responses.RideEstimateResponseDTO;
 import dtos.responses.RideStatusResponseDTO;
 import dtos.ride.GetRideDTO;
+import dtos.ride.GetRideTrackingDTO;
 import dtos.ride.UpdateRideDTO;
 import dtos.ride.UpdatedRideDTO;
 import org.springframework.http.HttpStatus;
@@ -54,15 +57,23 @@ public class RideController {
         return ResponseEntity.ok(response);
     }
 
-    // 2.6.2
-    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GetRideDTO> trackRide(@PathVariable("id") Long id) {
-        GetRideDTO ride = new GetRideDTO();
+    // 2.6.2 During the ride
+    @GetMapping(value = "/{id}/tracking", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetRideTrackingDTO> trackRide(@PathVariable("id") Long id) {
+        GetRideTrackingDTO ride = new GetRideTrackingDTO();
 
-        return new ResponseEntity<GetRideDTO>(ride, HttpStatus.OK);
+        return new ResponseEntity<GetRideTrackingDTO>(ride, HttpStatus.OK);
     }
 
-    // 2.7
+    // 2.6.2 During the ride
+    @PostMapping(value = "/{rideId}/inconsistencies", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CreatedInconsistencyReportDTO> createInconsistencyReport(@RequestBody CreateInconsistencyReportDTO report, @PathVariable Long rideId) throws Exception {
+        CreatedInconsistencyReportDTO savedInconsistencyReport = new CreatedInconsistencyReportDTO();
+
+        return new ResponseEntity<CreatedInconsistencyReportDTO>(savedInconsistencyReport, HttpStatus.CREATED);
+    }
+
+    // 2.7 Ride Completion
     @PutMapping(value = "/{id}/finish", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedRideDTO> finishRide(@RequestBody UpdateRideDTO ride, @PathVariable Long id)
             throws Exception {

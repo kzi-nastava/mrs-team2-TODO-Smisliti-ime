@@ -15,6 +15,7 @@ import java.util.Collection;
 @RequestMapping("/api/ratings")
 public class RatingController {
 
+    // 2.8 Vehicle and driver rating
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetRatingDTO>> getRatings() {
         Collection<GetRatingDTO> ratings = new ArrayList<>() ;
@@ -23,6 +24,7 @@ public class RatingController {
         return new ResponseEntity<Collection<GetRatingDTO>>(ratings, HttpStatus.OK);
     }
 
+    // 2.8 Vehicle and driver rating
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetRatingDTO> getRating(@PathVariable("id") Long id) {
         GetRatingDTO rating = new GetRatingDTO();
@@ -30,7 +32,8 @@ public class RatingController {
         return new ResponseEntity<GetRatingDTO>(rating, HttpStatus.OK);
     }
 
-    @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    // 2.8 Vehicle and driver rating
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedRatingDTO> createRating(@RequestBody CreateRatingDTO rating) throws Exception {
         CreatedRatingDTO savedRating = new CreatedRatingDTO();
 

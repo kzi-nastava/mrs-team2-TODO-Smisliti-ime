@@ -1,9 +1,13 @@
 package dtos.ride;
 
+import dtos.passenger.GetPassengerDTO;
 import dtos.route.GetRouteDTO;
 import dtos.wayPoint.GetWayPointDTO;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import dtos.wayPoint.GetWayPointDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,12 +17,14 @@ import lombok.Setter;
 public class GetRideDTO {
     private Long id;
     private Long driverId;
-    private Long passengerId;
+    private List<GetPassengerDTO> passengers;
+    private String startPoint;
+    private String endPoint;
     private LocalDateTime startingTime;
+    private LocalDateTime finishedTime;
     private Integer duration;
     private Boolean isCancelled;
     private Boolean isFavourite;
     private String status; // it can be ACTIVE, FINISHED, CANCELLED, SCHEDULED
-    private GetWayPointDTO currentLocation;
-    private GetRouteDTO route;
+    private Double price;
 }

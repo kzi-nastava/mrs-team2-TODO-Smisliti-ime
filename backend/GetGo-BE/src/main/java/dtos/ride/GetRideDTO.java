@@ -8,10 +8,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import dtos.wayPoint.GetWayPointDTO;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 public class GetRideDTO {

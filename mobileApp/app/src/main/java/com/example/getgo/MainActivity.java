@@ -137,14 +137,5 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
-
-    @Override
-    public void onBackPressed() {
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            // Don't allow back to login - just minimize app
-            moveTaskToBack(true);
-        }
-    }
+    
 }

@@ -70,7 +70,8 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void handleForgotPassword() {
-        Toast.makeText(this, "Password reset not implemented", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(this, ResetPasswordActivity.class);
+        startActivity(intent);
     }
 
     // TODO: Replace with real authentication

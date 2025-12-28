@@ -13,7 +13,7 @@ export class DriverProfile {
   selectedFile: File | null = null;
   activeTab: string = 'driver';
 
-  // Driver form data
+  // driver form data
   driverData = {
     email: '',
     firstName: '',
@@ -22,7 +22,7 @@ export class DriverProfile {
     address: ''
   };
 
-  // Vehicle form data
+  // vehicle form data
   vehicleData = {
     model: '',
     type: '',

@@ -1,5 +1,6 @@
 package com.example.getgo;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -18,7 +19,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
 
 public class MainActivity extends AppCompatActivity {
-    private UserRole currentUserRole = UserRole.PASSENGER; // TEST - Change to PASSENGER or ADMIN
+    private UserRole currentUserRole;
     private DrawerLayout drawer;
     private NavigationHelper navigationHelper;
 
@@ -28,6 +29,17 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        // Get user role from login
+        String roleString = getIntent().getStringExtra("USER_ROLE");
+        if (roleString != null) {
+            currentUserRole = UserRole.valueOf(roleString);
+        } else {
+            // No role provided - redirect to login
+            redirectToLogin();
+            return;
+        }
+
+        // Initialize navigation helper
         navigationHelper = new NavigationHelper(currentUserRole);
 
         setupToolbar();
@@ -35,12 +47,14 @@ public class MainActivity extends AppCompatActivity {
         setupDrawerNavigation();
 
         // Load default fragment for the user's role
-        openFragment(navigationHelper.getDefaultFragment());
+        openFragment(navigationHelper.getStartFragment());
     }
 
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        toolbar.setTitleTextColor(getColor(R.color.white));
 
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -70,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
                 openFragment(fragment);
                 return true;
             }
-            // Show text if not implemented
+            // Fragment not implemented yet - show toast
             Toast.makeText(this, "Feature coming soon", Toast.LENGTH_SHORT).show();
             return false;
         });
@@ -85,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
             // Handle logout separately
             if (item.getItemId() == R.id.nav_drawer_logout) {
                 handleLogout();
+                drawer.closeDrawer(GravityCompat.START);
                 return true;
             }
 
@@ -92,9 +107,10 @@ public class MainActivity extends AppCompatActivity {
             Fragment fragment = navigationHelper.getFragmentForMenuItem(item.getItemId());
             if (fragment != null) {
                 openFragment(fragment);
+            } else {
+                // Fragment not implemented yet - show toast
+                Toast.makeText(this, "Feature coming soon", Toast.LENGTH_SHORT).show();
             }
-            // Show text if not implemented
-            Toast.makeText(this, "Feature coming soon", Toast.LENGTH_SHORT).show();
 
             drawer.closeDrawer(GravityCompat.START);
             return true;
@@ -111,6 +127,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleLogout() {
+        Toast.makeText(this, "Logging out...", Toast.LENGTH_SHORT).show();
+        redirectToLogin();
+    }
 
+    private void redirectToLogin() {
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            // Don't allow back to login - just minimize app
+            moveTaskToBack(true);
+        }
     }
 }

@@ -273,6 +273,7 @@
                     android:id="@+id/btnRegister"
                     style="@style/Widget.MaterialComponents.Button"
                     android:layout_width="match_parent"
+                    android:layout_height="48dp"
                     android:text="@string/register_button"
                     android:textAllCaps="true"
                     android:textColor="@color/white"

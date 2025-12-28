@@ -2,6 +2,21 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <group android:checkableBehavior="single">
         <item
+            android:id="@+id/nav_bottom_dashboard"
+            android:icon="@drawable/ic_home"
+            android:title="@string/dashboard"/>
+        <item
+            android:id="@+id/nav_bottom_profile"
+            android:icon="@drawable/ic_profile"
+            android:title="@string/profile"/>
+        <item
+            android:id="@+id/nav_bottom_reports"
+            android:icon="@drawable/ic_car"
+            android:title="@string/reports"/>
+    </group>
+
+    <group android:checkableBehavior="single">
+        <item
             android:id="@+id/nav_drawer_panic"
             android:icon="@drawable/ic_home"
             android:title="@string/panic_notifications"/>
@@ -11,13 +26,14 @@
             android:title="@string/manage_pricing"/>
         <item
             android:id="@+id/nav_drawer_search"
-            android:icon="@drawable/ic_car"
-            android:title="@string/search_users"/>
+            android:icon="@drawable/ic_home"
+            android:title="@string/reports"/>
         <item
             android:id="@+id/nav_drawer_support_chats"
             android:icon="@drawable/ic_profile"
             android:title="@string/support_chats"/>
     </group>
+
     <item android:title="@string/other">
         <menu>
             <item

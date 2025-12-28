@@ -13,7 +13,6 @@
     <!-- Drawer Navigation Strings -->
     <string name="panic_notifications">PANIC Notifications</string>
     <string name="manage_pricing">Manage Pricing</string>
-    <string name="search_users">Search Users</string>
     <string name="support_chats">Support Chats</string>
     <string name="generate_reports">Generate Reports</string>
     <string name="live_support">Live Support</string>

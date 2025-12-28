@@ -5,9 +5,9 @@
         android:icon="@drawable/ic_home"
         android:title="@string/dashboard"/>
     <item
-        android:id="@+id/nav_bottom_users"
+        android:id="@+id/nav_bottom_profile"
         android:icon="@drawable/ic_profile"
-        android:title="@string/users"/>
+        android:title="@string/profile"/>
     <item
         android:id="@+id/nav_bottom_reports"
         android:icon="@drawable/ic_car"

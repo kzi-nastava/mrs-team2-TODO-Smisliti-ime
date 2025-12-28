@@ -43,8 +43,12 @@
             android:id="@+id/bottom_nav"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/blue"
+            android:background="@color/dark_blue"
             android:layout_gravity="bottom"
+            app:itemIconTint="@color/bottom_nav_item_color"
+            app:itemTextColor="@color/bottom_nav_item_color"
+            app:itemRippleColor="@color/selected_blue"
+            app:itemActiveIndicatorStyle="@null"
             app:menu="@menu/driver_bottom_nav_menu"/>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>

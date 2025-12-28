@@ -1,9 +1,10 @@
 package controllers;
 
-import dtos.requests.LoginRequestDTO;
-import dtos.requests.RegisterRequestDTO;
-import dtos.responses.LoginResponseDTO;
-import dtos.responses.UserResponseDTO;
+import dtos.login.CreateLoginDTO;
+import dtos.login.CreatedLoginDTO;
+import dtos.user.CreateUserDTO;
+import dtos.user.CreatedUserDTO;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,23 +13,16 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(
-            @RequestBody LoginRequestDTO request) {
-
-        LoginResponseDTO response =
-                new LoginResponseDTO(1L, "USER", "dummy-token");
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<CreatedLoginDTO> login(@RequestBody CreateLoginDTO request) {
+        CreatedLoginDTO response = new CreatedLoginDTO(1L, "USER", "dummy-token");
+        return ResponseEntity.ok(response); // 200 OK
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponseDTO> register(
-            @RequestBody RegisterRequestDTO request) {
-
-        UserResponseDTO response =
-                new UserResponseDTO(1L, request.getEmail(),
-                        request.getName(), request.getSurname());
-
-        return ResponseEntity.status(201).body(response);
+    public ResponseEntity<CreatedUserDTO> register(@RequestBody CreateUserDTO request) {
+        CreatedUserDTO response = new CreatedUserDTO(
+                1L, request.getEmail(), request.getName(), request.getSurname()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

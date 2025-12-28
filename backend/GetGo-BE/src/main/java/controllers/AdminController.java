@@ -1,7 +1,8 @@
 package controllers;
 
-import dtos.responses.ReportResponseDTO;
-import dtos.responses.UserResponseDTO;
+import dtos.report.GetReportDTO;
+import dtos.user.CreatedUserDTO;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,39 +12,30 @@ import java.util.List;
 @RequestMapping("/api/admin")
 public class AdminController {
 
-    // User Blocking
     @PutMapping("/users/{id}/block")
-    public ResponseEntity<Void> blockUser(@PathVariable Long id) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<CreatedUserDTO> blockUser(@PathVariable Long id) {
+        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Blocked", "User");
+        return ResponseEntity.ok(response);
     }
 
-    // User Unblocking
     @PutMapping("/users/{id}/unblock")
-    public ResponseEntity<Void> unblockUser(@PathVariable Long id) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<CreatedUserDTO> unblockUser(@PathVariable Long id) {
+        CreatedUserDTO response = new CreatedUserDTO(id, "unblocked@getgo.com", "Active", "User");
+        return ResponseEntity.ok(response);
     }
 
-    // View Reports
     @GetMapping("/reports")
-    public ResponseEntity<List<ReportResponseDTO>> getReports(
+    public ResponseEntity<List<GetReportDTO>> getReports(
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to) {
 
-        ReportResponseDTO report =
-                new ReportResponseDTO("01-01-2025 / 31-01-2025",
-                        120, 860.5, 750.0);
-
+        GetReportDTO report = new GetReportDTO("01-01-2025 / 31-01-2025", 120, 860.5, 750.0);
         return ResponseEntity.ok(List.of(report));
     }
 
-    // Create Admin Profile
     @PostMapping("/create")
-    public ResponseEntity<UserResponseDTO> createAdmin() {
-
-        UserResponseDTO response =
-                new UserResponseDTO(10L, "admin@getgo.com",
-                        "Admin", "User");
-
-        return ResponseEntity.status(201).body(response);
+    public ResponseEntity<CreatedUserDTO> createAdmin() {
+        CreatedUserDTO response = new CreatedUserDTO(10L, "admin@getgo.com", "Admin", "User");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

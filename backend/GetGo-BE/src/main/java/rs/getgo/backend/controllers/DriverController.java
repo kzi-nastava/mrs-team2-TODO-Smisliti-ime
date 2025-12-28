@@ -1,4 +1,4 @@
-package controllers;
+package rs.getgo.backend.controllers;
 
 import dtos.ride.GetRideDTO;
 import org.springframework.format.annotation.DateTimeFormat;

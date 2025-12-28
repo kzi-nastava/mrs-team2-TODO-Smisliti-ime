@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Text Input Layout Style -->
+    <style name="AppTextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">16dp</item>
+        <item name="boxBackgroundColor">@color/white</item>
+        <item name="boxStrokeColor">@color/dark_blue</item>
+    </style>
+
+    <!-- Text Input EditText Style -->
+    <style name="AppTextInputEditText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/dark_blue</item>
+    </style>
+
+    <!-- Dropdown Style (AutoCompleteTextView) -->
+    <style name="AppDropdownLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">16dp</item>
+        <item name="boxBackgroundColor">@color/white</item>
+        <item name="boxStrokeColor">@color/dark_blue</item>
+    </style>
+
+    <!-- Dropdown AutoCompleteTextView Style -->
+    <style name="AppDropdownText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/dark_blue</item>
+        <item name="android:inputType">none</item>
+    </style>
+
+    <!-- Profile Title Style -->
+    <style name="ProfileTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/dark_blue</item>
+        <item name="android:layout_marginBottom">32dp</item>
+    </style>
+
+    <!-- Blue Button Style -->
+    <style name="AppButton" parent="Widget.Material3.Button.ElevatedButton">
+        <item name="android:textColor">@color/white</item>
+        <item name="backgroundTint">@color/dark_blue</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- Link Text Style (clickable text that looks like a link) -->
+    <style name="LinkText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/dark_blue</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:paddingVertical">8dp</item>
+    </style>
+
+</resources>

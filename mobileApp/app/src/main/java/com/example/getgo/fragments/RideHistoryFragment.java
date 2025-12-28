@@ -274,8 +274,6 @@ public class RideHistoryFragment extends Fragment {
             }
         });
 
-
-
         adapter.setOnRideClickListener(ride -> {
             RideDetailFragment fragment =
                     RideDetailFragment.newInstance(ride);

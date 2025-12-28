@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -14,125 +13,79 @@
         android:padding="24dp"
         android:gravity="center_horizontal">
 
+        <!-- Title -->
         <TextView
             android:id="@+id/tvEditProfileTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/edit_personal_information"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@color/dark_blue"
-            android:layout_marginBottom="32dp"/>
+            style="@style/ProfileTitle"
+            android:text="@string/edit_personal_information"/>
 
+        <!-- Email -->
         <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="@string/email_hint"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            app:boxBackgroundColor="@color/white"
-            app:boxStrokeColor="@color/dark_blue">
-
+            style="@style/AppTextInputLayout"
+            android:hint="@string/email_hint">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etEmail"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textEmailAddress"
-                android:textColor="@color/dark_blue"/>
+                style="@style/AppTextInputEditText"
+                android:inputType="textEmailAddress"/>
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- First Name -->
         <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="@string/first_name_hint"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            app:boxBackgroundColor="@color/white"
-            app:boxStrokeColor="@color/dark_blue">
-
+            style="@style/AppTextInputLayout"
+            android:hint="@string/first_name_hint">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etFirstName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPersonName"
-                android:textColor="@color/dark_blue"/>
+                style="@style/AppTextInputEditText"
+                android:inputType="textPersonName"/>
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Last Name -->
         <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="@string/last_name_hint"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            app:boxBackgroundColor="@color/white"
-            app:boxStrokeColor="@color/dark_blue">
-
+            style="@style/AppTextInputLayout"
+            android:hint="@string/last_name_hint">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etLastName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPersonName"
-                android:textColor="@color/dark_blue"/>
+                style="@style/AppTextInputEditText"
+                android:inputType="textPersonName"/>
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Phone -->
         <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="@string/phone_hint"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            app:boxBackgroundColor="@color/white"
-            app:boxStrokeColor="@color/dark_blue">
-
+            style="@style/AppTextInputLayout"
+            android:hint="@string/phone_hint">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etPhone"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="phone"
-                android:textColor="@color/dark_blue"/>
+                style="@style/AppTextInputEditText"
+                android:inputType="phone"/>
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Address -->
         <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            style="@style/AppTextInputLayout"
             android:layout_marginBottom="24dp"
-            android:hint="@string/address_hint"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            app:boxBackgroundColor="@color/white"
-            app:boxStrokeColor="@color/dark_blue">
-
+            android:hint="@string/address_hint">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etAddress"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPostalAddress"
-                android:textColor="@color/dark_blue"/>
+                style="@style/AppTextInputEditText"
+                android:inputType="textPostalAddress"/>
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Change Password Link -->
         <TextView
             android:id="@+id/tvChangePassword"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/LinkText"
             android:text="@string/change_password"
-            android:textSize="16sp"
-            android:textColor="@color/dark_blue"
-            android:textStyle="bold"
-            android:layout_marginBottom="24dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:paddingVertical="8dp"/>
+            android:layout_marginBottom="24dp"/>
 
+        <!-- Save Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSave"
-            style="@style/Widget.Material3.Button.ElevatedButton"
+            style="@style/AppButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/save"
-            android:textSize="16sp"
-            android:textColor="@color/white"
             android:paddingHorizontal="48dp"
-            android:paddingVertical="12dp"
-            android:backgroundTint="@color/dark_blue"/>
+            android:paddingVertical="12dp"/>
 
     </LinearLayout>
 

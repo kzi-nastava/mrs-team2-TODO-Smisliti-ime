@@ -1,4 +1,4 @@
-package controllers;
+package rs.getgo.backend.controllers;
 
 import dtos.rating.CreateRatingDTO;
 import dtos.rating.CreatedRatingDTO;

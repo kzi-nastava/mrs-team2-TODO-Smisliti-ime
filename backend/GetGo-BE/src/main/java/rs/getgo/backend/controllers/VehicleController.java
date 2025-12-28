@@ -1,4 +1,4 @@
-package controllers;
+package rs.getgo.backend.controllers;
 
 import dtos.vehicle.GetVehicleDTO;
 import org.springframework.http.HttpStatus;

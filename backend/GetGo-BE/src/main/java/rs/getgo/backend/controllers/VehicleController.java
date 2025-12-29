@@ -1,6 +1,7 @@
 package rs.getgo.backend.controllers;
 
 import dtos.vehicle.GetVehicleDTO;
+import dtos.vehicle.GetVehicleTypeDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/vehicles")
@@ -35,5 +37,25 @@ public class VehicleController {
         GetVehicleDTO vehicle = new GetVehicleDTO(id, "Mercedes A-Class", "Hatchback", 44.8190, 20.4570, true);
 
         return new ResponseEntity<GetVehicleDTO>(vehicle, HttpStatus.OK);
+    }
+
+    // 2.4.1 - Calling a ride (load all existing vehicle types into ddl)
+    @GetMapping(value = "/types", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<GetVehicleTypeDTO>> getVehicleTypes() {
+        List<GetVehicleTypeDTO> response = new ArrayList<>();
+
+        GetVehicleTypeDTO standard = new GetVehicleTypeDTO();
+        standard.setType("STANDARD");
+        response.add(standard);
+
+        GetVehicleTypeDTO luxury = new GetVehicleTypeDTO();
+        luxury.setType("LUXURY");
+        response.add(luxury);
+
+        GetVehicleTypeDTO van = new GetVehicleTypeDTO();
+        van.setType("VAN");
+        response.add(van);
+
+        return ResponseEntity.ok(response);
     }
 }

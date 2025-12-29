@@ -1,20 +1,18 @@
-package dtos.passenger;
+package dtos.driver;
 
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public class GetPassengerDTO {
+public class CreatedDriverDTO {
     private Long id;
     private String email;
     private String name;
     private String surname;
-    private String phone;
-    private String address;
-    private String profilePictureUrl;
+    private Boolean activated;
 }

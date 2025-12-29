@@ -1,4 +1,4 @@
-package dtos.passenger;
+package dtos.admin;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -9,12 +9,11 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class GetPassengerDTO {
+public class GetAdminDTO {
     private Long id;
     private String email;
     private String name;
     private String surname;
     private String phone;
     private String address;
-    private String profilePictureUrl;
 }

@@ -1,4 +1,4 @@
-package dtos.passenger;
+package dtos.driver;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -9,7 +9,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class GetPassengerDTO {
+public class GetDriverDTO {
+    // Personal info
     private Long id;
     private String email;
     private String name;
@@ -17,4 +18,12 @@ public class GetPassengerDTO {
     private String phone;
     private String address;
     private String profilePictureUrl;
+    private Integer recentHoursWorked;
+    // Vehicle info
+    private String vehicleModel;
+    private String vehicleType;
+    private String vehicleLicensePlate;
+    private Integer vehicleSeats;
+    private Boolean vehicleHasBabySeats;
+    private Boolean vehicleAllowsPets;
 }

@@ -1,10 +1,9 @@
 package rs.getgo.backend.controllers;
 
+import dtos.favorite.CreatedFavoriteDTO;
 import dtos.inconsistencyReport.CreateInconsistencyReportDTO;
 import dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
-import dtos.ride.GetRideTrackingDTO;
-import dtos.ride.UpdateRideDTO;
-import dtos.ride.UpdatedRideDTO;
+import dtos.ride.*;
 import dtos.rideEstimate.CreateRideEstimateDTO;
 import dtos.rideEstimate.CreatedRideEstimateDTO;
 import dtos.rideStatus.CreatedRideStatusDTO;
@@ -12,6 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/rides")
@@ -65,4 +68,57 @@ public class RideController {
         CreatedRideStatusDTO response = new CreatedRideStatusDTO(rideId, "FINISHED");
         return ResponseEntity.ok(response);
     }
+
+    // 2.6.1 - Start ride
+    @PutMapping(value = "/{rideId}/start", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UpdatedRideDTO> startRide(@PathVariable Long rideId) {
+        UpdatedRideDTO response = new UpdatedRideDTO();
+        response.setId(rideId);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.4.3 - Calling favorite ride
+    @GetMapping(value = "/favorites", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<GetRideDTO>> getFavoriteRides() {
+        List<GetRideDTO> response = new ArrayList<>();
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.4.3 - Calling favorite ride
+    @PostMapping(value = "/{rideId}/favorite", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CreatedFavoriteDTO> favoriteRide(@PathVariable Long rideId) {
+        CreatedFavoriteDTO response = new CreatedFavoriteDTO();
+        response.setRideId(rideId);
+        response.setCreatedAt(LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // 2.4.3 - Calling favorite ride
+    @DeleteMapping("/{rideId}/favorite")
+    public ResponseEntity<Void> unfavoriteRide(@PathVariable Long rideId) {
+        return ResponseEntity.noContent().build();
+    }
+
+    // 2.4.1 - Calling a ride
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CreatedRideDTO> createRide(@RequestBody CreateRideDTO request) {
+
+        CreatedRideDTO response = new CreatedRideDTO();
+
+        if (request.getScheduledTime() == null) {
+            // Immediate ride
+            response.setRideId(1L);
+            response.setStatus("ACCEPTED");
+            response.setDriverId(5L);
+        } else {
+            // Scheduled ride
+            response.setRideId(2L);
+            response.setStatus("SCHEDULED");
+            response.setScheduledTime(request.getScheduledTime());
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
 }

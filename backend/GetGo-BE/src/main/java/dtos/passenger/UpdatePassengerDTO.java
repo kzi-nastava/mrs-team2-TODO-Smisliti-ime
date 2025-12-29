@@ -9,9 +9,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class GetPassengerDTO {
-    private Long id;
-    private String email;
+public class UpdatePassengerDTO {
     private String name;
     private String surname;
     private String phone;

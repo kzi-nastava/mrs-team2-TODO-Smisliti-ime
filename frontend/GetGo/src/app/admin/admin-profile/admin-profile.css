@@ -9,7 +9,7 @@
   min-height: 100vh;
   background-color: #8FABD4;
   margin: 0 auto;
-  padding: 2rem; /* optional, but usually needed */
+  padding: 2rem;
   box-sizing: border-box;
 }
 

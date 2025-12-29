@@ -11,5 +11,10 @@ import lombok.Setter;
 @Setter
 public class GetPassengerDTO {
     private Long id;
-    private String username;
+    private String email;
+    private String name;
+    private String surname;
+    private String phone;
+    private String address;
+    private String profilePictureUrl;
 }

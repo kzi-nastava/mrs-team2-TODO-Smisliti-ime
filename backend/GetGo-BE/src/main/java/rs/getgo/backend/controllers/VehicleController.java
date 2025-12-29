@@ -25,16 +25,14 @@ public class VehicleController {
     public ResponseEntity<Collection<GetVehicleDTO>> getActiveVehicles(){
         Collection<GetVehicleDTO> activeVehicles = new ArrayList<>();
 
+        activeVehicles.add(new GetVehicleDTO(1L, "Toyota Corolla", "Sedan", 44.8176, 20.4569, true));
+        activeVehicles.add(new GetVehicleDTO(2L, "BMW X5", "SUV", 44.8200, 20.4600, true));
         return new ResponseEntity<Collection<GetVehicleDTO>>(activeVehicles, HttpStatus.OK);
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetVehicleDTO> getVehicle(@PathVariable("id") Long id) {
-        GetVehicleDTO vehicle = new GetVehicleDTO();
-
-//        if (vehicle == null) {
-//            return new ResponseEntity<GetVehicleDTO>(HttpStatus.NOT_FOUND);
-//        }
+        GetVehicleDTO vehicle = new GetVehicleDTO(id, "Mercedes A-Class", "Hatchback", 44.8190, 20.4570, true);
 
         return new ResponseEntity<GetVehicleDTO>(vehicle, HttpStatus.OK);
     }

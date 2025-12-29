@@ -20,7 +20,7 @@ public class RideController {
     // 2.6.2 – Track ride
     @GetMapping(value = "/{id}/tracking", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetRideTrackingDTO> trackRide(@PathVariable("id") Long id) {
-        GetRideTrackingDTO ride = new GetRideTrackingDTO();
+        GetRideTrackingDTO ride = new GetRideTrackingDTO(id, 44.8176, 20.4569, 15.0);
 
         return new ResponseEntity<GetRideTrackingDTO>(ride, HttpStatus.OK);
     }
@@ -28,7 +28,8 @@ public class RideController {
     // 2.6.2 – Create inconsistency report
     @PostMapping(value = "/{rideId}/inconsistencies", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedInconsistencyReportDTO> createInconsistencyReport(@RequestBody CreateInconsistencyReportDTO report, @PathVariable Long rideId) throws Exception {
-        CreatedInconsistencyReportDTO savedInconsistencyReport = new CreatedInconsistencyReportDTO();
+        CreatedInconsistencyReportDTO savedInconsistencyReport = new CreatedInconsistencyReportDTO(1L, rideId, 501L, report.getText());
+
 
         return new ResponseEntity<CreatedInconsistencyReportDTO>(savedInconsistencyReport, HttpStatus.CREATED);
     }
@@ -37,7 +38,7 @@ public class RideController {
     @PutMapping(value = "/{id}/finish", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedRideDTO> finishRide(@RequestBody UpdateRideDTO ride, @PathVariable Long id)
             throws Exception {
-        UpdatedRideDTO updatedRide = new UpdatedRideDTO();
+        UpdatedRideDTO updatedRide = new UpdatedRideDTO(id, ride.getStatus(), java.time.LocalDateTime.now());
 
         return new ResponseEntity<UpdatedRideDTO>(updatedRide, HttpStatus.OK);
     }

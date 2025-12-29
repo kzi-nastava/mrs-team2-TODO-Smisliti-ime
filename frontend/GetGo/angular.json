@@ -26,9 +26,16 @@
                 "output": "/"
               },
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              {
+                "glob": "**/*",
+                "input": "node_modules/leaflet/dist/images",
+                "output": "assets/leaflet"
+              }
             ],
             "styles": [
+              "./node_modules/leaflet-routing-machine/dist/leaflet-routing-machine.css",
+              "node_modules/leaflet/dist/leaflet.css",
               "src/custom-theme.scss",
               "src/styles.css"
             ]

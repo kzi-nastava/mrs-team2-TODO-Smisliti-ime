@@ -80,13 +80,24 @@
   box-shadow: 0 6px 18px rgba(19,62,135,0.18);
 }
 
+/*sa vezbi*/
+/*.right {*/
+/*  flex: 1;*/
+/*  display: flex;*/
+/*  justify-content: center;*/
+/*  align-items: center;*/
+/*  min-width: 320px;*/
+/*}*/
+
+/*me*/
 .right {
   flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 320px;
+  min-height: 600px;
+  background: #eaeaea;
+  border-radius: 12px;
+  overflow: hidden;
 }
+
 
 .right img {
   width: 100%;

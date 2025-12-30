@@ -1,10 +1,8 @@
 import {AfterViewInit, Component} from '@angular/core'
-// import * as L from 'leaflet';
+import * as L from 'leaflet';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
 import 'leaflet-routing-machine';
-
-declare let L: any;
 
 @Component({
   selector: 'app-map',
@@ -89,32 +87,17 @@ export class MapComponent implements AfterViewInit{
     );
   }
 
-  // setRoute(): void {
-  //   const routeControl = L.Routing.control({
-  //     waypoints: [L.latLng(57.74, 11.94), L.latLng(57.6792, 11.949)],
-  //     router: L.routing.mapbox('DODATI SVOJ API KEY', {profile: 'mapbox/walking'})
-  //   }).addTo(this.map);
-  //
-  //   routeControl.on('routesfound', function(e : any) {
-  //     var routes = e.routes;
-  //     var summary = routes[0].summary;
-  //     alert('Total distance is ' + summary.totalDistance / 1000 + ' km and total time is ' + Math.round(summary.totalTime % 3600 / 60) + ' minutes');
-  //   });
-  // }
   setRoute(): void {
     const routeControl = L.Routing.control({
-      waypoints: [
-        L.latLng(57.74, 11.94),
-        L.latLng(57.6792, 11.949)
-      ]
-      // nema router: L.routing.mapbox(...) - koristi default OSRM
+      waypoints: [L.latLng(57.74, 11.94), L.latLng(57.6792, 11.949)],
+      router: L.routing.mapbox('DODATI SVOJ API KEY', {profile: 'mapbox/walking'})
     }).addTo(this.map);
 
-    routeControl.on('routesfound', function(e: any) {
-      var summary = e.routes[0].summary;
+    routeControl.on('routesfound', function(e : any) {
+      var routes = e.routes;
+      var summary = routes[0].summary;
       alert('Total distance is ' + summary.totalDistance / 1000 + ' km and total time is ' + Math.round(summary.totalTime % 3600 / 60) + ' minutes');
     });
   }
-
 
 }

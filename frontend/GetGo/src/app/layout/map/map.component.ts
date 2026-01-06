@@ -3,6 +3,9 @@ import * as L from 'leaflet';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
 import 'leaflet-routing-machine';
+import { VehicleService } from '../../service/vehicle-service/vehicle.service';
+import { GetVehicleDTO } from '../../service/vehicle-service/get-vehicle-dto.interface';
+
 
 @Component({
   selector: 'app-map',
@@ -14,7 +17,7 @@ export class MapComponent implements AfterViewInit{
 
   private map: any;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private vehicleService: VehicleService) {}
 
   private initMap(): void {
     this.map = L.map('map', {
@@ -44,6 +47,7 @@ export class MapComponent implements AfterViewInit{
     this.registerOnClick()
     this.setRoute()
     this.search()
+    this.loadVehicles();
   }
 
   searchStreet(street: string): Observable<any> {
@@ -99,5 +103,67 @@ export class MapComponent implements AfterViewInit{
       alert('Total distance is ' + summary.totalDistance / 1000 + ' km and total time is ' + Math.round(summary.totalTime % 3600 / 60) + ' minutes');
     });
   }
+
+  private addVehicleMarker(vehicle: GetVehicleDTO): L.Marker {
+    // Parse latitude and longitude to numbers to ensure Leaflet positions the marker correctly
+    const lat = Number(vehicle.latitude);
+    const lng = Number(vehicle.longitude);
+
+    // Determine marker color based on availability
+    const colorFilter = vehicle.isAvailable
+      ? 'invert(50%) sepia(100%) saturate(600%) hue-rotate(90deg)' // green for available
+      : 'invert(16%) sepia(94%) saturate(7481%) hue-rotate(357deg)'; // red for busy
+
+    // Create a custom icon
+    const icon = L.icon({
+      iconUrl: 'assets/images/car.png', // path to your car icon image
+      iconSize: [32, 32],
+      iconAnchor: [16, 16], // center of icon for positioning
+      popupAnchor: [0, -16], // position of the popup relative to the icon
+      className: 'vehicle-icon'
+    });
+
+    // Create the marker and add it to the map
+    const marker = L.marker([lat, lng], { icon: icon })
+      .addTo(this.map)
+      .bindPopup(`${vehicle.model} - ${vehicle.isAvailable ? 'Free' : 'Busy'}`);
+
+    // Apply the color filter once the DOM element exists
+    const markerEl = marker.getElement();
+    if (markerEl) {
+      setTimeout(() => {
+        const img = markerEl.querySelector('img') as HTMLImageElement;
+        if (img) img.style.filter = colorFilter;
+      }, 0);
+    }
+
+    // Return the marker (useful for grouping or bounds)
+    return marker;
+  }
+
+
+
+
+
+  private loadVehicles(): void {
+    this.vehicleService.getActiveVehicles().subscribe({
+      next: (vehicles: GetVehicleDTO[]) => {
+        if (!vehicles || vehicles.length === 0) return;
+
+        // Create a feature group to hold all vehicle markers
+        const group = L.featureGroup([]);
+        vehicles.forEach(vehicle => {
+          const marker = this.addVehicleMarker(vehicle);
+          group.addLayer(marker);
+        });
+
+        // Automatically adjust map view to fit all markers with padding
+        this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
+
 
 }

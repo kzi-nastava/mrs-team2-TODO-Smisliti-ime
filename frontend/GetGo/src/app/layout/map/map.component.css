@@ -1,0 +1,25 @@
+/*.map-frame {*/
+/*  border: 2px solid black;*/
+/*}*/
+
+/*#map {*/
+/*  height: 600px;*/
+/*}*/
+
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.map-frame {
+  width: 100%;
+  height: 100%;
+}
+
+#map {
+  width: 100%;
+  height: 600px; /* ili 100% ako hoćeš full height */
+}
+

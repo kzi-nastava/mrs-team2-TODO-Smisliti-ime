@@ -1,8 +1,8 @@
 package rs.getgo.backend.controllers;
 
-import dtos.rating.CreateRatingDTO;
-import dtos.rating.CreatedRatingDTO;
-import dtos.rating.GetRatingDTO;
+import rs.getgo.backend.dtos.rating.CreateRatingDTO;
+import rs.getgo.backend.dtos.rating.CreatedRatingDTO;
+import rs.getgo.backend.dtos.rating.GetRatingDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

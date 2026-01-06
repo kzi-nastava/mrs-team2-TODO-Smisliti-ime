@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 
 import { AuthService } from './pages/authentication/auth-service/auth.service';
 import { NavBarComponent} from './layout/nav-bar/nav-bar.component';
+import {MapComponent} from './layout/map/map.component';
 
 @Component({
   selector: 'app-root',

@@ -1,12 +1,12 @@
 package rs.getgo.backend.controllers;
 
-import dtos.favorite.CreatedFavoriteDTO;
-import dtos.inconsistencyReport.CreateInconsistencyReportDTO;
-import dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
-import dtos.ride.*;
-import dtos.rideEstimate.CreateRideEstimateDTO;
-import dtos.rideEstimate.CreatedRideEstimateDTO;
-import dtos.rideStatus.CreatedRideStatusDTO;
+import rs.getgo.backend.dtos.favorite.CreatedFavoriteDTO;
+import rs.getgo.backend.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
+import rs.getgo.backend.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
+import rs.getgo.backend.dtos.ride.*;
+import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
+import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
+import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

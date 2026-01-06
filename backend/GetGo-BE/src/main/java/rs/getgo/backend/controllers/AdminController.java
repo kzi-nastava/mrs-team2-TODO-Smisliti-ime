@@ -1,17 +1,16 @@
 package rs.getgo.backend.controllers;
 
-import dtos.admin.GetAdminDTO;
-import dtos.admin.UpdateAdminDTO;
-import dtos.admin.UpdatedAdminDTO;
-import dtos.driver.*;
-import dtos.report.GetReportDTO;
-import dtos.user.CreatedUserDTO;
+import rs.getgo.backend.dtos.admin.GetAdminDTO;
+import rs.getgo.backend.dtos.admin.UpdateAdminDTO;
+import rs.getgo.backend.dtos.admin.UpdatedAdminDTO;
+import rs.getgo.backend.dtos.driver.*;
+import rs.getgo.backend.dtos.report.GetReportDTO;
+import rs.getgo.backend.dtos.user.CreatedUserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 

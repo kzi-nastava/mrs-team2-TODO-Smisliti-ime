@@ -105,57 +105,37 @@ export class MapComponent implements AfterViewInit{
   }
 
   private addVehicleMarker(vehicle: GetVehicleDTO): L.Marker {
-    // Parse latitude and longitude to numbers to ensure Leaflet positions the marker correctly
     const lat = Number(vehicle.latitude);
     const lng = Number(vehicle.longitude);
 
-    // Determine marker color based on availability
-    const colorFilter = vehicle.isAvailable
-      ? 'invert(50%) sepia(100%) saturate(600%) hue-rotate(90deg)' // green for available
-      : 'invert(16%) sepia(94%) saturate(7481%) hue-rotate(357deg)'; // red for busy
+    const iconUrl = vehicle.isAvailable
+      ? 'assets/images/green_car.svg'
+      : 'assets/images/red_car.svg';
 
-    // Create a custom icon
     const icon = L.icon({
-      iconUrl: 'assets/images/car.png', // path to your car icon image
+      iconUrl: iconUrl,
       iconSize: [32, 32],
-      iconAnchor: [16, 16], // center of icon for positioning
-      popupAnchor: [0, -16], // position of the popup relative to the icon
-      className: 'vehicle-icon'
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -16]
     });
 
-    // Create the marker and add it to the map
-    const marker = L.marker([lat, lng], { icon: icon })
-      .addTo(this.map)
+    // Create the marker with the icon and bind a popup
+    const marker = L.marker([lat, lng], { icon })
       .bindPopup(`${vehicle.model} - ${vehicle.isAvailable ? 'Free' : 'Busy'}`);
 
-    // Apply the color filter once the DOM element exists
-    const markerEl = marker.getElement();
-    if (markerEl) {
-      setTimeout(() => {
-        const img = markerEl.querySelector('img') as HTMLImageElement;
-        if (img) img.style.filter = colorFilter;
-      }, 0);
-    }
-
-    // Return the marker (useful for grouping or bounds)
     return marker;
   }
 
-
-
-
-
   private loadVehicles(): void {
+    console.log('Trying to load vehicles...');
     this.vehicleService.getActiveVehicles().subscribe({
       next: (vehicles: GetVehicleDTO[]) => {
+        console.log('Loaded vehicles:', vehicles);
         if (!vehicles || vehicles.length === 0) return;
 
         // Create a feature group to hold all vehicle markers
-        const group = L.featureGroup([]);
-        vehicles.forEach(vehicle => {
-          const marker = this.addVehicleMarker(vehicle);
-          group.addLayer(marker);
-        });
+        const markers = vehicles.map(vehicle => this.addVehicleMarker(vehicle));
+        const group = L.featureGroup(markers).addTo(this.map);
 
         // Automatically adjust map view to fit all markers with padding
         this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
@@ -163,6 +143,7 @@ export class MapComponent implements AfterViewInit{
       error: (err) => console.error(err)
     });
   }
+
 
 
 

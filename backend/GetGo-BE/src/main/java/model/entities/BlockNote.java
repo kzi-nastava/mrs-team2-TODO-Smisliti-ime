@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter @Setter
+@Table(name="block_notes")
 @NoArgsConstructor @AllArgsConstructor
 public class BlockNote {
 
@@ -17,9 +18,16 @@ public class BlockNote {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String reason;
-    private LocalDateTime timestamp;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @ManyToOne
+    @JoinColumn(name = "admin_id")
     private Administrator admin;
+
+    private String reason;
+
+    private LocalDateTime blockedAt;
+    private LocalDateTime unblockedAt;  // null if still blocked
 }

@@ -1,16 +1,16 @@
 package model.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Getter @Setter
+@Table(name="routes")
 @NoArgsConstructor @AllArgsConstructor
 public class Route {
 
@@ -22,4 +22,11 @@ public class Route {
     private String endingPoint;
     private double estimatedTime;
     private double distance;
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "route_id")
+    @OrderColumn(name = "waypoint_order")  // Maintain order of waypoints
+    private List<WayPoint> waypoints;
+
+    private Double basePrice;
 }

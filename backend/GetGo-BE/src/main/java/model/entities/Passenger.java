@@ -1,8 +1,6 @@
 package model.entities;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
-import lombok.AllArgsConstructor;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,6 +8,7 @@ import lombok.Setter;
 @Entity
 @Getter @Setter
 @DiscriminatorValue("PASSENGER")
+@Table(name="passengers")
 @NoArgsConstructor
 public class Passenger extends User {
 }

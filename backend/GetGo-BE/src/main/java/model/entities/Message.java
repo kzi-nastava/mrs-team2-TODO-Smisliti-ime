@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter @Setter
+@Table(name="messages")
 @NoArgsConstructor @AllArgsConstructor
 public class Message {
 
@@ -26,4 +27,8 @@ public class Message {
 
     @ManyToOne
     private Chat chat;
+
+    @ManyToOne
+    @JoinColumn(name = "sender_id")
+    private User sender;
 }

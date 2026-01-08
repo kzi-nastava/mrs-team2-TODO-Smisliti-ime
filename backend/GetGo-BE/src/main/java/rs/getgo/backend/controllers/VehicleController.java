@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import rs.getgo.backend.services.VehicleService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,6 +18,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/vehicles")
 public class VehicleController {
+
+    private final VehicleService vehicleService;
+
+    public VehicleController(VehicleService vehicleService) {
+        this.vehicleService = vehicleService;
+    }
 
     // 2.1.1 Display information
     @GetMapping(value = "/active", produces = MediaType.APPLICATION_JSON_VALUE)

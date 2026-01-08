@@ -12,7 +12,6 @@ import java.util.List;
 @Entity
 @Getter @Setter
 @Table(name="routes")
-@NoArgsConstructor @AllArgsConstructor
 public class Route {
 
     @Id

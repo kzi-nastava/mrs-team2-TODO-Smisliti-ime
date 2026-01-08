@@ -39,6 +39,7 @@ public class Ride {
     private boolean isPanicPressed;
 
     @Enumerated(EnumType.STRING)
+
     private RideStatus rideStatus;
 
     @ManyToOne

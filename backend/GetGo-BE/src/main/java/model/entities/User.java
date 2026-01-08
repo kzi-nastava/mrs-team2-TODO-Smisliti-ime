@@ -32,12 +32,4 @@ public abstract class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Chat chat;
-
-    @ManyToMany
-    @JoinTable(
-            name = "user_favorite_routes",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "route_id")
-    )
-    private List<Route> favoriteRoutes;
 }

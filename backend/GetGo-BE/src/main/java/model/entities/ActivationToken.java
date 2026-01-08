@@ -10,18 +10,23 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter @Setter
-@Table(name="waypoints")
+@Table(name="activation_tokens")
 @NoArgsConstructor @AllArgsConstructor
-public class WayPoint {
+public class ActivationToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private double longitude;
-    private double latitude;
+    private String token;
 
-    private String address;
+    @OneToOne
+    @JoinColumn(name = "driver_id", nullable = false)
+    private Driver driver;
 
-    private LocalDateTime reachedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime expiresAt;
+
+    private boolean isUsed;
+    private LocalDateTime usedAt;
 }

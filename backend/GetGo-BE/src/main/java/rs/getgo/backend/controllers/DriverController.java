@@ -1,13 +1,13 @@
 package rs.getgo.backend.controllers;
 
-import dtos.authentication.GetActivationTokenDTO;
-import dtos.authentication.UpdatePasswordDTO;
-import dtos.authentication.UpdatedPasswordDTO;
-import dtos.driver.CreatedDriverChangeRequestDTO;
-import dtos.driver.GetActiveDriverLocationDTO;
-import dtos.driver.GetDriverDTO;
-import dtos.driver.UpdateDriverDTO;
-import dtos.ride.GetRideDTO;
+import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
+import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
+import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
+import rs.getgo.backend.dtos.driver.CreatedDriverChangeRequestDTO;
+import rs.getgo.backend.dtos.driver.GetActiveDriverLocationDTO;
+import rs.getgo.backend.dtos.driver.GetDriverDTO;
+import rs.getgo.backend.dtos.driver.UpdateDriverDTO;
+import rs.getgo.backend.dtos.ride.GetRideDTO;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

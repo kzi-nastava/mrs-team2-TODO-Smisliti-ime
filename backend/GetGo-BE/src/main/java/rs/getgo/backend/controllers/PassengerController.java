@@ -1,9 +1,9 @@
 package rs.getgo.backend.controllers;
 
-import dtos.passenger.GetPassengerDTO;
-import dtos.passenger.UpdatePassengerDTO;
-import dtos.passenger.UpdatedPassengerDTO;
-import dtos.user.UpdatedProfilePictureDTO;
+import rs.getgo.backend.dtos.passenger.GetPassengerDTO;
+import rs.getgo.backend.dtos.passenger.UpdatePassengerDTO;
+import rs.getgo.backend.dtos.passenger.UpdatedPassengerDTO;
+import rs.getgo.backend.dtos.user.UpdatedProfilePictureDTO;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

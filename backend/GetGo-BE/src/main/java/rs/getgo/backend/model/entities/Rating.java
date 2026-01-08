@@ -25,6 +25,6 @@ public class Rating {
     private Passenger passenger;
 
     @ManyToOne
-    @JoinColumn(name = "ride_id")
-    private Ride ride;
+    @JoinColumn(name = "completed_ride_id")
+    private CompletedRide completedRide;
 }

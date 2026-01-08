@@ -19,8 +19,8 @@ public class InconsistencyReport {
     private String text;
 
     @ManyToOne
-    @JoinColumn(name = "ride_id")
-    private Ride ride;
+    @JoinColumn(name = "completed_ride_id")
+    private CompletedRide completedRide;
 
     @ManyToOne
     @JoinColumn(name = "passenger_id")

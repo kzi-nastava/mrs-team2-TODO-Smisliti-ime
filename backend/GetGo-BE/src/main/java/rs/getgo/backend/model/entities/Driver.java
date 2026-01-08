@@ -6,8 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Entity
 @Getter @Setter
 @Table(name="drivers")
@@ -19,10 +17,4 @@ public class Driver extends User {
     @OneToOne
     @JoinColumn(name = "vehicle_id")
     private Vehicle vehicle;
-
-    @OneToMany(mappedBy = "driver", cascade = CascadeType.ALL)
-    private List<ProfileChangeRequest> changeRequests;
-
-    @OneToMany(mappedBy = "driver")
-    private List<Ride> rides;
 }

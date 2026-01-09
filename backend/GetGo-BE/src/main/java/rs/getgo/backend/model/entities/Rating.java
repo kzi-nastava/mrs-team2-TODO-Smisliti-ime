@@ -8,6 +8,7 @@ import lombok.Setter;
 
 @Entity
 @Getter @Setter
+@Table(name="ratings")
 @NoArgsConstructor @AllArgsConstructor
 public class Rating {
 
@@ -20,8 +21,10 @@ public class Rating {
     private String comment;
 
     @ManyToOne
+    @JoinColumn(name = "passenger_id")
     private Passenger passenger;
 
     @ManyToOne
-    private Ride ride;
+    @JoinColumn(name = "completed_ride_id")
+    private CompletedRide completedRide;
 }

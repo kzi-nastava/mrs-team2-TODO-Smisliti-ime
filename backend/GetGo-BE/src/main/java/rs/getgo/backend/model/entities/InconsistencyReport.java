@@ -8,6 +8,7 @@ import lombok.Setter;
 
 @Entity
 @Getter @Setter
+@Table(name="inconsistency_reports")
 @NoArgsConstructor @AllArgsConstructor
 public class InconsistencyReport {
 
@@ -18,8 +19,10 @@ public class InconsistencyReport {
     private String text;
 
     @ManyToOne
-    private Ride ride;
+    @JoinColumn(name = "completed_ride_id")
+    private CompletedRide completedRide;
 
     @ManyToOne
+    @JoinColumn(name = "passenger_id")
     private Passenger passenger;
 }

@@ -5,34 +5,28 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import rs.getgo.backend.model.enums.RideStatus;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter @Setter
+@Table(name="activation_tokens")
 @NoArgsConstructor @AllArgsConstructor
-public class Ride {
+public class ActivationToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDateTime startingTime;
-    private int duration;
-    private boolean isCancelled;
-    private boolean isFavourite;
-    private RideStatus rideStatus;
-
-    @ManyToOne
-    private Driver driver;
-
-    @ManyToOne
-    private Passenger passenger;
-
-    @ManyToOne
-    private Route route;
+    private String token;
 
     @OneToOne
-    private WayPoint currentLocation;
+    @JoinColumn(name = "driver_id", nullable = false)
+    private Driver driver;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime expiresAt;
+
+    private boolean isUsed;
+    private LocalDateTime usedAt;
 }

@@ -5,11 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import rs.getgo.backend.model.enums.NotificationType;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter @Setter
+@Table(name="notifications")
 @NoArgsConstructor @AllArgsConstructor
 public class Notification {
 
@@ -17,10 +19,16 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String type;
+    @Enumerated(EnumType.STRING)
+    private NotificationType type;
+
+    private String title;
+    private String message;
+
     private boolean isRead;
     private LocalDateTime timestamp;
 
     @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
 }

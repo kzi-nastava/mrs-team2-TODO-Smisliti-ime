@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "user_type")
+@Table(name="users")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 public abstract class User {
@@ -24,5 +24,9 @@ public abstract class User {
     private String lastName;
     private String address;
     private String phoneNumber;
-    private boolean isBlocked;
+
+    private boolean isBlocked; // quick check for whether user is blocked, for details check block note
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Chat chat;
 }

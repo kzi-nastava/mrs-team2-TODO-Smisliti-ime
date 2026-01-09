@@ -1,5 +1,6 @@
 package rs.getgo.backend.services;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import rs.getgo.backend.dtos.admin.GetAdminDTO;
@@ -16,11 +17,14 @@ public class AdminService {
     @Autowired
     private AdministratorRepository adminRepo;
 
+    @Autowired
+    private ModelMapper modelMapper;
+
     public GetAdminDTO getAdminById(Long adminId) {
         Administrator admin = adminRepo.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
 
-        return mapToGetAdminDTO(admin);
+        return modelMapper.map(admin, GetAdminDTO.class);
     }
 
     public UpdatedAdminDTO updateAdmin(Long adminId, UpdateAdminDTO updateAdminDTO) {
@@ -31,7 +35,7 @@ public class AdminService {
             admin.setFirstName(updateAdminDTO.getFirstName().trim());
         }
         if (updateAdminDTO.getLastName() != null && !updateAdminDTO.getLastName().trim().isEmpty()) {
-            admin.setFirstName(updateAdminDTO.getLastName().trim());
+            admin.setLastName(updateAdminDTO.getLastName().trim());
         }
         if (updateAdminDTO.getPhone() != null && !updateAdminDTO.getPhone().trim().isEmpty()) {
             admin.setPhoneNumber(updateAdminDTO.getPhone().trim());
@@ -41,7 +45,7 @@ public class AdminService {
         }
 
         Administrator savedAdmin = adminRepo.save(admin);
-        return mapToUpdatedAdminDTO(savedAdmin);
+        return modelMapper.map(savedAdmin, UpdatedAdminDTO.class);
     }
 
     public UpdatedPasswordDTO updatePassword(Long adminId, UpdatePasswordDTO updatePasswordDTO) {
@@ -64,29 +68,6 @@ public class AdminService {
         adminRepo.save(admin);
 
         return new UpdatedPasswordDTO(true, "Password updated successfully");
-    }
-
-    // Temporary methods before real mapper
-    private GetAdminDTO mapToGetAdminDTO(Administrator admin) {
-        return new GetAdminDTO(
-                admin.getId(),
-                admin.getEmail(),
-                admin.getFirstName(),
-                admin.getLastName(),
-                admin.getPhoneNumber(),
-                admin.getAddress()
-        );
-    }
-
-    private UpdatedAdminDTO mapToUpdatedAdminDTO(Administrator admin) {
-        return new UpdatedAdminDTO(
-                admin.getId(),
-                admin.getEmail(),
-                admin.getFirstName(),
-                admin.getLastName(),
-                admin.getPhoneNumber(),
-                admin.getAddress()
-        );
     }
 
     public void blockUser() {

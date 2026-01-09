@@ -1,0 +1,588 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+		"name": "GetGo API",
+		"description": "API collection for GetGo ride-sharing backend application. This collection contains all REST endpoints discovered from the Spring Boot controllers.\n\n## Base URL\nThe API base URL should be configured in an environment variable `{{baseUrl}}`.\n\n## Controllers\n- **Auth** - Authentication and registration\n- **Admin** - Administrative operations (user management, reports)\n- **Driver** - Driver-related operations\n- **Ride** - Ride management and tracking\n- **Rating** - Driver and vehicle ratings\n- **Vehicle** - Vehicle information\n- **Hello** - Health check endpoint",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"description": "Authentication and user registration endpoints",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate a user and receive a token.\n\n**Request Body:**\n- `email` (string): User's email address\n- `password` (string): User's password\n\n**Response:**\n- `id` (Long): User ID\n- `role` (string): User role\n- `token` (string): Authentication token"
+					},
+					"response": []
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"newuser@example.com\",\n    \"password\": \"password123\",\n    \"name\": \"John\",\n    \"surname\": \"Doe\",\n    \"phone\": \"+381601234567\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user account.\n\n**Request Body:**\n- `email` (string): User's email address\n- `password` (string): User's password\n- `name` (string): User's first name\n- `surname` (string): User's last name\n- `phone` (string): User's phone number\n\n**Response:**\n- `id` (Long): Created user ID\n- `email` (string): User's email\n- `name` (string): User's first name\n- `surname` (string): User's last name"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"description": "Administrative operations for user management and reports",
+			"item": [
+				{
+					"name": "Block User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/users/:id/block",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users",
+								":id",
+								"block"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "User ID to block"
+								}
+							]
+						},
+						"description": "Block a user account.\n\n**Path Variables:**\n- `id` (Long): The ID of the user to block\n\n**Response:**\n- `id` (Long): User ID\n- `email` (string): User's email\n- `name` (string): User's first name\n- `surname` (string): User's last name"
+					},
+					"response": []
+				},
+				{
+					"name": "Unblock User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/users/:id/unblock",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users",
+								":id",
+								"unblock"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "User ID to unblock"
+								}
+							]
+						},
+						"description": "Unblock a previously blocked user account.\n\n**Path Variables:**\n- `id` (Long): The ID of the user to unblock\n\n**Response:**\n- `id` (Long): User ID\n- `email` (string): User's email\n- `name` (string): User's first name\n- `surname` (string): User's last name"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Reports",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/reports?from=01-01-2025&to=31-01-2025",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"reports"
+							],
+							"query": [
+								{
+									"key": "from",
+									"value": "01-01-2025",
+									"description": "Start date for report period (optional)"
+								},
+								{
+									"key": "to",
+									"value": "31-01-2025",
+									"description": "End date for report period (optional)"
+								}
+							]
+						},
+						"description": "Retrieve system reports for a specified date range.\n\n**Query Parameters:**\n- `from` (string, optional): Start date for the report period\n- `to` (string, optional): End date for the report period\n\n**Response:**\nArray of report objects containing:\n- `period` (string): Report period\n- `totalRides` (int): Total number of rides\n- `totalRevenue` (double): Total revenue\n- `totalDistance` (double): Total distance covered"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Admin",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/create",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"create"
+							]
+						},
+						"description": "Create a new administrator profile.\n\n**Response:**\n- `id` (Long): Created admin ID\n- `email` (string): Admin's email\n- `name` (string): Admin's first name\n- `surname` (string): Admin's last name"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Driver",
+			"description": "Driver-related operations",
+			"item": [
+				{
+					"name": "Get Driver Rides",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/drivers/:id/rides?startDate=28-12-2025",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"drivers",
+								":id",
+								"rides"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "28-12-2025",
+									"description": "Filter rides from this date (format: dd-MM-yyyy, optional)"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Driver ID"
+								}
+							]
+						},
+						"description": "Get all rides for a specific driver.\n\n**Path Variables:**\n- `id` (Long): The driver's ID\n\n**Query Parameters:**\n- `startDate` (string, optional): Filter rides starting from this date (format: dd-MM-yyyy)\n\n**Response:**\nArray of ride objects containing:\n- `id` (Long): Ride ID\n- `driverId` (Long): Driver ID\n- `passengers` (array): List of passengers\n- `startLocation` (string): Starting location\n- `endLocation` (string): Destination\n- `startingTime` (datetime): Ride start time\n- `endingTime` (datetime): Ride end time\n- `duration` (int): Duration in minutes\n- `isPanic` (boolean): Panic status\n- `isBabySeat` (boolean): Baby seat requested\n- `status` (string): Ride status\n- `price` (double): Ride price"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Ride",
+			"description": "Ride management, tracking, and status operations",
+			"item": [
+				{
+					"name": "Track Ride",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/rides/:id/tracking",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rides",
+								":id",
+								"tracking"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Ride ID to track"
+								}
+							]
+						},
+						"description": "Get real-time tracking information for a ride.\n\n**Path Variables:**\n- `id` (Long): The ride ID to track\n\n**Response:**\n- `rideId` (Long): Ride ID\n- `latitude` (double): Current latitude\n- `longitude` (double): Current longitude\n- `speed` (double): Current speed"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Inconsistency Report",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Driver took a longer route than expected\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/rides/:rideId/inconsistencies",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rides",
+								":rideId",
+								"inconsistencies"
+							],
+							"variable": [
+								{
+									"key": "rideId",
+									"value": "1",
+									"description": "Ride ID for the inconsistency report"
+								}
+							]
+						},
+						"description": "Create an inconsistency report for a ride.\n\n**Path Variables:**\n- `rideId` (Long): The ride ID to report\n\n**Request Body:**\n- `text` (string): Description of the inconsistency\n\n**Response:**\n- `id` (Long): Report ID\n- `rideId` (Long): Associated ride ID\n- `userId` (Long): Reporting user ID\n- `text` (string): Report description"
+					},
+					"response": []
+				},
+				{
+					"name": "Finish Ride",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"FINISHED\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/rides/:id/finish",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rides",
+								":id",
+								"finish"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Ride ID to finish"
+								}
+							]
+						},
+						"description": "Mark a ride as finished.\n\n**Path Variables:**\n- `id` (Long): The ride ID to finish\n\n**Request Body:**\n- `status` (string): New status (e.g., \"FINISHED\")\n\n**Response:**\n- `id` (Long): Ride ID\n- `status` (string): Updated status\n- `endTime` (datetime): Ride end time"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Ride Estimate",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"startLat\": 44.8176,\n    \"startLng\": 20.4569,\n    \"endLat\": 45.2671,\n    \"endLng\": 19.8335,\n    \"vehicleType\": \"STANDARD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/rides/estimate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rides",
+								"estimate"
+							]
+						},
+						"description": "Get an estimate for a ride before booking.\n\n**Request Body:**\n- `startLat` (double): Starting point latitude\n- `startLng` (double): Starting point longitude\n- `endLat` (double): Destination latitude\n- `endLng` (double): Destination longitude\n- `vehicleType` (string): Type of vehicle (e.g., \"STANDARD\", \"LUXURY\")\n\n**Response:**\n- `distance` (double): Estimated distance in meters\n- `duration` (int): Estimated duration in minutes\n- `price` (double): Estimated price"
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Ride",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/rides/:rideId/cancel",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rides",
+								":rideId",
+								"cancel"
+							],
+							"variable": [
+								{
+									"key": "rideId",
+									"value": "1",
+									"description": "Ride ID to cancel"
+								}
+							]
+						},
+						"description": "Cancel an active ride.\n\n**Path Variables:**\n- `rideId` (Long): The ride ID to cancel\n\n**Response:**\n- `rideId` (Long): Ride ID\n- `status` (string): Updated status (\"CANCELED\")"
+					},
+					"response": []
+				},
+				{
+					"name": "Stop Ride",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/rides/:rideId/stop",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rides",
+								":rideId",
+								"stop"
+							],
+							"variable": [
+								{
+									"key": "rideId",
+									"value": "1",
+									"description": "Ride ID to stop"
+								}
+							]
+						},
+						"description": "Stop an active ride.\n\n**Path Variables:**\n- `rideId` (Long): The ride ID to stop\n\n**Response:**\n- `rideId` (Long): Ride ID\n- `status` (string): Updated status (\"FINISHED\")"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Rating",
+			"description": "Driver and vehicle rating operations",
+			"item": [
+				{
+					"name": "Get All Ratings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/ratings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ratings"
+							]
+						},
+						"description": "Get all ratings in the system.\n\n**Response:**\nArray of rating objects containing:\n- `id` (Long): Rating ID\n- `passengerId` (Long): Passenger who gave the rating\n- `driverId` (Long): Rated driver\n- `rideId` (Long): Associated ride\n- `vehicleId` (Long): Rated vehicle\n- `driverRating` (int): Driver rating (1-5)\n- `vehicleRating` (int): Vehicle rating (1-5)\n- `comment` (string): Optional comment"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Rating by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/ratings/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ratings",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Rating ID"
+								}
+							]
+						},
+						"description": "Get a specific rating by ID.\n\n**Path Variables:**\n- `id` (Long): The rating ID\n\n**Response:**\n- `id` (Long): Rating ID\n- `passengerId` (Long): Passenger who gave the rating\n- `driverId` (Long): Rated driver\n- `rideId` (Long): Associated ride\n- `vehicleId` (Long): Rated vehicle\n- `driverRating` (int): Driver rating (1-5)\n- `vehicleRating` (int): Vehicle rating (1-5)\n- `comment` (string): Optional comment"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Rating",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"driverRating\": 5,\n    \"vehicleRating\": 4,\n    \"comment\": \"Great ride, very professional driver!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/ratings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ratings"
+							]
+						},
+						"description": "Create a new rating for a completed ride.\n\n**Request Body:**\n- `driverRating` (int): Rating for the driver (1-5)\n- `vehicleRating` (int): Rating for the vehicle (1-5)\n- `comment` (string): Optional comment about the ride\n\n**Response:**\n- `id` (Long): Created rating ID\n- `passengerId` (Long): Passenger ID\n- `driverId` (Long): Driver ID\n- `rideId` (Long): Ride ID\n- `driverRating` (int): Driver rating\n- `vehicleRating` (int): Vehicle rating\n- `comment` (string): Comment"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Vehicle",
+			"description": "Vehicle information and management",
+			"item": [
+				{
+					"name": "Get Active Vehicles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vehicles/active",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"vehicles",
+								"active"
+							]
+						},
+						"description": "Get all currently active vehicles.\n\n**Response:**\nArray of vehicle objects containing:\n- `id` (Long): Vehicle ID\n- `model` (string): Vehicle model\n- `type` (string): Vehicle type (Sedan, SUV, etc.)\n- `latitude` (double): Current latitude\n- `longitude` (double): Current longitude\n- `isActive` (boolean): Active status"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Vehicle by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vehicles/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"vehicles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Vehicle ID"
+								}
+							]
+						},
+						"description": "Get details of a specific vehicle.\n\n**Path Variables:**\n- `id` (Long): The vehicle ID\n\n**Response:**\n- `id` (Long): Vehicle ID\n- `model` (string): Vehicle model\n- `type` (string): Vehicle type\n- `latitude` (double): Current latitude\n- `longitude` (double): Current longitude\n- `isActive` (boolean): Active status"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health",
+			"description": "Health check and utility endpoints",
+			"item": [
+				{
+					"name": "Hello",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/hello",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"hello"
+							]
+						},
+						"description": "Simple health check endpoint.\n\n**Response:**\nPlain text: \"Hello GetGo!\""
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}

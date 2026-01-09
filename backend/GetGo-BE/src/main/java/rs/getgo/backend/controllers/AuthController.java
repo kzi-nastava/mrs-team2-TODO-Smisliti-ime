@@ -1,9 +1,9 @@
 package rs.getgo.backend.controllers;
 
-import dtos.login.CreateLoginDTO;
-import dtos.login.CreatedLoginDTO;
-import dtos.user.CreateUserDTO;
-import dtos.user.CreatedUserDTO;
+import rs.getgo.backend.dtos.login.CreateLoginDTO;
+import rs.getgo.backend.dtos.login.CreatedLoginDTO;
+import rs.getgo.backend.dtos.user.CreateUserDTO;
+import rs.getgo.backend.dtos.user.CreatedUserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

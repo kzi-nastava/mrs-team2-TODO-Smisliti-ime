@@ -23,7 +23,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<CreatedUserDTO> register(@RequestBody CreateUserDTO request) {
         CreatedUserDTO response = new CreatedUserDTO(
-                1L, request.getEmail(), request.getName(), request.getSurname()
+                1L, request.getEmail(), request.getName(), request.getSurname(), request.getPhone()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

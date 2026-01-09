@@ -28,14 +28,14 @@ public class AdminController {
     // 2.9.3 – Block user
     @PutMapping("/users/{id}/block")
     public ResponseEntity<CreatedUserDTO> blockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Blocked", "User");
+        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Blocked", "User", "+38178687868");
         return ResponseEntity.ok(response);
     }
 
     // 2.9.3 – Unblock user
     @PutMapping("/users/{id}/unblock")
     public ResponseEntity<CreatedUserDTO> unblockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "unblocked@getgo.com", "Active", "User");
+        CreatedUserDTO response = new CreatedUserDTO(id, "unblocked@getgo.com", "Active", "User", "+38178687868");
         return ResponseEntity.ok(response);
     }
 
@@ -52,7 +52,7 @@ public class AdminController {
     // 2.9.3 – Create admin profile
     @PostMapping("/create")
     public ResponseEntity<CreatedUserDTO> createAdmin() {
-        CreatedUserDTO response = new CreatedUserDTO(10L, "admin@getgo.com", "Admin", "User");
+        CreatedUserDTO response = new CreatedUserDTO(10L, "admin@getgo.com", "Admin", "User", "+38178687868");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

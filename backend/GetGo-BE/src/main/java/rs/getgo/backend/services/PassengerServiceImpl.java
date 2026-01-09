@@ -3,21 +3,27 @@ package rs.getgo.backend.services;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.passenger.GetPassengerDTO;
 import rs.getgo.backend.dtos.passenger.UpdatePassengerDTO;
 import rs.getgo.backend.dtos.passenger.UpdatedPassengerDTO;
+import rs.getgo.backend.dtos.user.UpdatedProfilePictureDTO;
 import rs.getgo.backend.model.entities.Passenger;
 import rs.getgo.backend.repositories.PassengerRepository;
 
 @Service
 public class PassengerServiceImpl {
+
     @Autowired
     private PassengerRepository passengerRepo;
 
     @Autowired
     private ModelMapper modelMapper;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     public GetPassengerDTO getPassengerById(Long passengerId) {
         Passenger passenger = passengerRepo.findById(passengerId)
@@ -63,5 +69,26 @@ public class PassengerServiceImpl {
         passengerRepo.save(passenger);
 
         return new UpdatedPasswordDTO(true, "Password updated successfully");
+    }
+
+
+    public UpdatedProfilePictureDTO uploadProfilePicture(Long passengerId, MultipartFile file) {
+        Passenger passenger = passengerRepo.findById(passengerId)
+                .orElseThrow(() -> new RuntimeException("Passenger not found with id: " + passengerId));
+
+        // Delete old picture if exists
+        if (passenger.getProfilePictureUrl() != null) {
+            fileStorageService.deleteFile(passenger.getProfilePictureUrl());
+        }
+
+        // Store new picture
+        String filename = fileStorageService.storeFile(file, "passenger_" + passengerId);
+
+        passenger.setProfilePictureUrl(filename);
+        passengerRepo.save(passenger);
+
+        return new UpdatedProfilePictureDTO(
+                fileStorageService.getFileUrl(filename),
+                "Profile picture updated successfully");
     }
 }

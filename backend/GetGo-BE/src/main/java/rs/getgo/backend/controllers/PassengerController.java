@@ -26,6 +26,7 @@ public class PassengerController {
 
         Long passengerId = 1L; // TODO: get from cookie/whatever we decide to use
         GetPassengerDTO response = passengerService.getPassengerById(passengerId);
+
         return ResponseEntity.ok(response);
     }
 
@@ -38,6 +39,7 @@ public class PassengerController {
 
         Long passengerId = 1L; // TODO: get from cookie/whatever we decide to use
         UpdatedPassengerDTO response = passengerService.updateProfile(passengerId, updatePassengerDTO);
+
         return ResponseEntity.ok(response);
     }
 
@@ -47,11 +49,13 @@ public class PassengerController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
             @RequestBody UpdatePasswordDTO updatePasswordDTO) {
+
         Long passengerId = 1L; // TODO: get from cookie/whatever we decide to use
         UpdatedPasswordDTO response = passengerService.updatePassword(passengerId, updatePasswordDTO);
         if (!response.getSuccess()) {
             return ResponseEntity.badRequest().body(response);
         }
+
         return ResponseEntity.ok(response);
     }
 
@@ -62,8 +66,8 @@ public class PassengerController {
     public ResponseEntity<UpdatedProfilePictureDTO> uploadProfilePicture(
             @RequestParam("file") MultipartFile file) {
 
-        UpdatedProfilePictureDTO response = new UpdatedProfilePictureDTO();
-        response.setPictureUrl("/uploads/passenger_123.jpg");
+        Long passengerId = 1L; // TODO: get from cookie/whatever we decide to us
+        UpdatedProfilePictureDTO response = passengerService.uploadProfilePicture(passengerId, file);
 
         return ResponseEntity.ok(response);
     }

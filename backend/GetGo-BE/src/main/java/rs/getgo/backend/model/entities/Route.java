@@ -1,17 +1,17 @@
 package rs.getgo.backend.model.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Table(name="routes")
 public class Route {
 
     @Id
@@ -20,6 +20,17 @@ public class Route {
 
     private String startingPoint;
     private String endingPoint;
-    private double estimatedTime;
-    private double distance;
+
+    private double estTimeMin;
+    private double estDistanceKm;
+
+    // Encoded polyline (from Google Maps API for drawing route on map)
+    @Column(length = 10000)
+    private String encodedPolyline;
+
+    // Ordered waypoints
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "route_id")
+    @OrderColumn(name = "waypoint_order")
+    private List<WayPoint> waypoints = new ArrayList<>();
 }

@@ -1,0 +1,16 @@
+package rs.getgo.backend.model.enums;
+
+public enum NotificationType {
+    RIDE_ACCEPTED,
+    RIDE_REJECTED,
+    RIDE_SCHEDULED,
+    RIDE_STARTING_SOON,
+    RIDE_STARTED,
+    RIDE_COMPLETED,
+    RIDE_CANCELLED,
+    PANIC_ALERT,
+    PROFILE_CHANGE_APPROVED,
+    PROFILE_CHANGE_REJECTED,
+    DRIVER_ASSIGNED,
+    GENERAL
+}

@@ -9,6 +9,7 @@ import lombok.Setter;
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "report_type")
+@Table(name="reports")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 public class Report {
@@ -22,4 +23,8 @@ public class Report {
     private double totalKm;
     private double totalMoney;
     private double average;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 }

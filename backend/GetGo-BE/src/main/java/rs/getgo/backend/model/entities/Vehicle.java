@@ -9,6 +9,7 @@ import rs.getgo.backend.model.enums.VehicleType;
 
 @Entity
 @Getter @Setter
+@Table(name="vehicles")
 @NoArgsConstructor @AllArgsConstructor
 public class Vehicle {
 
@@ -23,12 +24,10 @@ public class Vehicle {
 
     private String licensePlate;
     private int numberOfSeats;
-    private boolean babyDriver;
-    private boolean petFriendly;
-    private Boolean isAvailable;
 
-    @ManyToOne
-    private Driver driver;
+    private Boolean isBabyFriendly;
+    private Boolean isPetFriendly;
+    private Boolean isAvailable;
 
     @OneToOne
     private WayPoint currentLocation;

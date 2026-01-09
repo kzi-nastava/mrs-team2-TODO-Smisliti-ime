@@ -86,7 +86,7 @@ public class AdminController {
     public ResponseEntity<UpdatedAdminDTO> updateProfile(
             @RequestBody UpdateAdminDTO updateAdminDTO) {
         Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
-        UpdatedAdminDTO response = adminService.updateAdmin(adminId, updateAdminDTO);
+        UpdatedAdminDTO response = adminService.updateProfile(adminId, updateAdminDTO);
         return ResponseEntity.ok(response);
     }
 

@@ -27,7 +27,7 @@ public class AdminService {
         return modelMapper.map(admin, GetAdminDTO.class);
     }
 
-    public UpdatedAdminDTO updateAdmin(Long adminId, UpdateAdminDTO updateAdminDTO) {
+    public UpdatedAdminDTO updateProfile(Long adminId, UpdateAdminDTO updateAdminDTO) {
         Administrator admin = adminRepo.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
 
@@ -51,10 +51,6 @@ public class AdminService {
     public UpdatedPasswordDTO updatePassword(Long adminId, UpdatePasswordDTO updatePasswordDTO) {
         if (!updatePasswordDTO.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
             return new UpdatedPasswordDTO(false, "Passwords do not match");
-        }
-
-        if (updatePasswordDTO.getPassword().length() < 8) {
-            return new UpdatedPasswordDTO(false, "Password must be at least 8 characters long");
         }
 
         Administrator admin = adminRepo.findById(adminId)

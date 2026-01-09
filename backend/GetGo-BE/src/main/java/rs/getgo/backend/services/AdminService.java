@@ -1,9 +1,93 @@
 package rs.getgo.backend.services;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import rs.getgo.backend.dtos.admin.GetAdminDTO;
+import rs.getgo.backend.dtos.admin.UpdateAdminDTO;
+import rs.getgo.backend.dtos.admin.UpdatedAdminDTO;
+import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
+import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
+import rs.getgo.backend.model.entities.Administrator;
+import rs.getgo.backend.repositories.AdministratorRepository;
 
 @Service
 public class AdminService {
+
+    @Autowired
+    private AdministratorRepository adminRepo;
+
+    public GetAdminDTO getAdminById(Long adminId) {
+        Administrator admin = adminRepo.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+
+        return mapToGetAdminDTO(admin);
+    }
+
+    public UpdatedAdminDTO updateAdmin(Long adminId, UpdateAdminDTO updateAdminDTO) {
+        Administrator admin = adminRepo.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+
+        if (updateAdminDTO.getFirstName() != null && !updateAdminDTO.getFirstName().trim().isEmpty()) {
+            admin.setFirstName(updateAdminDTO.getFirstName().trim());
+        }
+        if (updateAdminDTO.getLastName() != null && !updateAdminDTO.getLastName().trim().isEmpty()) {
+            admin.setFirstName(updateAdminDTO.getLastName().trim());
+        }
+        if (updateAdminDTO.getPhone() != null && !updateAdminDTO.getPhone().trim().isEmpty()) {
+            admin.setPhoneNumber(updateAdminDTO.getPhone().trim());
+        }
+        if (updateAdminDTO.getAddress() != null && !updateAdminDTO.getAddress().trim().isEmpty()) {
+            admin.setAddress(updateAdminDTO.getAddress().trim());
+        }
+
+        Administrator savedAdmin = adminRepo.save(admin);
+        return mapToUpdatedAdminDTO(savedAdmin);
+    }
+
+    public UpdatedPasswordDTO updatePassword(Long adminId, UpdatePasswordDTO updatePasswordDTO) {
+        if (!updatePasswordDTO.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
+            return new UpdatedPasswordDTO(false, "Passwords do not match");
+        }
+
+        if (updatePasswordDTO.getPassword().length() < 8) {
+            return new UpdatedPasswordDTO(false, "Password must be at least 8 characters long");
+        }
+
+        Administrator admin = adminRepo.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+
+        if (!admin.getPassword().equals(updatePasswordDTO.getOldPassword())) {
+            return new UpdatedPasswordDTO(false, "Old password is incorrect");
+        }
+
+        admin.setPassword(updatePasswordDTO.getPassword());
+        adminRepo.save(admin);
+
+        return new UpdatedPasswordDTO(true, "Password updated successfully");
+    }
+
+    // Temporary methods before real mapper
+    private GetAdminDTO mapToGetAdminDTO(Administrator admin) {
+        return new GetAdminDTO(
+                admin.getId(),
+                admin.getEmail(),
+                admin.getFirstName(),
+                admin.getLastName(),
+                admin.getPhoneNumber(),
+                admin.getAddress()
+        );
+    }
+
+    private UpdatedAdminDTO mapToUpdatedAdminDTO(Administrator admin) {
+        return new UpdatedAdminDTO(
+                admin.getId(),
+                admin.getEmail(),
+                admin.getFirstName(),
+                admin.getLastName(),
+                admin.getPhoneNumber(),
+                admin.getAddress()
+        );
+    }
 
     public void blockUser() {
         // TODO

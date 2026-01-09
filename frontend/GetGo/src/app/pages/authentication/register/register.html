@@ -22,6 +22,11 @@
       <mat-icon matPrefix>mail</mat-icon>
     </mat-form-field>
 
+    <div *ngIf="form.get('email')?.invalid && (form.get('email')?.touched || form.get('email')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
+      <div *ngIf="form.get('email')?.hasError('required')">Email is required.</div>
+      <div *ngIf="form.get('email')?.hasError('email')">Enter a valid email.</div>
+    </div>
+
     <mat-form-field appearance="outline" floatLabel="always">
       <mat-label>First name</mat-label>
       <input
@@ -32,6 +37,10 @@
       />
       <mat-icon matPrefix>person</mat-icon>
     </mat-form-field>
+
+    <div *ngIf="form.get('firstName')?.invalid && (form.get('firstName')?.touched || form.get('firstName')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
+      <div *ngIf="form.get('firstName')?.hasError('required')">First name is required.</div>
+    </div>
 
     <mat-form-field appearance="outline" floatLabel="always">
       <mat-label>Last name</mat-label>
@@ -44,6 +53,10 @@
       <mat-icon matPrefix>person</mat-icon>
     </mat-form-field>
 
+    <div *ngIf="form.get('lastName')?.invalid && (form.get('lastName')?.touched || form.get('lastName')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
+      <div *ngIf="form.get('lastName')?.hasError('required')">Last name is required.</div>
+    </div>
+
     <mat-form-field appearance="outline" floatLabel="always">
       <mat-label>Address</mat-label>
       <input
@@ -55,6 +68,10 @@
       <mat-icon matPrefix>home</mat-icon>
     </mat-form-field>
 
+    <div *ngIf="form.get('address')?.invalid && (form.get('address')?.touched || form.get('address')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
+      <div *ngIf="form.get('address')?.hasError('required')">Address is required.</div>
+    </div>
+
     <mat-form-field appearance="outline" floatLabel="always">
       <mat-label>Phone number</mat-label>
       <input
@@ -65,6 +82,10 @@
       />
       <mat-icon matPrefix>phone</mat-icon>
     </mat-form-field>
+
+    <div *ngIf="form.get('phoneNumber')?.invalid && (form.get('phoneNumber')?.touched || form.get('phoneNumber')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
+      <div *ngIf="form.get('phoneNumber')?.hasError('required')">Phone number is required.</div>
+    </div>
 
     <!-- Password -->
     <mat-form-field appearance="outline" floatLabel="always">
@@ -87,6 +108,11 @@
       </button>
     </mat-form-field>
 
+    <div *ngIf="form.get('password')?.invalid && (form.get('password')?.touched || form.get('password')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
+      <div *ngIf="form.get('password')?.hasError('required')">Password is required.</div>
+      <div *ngIf="form.get('password')?.hasError('minlength')">Password must be at least 6 characters.</div>
+    </div>
+
     <!-- Confirm password -->
     <mat-form-field appearance="outline" floatLabel="always">
       <mat-label>Confirm password</mat-label>
@@ -107,6 +133,15 @@
         <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
       </button>
     </mat-form-field>
+
+    <div *ngIf="form.get('confirmPassword')?.invalid && (form.get('confirmPassword')?.touched || form.get('confirmPassword')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
+      <div *ngIf="form.get('confirmPassword')?.hasError('required')">Confirm password is required.</div>
+    </div>
+
+    <!-- Form level password mismatch -->
+    <div *ngIf="form.hasError('passwordsDontMatch') && (form.get('password')?.touched || form.get('confirmPassword')?.touched)" style="color: red; font-weight: 600; margin-bottom: 8px;">
+      Passwords do not match.
+    </div>
   </div>
 
   <button

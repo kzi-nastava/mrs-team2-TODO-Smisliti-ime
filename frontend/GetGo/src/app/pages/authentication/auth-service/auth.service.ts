@@ -11,9 +11,11 @@ export class AuthService {
 
   loginAs(role: UserRole) {
     this.role.set(role);
+    console.log('AuthService: loginAs called, role set to', role);
   }
 
   logout() {
     this.role.set(UserRole.Guest);
+    console.log('AuthService: logout called, role set to Guest');
   }
 }

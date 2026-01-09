@@ -10,8 +10,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UpdateAdminDTO {
-    private String firstName;
-    private String lastName;
+    private String name;
+    private String surname;
     private String phone;
     private String address;
 }

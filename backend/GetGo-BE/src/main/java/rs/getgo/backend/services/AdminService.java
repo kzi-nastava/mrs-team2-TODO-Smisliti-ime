@@ -31,14 +31,14 @@ public class AdminService {
         Administrator admin = adminRepo.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
 
-        if (updateAdminDTO.getFirstName() != null && !updateAdminDTO.getFirstName().trim().isEmpty()) {
-            admin.setFirstName(updateAdminDTO.getFirstName().trim());
+        if (updateAdminDTO.getName() != null && !updateAdminDTO.getName().trim().isEmpty()) {
+            admin.setName(updateAdminDTO.getName().trim());
         }
-        if (updateAdminDTO.getLastName() != null && !updateAdminDTO.getLastName().trim().isEmpty()) {
-            admin.setLastName(updateAdminDTO.getLastName().trim());
+        if (updateAdminDTO.getSurname() != null && !updateAdminDTO.getSurname().trim().isEmpty()) {
+            admin.setSurname(updateAdminDTO.getSurname().trim());
         }
         if (updateAdminDTO.getPhone() != null && !updateAdminDTO.getPhone().trim().isEmpty()) {
-            admin.setPhoneNumber(updateAdminDTO.getPhone().trim());
+            admin.setPhone(updateAdminDTO.getPhone().trim());
         }
         if (updateAdminDTO.getAddress() != null && !updateAdminDTO.getAddress().trim().isEmpty()) {
             admin.setAddress(updateAdminDTO.getAddress().trim());

@@ -21,6 +21,7 @@ body {
   gap: 16px;
   border: 2px solid #133E87
 }
+
 .stars {
   display: flex;
   flex-direction: row-reverse;
@@ -32,9 +33,11 @@ body {
   width: max-content;
   margin: 10px 0px;
 }
+
 .stars input {
   display: none;
 }
+
 .stars label {
   color: #bbb;
   font-size: 2.5em;
@@ -42,6 +45,7 @@ body {
   transition: color 0.2s;
   order: 0;
 }
+
 .stars input:checked ~ label,
 .stars label:hover,
 .stars label:hover ~ label {
@@ -50,12 +54,14 @@ body {
 textarea {
   width: 100%;
   min-height: 80px;
+  max-height: 120px;
+  height: auto;
   border-radius: 8px;
   border: 1px solid #ccc;
   padding: 8px;
   resize: vertical;
   font-family: inherit;
-  height: 200px;
+
 }
 button {
   background: #133E87;
@@ -73,10 +79,11 @@ button {
   display: flex;
   gap: 40px;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
   margin: 0 auto;
   max-width: 1100px;
   width: 100%;
+
 }
 
 .ratings-summary {
@@ -142,6 +149,13 @@ button {
 
 .comment-text {
   font-size: 1em;
+}
+
+.rating-form,
+.ratings-summary {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 

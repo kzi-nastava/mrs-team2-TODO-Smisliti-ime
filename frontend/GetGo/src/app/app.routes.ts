@@ -13,6 +13,7 @@ import { AdminProfile } from './admin/admin-profile/admin-profile';
 import { DriverRegistration } from './admin/driver-registration/driver-registration';
 import { OrderRide } from './passenger/order-ride/order-ride';
 import { FavoriteRides } from './passenger/favorite-rides/favorite-rides';
+import { RatingVehicleDriverComponent } from './passenger/rating-vehicle-driver/rating-vehicle-driver.component';
 
 export const routes: Routes = [
   { path: '', component: UnregisteredHomeComponent },
@@ -23,6 +24,7 @@ export const routes: Routes = [
   { path: 'ride', component: RideComponent},
   { path: 'driver/rides/:id', component: RideDetailsComponent},
   { path: 'passenger/passenger-profile', component: PassengerProfileInfo},
+  { path: 'passenger/rating-vehicle-driver', component: RatingVehicleDriverComponent},
   { path: 'driver/driver-profile', component: DriverProfile},
   { path: 'admin/admin-profile', component: AdminProfile},
   { path: 'admin/driver-registration', component: DriverRegistration},

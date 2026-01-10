@@ -61,13 +61,9 @@ public class AdminController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverDTO> registerDriver(
-            @RequestBody CreateDriverDTO request) {
+            @RequestBody CreateDriverDTO createDriverDTO) {
 
-        CreatedDriverDTO response = new CreatedDriverDTO();
-        response.setId(1L);
-        response.setEmail(request.getEmail());
-        response.setActivated(false);
-
+        CreatedDriverDTO response = adminService.registerDriver(createDriverDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

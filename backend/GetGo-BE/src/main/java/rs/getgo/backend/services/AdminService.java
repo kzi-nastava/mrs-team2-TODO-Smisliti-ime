@@ -8,6 +8,8 @@ import rs.getgo.backend.dtos.admin.UpdateAdminDTO;
 import rs.getgo.backend.dtos.admin.UpdatedAdminDTO;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
+import rs.getgo.backend.dtos.driver.CreateDriverDTO;
+import rs.getgo.backend.dtos.driver.CreatedDriverDTO;
 import rs.getgo.backend.dtos.request.*;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
@@ -16,6 +18,7 @@ import rs.getgo.backend.repositories.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,9 +35,69 @@ public class AdminService {
     @Autowired
     private AvatarChangeRequestRepository avatarChangeRequestRepo;
     @Autowired
+    private DriverActivationTokenRepository driverActivationTokenRepo;
+    @Autowired
     private FileStorageService fileStorageService;
     @Autowired
     private ModelMapper modelMapper;
+
+    public CreatedDriverDTO registerDriver(CreateDriverDTO createDriverDTO) {
+        Vehicle vehicle = fillVehicle(createDriverDTO);
+        Driver driver = fillDriver(createDriverDTO, vehicle);
+        Driver savedDriver = driverRepo.save(driver); // Should save both vehicle and driver due to CascadeType.ALL
+        DriverActivationToken token = createDriverActivationToken(savedDriver);
+        driverActivationTokenRepo.save(token);
+
+        // Mock email sending, doesn't matter what's done here
+        System.out.println("==============================================");
+        System.out.println("EMAIL SENT TO: " + driver.getEmail());
+        System.out.println("Subject: Activate Your Driver Account");
+        System.out.println("Your account has been created. Click the link below to set your password:");
+        System.out.println("This link expires in 24 hours.");
+        System.out.println("==============================================");
+
+        return modelMapper.map(savedDriver, CreatedDriverDTO.class);
+    }
+
+    // Move to separate service if tokens become used besides here
+    private static DriverActivationToken createDriverActivationToken(Driver driver) {
+        String tokenString = UUID.randomUUID().toString();
+        DriverActivationToken token = new DriverActivationToken();
+        token.setToken(tokenString);
+        token.setDriver(driver);
+        token.setCreatedAt(LocalDateTime.now());
+        token.setExpiresAt(LocalDateTime.now().plusHours(24));
+        token.setUsed(false);
+        return token;
+    }
+
+    private static Vehicle fillVehicle(CreateDriverDTO createDriverDTO) {
+        Vehicle vehicle = new Vehicle();
+        vehicle.setModel(createDriverDTO.getVehicleModel());
+        vehicle.setType(VehicleType.valueOf(createDriverDTO.getVehicleType()));
+        vehicle.setLicensePlate(createDriverDTO.getVehicleLicensePlate());
+        vehicle.setNumberOfSeats(createDriverDTO.getVehicleSeats());
+        vehicle.setIsBabyFriendly(createDriverDTO.getVehicleHasBabySeats());
+        vehicle.setIsPetFriendly(createDriverDTO.getVehicleAllowsPets());
+        vehicle.setIsAvailable(true);
+        return vehicle;
+    }
+
+    private Driver fillDriver(CreateDriverDTO createDriverDTO, Vehicle vehicle) {
+        Driver driver = new Driver();
+        driver.setEmail(createDriverDTO.getEmail());
+        driver.setName(createDriverDTO.getName());
+        driver.setSurname(createDriverDTO.getSurname());
+        driver.setPhone(createDriverDTO.getPhone());
+        driver.setAddress(createDriverDTO.getAddress());
+        driver.setProfilePictureUrl(fileStorageService.getDefaultProfilePicture());
+        driver.setActive(false);
+        driver.setActivated(false);
+        driver.setBlocked(false);
+        driver.setVehicle(vehicle);
+        // Password is set later
+        return driver;
+    }
 
     public GetAdminDTO getAdminById(Long adminId) {
         Administrator admin = adminRepo.findById(adminId)

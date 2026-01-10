@@ -4,23 +4,20 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
+import rs.getgo.backend.dtos.authentication.UpdateDriverPasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.GetDriverDTO;
 import rs.getgo.backend.dtos.driver.UpdateDriverPersonalDTO;
 import rs.getgo.backend.dtos.driver.UpdateDriverVehicleDTO;
 import rs.getgo.backend.dtos.request.CreatedDriverChangeRequestDTO;
-import rs.getgo.backend.model.entities.AvatarChangeRequest;
-import rs.getgo.backend.model.entities.Driver;
-import rs.getgo.backend.model.entities.PersonalChangeRequest;
-import rs.getgo.backend.model.entities.VehicleChangeRequest;
+import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
-import rs.getgo.backend.repositories.AvatarChangeRequestRepository;
-import rs.getgo.backend.repositories.DriverRepository;
-import rs.getgo.backend.repositories.PersonalChangeRequestRepository;
-import rs.getgo.backend.repositories.VehicleChangeRequestRepository;
+import rs.getgo.backend.repositories.*;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class DriverServiceImpl {
@@ -34,9 +31,67 @@ public class DriverServiceImpl {
     @Autowired
     private AvatarChangeRequestRepository avatarChangeRequestRepo;
     @Autowired
+    private DriverActivationTokenRepository driverActivationTokenRepo;
+    @Autowired
     private ModelMapper modelMapper;
     @Autowired
     private FileStorageService fileStorageService;
+
+    public GetActivationTokenDTO validateActivationToken(String token) {
+        Optional<DriverActivationToken> tokenOptional = driverActivationTokenRepo.findByToken(token);
+
+        if (tokenOptional.isEmpty()) {
+            return new GetActivationTokenDTO(false, null, "Invalid activation token");
+        }
+
+        DriverActivationToken activationToken = tokenOptional.get();
+
+        // Check if already used
+        if (activationToken.isUsed()) {
+            return new GetActivationTokenDTO(false, null, "Activation token has already been used");
+        }
+
+        // Check if expired
+        if (activationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return new GetActivationTokenDTO(false, null, "Activation token has expired");
+        }
+
+        // Token is valid
+        Driver driver = activationToken.getDriver();
+        return new GetActivationTokenDTO(true, driver.getEmail(), null);
+    }
+
+    public UpdatedPasswordDTO setDriverPassword(UpdateDriverPasswordDTO passwordDTO) {
+        if (!passwordDTO.getPassword().equals(passwordDTO.getConfirmPassword())) {
+            return new UpdatedPasswordDTO(false, "Passwords do not match");
+        }
+
+        Optional<DriverActivationToken> tokenOpt =
+                driverActivationTokenRepo.findByToken(passwordDTO.getToken());
+        if (tokenOpt.isEmpty()) {
+            return new UpdatedPasswordDTO(false, "Invalid activation token");
+        }
+        DriverActivationToken activationToken = tokenOpt.get();
+        if (activationToken.isUsed()) {
+            return new UpdatedPasswordDTO(false, "Activation token has already been used");
+        }
+        if (activationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return new UpdatedPasswordDTO(false, "Activation token expired");
+        }
+
+        // Set password and activate driver
+        Driver driver = activationToken.getDriver();
+        driver.setPassword(passwordDTO.getPassword());
+        driver.setActivated(true);
+        driverRepo.save(driver);
+
+        // Mark token as used
+        activationToken.setUsed(true);
+        activationToken.setUsedAt(LocalDateTime.now());
+        driverActivationTokenRepo.save(activationToken);
+
+        return new UpdatedPasswordDTO(true, "Password set successfully. You can now log in.");
+    }
 
     public GetDriverDTO getDriverById(Long driverId) {
         Driver driver = driverRepo.findById(driverId)

@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter @Setter
-@Table(name="activation_tokens")
+@Table(name="driver_activation_tokens")
 @NoArgsConstructor @AllArgsConstructor
-public class ActivationToken {
+public class DriverActivationToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

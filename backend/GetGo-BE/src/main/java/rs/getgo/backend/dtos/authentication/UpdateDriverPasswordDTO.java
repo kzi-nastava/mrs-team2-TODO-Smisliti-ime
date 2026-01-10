@@ -9,8 +9,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class UpdatePasswordDTO {
-    private String oldPassword;
+public class UpdateDriverPasswordDTO {
+    private String token;
     private String password;
     private String confirmPassword;
 }

@@ -16,4 +16,5 @@ public class UpdatedAdminDTO {
     private String surname;
     private String phone;
     private String address;
+    private String profilePictureUrl;
 }

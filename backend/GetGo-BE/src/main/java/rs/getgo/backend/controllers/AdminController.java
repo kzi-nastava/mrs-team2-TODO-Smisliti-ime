@@ -1,8 +1,11 @@
 package rs.getgo.backend.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import rs.getgo.backend.dtos.admin.GetAdminDTO;
 import rs.getgo.backend.dtos.admin.UpdateAdminDTO;
 import rs.getgo.backend.dtos.admin.UpdatedAdminDTO;
+import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
+import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.*;
 import rs.getgo.backend.dtos.report.GetReportDTO;
 import rs.getgo.backend.dtos.user.CreatedUserDTO;
@@ -10,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rs.getgo.backend.services.AdminService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,17 +22,20 @@ import java.util.List;
 @RequestMapping("/api/admin")
 public class AdminController {
 
+    @Autowired
+    private AdminService adminService;
+
     // 2.9.3 – Block user
     @PutMapping("/users/{id}/block")
     public ResponseEntity<CreatedUserDTO> blockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Blocked", "User");
+        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Blocked", "User", "+38178687868");
         return ResponseEntity.ok(response);
     }
 
     // 2.9.3 – Unblock user
     @PutMapping("/users/{id}/unblock")
     public ResponseEntity<CreatedUserDTO> unblockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "unblocked@getgo.com", "Active", "User");
+        CreatedUserDTO response = new CreatedUserDTO(id, "unblocked@getgo.com", "Active", "User", "+38178687868");
         return ResponseEntity.ok(response);
     }
 
@@ -45,7 +52,7 @@ public class AdminController {
     // 2.9.3 – Create admin profile
     @PostMapping("/create")
     public ResponseEntity<CreatedUserDTO> createAdmin() {
-        CreatedUserDTO response = new CreatedUserDTO(10L, "admin@getgo.com", "Admin", "User");
+        CreatedUserDTO response = new CreatedUserDTO(10L, "admin@getgo.com", "Admin", "User", "+38178687868");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -67,11 +74,8 @@ public class AdminController {
     // 2.3 - User profile
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetAdminDTO> getProfile() {
-        GetAdminDTO response = new GetAdminDTO();
-        response.setId(3L);
-        response.setEmail("admin@example.com");
-        response.setName("Admin");
-
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        GetAdminDTO response = adminService.getAdminById(adminId);
         return ResponseEntity.ok(response);
     }
 
@@ -80,12 +84,23 @@ public class AdminController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedAdminDTO> updateProfile(
-            @RequestBody UpdateAdminDTO request) {
+            @RequestBody UpdateAdminDTO updateAdminDTO) {
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        UpdatedAdminDTO response = adminService.updateProfile(adminId, updateAdminDTO);
+        return ResponseEntity.ok(response);
+    }
 
-        UpdatedAdminDTO response = new UpdatedAdminDTO();
-        response.setId(3L);
-        response.setName(request.getName());
-
+    // 2.3 - User profile (Change admin password)
+    @PutMapping(value = "/profile/password",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UpdatedPasswordDTO> updatePassword(
+            @RequestBody UpdatePasswordDTO updatePasswordDTO) {
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        UpdatedPasswordDTO response = adminService.updatePassword(adminId, updatePasswordDTO);
+        if (!response.getSuccess()) {
+            return ResponseEntity.badRequest().body(response);
+        }
         return ResponseEntity.ok(response);
     }
 

@@ -13,6 +13,7 @@ import lombok.Setter;
 public class Driver extends User {
 
     private boolean isActive;
+    private String profilePictureUrl;
 
     @OneToOne
     @JoinColumn(name = "vehicle_id")

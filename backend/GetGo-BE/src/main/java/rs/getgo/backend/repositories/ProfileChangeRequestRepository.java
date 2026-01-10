@@ -5,3 +5,6 @@ import rs.getgo.backend.model.entities.ProfileChangeRequest;
 
 public interface ProfileChangeRequestRepository extends JpaRepository<ProfileChangeRequest, Long> {
 }
+
+
+// todo: remove

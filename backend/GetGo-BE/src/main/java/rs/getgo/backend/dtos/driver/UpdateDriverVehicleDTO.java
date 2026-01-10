@@ -1,22 +1,15 @@
 package rs.getgo.backend.dtos.driver;
 
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public class UpdateDriverDTO {
-    // Personal info
-    private String name;
-    private String surname;
-    private String phone;
-    private String address;
-
-    // Vehicle info
+public class UpdateDriverVehicleDTO {
     private String vehicleModel;
     private String vehicleType;
     private String vehicleLicensePlate;

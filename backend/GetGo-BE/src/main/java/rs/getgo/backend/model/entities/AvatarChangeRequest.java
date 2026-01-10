@@ -11,39 +11,29 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter @Setter
-@Table(name="profile_change_requests")
+@Table(name="avatar_change_requests")
 @NoArgsConstructor @AllArgsConstructor
-public class ProfileChangeRequest {
+public class AvatarChangeRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String newEmail;
-    private String newFirstName;
-    private String newLastName;
-    private String newAddress;
-    private String newPhoneNumber;
-    private String newProfilePicture;
-
-    private String newVehicleModel;
-    private String newVehicleLicensePlate;
-    private Integer newVehicleSeats;
-    private Boolean newVehicleBabyFriendly;
-    private Boolean newVehiclePetFriendly;
+    private String requestedProfilePictureUrl;
 
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
 
-    private LocalDateTime requestedAt;
+    private LocalDateTime createdAt;
     private LocalDateTime reviewedAt;
 
     @ManyToOne
+    @JoinColumn(name = "driver_id")
     private Driver driver;
 
     @ManyToOne
     @JoinColumn(name = "reviewed_by_admin_id")
     private Administrator reviewedBy;
-}
 
-// todo: remove
+    private String rejectionReason;
+}

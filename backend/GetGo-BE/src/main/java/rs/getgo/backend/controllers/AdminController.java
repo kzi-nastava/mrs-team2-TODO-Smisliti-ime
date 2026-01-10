@@ -16,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.services.AdminService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -106,28 +105,32 @@ public class AdminController {
     }
 
     // 2.3 - Get all pending personal change requests
-    @GetMapping(value = "/driver-change-requests/personal", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/driver-change-requests/personal",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetPersonalDriverChangeRequestDTO>> getPendingPersonalChangeRequests() {
         List<GetPersonalDriverChangeRequestDTO> response = adminService.getPendingPersonalChangeRequests();
         return ResponseEntity.ok(response);
     }
 
     // 2.3 - Get all pending vehicle change requests
-    @GetMapping(value = "/driver-change-requests/vehicle", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/driver-change-requests/vehicle",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetDriverVehicleChangeRequestDTO>> getPendingVehicleChangeRequests() {
         List<GetDriverVehicleChangeRequestDTO> response = adminService.getPendingVehicleChangeRequests();
         return ResponseEntity.ok(response);
     }
 
     // 2.3 - Get all pending picture change requests
-    @GetMapping(value = "/driver-change-requests/picture", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/driver-change-requests/picture",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetDriverAvatarChangeRequestDTO>> getPendingPictureChangeRequests() {
         List<GetDriverAvatarChangeRequestDTO> response = adminService.getPendingAvatarChangeRequests();
         return ResponseEntity.ok(response);
     }
 
     // 2.3 - Get specific personal change request
-    @GetMapping(value = "/driver-change-requests/personal/{requestId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/driver-change-requests/personal/{requestId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetPersonalDriverChangeRequestDTO> getPersonalChangeRequest(
             @PathVariable Long requestId) {
         GetPersonalDriverChangeRequestDTO response = adminService.getPersonalChangeRequest(requestId);
@@ -135,7 +138,8 @@ public class AdminController {
     }
 
     // 2.3 - Get specific vehicle change request
-    @GetMapping(value = "/driver-change-requests/vehicle/{requestId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/driver-change-requests/vehicle/{requestId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverVehicleChangeRequestDTO> getVehicleChangeRequest(
             @PathVariable Long requestId) {
         GetDriverVehicleChangeRequestDTO response = adminService.getVehicleChangeRequest(requestId);
@@ -143,7 +147,8 @@ public class AdminController {
     }
 
     // 2.3 - Get specific picture change request
-    @GetMapping(value = "/driver-change-requests/picture/{requestId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/driver-change-requests/picture/{requestId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverAvatarChangeRequestDTO> getPictureChangeRequest(
             @PathVariable Long requestId) {
         GetDriverAvatarChangeRequestDTO response = adminService.getAvatarChangeRequest(requestId);
@@ -151,7 +156,8 @@ public class AdminController {
     }
 
     // 2.3 - Approve personal change request
-    @PutMapping(value = "/driver-change-requests/personal/{requestId}/approve", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/driver-change-requests/personal/{requestId}/approve",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approvePersonalChangeRequest(
             @PathVariable Long requestId) {
         Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
@@ -160,7 +166,8 @@ public class AdminController {
     }
 
     // 2.3 - Approve vehicle change request
-    @PutMapping(value = "/driver-change-requests/vehicle/{requestId}/approve", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/driver-change-requests/vehicle/{requestId}/approve",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approveVehicleChangeRequest(
             @PathVariable Long requestId) {
         Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
@@ -169,7 +176,8 @@ public class AdminController {
     }
 
     // 2.3 - Approve picture change request
-    @PutMapping(value = "/driver-change-requests/picture/{requestId}/approve", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/driver-change-requests/picture/{requestId}/approve",
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approvePictureChangeRequest(
             @PathVariable Long requestId) {
         Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
@@ -185,7 +193,8 @@ public class AdminController {
             @PathVariable Long requestId,
             @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
         Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
-        AcceptDriverChangeRequestDTO response = adminService.rejectPersonalChangeRequest(requestId, adminId, rejectDriverChangeRequestDTO);
+        AcceptDriverChangeRequestDTO response = adminService.rejectPersonalChangeRequest(
+                requestId, adminId, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);
     }
 
@@ -197,7 +206,8 @@ public class AdminController {
             @PathVariable Long requestId,
             @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
         Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
-        AcceptDriverChangeRequestDTO response = adminService.rejectVehicleChangeRequest(requestId, adminId, rejectDriverChangeRequestDTO);
+        AcceptDriverChangeRequestDTO response = adminService.rejectVehicleChangeRequest(
+                requestId, adminId, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);
     }
 
@@ -209,7 +219,8 @@ public class AdminController {
             @PathVariable Long requestId,
             @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
         Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
-        AcceptDriverChangeRequestDTO response = adminService.rejectAvatarChangeRequest(requestId, adminId, rejectDriverChangeRequestDTO);
+        AcceptDriverChangeRequestDTO response = adminService.rejectAvatarChangeRequest(
+                requestId, adminId, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);
     }
 

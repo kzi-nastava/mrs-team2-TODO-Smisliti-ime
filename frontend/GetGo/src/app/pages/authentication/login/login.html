@@ -1,4 +1,4 @@
-<form *ngIf="!showRoleSelector" [formGroup]="createLoginForm" (ngSubmit)="login()">
+<form [formGroup]="createLoginForm" (ngSubmit)="login()">
   <h1>Welcome Back</h1>
   <p class="subtitle">Please enter your credentials to continue</p>
 
@@ -8,11 +8,22 @@
     <mat-icon matPrefix>person</mat-icon>
   </mat-form-field>
 
+  <!-- Error message for email -->
+  <div *ngIf="createLoginForm.get('email')?.invalid && (createLoginForm.get('email')?.touched || createLoginForm.get('email')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
+    <div *ngIf="createLoginForm.get('email')?.hasError('required')">Email is required.</div>
+    <div *ngIf="createLoginForm.get('email')?.hasError('email')">Enter a valid email address.</div>
+  </div>
+
   <mat-form-field appearance="outline" floatLabel="always">
     <mat-label>Password</mat-label>
     <input matInput type="password" placeholder="Enter your password" formControlName="password"/>
     <mat-icon matPrefix>lock</mat-icon>
   </mat-form-field>
+
+  <!-- Error message for password -->
+  <div *ngIf="createLoginForm.get('password')?.invalid && (createLoginForm.get('password')?.touched || createLoginForm.get('password')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
+    <div *ngIf="createLoginForm.get('password')?.hasError('required')">Password is required.</div>
+  </div>
 
   <div class="checkbox-container">
     <mat-checkbox color="primary">Stay logged in</mat-checkbox>
@@ -25,7 +36,6 @@
     mat-raised-button
     color="primary"
     type="submit"
-    (click)="login()"
   >
     Login
   </button>
@@ -35,9 +45,3 @@
     <a [routerLink]="['/register']">Register</a>
   </div>
 </form>
-
-<app-role-selector
-  *ngIf="showRoleSelector"
-  (selectRole)="onRoleSelected($event)"
-  (close)="showRoleSelector = false">
-</app-role-selector>

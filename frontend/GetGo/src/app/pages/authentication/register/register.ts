@@ -5,12 +5,15 @@ import {RouterLink} from '@angular/router';
 import {MatButtonModule, MatIconButton} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
+import { HttpClient } from '@angular/common/http';
+import {CommonModule} from '@angular/common';
 
 @Component({
   selector: 'app-register',
   templateUrl: './register.html',
   styleUrls: ['./register.css'],
   imports: [
+    CommonModule,
     RouterLink,
     MatButtonModule,
     MatIconModule,
@@ -27,7 +30,7 @@ export class RegisterComponent {
   hideConfirmPassword = true;
   isSubmitting = false;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private http: HttpClient) {
     this.form = this.fb.group(
       {
         email: ['', [Validators.required, Validators.email]],
@@ -51,6 +54,43 @@ export class RegisterComponent {
     return password === confirm ? null : { passwordsDontMatch: true };
   }
 
+  // New helper: log per-field validation errors
+  private logValidationErrors(): void {
+    const controls: { [key: string]: AbstractControl | null } = {
+      email: this.form.get('email'),
+      firstName: this.form.get('firstName'),
+      lastName: this.form.get('lastName'),
+      address: this.form.get('address'),
+      phoneNumber: this.form.get('phoneNumber'),
+      password: this.form.get('password'),
+      confirmPassword: this.form.get('confirmPassword')
+    };
+
+    for (const [name, control] of Object.entries(controls)) {
+      if (!control) {
+        console.warn(`Register validation: missing control ${name}`);
+        continue;
+      }
+      if (control.invalid) {
+        if (control.hasError('required')) {
+          console.log(`Register validation: ${name} is required`);
+        } else if (name === 'email' && control.hasError('email')) {
+          console.log('Register validation: email format is invalid');
+        } else if (name === 'password' && control.hasError('minlength')) {
+          console.log('Register validation: password must be at least 6 characters');
+        } else {
+          console.log(`Register validation: ${name} invalid`, control.errors);
+        }
+      }
+      // mark touched so errors show in UI
+      control.markAsTouched();
+    }
+
+    if (this.form.errors && this.form.errors["passwordsDontMatch"]) {
+      console.log('Register validation: passwords do not match');
+    }
+  }
+
   get password() {
     return this.form.get('password');
   }
@@ -61,7 +101,9 @@ export class RegisterComponent {
 
   submit(): void {
     if (this.form.invalid) {
+      this.logValidationErrors();
       this.form.markAllAsTouched();
+      console.log('Register: form invalid, abort submit');
       return;
     }
 
@@ -69,7 +111,7 @@ export class RegisterComponent {
 
     const user: User = {
       email: this.form.value.email,
-      username: this.form.value.username,
+      username: this.form.value.username || this.form.value.email, // fallback to email
       firstName: this.form.value.firstName,
       lastName: this.form.value.lastName,
       password: this.form.value.password,
@@ -78,11 +120,19 @@ export class RegisterComponent {
       role: this.form.value.role || UserRole.Passenger // default role
     };
 
-    // TODO: call API for registration
-    console.log('Register user:', user);
+    console.log('Register: sending user to /api/auth/register', user);
 
-    setTimeout(() => {
-      this.isSubmitting = false;
-    }, 1000);
+    type RegisterResponse = { id?: string };
+
+    this.http.post<RegisterResponse>('/api/auth/register', user).subscribe({
+      next: (res) => {
+        this.isSubmitting = false;
+        console.log('Register: success', res);
+      },
+      error: (err) => {
+        this.isSubmitting = false;
+        console.error('Register: failed', err);
+      }
+    });
   }
 }

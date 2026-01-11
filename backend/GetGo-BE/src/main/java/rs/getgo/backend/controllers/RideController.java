@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rs.getgo.backend.services.RideTrackingService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,22 +21,27 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/rides")
+@CrossOrigin(origins = "http://localhost:4200")
 public class RideController {
 
     private final RideEstimateService rideEstimateService;
     private final RideService rideService;
+    private final RideTrackingService rideTrackingService;
 
-    public RideController(RideEstimateService rideEstimateService, RideService rideService) {
+    public RideController(RideEstimateService rideEstimateService, RideService rideService, RideTrackingService rideTrackingService) {
         this.rideEstimateService = rideEstimateService;
         this.rideService = rideService;
+        this.rideTrackingService = rideTrackingService;
     }
 
     // 2.6.2 – Track ride
     @GetMapping(value = "/{id}/tracking", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetRideTrackingDTO> trackRide(@PathVariable("id") Long id) {
-        GetRideTrackingDTO ride = new GetRideTrackingDTO(id, 44.8176, 20.4569, 15.0);
+//        GetRideTrackingDTO ride = new GetRideTrackingDTO(id, 44.8176, 20.4569, 15.0);
+        GetRideTrackingDTO ride = rideTrackingService.getRideTracking(id);
 
-        return new ResponseEntity<GetRideTrackingDTO>(ride, HttpStatus.OK);
+//        return new ResponseEntity<GetRideTrackingDTO>(ride, HttpStatus.OK);
+        return ResponseEntity.ok(ride);
     }
 
     // 2.6.2 – Create inconsistency report

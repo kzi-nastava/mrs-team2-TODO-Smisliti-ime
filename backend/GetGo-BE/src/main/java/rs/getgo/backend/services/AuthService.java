@@ -46,9 +46,9 @@ public class AuthService {
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPassword(request.getPassword());
-        user.setFirstName(request.getName());
-        user.setLastName(request.getSurname());
-        user.setPhoneNumber(request.getPhone());
+        user.setName(request.getName());
+        user.setSurname(request.getSurname());
+        user.setPhone(request.getPhone());
         user.setBlocked(false);
 
         User saved = userRepository.save(user);
@@ -56,8 +56,9 @@ public class AuthService {
         return new CreatedUserDTO(
                 saved.getId(),
                 saved.getEmail(),
-                saved.getFirstName(),
-                saved.getLastName()
+                saved.getName(),
+                saved.getSurname(),
+                saved.getPhone()
         );
     }
 

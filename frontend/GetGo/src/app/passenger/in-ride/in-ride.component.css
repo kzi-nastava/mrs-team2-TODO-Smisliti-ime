@@ -57,9 +57,8 @@
 
 .ride-progress {
   margin-top: 12px;
-  display: flex;
+  display: block;
   align-items: center;
-  gap: 10px;
   flex-wrap: wrap;
 
 }
@@ -72,16 +71,17 @@
 
 .progress-value {
   font-size: 0.95em;
-  color: #133E87;
-  margin-left: 8px;
+  color: #0072C3;
+  margin-left: 0px;
+  font-weight: bold;
 }
 
 .progress-bar-bg {
   background: #d3d3d3;
   border-radius: 6px;
-  width: 120px;
+  width: 100%;
   height: 8px;
-  margin: 0 8px;
+  margin: 0 0px;
   overflow: hidden;
   display: inline-block;
   vertical-align: middle;
@@ -91,6 +91,26 @@
   background: #133E87;
   height: 100%;
   border-radius: 6px;
+}
+
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: -5px;
+}
+
+.start-icon {
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: middle;
+}
+
+.finish-icon {
+  width: 2em;
+  height: 1.2em;
+  vertical-align: middle;
+  margin: 0 -6px;
 }
 
 .ride-time {

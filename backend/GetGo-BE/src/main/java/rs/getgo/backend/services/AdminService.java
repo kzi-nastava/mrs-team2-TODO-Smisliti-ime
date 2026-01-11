@@ -39,22 +39,19 @@ public class AdminService {
     @Autowired
     private FileStorageService fileStorageService;
     @Autowired
+    private EmailService emailService;
+    @Autowired
     private ModelMapper modelMapper;
 
     public CreatedDriverDTO registerDriver(CreateDriverDTO createDriverDTO) {
         Vehicle vehicle = fillVehicle(createDriverDTO);
         Driver driver = fillDriver(createDriverDTO, vehicle);
         Driver savedDriver = driverRepo.save(driver); // Should save both vehicle and driver due to CascadeType.ALL
+
         DriverActivationToken token = createDriverActivationToken(savedDriver);
         driverActivationTokenRepo.save(token);
 
-        // Mock email sending, doesn't matter what's done here
-        System.out.println("==============================================");
-        System.out.println("EMAIL SENT TO: " + driver.getEmail());
-        System.out.println("Subject: Activate Your Driver Account");
-        System.out.println("Your account has been created. Click the link below to set your password:");
-        System.out.println("This link expires in 24 hours.");
-        System.out.println("==============================================");
+        emailService.sendActivationEmail(savedDriver.getEmail(), token.getToken());
 
         return modelMapper.map(savedDriver, CreatedDriverDTO.class);
     }

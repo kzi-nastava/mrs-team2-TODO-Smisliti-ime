@@ -1,0 +1,80 @@
+<div class="main-container">
+
+  <div class="ride-status">
+<!--    <p>Loading: {{ loading() }}</p>-->
+<!--    <pre>{{ tracking() | json }}</pre>-->
+
+
+    <h2>On my way</h2>
+    <div *ngIf="loading()"> Loading ride... </div>
+
+
+
+    <div *ngIf="tracking() as ride; else loadingBlock" class="ride-info-box">
+
+      <div class="ride-address">
+        <img src="assets/images/location.png" class="start-icon" />
+        {{ ride.startAddress }}
+      </div>
+
+      <div class="ride-address">
+        <img src="assets/images/finish.png" class="finish-icon" />
+        {{ ride.destinationAddress }}
+      </div>
+
+      <div class="ride-progress">
+        <p class="progress-label">Your progress</p>
+
+        <div class="progress-row">
+          <span class="progress-value"> {{ progressPercent() }}% to complete </span>
+          <span class="ride-time"> &#128337; {{ ride.estimatedTime }} min </span>
+        </div>
+
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fg" [style.width.%]="progressPercent()"> </div>
+        </div>
+      </div>
+    </div>
+
+
+    <ng-template #noRide>
+      <p>No active ride</p>
+    </ng-template>
+
+    <ng-template #loadingBlock>
+      <p>Loading ride...</p>
+    </ng-template>
+<!--    <div class="ride-info-box">-->
+<!--      <div class="ride-address">-->
+<!--        <img src="assets/images/location.png" alt="Start location" class="start-icon" />-->
+<!--        Zlatne grede 4-->
+<!--      </div>-->
+<!--      <div class="ride-address">-->
+<!--        <img src="assets/images/finish.png" alt="Finish" class="finish-icon" />-->
+<!--        Trg Dositeja Obradovića 6-->
+<!--      </div>-->
+<!--      <div class="ride-progress">-->
+<!--        <p class="progress-label">Your progress</p>-->
+<!--        <div class="progress-row">-->
+<!--          <span class="progress-value">42% to complete</span>-->
+<!--          <span class="ride-time">&#128337; 39min</span>-->
+<!--        </div>-->
+<!--        <div class="progress-bar-bg">-->
+<!--          <div class="progress-bar-fg" style="width: 42%;"></div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+    <button class="report-route-btn" (click)="showReportForm = true">Report route</button>
+    <div *ngIf="showReportForm" class="report-form">
+      <label for="reportText">Describe the issue:</label>
+      <textarea id="reportText" [(ngModel)]="reportText" placeholder="Enter your note..."></textarea>
+      <button (click)="submitReport()">Submit</button>
+      <button class="cancel-btn" (click)="showReportForm = false">Cancel</button>
+    </div>
+    <button class="panic-btn">PANIC</button>
+  </div>
+
+  <div class="map-container">
+    <app-ride-tracking-map></app-ride-tracking-map>
+  </div>
+</div>

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
@@ -15,7 +16,8 @@ import { HttpClient } from '@angular/common/http'; // added
     ReactiveFormsModule,
     MatIcon,
     MatInput,
-    MatButton
+    MatButton,
+    CommonModule
   ],
   templateUrl: './forgot-password.html',
   styleUrls: ['./forgot-password.css']

@@ -1,12 +1,12 @@
 package rs.getgo.backend.controllers;
 
+
+import org.springframework.beans.factory.annotation.Autowired;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
-import rs.getgo.backend.dtos.driver.CreatedDriverChangeRequestDTO;
-import rs.getgo.backend.dtos.driver.GetActiveDriverLocationDTO;
-import rs.getgo.backend.dtos.driver.GetDriverDTO;
-import rs.getgo.backend.dtos.driver.UpdateDriverDTO;
+import rs.getgo.backend.dtos.driver.*;
+import rs.getgo.backend.dtos.request.CreatedDriverChangeRequestDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import rs.getgo.backend.services.DriverServiceImpl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,6 +25,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/drivers")
 public class DriverController {
+
+    @Autowired
+    private DriverServiceImpl driverService;
+
     // 2.9.2
     @GetMapping(value = "/{id}/rides", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetRideDTO>> getDriverRides(
@@ -80,42 +85,56 @@ public class DriverController {
     // 2.3 - User profile
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverDTO> getProfile() {
-
-        GetDriverDTO response = new GetDriverDTO();
-        response.setId(2L);
-        response.setEmail("driver@example.com");
-        response.setName("Driver");
-        response.setRecentHoursWorked(6);
-
+        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+        GetDriverDTO response = driverService.getDriverById(driverId);
         return ResponseEntity.ok(response);
     }
 
-    // 2.3 - User profile
-    @PutMapping(value = "/profile",
+    // 2.3 - User profile (Request personal info change)
+    @PutMapping(value = "/profile/personal",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedDriverChangeRequestDTO> updateProfile(
-            @RequestBody UpdateDriverDTO request) {
-
-        CreatedDriverChangeRequestDTO response = new CreatedDriverChangeRequestDTO();
-        response.setRequestId(1L);
-        response.setStatus("PENDING");
-
+    public ResponseEntity<CreatedDriverChangeRequestDTO> updatePersonalInfo(
+            @RequestBody UpdateDriverPersonalDTO updateDriverPersonalDTO) {
+        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+        CreatedDriverChangeRequestDTO response = driverService.requestPersonalInfoChange(driverId, updateDriverPersonalDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // 2.3 - User profile
+    // 2.3 - User profile (Request vehicle info change)
+    @PutMapping(value = "/profile/vehicle",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CreatedDriverChangeRequestDTO> updateVehicleInfo(
+            @RequestBody UpdateDriverVehicleDTO updateDriverVehicleDTO) {
+        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+        CreatedDriverChangeRequestDTO response = driverService.requestVehicleInfoChange(driverId, updateDriverVehicleDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // 2.3 - User profile (Request profile picture change)
     @PostMapping(value = "/profile/picture",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverChangeRequestDTO> uploadProfilePicture(
             @RequestParam("file") MultipartFile file) {
-
-        CreatedDriverChangeRequestDTO response = new CreatedDriverChangeRequestDTO();
-        response.setRequestId(2L);
-        response.setStatus("PENDING");
-
+        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+        CreatedDriverChangeRequestDTO response = driverService.requestProfilePictureChange(driverId, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // 2.3 - User profile (Change driver password)
+    @PutMapping(value = "/profile/password",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UpdatedPasswordDTO> updatePassword(
+            @RequestBody UpdatePasswordDTO updatePasswordDTO) {
+        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+        UpdatedPasswordDTO response = driverService.updatePassword(driverId, updatePasswordDTO);
+        if (!response.getSuccess()) {
+            return ResponseEntity.badRequest().body(response);
+        }
+        return ResponseEntity.ok(response);
     }
 
     // 2.4.1 - Calling a ride

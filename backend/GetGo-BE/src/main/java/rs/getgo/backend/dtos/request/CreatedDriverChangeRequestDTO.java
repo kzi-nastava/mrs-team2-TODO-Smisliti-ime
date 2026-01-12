@@ -1,8 +1,8 @@
-package rs.getgo.backend.dtos.driver;
+package rs.getgo.backend.dtos.request;
 
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @NoArgsConstructor

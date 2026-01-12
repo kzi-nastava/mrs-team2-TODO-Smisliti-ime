@@ -12,10 +12,11 @@ import lombok.Setter;
 @NoArgsConstructor @AllArgsConstructor
 public class Driver extends User {
 
-    private boolean isActive;
+    private boolean isActive; // Is driver currently active on the app
+    private boolean isActivated; // Is driver's account activated
     private String profilePictureUrl;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "vehicle_id")
     private Vehicle vehicle;
 }

@@ -1,5 +1,6 @@
 package rs.getgo.backend.services;
 
+import lombok.Getter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,6 +15,7 @@ import java.util.UUID;
 public class FileStorageService {
 
     private final Path fileStorageLocation;
+    @Getter
     private final String defaultProfilePicture;
     private final String baseUrl;
 
@@ -67,4 +69,5 @@ public class FileStorageService {
     public String getFileUrl(String filename) {
         return baseUrl + filename;
     }
+
 }

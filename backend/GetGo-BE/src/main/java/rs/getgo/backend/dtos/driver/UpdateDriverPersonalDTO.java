@@ -9,10 +9,9 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class CreatedDriverDTO {
-    private Long id;
-    private String email;
+public class UpdateDriverPersonalDTO {
     private String name;
     private String surname;
+    private String phone;
     private String address;
 }

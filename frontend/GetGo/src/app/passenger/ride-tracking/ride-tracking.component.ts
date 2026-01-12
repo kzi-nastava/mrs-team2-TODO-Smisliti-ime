@@ -55,13 +55,30 @@ export class RideTrackingComponent implements OnInit{
     const ride = this.tracking();
     if (!ride) return 0;
 
-    return 41; // temporary
+    return 42; // temporary
   }
 
 
 
   submitReport() {
-    this.showReportForm = false;
-    this.reportText = '';
+//     this.showReportForm = false;
+//     this.reportText = '';
+
+  if (!this.reportText.trim()) return;
+
+  console.log("Submitting report:", this.reportText);
+
+  this.rideTrackingService.createInconsistencyReport({ text: this.reportText })
+    .subscribe({
+      next: (response) => {
+        console.log("Report saved", response);
+        this.showReportForm = false;
+        this.reportText = '';
+      },
+      error: (error) => {
+        console.error("Error saving report", error);
+      }
+    });
+
   }
 }

@@ -66,17 +66,22 @@ export class RideTrackingComponent implements OnInit{
 
   if (!this.reportText.trim()) return;
 
+  const textToSend = this.reportText;
+  this.showReportForm = false;
+  this.reportText = '';
+
   console.log("Submitting report:", this.reportText);
 
-  this.rideTrackingService.createInconsistencyReport({ text: this.reportText })
+  this.rideTrackingService.createInconsistencyReport({ text: textToSend })
     .subscribe({
       next: (response) => {
         console.log("Report saved", response);
-        this.showReportForm = false;
-        this.reportText = '';
       },
       error: (error) => {
         console.error("Error saving report", error);
+        // in case of error, we can show the form again with the text
+        this.reportText = textToSend;
+        this.showReportForm = true;
       }
     });
 

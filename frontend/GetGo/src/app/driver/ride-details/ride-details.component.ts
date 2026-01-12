@@ -1,7 +1,7 @@
 import { Component, Signal, computed } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { RideService } from '../service/ride.service';
-import { Ride } from '../model/ride.model';
+import { Ride, GetRideDTO } from '../model/ride.model';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -14,7 +14,7 @@ import { CommonModule } from '@angular/common';
 export class RideDetailsComponent {
   rideId!: number;
 
-  ride: Signal<Ride | undefined>;
+  ride: Signal<GetRideDTO | undefined>;
 
   constructor(private route: ActivatedRoute, private rideService: RideService) {
     this.rideId = Number(this.route.snapshot.paramMap.get('id'));

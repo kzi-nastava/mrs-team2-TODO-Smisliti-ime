@@ -7,6 +7,7 @@ import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
 import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
+import rs.getgo.backend.model.entities.InconsistencyReport;
 import rs.getgo.backend.services.RideEstimateService;
 import rs.getgo.backend.services.RideService;
 import org.springframework.http.HttpStatus;
@@ -47,10 +48,13 @@ public class RideController {
     // 2.6.2 – Create inconsistency report
     @PostMapping(value = "/{rideId}/inconsistencies", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedInconsistencyReportDTO> createInconsistencyReport(@RequestBody CreateInconsistencyReportDTO report, @PathVariable Long rideId) throws Exception {
-        CreatedInconsistencyReportDTO savedInconsistencyReport = new CreatedInconsistencyReportDTO(1L, rideId, 501L, report.getText());
+//        CreatedInconsistencyReportDTO savedInconsistencyReport = new CreatedInconsistencyReportDTO(1L, rideId, 501L, report.getText());
+
+        CreatedInconsistencyReportDTO savedReportDTO = rideTrackingService.saveInconsistencyReport(rideId, report);
 
 
-        return new ResponseEntity<CreatedInconsistencyReportDTO>(savedInconsistencyReport, HttpStatus.CREATED);
+//        return new ResponseEntity<CreatedInconsistencyReportDTO>(savedInconsistencyReport, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedReportDTO);
     }
 
     // 2.7 – Finish ride

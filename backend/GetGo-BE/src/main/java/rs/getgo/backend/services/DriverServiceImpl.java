@@ -32,9 +32,10 @@ public class DriverServiceImpl implements DriverService {
         for (CompletedRide r : rides) {
 
             // filtering by startDate
-            if (startDate != null && r.getScheduledTime().toLocalDate().isBefore(startDate)) {
+            if (startDate != null && !r.getScheduledTime().toLocalDate().isEqual(startDate)) {
                 continue;
             }
+
 
             // mapping passengers
             List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();

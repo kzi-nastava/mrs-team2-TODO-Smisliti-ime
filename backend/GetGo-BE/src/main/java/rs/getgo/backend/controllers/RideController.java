@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.favorite.CreatedFavoriteDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
@@ -7,8 +8,8 @@ import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
 import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
-import rs.getgo.backend.services.RideEstimateService;
-import rs.getgo.backend.services.RideService;
+import rs.getgo.backend.services.Impl.RideEstimateServiceImpl;
+import rs.getgo.backend.services.Impl.RideServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +23,10 @@ import java.util.List;
 @RequestMapping("/api/rides")
 public class RideController {
 
-    private final RideEstimateService rideEstimateService;
-    private final RideService rideService;
+    private final RideEstimateServiceImpl rideEstimateService;
+    private final RideServiceImpl rideService;
 
-    public RideController(RideEstimateService rideEstimateService, RideService rideService) {
+    public RideController(RideEstimateServiceImpl rideEstimateService, RideServiceImpl rideService) {
         this.rideEstimateService = rideEstimateService;
         this.rideService = rideService;
     }
@@ -48,6 +49,7 @@ public class RideController {
     }
 
     // 2.7 – Finish ride
+    @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/{id}/finish", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedRideDTO> finishRide(@RequestBody UpdateRideDTO ride, @PathVariable Long id)
             throws Exception {
@@ -67,6 +69,7 @@ public class RideController {
     }
 
     // 2.5 – Cancel ride
+    @PreAuthorize("hasRole('PASSENGER')")
     @PutMapping("/{rideId}/cancel")
     public ResponseEntity<CreatedRideStatusDTO> cancelRide(@PathVariable Long rideId,
                                                            @RequestBody CancelRideDTO cancelRequest) {
@@ -81,6 +84,7 @@ public class RideController {
     }
 
     // 2.6.5 – Stop ride
+    @PreAuthorize("hasRole('DRIVER')")
     @PutMapping("/{rideId}/stop")
     public ResponseEntity<CreatedRideStatusDTO> stopRide(@PathVariable Long rideId) {
         CreatedRideStatusDTO response = new CreatedRideStatusDTO(rideId, "FINISHED");
@@ -88,6 +92,7 @@ public class RideController {
     }
 
     // 2.6.1 - Start ride
+    @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/{rideId}/start", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedRideDTO> startRide(@PathVariable Long rideId) {
         UpdatedRideDTO response = new UpdatedRideDTO();
@@ -96,6 +101,7 @@ public class RideController {
     }
 
     // 2.4.3 - Calling favorite ride
+    @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/favorites", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetRideDTO>> getFavoriteRides() {
         List<GetRideDTO> response = new ArrayList<>();
@@ -103,6 +109,7 @@ public class RideController {
     }
 
     // 2.4.3 - Calling favorite ride
+    @PreAuthorize("hasRole('PASSENGER')")
     @PostMapping(value = "/{rideId}/favorite", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedFavoriteDTO> favoriteRide(@PathVariable Long rideId) {
         CreatedFavoriteDTO response = new CreatedFavoriteDTO();
@@ -112,12 +119,14 @@ public class RideController {
     }
 
     // 2.4.3 - Calling favorite ride
+    @PreAuthorize("hasRole('PASSENGER')")
     @DeleteMapping("/{rideId}/favorite")
     public ResponseEntity<Void> unfavoriteRide(@PathVariable Long rideId) {
         return ResponseEntity.noContent().build();
     }
 
     // 2.4.1 - Calling a ride
+    @PreAuthorize("hasRole('PASSENGER')")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedRideDTO> createRide(@RequestBody CreateRideDTO request) {
@@ -138,5 +147,4 @@ public class RideController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
 }

@@ -1,21 +1,50 @@
 import {Injectable, signal} from '@angular/core';
 import {UserRole} from '../../../model/user.model';
+import {JwtHelperService} from '@auth0/angular-jwt';
+import {computed} from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  public role = signal<UserRole>(UserRole.Guest);
+
+  private jwtHelper = new JwtHelperService();
+  private TOKEN_KEY = 'authToken';
+
+  private _role = signal<UserRole>(UserRole.Guest);
+  role = computed(() => this._role());
 
   constructor() {
-    console.log('AuthService instance created');
+    this.loadRoleFromToken();
   }
 
-  loginAs(role: UserRole) {
-    this.role.set(role);
-    console.log('AuthService: loginAs called, role set to', role);
+  setToken(token: string) {
+    console.log('SET TOKEN CALLED');
+    localStorage.setItem(this.TOKEN_KEY, token);
+    this.loadRoleFromToken();
+    console.log('ROLE AFTER SET:', this._role());
   }
 
   logout() {
-    this.role.set(UserRole.Guest);
-    console.log('AuthService: logout called, role set to Guest');
+    localStorage.removeItem(this.TOKEN_KEY);
+    this._role.set(UserRole.Guest);
+  }
+
+  isLoggedIn(): boolean {
+    const token = localStorage.getItem(this.TOKEN_KEY);
+    return !!token && !this.jwtHelper.isTokenExpired(token);
+  }
+
+  private loadRoleFromToken() {
+    const token = localStorage.getItem(this.TOKEN_KEY);
+    if (!token) {
+      this._role.set(UserRole.Guest);
+      return;
+    }
+
+    const decoded = this.jwtHelper.decodeToken(token);
+    this._role.set(decoded?.role ?? UserRole.Guest);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
   }
 }

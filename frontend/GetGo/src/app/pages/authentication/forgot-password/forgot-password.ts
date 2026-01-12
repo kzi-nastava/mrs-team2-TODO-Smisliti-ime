@@ -5,10 +5,12 @@ import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatIcon} from '@angular/material/icon';
 import {MatButton} from '@angular/material/button';
 import { HttpClient } from '@angular/common/http'; // added
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-forgot-password',
   imports: [
+    CommonModule,
     RouterLink,
     MatFormField,
     MatLabel,

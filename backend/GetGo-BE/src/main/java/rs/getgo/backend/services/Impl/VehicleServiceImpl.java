@@ -1,7 +1,8 @@
-package rs.getgo.backend.services;
+package rs.getgo.backend.services.Impl;
 
 import rs.getgo.backend.dtos.vehicle.GetVehicleDTO;
 import org.springframework.stereotype.Service;
+import rs.getgo.backend.services.VehicleService;
 
 import java.util.ArrayList;
 import java.util.Collection;

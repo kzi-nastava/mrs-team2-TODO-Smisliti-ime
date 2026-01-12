@@ -191,7 +191,7 @@ export class RideService {
   loadRides(driverId: number, startDate?: Date) {
       let url = `${environment.apiHost}/api/drivers/${driverId}/rides`;
       if (startDate) {
-        const dateStr = `${startDate.getDate().toString().padStart(2,'0')}-${(startDate.getMonth()+1).toString().padStart(2,'0')}-${startDate.getFullYear()}`;
+        const dateStr = `${startDate.getFullYear()}-${(startDate.getMonth()+1).toString().padStart(2,'0')}-${startDate.getDate().toString().padStart(2,'0')}`;
         url += `?startDate=${dateStr}`;
       }
 

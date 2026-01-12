@@ -24,7 +24,7 @@ export class RideComponent {
   protected rides:  Signal<GetRideDTO[]>;
 
   searchRideForm = new FormGroup({
-    date: new FormControl<Date | null>(null, [Validators.required, Validators.min(2000), Validators.max(new Date().getFullYear())])
+    date: new FormControl<Date | null>(null, [Validators.required])
   });
 
   driverId = 11;
@@ -35,11 +35,13 @@ export class RideComponent {
   }
 
   searchRides() {
-    const selectedDate = this.searchRideForm.value.date;
-    if (selectedDate) {
+      const selectedDate = this.searchRideForm.value.date;
+      if (!selectedDate) return;
+
       this.service.searchRidesByDate(this.driverId, selectedDate);
     }
-  }
+
+
 
   resetFilter(){
     this.searchRideForm.reset();

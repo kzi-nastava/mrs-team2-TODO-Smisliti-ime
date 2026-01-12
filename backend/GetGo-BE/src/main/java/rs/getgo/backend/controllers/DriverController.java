@@ -14,42 +14,59 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import rs.getgo.backend.model.entities.CompletedRide;
+import rs.getgo.backend.repositories.CompletedRideRepository;
+import rs.getgo.backend.services.DriverServiceImpl;
+
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/api/drivers")
 public class DriverController {
+
+    private final DriverServiceImpl driverService;
+
+    public DriverController(DriverServiceImpl driverService) {
+        this.driverService = driverService;
+    }
+
     // 2.9.2
     @GetMapping(value = "/{id}/rides", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetRideDTO>> getDriverRides(
             @PathVariable("id") Long id,
             @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
-        Collection<GetRideDTO> driverRides = new ArrayList<>() ;
+//        Collection<GetRideDTO> driverRides = new ArrayList<>() ;
+//
+//        GetRideDTO ride1 = new GetRideDTO(1L, id, new ArrayList<>(), "Belgrade", "Novi Sad",
+//                LocalDateTime.of(2025, 12, 28, 14, 0),
+//                LocalDateTime.of(2025, 12, 28, 16, 0),
+//                120, false, true, "FINISHED", 25.50);
+//
+//        GetRideDTO ride2 = new GetRideDTO(2L, id, new ArrayList<>(), "Belgrade", "Subotica",
+//                LocalDateTime.of(2025, 12, 29, 10, 0),
+//                LocalDateTime.of(2025, 12, 29, 13, 0),
+//                180, false, false, "ACTIVE", 35.00);
+//
+//        if (startDate != null) {
+//            if (!ride1.getStartingTime().toLocalDate().isBefore(startDate)) driverRides.add(ride1);
+//            if (!ride2.getStartingTime().toLocalDate().isBefore(startDate)) driverRides.add(ride2);
+//        } else {
+//            driverRides.add(ride1);
+//            driverRides.add(ride2);
+//        }
+//
+//        return new ResponseEntity<Collection<GetRideDTO>>(driverRides, HttpStatus.OK);
 
-        GetRideDTO ride1 = new GetRideDTO(1L, id, new ArrayList<>(), "Belgrade", "Novi Sad",
-                LocalDateTime.of(2025, 12, 28, 14, 0),
-                LocalDateTime.of(2025, 12, 28, 16, 0),
-                120, false, true, "FINISHED", 25.50);
-
-        GetRideDTO ride2 = new GetRideDTO(2L, id, new ArrayList<>(), "Belgrade", "Subotica",
-                LocalDateTime.of(2025, 12, 29, 10, 0),
-                LocalDateTime.of(2025, 12, 29, 13, 0),
-                180, false, false, "ACTIVE", 35.00);
-
-        if (startDate != null) {
-            if (!ride1.getStartingTime().toLocalDate().isBefore(startDate)) driverRides.add(ride1);
-            if (!ride2.getStartingTime().toLocalDate().isBefore(startDate)) driverRides.add(ride2);
-        } else {
-            driverRides.add(ride1);
-            driverRides.add(ride2);
-        }
-
-        return new ResponseEntity<Collection<GetRideDTO>>(driverRides, HttpStatus.OK);
+        List<GetRideDTO> rides = driverService.getDriverRides(id, startDate);
+        return ResponseEntity.ok(rides);
     }
 
     // 2.2.3 - Driver registration

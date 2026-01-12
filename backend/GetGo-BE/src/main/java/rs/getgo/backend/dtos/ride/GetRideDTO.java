@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import rs.getgo.backend.dtos.passenger.GetRidePassengerDTO;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,7 +18,7 @@ import lombok.Setter;
 public class GetRideDTO {
     private Long id;
     private Long driverId;
-    private List<GetPassengerDTO> passengers;
+    private List<GetRidePassengerDTO> passengers;
     private String startPoint;
     private String endPoint;
     private LocalDateTime startingTime;

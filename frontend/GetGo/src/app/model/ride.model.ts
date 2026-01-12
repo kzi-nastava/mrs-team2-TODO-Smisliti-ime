@@ -20,4 +20,5 @@ export interface GetRideDTO {
   isFavourite: boolean;
   status: 'ACTIVE' | 'FINISHED' | 'CANCELLED' | 'SCHEDULED';
   price: number;
+  panicActivated?: boolean;
 }

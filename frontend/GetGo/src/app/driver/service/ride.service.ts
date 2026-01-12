@@ -199,10 +199,10 @@ export class RideService {
         .subscribe({
           next: (rides) => {
             console.log('Rides from API:', rides);
-            const mappedRides = rides.map(r => ({...r,panicActivated: false  // default value
-            }));
-//             this._rides.set(rides);
-            this._rides.set(mappedRides);
+//             const mappedRides = rides.map(r => ({...r,panicActivated: false  // default value
+//             }));
+            this._rides.set(rides);
+//             this._rides.set(mappedRides);
           },
           error: (err) => console.error("Error loading rides", err)
         });

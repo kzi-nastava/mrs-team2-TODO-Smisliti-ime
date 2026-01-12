@@ -7,6 +7,8 @@ import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
 import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
+import rs.getgo.backend.services.RideEstimateService;
+import rs.getgo.backend.services.RideService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/rides")
 public class RideController {
+
+    private final RideEstimateService rideEstimateService;
+    private final RideService rideService;
+
+    public RideController(RideEstimateService rideEstimateService, RideService rideService) {
+        this.rideEstimateService = rideEstimateService;
+        this.rideService = rideService;
+    }
 
     // 2.6.2 – Track ride
     @GetMapping(value = "/{id}/tracking", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -51,15 +61,23 @@ public class RideController {
     public ResponseEntity<CreatedRideEstimateDTO> createRideEstimate(
             @RequestBody CreateRideEstimateDTO request) {
 
-        CreatedRideEstimateDTO response = new CreatedRideEstimateDTO(850.0, 15, 6.3);
+        // delegate to service which geocodes, estimates distance/time and returns DTO
+        CreatedRideEstimateDTO response = rideEstimateService.createEstimate(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 2.5 – Cancel ride
     @PutMapping("/{rideId}/cancel")
-    public ResponseEntity<CreatedRideStatusDTO> cancelRide(@PathVariable Long rideId) {
-        CreatedRideStatusDTO response = new CreatedRideStatusDTO(rideId, "CANCELED");
-        return ResponseEntity.ok(response);
+    public ResponseEntity<CreatedRideStatusDTO> cancelRide(@PathVariable Long rideId,
+                                                           @RequestBody CancelRideDTO cancelRequest) {
+        try {
+            CreatedRideStatusDTO response = rideService.cancelRide(rideId, cancelRequest);
+            return ResponseEntity.ok(response);
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     // 2.6.5 – Stop ride

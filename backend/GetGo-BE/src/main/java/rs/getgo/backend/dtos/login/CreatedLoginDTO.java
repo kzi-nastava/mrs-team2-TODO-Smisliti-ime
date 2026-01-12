@@ -10,4 +10,7 @@ public class CreatedLoginDTO {
     private Long id;
     private String role;
     private String token;
+
+    public CreatedLoginDTO(Long id, String token) {
+    }
 }

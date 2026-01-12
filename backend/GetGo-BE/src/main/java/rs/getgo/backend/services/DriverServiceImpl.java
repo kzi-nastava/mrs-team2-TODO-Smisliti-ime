@@ -11,12 +11,17 @@ import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.GetDriverDTO;
 import rs.getgo.backend.dtos.driver.UpdateDriverPersonalDTO;
 import rs.getgo.backend.dtos.driver.UpdateDriverVehicleDTO;
+import rs.getgo.backend.dtos.passenger.GetRidePassengerDTO;
 import rs.getgo.backend.dtos.request.CreatedDriverChangeRequestDTO;
+import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
 import rs.getgo.backend.repositories.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,6 +29,10 @@ public class DriverServiceImpl {
 
     @Autowired
     private DriverRepository driverRepo;
+    @Autowired
+    private CompletedRideRepository completedRideRepository;
+    @Autowired
+    private PassengerRepository passengerRepository;
     @Autowired
     private PersonalChangeRequestRepository personalChangeRequestRepo;
     @Autowired
@@ -36,6 +45,52 @@ public class DriverServiceImpl {
     private ModelMapper modelMapper;
     @Autowired
     private FileStorageService fileStorageService;
+
+    public List<GetRideDTO> getDriverRides(Long driverId, LocalDate startDate) {
+        List<CompletedRide> rides = completedRideRepository.findByDriverId(driverId);
+
+        List<GetRideDTO> dtoList = new ArrayList<>();
+
+        for (CompletedRide r : rides) {
+
+            // filtering by startDate
+            if (startDate != null && !r.getScheduledTime().toLocalDate().isEqual(startDate)) {
+                continue;
+            }
+
+
+            // mapping passengers
+            List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
+            if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
+                List<Passenger> passengers = passengerRepository.findAllById(r.getLinkedPassengerIds());
+
+                for (Passenger p : passengers) {
+                    passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getUsername()));
+                }
+            }
+
+            GetRideDTO dto = new GetRideDTO(
+                    r.getId(),
+                    r.getDriverId(),
+                    passengerDTOs,
+                    r.getRoute() != null ? r.getRoute().getStartingPoint() : "Unknown",
+                    r.getRoute() != null ? r.getRoute().getEndingPoint() : "Unknown",
+                    r.getStartTime(),
+                    r.getEndTime(),
+                    r.getStartTime() != null && r.getEndTime() != null ?
+                            (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
+                    r.isCancelled(),
+                    false,
+                    r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
+                    r.getActualPrice(),
+                    r.isPanicPressed()
+            );
+
+            dtoList.add(dto);
+        }
+
+        return dtoList;
+    }
 
     public GetActivationTokenDTO validateActivationToken(String token) {
         Optional<DriverActivationToken> tokenOptional = driverActivationTokenRepo.findByToken(token);

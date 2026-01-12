@@ -60,7 +60,8 @@ public class DriverServiceImpl implements DriverService {
                     r.isCancelled(),
                     false,
                     r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
-                    r.getActualPrice()
+                    r.getActualPrice(),
+                    r.isPanicPressed()
             );
 
             dtoList.add(dto);

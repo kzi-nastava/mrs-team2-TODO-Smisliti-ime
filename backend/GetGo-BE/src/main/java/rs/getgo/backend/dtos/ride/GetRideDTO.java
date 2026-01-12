@@ -28,4 +28,5 @@ public class GetRideDTO {
     private Boolean isFavourite;
     private String status; // it can be ACTIVE, FINISHED, CANCELLED, SCHEDULED
     private Double price;
+    private Boolean panicActivated;
 }

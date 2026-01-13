@@ -77,31 +77,23 @@ export class MapComponent implements AfterViewInit{
       const { lat, lng } = e.latlng;
       console.log('Map clicked at latitude:', lat, 'longitude:', lng, 'activeInput:', this.activeInput, 'activeInputIndex:', this.activeInputIndex);
 
-      // Check if either activeInput or activeInputIndex is set
       if (!this.activeInput && this.activeInputIndex === null) {
         console.log('No active input or index, ignoring map click');
         return;
       }
 
-      // Reverse geocode
       fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
         .then(res => res.json())
         .then(data => {
-          const address = data.display_name || '';
+          const address = data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
           console.log('Reverse geocoded address:', address);
 
-          // Handle unregistered home (origin/destination)
           if (this.activeInput) {
             const inputType = this.activeInput as 'origin' | 'destination';
 
-            // Remove old marker
-            if (inputType === 'origin' && this.originMarker) {
-              this.map?.removeLayer(this.originMarker);
-            } else if (inputType === 'destination' && this.destinationMarker) {
-              this.map?.removeLayer(this.destinationMarker);
-            }
+            if (inputType === 'origin' && this.originMarker) this.map.removeLayer(this.originMarker);
+            if (inputType === 'destination' && this.destinationMarker) this.map.removeLayer(this.destinationMarker);
 
-            // Create new marker with color
             const icon = L.divIcon({
               className: 'custom-marker',
               html: `<div style="background-color: ${inputType === 'origin' ? '#22c55e' : '#3b82f6'}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
@@ -109,36 +101,22 @@ export class MapComponent implements AfterViewInit{
             });
 
             const marker = L.marker([lat, lng], { icon }).addTo(this.map!);
+            if (inputType === 'origin') this.originMarker = marker;
+            else this.destinationMarker = marker;
 
-            if (inputType === 'origin') {
-              this.originMarker = marker;
-            } else {
-              this.destinationMarker = marker;
-            }
-
-            console.log('Placed', inputType, 'marker at', lat, lng);
-
-            // Dispatch event with inputType
             const event = new CustomEvent('map-click', {
               detail: { lat, lng, address, inputType },
               bubbles: true
             });
             this.elementRef.nativeElement.dispatchEvent(event);
-            console.log('Dispatched map-click event with inputType:', inputType);
-          }
-          // Handle registered home (index-based destinations)
-          else if (this.activeInputIndex !== null) {
+            console.log('Dispatched map-click event with address:', address, inputType);
+
+          } else if (this.activeInputIndex !== null) {
             const index = this.activeInputIndex;
 
-            // Remove old marker at this index if exists
-            if (this.waypointMarkers[index]) {
-              this.map?.removeLayer(this.waypointMarkers[index]);
-            }
+            if (this.waypointMarkers[index]) this.map.removeLayer(this.waypointMarkers[index]);
 
-            // Pick color based on index (0=green start, others=orange waypoints)
-            let color = '#f97316'; // orange for waypoints
-            if (index === 0) color = '#22c55e'; // green for start
-
+            const color = index === 0 ? '#22c55e' : '#f97316';
             const icon = L.divIcon({
               className: 'custom-marker',
               html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
@@ -148,23 +126,21 @@ export class MapComponent implements AfterViewInit{
             const marker = L.marker([lat, lng], { icon }).addTo(this.map!);
             this.waypointMarkers[index] = marker;
 
-            console.log('Placed waypoint marker at index', index, 'lat:', lat, 'lng:', lng);
-
-            // Dispatch event without inputType (registered home uses index)
             const event = new CustomEvent('map-click', {
-              detail: { lat, lng, address },
+              detail: { lat, lng, address, index },
               bubbles: true
             });
             this.elementRef.nativeElement.dispatchEvent(event);
-            console.log('Dispatched map-click event for index:', index);
+            console.log('Dispatched map-click event for waypoint with address:', index, address);
           }
         })
         .catch(err => {
           console.error('Reverse geocoding failed:', err);
 
-          // Still dispatch event with coordinates only
+          // Fallback to coordinates only
+          const address = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
           const event = new CustomEvent('map-click', {
-            detail: { lat, lng, address: '' },
+            detail: { lat, lng, address, inputType: this.activeInput, index: this.activeInputIndex ?? undefined },
             bubbles: true
           });
           this.elementRef.nativeElement.dispatchEvent(event);

@@ -18,9 +18,12 @@ export class RegisteredHomeComponent implements AfterViewInit, OnDestroy {
   serverError: string | null = null;
   activeInputIndex: number | null = null;
 
+  // Store coordinates per destination
+  private destinationCoords: Array<{ lat: number; lng: number } | null> = [null, null];
+
   private mapClickListener?: (ev: Event) => void;
 
-  @ViewChild('appMap', { read: ElementRef, static: false }) private mapEl?: ElementRef<HTMLElement>;
+  @ViewChild('appMap', {read: ElementRef, static: false}) private mapEl?: ElementRef<HTMLElement>;
 
   constructor(
     private fb: FormBuilder,
@@ -49,12 +52,14 @@ export class RegisteredHomeComponent implements AfterViewInit, OnDestroy {
 
   addDestination(index: number) {
     this.destinations.insert(index + 1, this.createDestination());
+    this.destinationCoords.splice(index + 1, 0, null);
     console.log('Added destination at index', index + 1, 'total destinations:', this.destinations.length);
   }
 
   removeDestination(index: number) {
     if (this.destinations.length > 2) {
       this.destinations.removeAt(index);
+      this.destinationCoords.splice(index, 1);
       console.log('Removed destination at index', index, 'total destinations:', this.destinations.length);
 
       // Clear active input if it was the removed one
@@ -75,7 +80,7 @@ export class RegisteredHomeComponent implements AfterViewInit, OnDestroy {
 
     if (this.mapEl?.nativeElement) {
       const event = new CustomEvent<{ input: number | null }>('set-active-input-index', {
-        detail: { input: index },
+        detail: {input: index},
         bubbles: true
       });
       this.mapEl.nativeElement.dispatchEvent(event);
@@ -99,115 +104,101 @@ export class RegisteredHomeComponent implements AfterViewInit, OnDestroy {
   }
 
   private handleMapClick(ev: Event): void {
-    const ce = ev as CustomEvent<LocationPick>;
-    const detail = ce?.detail;
+    const ce = ev as CustomEvent<{ lat: number; lng: number; address?: string; index?: number }>;
+    const detail = ce.detail;
 
-    console.log('Map-click detail:', detail, 'activeInputIndex:', this.activeInputIndex);
+    if (!detail || this.activeInputIndex === null) return;
 
-    if (!detail || this.activeInputIndex === null) {
-      console.log('No active input or invalid detail; ignoring map pick');
-      return;
-    }
+    const idx = this.activeInputIndex;
+    this.destinationCoords[idx] = { lat: detail.lat, lng: detail.lng };
 
-    const valueToInsert = detail.address?.trim().length
-      ? detail.address
-      : `${detail.lat.toFixed(5)}, ${detail.lng.toFixed(5)}`;
-
-    console.log('Value to insert:', valueToInsert, 'into destination index:', this.activeInputIndex);
-
-    const control = this.destinations.at(this.activeInputIndex).get('name');
+    const control = this.destinations.at(idx).get('name');
     if (control) {
-      control.setValue(valueToInsert);
+      const displayValue = detail.address || `${detail.lat.toFixed(5)}, ${detail.lng.toFixed(5)}`;
+      control.setValue(displayValue);
       control.markAsTouched();
-      console.log('Destination updated at index', this.activeInputIndex, 'to:', valueToInsert);
+      console.log(`Destination ${idx} set to:`, displayValue, 'coords:', this.destinationCoords[idx]);
     }
 
+    // Reset active input
     this.setActive(null);
-    console.log('Cleared activeInputIndex after map pick');
   }
 
   submit() {
-    this.serverError = null;
+    // Validate all fields
+    Object.keys(this.travelForm.controls).forEach(key => {
+      const control = this.travelForm.get(key);
+      if (control) {
+        control.markAsTouched();
+      }
+    });
+
+    this.destinations.controls.forEach(dest => {
+      dest.markAsTouched();
+    });
 
     if (this.travelForm.invalid) {
-      this.travelForm.markAllAsTouched();
-      console.log('Form is invalid, aborting submit');
-
-      this.destinations.controls.forEach((control, i) => {
-        if (control.invalid) {
-          console.log('Validation failed: destination', i, 'is required');
-        }
-      });
+      console.log('Form validation failed');
       return;
     }
 
-    const destinationNames = this.destinations.controls.map(c => c.get('name')?.value.trim());
-    console.log('Destinations:', destinationNames);
-
-    if (destinationNames.length < 2) {
-      console.log('Need at least 2 destinations');
+    const coords = this.destinationCoords.filter(c => c !== null);
+    if (coords.length < 2) {
+      console.log('Need at least start and destination coordinates');
+      this.serverError = 'Please select at least starting point and destination on the map';
       return;
     }
 
-    const payload: EstimateRequest = {
-      origin: destinationNames[0],
-      destination: destinationNames[destinationNames.length - 1],
-      waypoints: destinationNames.slice(1, -1)
-    };
+    const payload = { coordinates: coords };
+    console.log('Sending estimate request with payload', payload);
 
-    console.log('Sending estimate request to /api/rides/estimate', payload);
     this.isLoading = true;
+    this.serverError = null;
     this.estimateMinutes = null;
-    this.cdr.detectChanges();
 
     this.http.post<EstimateResponse>('/api/rides/estimate', payload).subscribe({
-      next: (res) => {
+      next: res => {
         console.log('Received estimate response', res);
-        this.estimateMinutes = res.estimatedMinutes;
+        this.estimateMinutes = res.durationMinutes;
         this.isLoading = false;
         this.cdr.detectChanges();
-
-        if (this.mapEl?.nativeElement) {
-          const event = new CustomEvent<RouteEventDetail>('show-route', {
-            detail: {
-              origin: destinationNames[0],
-              destination: destinationNames[destinationNames.length - 1],
-              waypoints: destinationNames.slice(1, -1)
-            },
-            bubbles: true
-          });
-          this.mapEl.nativeElement.dispatchEvent(event);
-          console.log('Dispatched show-route event to map', event.detail);
-        }
       },
-      error: (err) => {
-        console.error('Estimate request failed', err);
+      error: err => {
+        console.error('Failed to get estimate', err);
         this.serverError = 'Failed to get estimate from server';
         this.isLoading = false;
         this.cdr.detectChanges();
       }
     });
   }
-}
 
-interface EstimateRequest {
-  origin: string;
-  destination: string;
-  waypoints?: string[];
+  cancel() {
+    this.travelForm.reset({
+      orderTiming: 'now',
+      travelOption: 'alone'
+    });
+    this.destinations.clear();
+    this.destinations.push(this.createDestination());
+    this.destinations.push(this.createDestination());
+    this.destinationCoords = [null, null];
+    this.estimateMinutes = null;
+    this.serverError = null;
+    this.activeInputIndex = null;
+    console.log('Form cancelled and reset');
+
+    // Notify map
+    if (this.mapEl?.nativeElement) {
+      const event = new CustomEvent<{ input: number | null }>('set-active-input-index', {
+        detail: {input: null},
+        bubbles: true
+      });
+      this.mapEl.nativeElement.dispatchEvent(event);
+    }
+  }
 }
 
 interface EstimateResponse {
-  estimatedMinutes: number;
-}
-
-interface RouteEventDetail {
-  origin: string;
-  destination: string;
-  waypoints?: string[];
-}
-
-interface LocationPick {
-  lat: number;
-  lng: number;
-  address?: string;
+  price: number;
+  durationMinutes: number;
+  distanceKm: number;
 }

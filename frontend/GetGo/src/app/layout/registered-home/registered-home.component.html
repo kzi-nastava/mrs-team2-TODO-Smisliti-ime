@@ -48,6 +48,7 @@
 
       <div class="form-actions">
         <button type="submit" [disabled]="isLoading">Calculate Time</button>
+        <button type="button" (click)="cancel()" [disabled]="isLoading">Cancel</button>
       </div>
 
       <div *ngIf="isLoading">Loading estimate...</div>

@@ -14,6 +14,11 @@ import { CommonModule } from '@angular/common';
 export class UnregisteredHomeComponent implements AfterViewInit, OnDestroy {
   origin = '';
   destination = '';
+
+  // Store actual coordinates
+  private originCoords: { lat: number; lng: number } | null = null;
+  private destinationCoords: { lat: number; lng: number } | null = null;
+
   formVisible = false;
   isLoading = false;
   estimateMinutes: number | null = null;
@@ -34,9 +39,11 @@ export class UnregisteredHomeComponent implements AfterViewInit, OnDestroy {
   closeForm() {
     this.formVisible = false;
     this.activeInput = null;
-    this.estimateMinutes = null; // reset estimate when closing form
-    this.serverError = null; // reset error too
-    console.log('Close route form, cleared activeInput and estimate');
+    this.estimateMinutes = null;
+    this.serverError = null;
+    this.originCoords = null;
+    this.destinationCoords = null;
+    console.log('Close route form, cleared activeInput, estimate and coordinates');
 
     // Notify map that no input is active
     if (this.mapEl?.nativeElement) {
@@ -82,52 +89,41 @@ export class UnregisteredHomeComponent implements AfterViewInit, OnDestroy {
   }
 
   private handleMapClick(ev: Event): void {
-    console.log('handleMapClick triggered, event type:', ev.type);
-
-    // expect CustomEvent<LocationPick> from map component
     const ce = ev as CustomEvent<LocationPick>;
-    const detail = ce && ce.detail ? ce.detail : undefined;
+    const detail = ce.detail;
 
-    console.log('Map-click detail:', detail, 'activeInput:', this.activeInput);
+    if (!detail) return;
 
-    if (!detail) {
-      console.log('map-click received without detail; ignoring');
-      return;
-    }
-
-    // Verify the inputType matches our activeInput (safety check)
-    if (detail.inputType && detail.inputType !== this.activeInput) {
-      console.log('inputType mismatch, expected', this.activeInput, 'got', detail.inputType);
-      return;
-    }
-
-    const valueToInsert = detail.address?.trim().length ? detail.address : `${detail.lat.toFixed(5)}, ${detail.lng.toFixed(5)}`;
-    console.log('Value to insert:', valueToInsert, 'into field:', this.activeInput);
+    if (detail.inputType && detail.inputType !== this.activeInput) return;
 
     if (this.activeInput === 'origin') {
-      this.origin = valueToInsert;
-      console.log('Origin updated to:', this.origin);
+      this.originCoords = { lat: detail.lat, lng: detail.lng };
+      this.origin = detail.address || `${detail.lat.toFixed(5)}, ${detail.lng.toFixed(5)}`;
+      console.log('Origin set to:', this.origin, 'coords:', this.originCoords);
+
+      // Force change detection immediately
+      this.cdr.detectChanges();
     } else if (this.activeInput === 'destination') {
-      this.destination = valueToInsert;
-      console.log('Destination updated to:', this.destination);
-    } else {
-      console.log('No active input selected; ignoring map pick');
-      return; // don't clear if nothing was set
+      this.destinationCoords = { lat: detail.lat, lng: detail.lng };
+      this.destination = detail.address || `${detail.lat.toFixed(5)}, ${detail.lng.toFixed(5)}`;
+      console.log('Destination set to:', this.destination, 'coords:', this.destinationCoords);
+
+      // Force change detection immediately
+      this.cdr.detectChanges();
     }
 
-    // Clear activeInput after successfully inserting value
-    this.activeInput = null;
-    console.log('Cleared activeInput after map pick');
+    // Reset active input after a small delay to ensure UI updates first
+    setTimeout(() => {
+      this.activeInput = null;
 
-    // Notify map that no input is active anymore
-    if (this.mapEl?.nativeElement) {
-      const event = new CustomEvent<{ input: ActiveInput }>('set-active-input', {
-        detail: { input: null },
-        bubbles: true
-      });
-      this.mapEl.nativeElement.dispatchEvent(event);
-      console.log('Dispatched set-active-input(null) after map pick');
-    }
+      if (this.mapEl?.nativeElement) {
+        const event = new CustomEvent<{ input: ActiveInput }>('set-active-input', {
+          detail: { input: null },
+          bubbles: true
+        });
+        this.mapEl.nativeElement.dispatchEvent(event);
+      }
+    }, 50);
   }
 
   calculateTime() {
@@ -137,80 +133,42 @@ export class UnregisteredHomeComponent implements AfterViewInit, OnDestroy {
 
   submitForm(originModel: NgModel, destinationModel: NgModel) {
     this.serverError = null;
-    // Validation checks with console logs per field
-    if (!this.origin || !this.origin.trim()) {
-      originModel.control.markAsTouched();
-      console.log('Validation failed: origin is required');
-    }
-    if (!this.destination || !this.destination.trim()) {
-      destinationModel.control.markAsTouched();
-      console.log('Validation failed: destination is required');
-    }
 
-    if (originModel.invalid || destinationModel.invalid) {
-      console.log('Form is invalid, aborting submit');
-      return;
-    }
+    // Validate
+    if (!this.originCoords) { originModel.control.markAsTouched(); return; }
+    if (!this.destinationCoords) { destinationModel.control.markAsTouched(); return; }
 
-    const payload: EstimateRequest = {
-      origin: this.origin.trim(),
-      destination: this.destination.trim()
+    const payload = {
+      coordinates: [
+        { lat: this.originCoords.lat, lng: this.originCoords.lng },
+        { lat: this.destinationCoords.lat, lng: this.destinationCoords.lng }
+      ]
     };
 
-    console.log('Sending estimate request to /api/rides/estimate', payload);
+    console.log('Sending estimate request with payload', payload);
     this.isLoading = true;
-    this.estimateMinutes = null;
-    this.cdr.detectChanges();
-    console.log('isLoading set to true');
 
     this.http.post<EstimateResponse>('/api/rides/estimate', payload).subscribe({
-      next: (res) => {
+      next: res => {
         console.log('Received estimate response', res);
-        this.estimateMinutes = res.estimatedMinutes;
+        this.estimateMinutes = res.durationMinutes;
         this.isLoading = false;
         this.cdr.detectChanges();
-        console.log('isLoading set to false after success');
-
-        // dispatch custom event so map can react and draw route
-        if (this.mapEl?.nativeElement) {
-          const event = new CustomEvent<EstimateRouteEventDetail>('show-route', {
-            detail: { origin: this.origin, destination: this.destination },
-            bubbles: true
-          });
-          this.mapEl.nativeElement.dispatchEvent(event);
-          console.log('Dispatched show-route event to map', event.detail);
-        } else {
-          console.log('Map element not available to dispatch route event');
-        }
-
-        // close the form after success using setTimeout to avoid NG0100
-        setTimeout(() => {
-          this.closeForm();
-        }, 0);
       },
-      error: (err) => {
+      error: err => {
         console.error('Estimate request failed', err);
-        this.serverError = 'Failed to get estimate from server';
+        this.serverError = 'Failed to get estimate';
         this.isLoading = false;
         this.cdr.detectChanges();
-        console.log('isLoading set to false after error');
       }
     });
   }
 }
 
-interface EstimateRequest {
-  origin: string;
-  destination: string;
-}
-
 interface EstimateResponse {
-  estimatedMinutes: number;
-}
-
-interface EstimateRouteEventDetail {
-  origin: string;
-  destination: string;
+  price: number;
+  durationMinutes: number;
+  distanceKm: number;
 }
 
 type ActiveInput = 'origin' | 'destination' | null;

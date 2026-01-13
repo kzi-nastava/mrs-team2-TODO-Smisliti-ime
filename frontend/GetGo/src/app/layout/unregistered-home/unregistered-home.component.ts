@@ -173,5 +173,5 @@ interface LocationPick {
   lat: number;
   lng: number;
   address?: string;
-  inputType?: 'origin' | 'destination'; // added
+  inputType?: 'origin' | 'destination';
 }

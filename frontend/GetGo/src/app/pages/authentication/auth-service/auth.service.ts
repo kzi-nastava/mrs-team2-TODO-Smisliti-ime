@@ -24,8 +24,10 @@ export class AuthService {
   }
 
   logout() {
+    console.log('AuthService: logout called');
     localStorage.removeItem(this.TOKEN_KEY);
     this._role.set(UserRole.Guest);
+    console.log('AuthService: role set to Guest after logout');
   }
 
   isLoggedIn(): boolean {
@@ -35,13 +37,38 @@ export class AuthService {
 
   private loadRoleFromToken() {
     const token = localStorage.getItem(this.TOKEN_KEY);
+    console.log('loadRoleFromToken: token from storage', token ? 'exists' : 'missing');
+
     if (!token) {
+      console.log('loadRoleFromToken: no token, setting Guest');
       this._role.set(UserRole.Guest);
       return;
     }
 
-    const decoded = this.jwtHelper.decodeToken(token);
-    this._role.set(decoded?.role ?? UserRole.Guest);
+    try {
+      const decoded = this.jwtHelper.decodeToken(token);
+      console.log('loadRoleFromToken: decoded token', decoded);
+
+      const roleFromToken = decoded?.role;
+      console.log('loadRoleFromToken: role field from token', roleFromToken);
+
+      // Map backend role strings to UserRole enum
+      let mappedRole: UserRole = UserRole.Guest;
+
+      if (roleFromToken === 'admin' || roleFromToken === 'ADMIN') {
+        mappedRole = UserRole.Admin;
+      } else if (roleFromToken === 'driver' || roleFromToken === 'DRIVER') {
+        mappedRole = UserRole.Driver;
+      } else if (roleFromToken === 'passenger' || roleFromToken === 'PASSENGER') {
+        mappedRole = UserRole.Passenger;
+      }
+
+      console.log('loadRoleFromToken: mapped role', mappedRole);
+      this._role.set(mappedRole);
+    } catch (err) {
+      console.error('loadRoleFromToken: failed to decode token', err);
+      this._role.set(UserRole.Guest);
+    }
   }
 
   getToken(): string | null {

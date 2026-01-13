@@ -107,9 +107,9 @@ export class LoginComponent {
 
         this.auth.setToken(res.token);
 
-        console.log('Login: token saved & role extracted from JWT');
+        console.log('Login: current role from AuthService', this.auth.role());
 
-        console.log("Current role:", res.role)
+        // Navigate immediately - homeGuard will redirect based on role
         this.router.navigate(['/home']);
       },
       error: (err) => {

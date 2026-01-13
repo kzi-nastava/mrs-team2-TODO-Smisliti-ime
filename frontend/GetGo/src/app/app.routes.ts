@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './pages/authentication/auth.guard';
+import { homeGuard } from './pages/authentication/home.guard';
 import {RideComponent}  from './driver/ride/ride.component';
 import {LoginComponent} from './pages/authentication/login/login';
 import {RegisterComponent} from './pages/authentication/register/register';
@@ -16,10 +18,12 @@ import {AuthGuard} from './pages/authentication/auth.guard';
 import {UserRole} from './model/user.model';
 
 export const routes: Routes = [
-  { path: '', component: UnregisteredHomeComponent },
-  { path: 'home', component: RegisteredHomeComponent },
-  { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
+  { path: '', canActivate: [homeGuard], children: [] },
+  { path: 'home', canActivate: [homeGuard], children: [] },
+  { path: 'unregistered-home', component: UnregisteredHomeComponent },
+  { path: 'registered-home', component: RegisteredHomeComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger, UserRole.Driver, UserRole.Admin] } },
+  { path: 'login', component: LoginComponent, canActivate: [authGuard] },
+  { path: 'register', component: RegisterComponent, canActivate: [authGuard] },
   { path: 'ride', component: RideComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'driver/rides/:id', component: RideDetailsComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'passenger/passenger-profile', component: PassengerProfileInfo, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },

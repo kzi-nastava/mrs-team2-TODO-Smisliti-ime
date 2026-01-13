@@ -13,7 +13,7 @@ import lombok.Setter;
 public class Driver extends User {
 
     private boolean isActive; // Is driver currently active on the app
-//    private boolean isActivated; // Is driver's account activated
+    //    private boolean isActivated; // Is driver's account activated
     private String profilePictureUrl;
 
     @OneToOne(cascade = CascadeType.ALL)
@@ -22,5 +22,4 @@ public class Driver extends User {
 
     @Column(nullable = false)
     private boolean isActivated = false;
-
 }

@@ -54,19 +54,6 @@ export class MapComponent implements AfterViewInit{
       console.log('Map received set-active-input event, activeInput now:', this.activeInput);
     });
 
-<<<<<<< Updated upstream
-=======
-    L.Marker.prototype.options.icon = DefaultIcon;
-    this.initMap();
-
-    // Listen for set-active-input event (unregistered home)
-    this.elementRef.nativeElement.addEventListener('set-active-input', (ev: Event) => {
-      const ce = ev as CustomEvent<{ input: string | null }>;
-      this.activeInput = ce.detail.input;
-      console.log('Map received set-active-input event, activeInput now:', this.activeInput);
-    });
-
->>>>>>> Stashed changes
     // Listen for set-active-input-index event (registered home)
     this.elementRef.nativeElement.addEventListener('set-active-input-index', (ev: Event) => {
       const ce = ev as CustomEvent<{ input: number | null }>;
@@ -75,8 +62,8 @@ export class MapComponent implements AfterViewInit{
     });
 
     this.registerOnClick();
-    this.setRoute();
-    //this.loadVehicles();
+    //this.setRoute();
+    this.loadVehicles();
   }
 
   searchStreet(street: string): Observable<any> {
@@ -161,12 +148,10 @@ export class MapComponent implements AfterViewInit{
     });
   }
 
-  setRoute(): void {
-<<<<<<< Updated upstream
-=======
+  /*setRoute(): void {
     const routeControl = L.Routing.control({
       waypoints: [L.latLng(57.74, 11.94), L.latLng(57.6792, 11.949)],
-      router: L.routing.mapbox('DODATI SVOJ API KEY', {profile: 'mapbox/walking'})
+      router: L.routing.mapbox('DODATI SVOJ API KEY', {profile: 'mapbox/driving'})
     }).addTo(this.map);
 
     routeControl.on('routesfound', function(e : any) {
@@ -174,18 +159,45 @@ export class MapComponent implements AfterViewInit{
       var summary = routes[0].summary;
       alert('Total distance is ' + summary.totalDistance / 1000 + ' km and total time is ' + Math.round(summary.totalTime % 3600 / 60) + ' minutes');
     });
->>>>>>> Stashed changes
+  }*/
+
+  private addVehicleMarker(vehicle: GetVehicleDTO): L.Marker {
+    const lat = Number(vehicle.latitude);
+    const lng = Number(vehicle.longitude);
+
+    const iconUrl = vehicle.isAvailable
+      ? 'assets/images/green_car.svg'
+      : 'assets/images/red_car.svg';
+
+    const icon = L.icon({
+      iconUrl: iconUrl,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -16]
+    });
+
+    // Create the marker with the icon and bind a popup
+    const marker = L.marker([lat, lng], { icon })
+      .bindPopup(`${vehicle.model} - ${vehicle.isAvailable ? 'Free' : 'Busy'}`);
+
+    return marker;
   }
 
-  /*loadVehicles(): void {
-    this.vehicleService.getVehicles().subscribe({
+  private loadVehicles(): void {
+    console.log('Trying to load vehicles...');
+    this.vehicleService.getActiveVehicles().subscribe({
       next: (vehicles: GetVehicleDTO[]) => {
-        console.log('Vehicles loaded:', vehicles);
-        // Here you would add code to display vehicles on the map
+        console.log('Loaded vehicles:', vehicles);
+        if (!vehicles || vehicles.length === 0) return;
+
+        // Create a feature group to hold all vehicle markers
+        const markers = vehicles.map(vehicle => this.addVehicleMarker(vehicle));
+        const group = L.featureGroup(markers).addTo(this.map);
+
+        // Automatically adjust map view to fit all markers with padding
+        this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
       },
-      error: (err) => {
-        console.error('Error loading vehicles:', err);
-      }
+      error: (err) => console.error(err)
     });
-  }*/
+  }
 }

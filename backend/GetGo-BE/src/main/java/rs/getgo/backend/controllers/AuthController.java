@@ -4,7 +4,7 @@ import rs.getgo.backend.dtos.login.CreateLoginDTO;
 import rs.getgo.backend.dtos.login.CreatedLoginDTO;
 import rs.getgo.backend.dtos.user.CreateUserDTO;
 import rs.getgo.backend.dtos.user.CreatedUserDTO;
-import rs.getgo.backend.services.AuthService;
+import rs.getgo.backend.services.Impl.AuthServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +15,9 @@ import rs.getgo.backend.dtos.user.ForgotPasswordDTO;
 @CrossOrigin(origins = "http://localhost:4200") // allow Angular dev server
 public class AuthController {
 
-    private final AuthService authService;
+    private final AuthServiceImpl authService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthServiceImpl authService) {
         this.authService = authService;
     }
 

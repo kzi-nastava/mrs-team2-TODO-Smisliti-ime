@@ -37,16 +37,16 @@ public class PassengerServiceImpl {
                 .orElseThrow(() -> new RuntimeException("Passenger not found with id: " + passengerId));
 
         if (updatePassengerDTO.getName() != null && !updatePassengerDTO.getName().trim().isEmpty()) {
-            passenger.setName(updatePassengerDTO.getName().trim());
+            passenger.setFirstName(updatePassengerDTO.getName().trim());
         }
         if (updatePassengerDTO.getSurname() != null && !updatePassengerDTO.getSurname().trim().isEmpty()) {
-            passenger.setName(updatePassengerDTO.getSurname().trim());
+            passenger.setLastName(updatePassengerDTO.getSurname().trim());
         }
         if (updatePassengerDTO.getPhone() != null && !updatePassengerDTO.getPhone().trim().isEmpty()) {
-            passenger.setName(updatePassengerDTO.getPhone().trim());
+            passenger.setPhoneNumber(updatePassengerDTO.getPhone().trim());
         }
         if (updatePassengerDTO.getAddress() != null && !updatePassengerDTO.getAddress().trim().isEmpty()) {
-            passenger.setName(updatePassengerDTO.getAddress().trim());
+            passenger.setAddress(updatePassengerDTO.getAddress().trim());
         }
 
         Passenger savedPassenger = passengerRepo.save(passenger);

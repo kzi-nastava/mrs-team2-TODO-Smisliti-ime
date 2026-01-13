@@ -10,8 +10,8 @@ export interface User {
 }
 
 export enum UserRole {
-  Admin = "admin",
-  Passenger = "passenger",
-  Driver = "driver",
-  Guest = "guest",
+  Admin = "ADMIN",
+  Passenger = "PASSENGER",
+  Driver = "DRIVER",
+  Guest = "GUEST",
 }

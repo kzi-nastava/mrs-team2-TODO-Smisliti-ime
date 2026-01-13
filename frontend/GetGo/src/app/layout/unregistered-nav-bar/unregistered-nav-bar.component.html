@@ -1,10 +1,10 @@
 <mat-toolbar>
-<!--  <mat-icon class="hamburger"> menu </mat-icon>-->
   <span [routerLink]="['/']" class="app-title">GetGo</span>
   <span class="spacer"></span>
-<!--  <button mat-raised-button [routerLink]="['/ride']" >Ride</button>-->
-  <button mat-raised-button [routerLink]="['/login']" >Login</button>
-  <button mat-raised-button [routerLink]="['/register']" >Register</button>
+
+  <!-- Show Login button only if NOT on login page -->
+  <button *ngIf="!isOnLoginPage()" mat-raised-button [routerLink]="['/login']">Login</button>
+
+  <!-- Show Register button only if NOT on register page -->
+  <button *ngIf="!isOnRegisterPage()" mat-raised-button [routerLink]="['/register']">Register</button>
 </mat-toolbar>
-
-

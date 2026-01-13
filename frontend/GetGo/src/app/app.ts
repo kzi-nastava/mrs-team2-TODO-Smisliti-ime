@@ -36,8 +36,5 @@ export class App {
     const segments = tree.root.children['primary']?.segments || [];
     const firstSegment = segments.length ? segments[0].path : '';
     console.log('First segment:', firstSegment);
-    const hiddenSegments = ['login', 'register', 'forgot-password'];
-    this.showNav.set(!hiddenSegments.includes(firstSegment));
-    console.log('showNav:', this.showNav());
   }
 }

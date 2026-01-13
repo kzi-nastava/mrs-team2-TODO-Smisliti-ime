@@ -1,8 +1,15 @@
 <form [formGroup]="form" (ngSubmit)="submit()">
   <div class="form-header">
     <div class="avatar-wrapper">
-      <button type="button" class="avatar-button">
-        <mat-icon>person</mat-icon>
+      <button type="button" class="avatar-button" (click)="fileInput.click()">
+        <img *ngIf="profileImageUrl" [src]="profileImageUrl" alt="Profile preview" />
+        <mat-icon *ngIf="!profileImageUrl">person</mat-icon>
+        <input
+          #fileInput
+          type="file"
+          accept="image/*"
+          (change)="onFileSelected($event)"
+        />
       </button>
     </div>
 

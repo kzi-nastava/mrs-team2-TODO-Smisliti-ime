@@ -2,29 +2,87 @@
   <div class="left">
     <h1>Welcome, unregistered user</h1>
 
-    <div class="form-group">
-      <label>Starting Point</label>
-      <input type="text" [(ngModel)]="destination" placeholder="Insert Starting Point" />
+    <div class="form-actions" *ngIf="!formVisible">
+      <button (click)="openForm()">Open route form</button>
     </div>
 
-    <div class="form-group">
-      <label>Destination</label>
-      <input type="text" [(ngModel)]="destination" placeholder="Insert Destination" />
+    <div *ngIf="formVisible" class="route-form">
+      <form (ngSubmit)="submitForm(originModel, destinationModel)">
+        <div class="form-group">
+          <label>Starting Point</label>
+          <input
+            name="origin"
+            required
+            type="text"
+            [(ngModel)]="origin"
+            #originModel="ngModel"
+            placeholder="Insert Starting Point"
+            (focus)="setActive('origin')"
+          />
+          <div class="error" *ngIf="originModel.invalid && (originModel.touched || originModel.dirty)">
+            Starting point is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Destination</label>
+          <input
+            name="destination"
+            required
+            type="text"
+            [(ngModel)]="destination"
+            #destinationModel="ngModel"
+            placeholder="Insert Destination"
+            (focus)="setActive('destination')"
+          />
+          <div class="error" *ngIf="destinationModel.invalid && (destinationModel.touched || destinationModel.dirty)">
+            Destination is required
+          </div>
+        </div>
+
+        <div *ngIf="activeInput" class="hint">
+          Click on the map to pick {{ activeInput === 'origin' ? 'Starting Point' : 'Destination' }}.
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" [disabled]="isLoading">Get Estimate</button>
+          <button type="button" (click)="closeForm()" [disabled]="isLoading">Cancel</button>
+        </div>
+      </form>
+
+      <div *ngIf="isLoading">Loading estimate...</div>
+      <div *ngIf="serverError" class="error">{{ serverError }}</div>
     </div>
 
-    <div class="form-actions">
-      <button (click)="calculateTime()">Calculate Time</button>
+    <div class="estimate" *ngIf="estimateMinutes !== null">
+      Estimated driving time: <strong>{{ estimateMinutes }} min</strong>
     </div>
   </div>
 
-<!--  <div class="right">-->
-<!--    <img src="/assets/images/map.jpeg" alt="Map" />-->
-<!--  </div>-->
-
-    <div class="right">
-<!--      <div id="map"></div>-->
-      <app-map></app-map>
-    </div>
-
-
+  <div class="right">
+    <!-- give the map an element reference so we can dispatch an event to it -->
+    <app-map #appMap></app-map>
+  </div>
 </div>
+
+<style>
+  .error {
+    color: red;
+    margin-top: 4px;
+  }
+  .hint {
+    color: red;
+    margin: 8px 0;
+  }
+  .route-form {
+    margin-top: 12px;
+    padding: 8px;
+    border: 1px solid #ddd;
+  }
+  .estimate {
+    margin-top: 12px;
+    padding: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+  }
+</style>

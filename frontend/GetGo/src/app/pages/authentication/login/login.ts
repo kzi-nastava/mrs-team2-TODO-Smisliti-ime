@@ -9,7 +9,6 @@ import {MatCheckboxModule} from '@angular/material/checkbox';
 import {RouterLink} from '@angular/router';
 import { AuthService } from '../auth-service/auth.service';
 import { Router } from '@angular/router';
-import {UserRole} from '../../../model/user.model';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
@@ -101,25 +100,20 @@ export class LoginComponent {
       next: (res) => {
         console.log('Login: server response', res);
 
-        if (res && res.token) {
-          localStorage.setItem('authToken', res.token);
-          console.log('Login: token stored in localStorage');
+        if (!res?.token) {
+          console.error('Login: token missing in response');
+          return;
         }
 
-        // prefer server-provided role; fallback to passenger
-        const assignedRole = res && res.role
-          ? (res.role === 'admin' ? UserRole.Admin : res.role === 'driver' ? UserRole.Driver : UserRole.Passenger)
-          : UserRole.Passenger;
+        this.auth.setToken(res.token);
 
-        this.auth.loginAs(assignedRole);
-        console.log('Login: applied role', assignedRole);
+        console.log('Login: token saved & role extracted from JWT');
 
+        console.log("Current role:", res.role)
         this.router.navigate(['/home']);
-        console.log('Login: navigated to /home');
       },
       error: (err) => {
         console.error('Login: request failed', err);
-        // optionally set UI error state here
       }
     });
   }

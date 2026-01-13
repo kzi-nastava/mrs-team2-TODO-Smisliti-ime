@@ -8,8 +8,13 @@ import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
 import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
+<<<<<<< Updated upstream
 import rs.getgo.backend.services.Impl.RideEstimateServiceImpl;
 import rs.getgo.backend.services.Impl.RideServiceImpl;
+=======
+import rs.getgo.backend.services.RideEstimateService;
+import rs.getgo.backend.services.RideService;
+>>>>>>> Stashed changes
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +28,14 @@ import java.util.List;
 @RequestMapping("/api/rides")
 public class RideController {
 
+<<<<<<< Updated upstream
     private final RideEstimateServiceImpl rideEstimateService;
     private final RideServiceImpl rideService;
+=======
+    private final RideTrackingService rideTrackingService;
+    private final RideEstimateService rideEstimateService;
+    private final RideService rideService;
+>>>>>>> Stashed changes
 
     public RideController(RideEstimateServiceImpl rideEstimateService, RideServiceImpl rideService) {
         this.rideEstimateService = rideEstimateService;

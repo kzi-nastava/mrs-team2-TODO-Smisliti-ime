@@ -54,6 +54,19 @@ export class MapComponent implements AfterViewInit{
       console.log('Map received set-active-input event, activeInput now:', this.activeInput);
     });
 
+<<<<<<< Updated upstream
+=======
+    L.Marker.prototype.options.icon = DefaultIcon;
+    this.initMap();
+
+    // Listen for set-active-input event (unregistered home)
+    this.elementRef.nativeElement.addEventListener('set-active-input', (ev: Event) => {
+      const ce = ev as CustomEvent<{ input: string | null }>;
+      this.activeInput = ce.detail.input;
+      console.log('Map received set-active-input event, activeInput now:', this.activeInput);
+    });
+
+>>>>>>> Stashed changes
     // Listen for set-active-input-index event (registered home)
     this.elementRef.nativeElement.addEventListener('set-active-input-index', (ev: Event) => {
       const ce = ev as CustomEvent<{ input: number | null }>;
@@ -149,6 +162,19 @@ export class MapComponent implements AfterViewInit{
   }
 
   setRoute(): void {
+<<<<<<< Updated upstream
+=======
+    const routeControl = L.Routing.control({
+      waypoints: [L.latLng(57.74, 11.94), L.latLng(57.6792, 11.949)],
+      router: L.routing.mapbox('DODATI SVOJ API KEY', {profile: 'mapbox/walking'})
+    }).addTo(this.map);
+
+    routeControl.on('routesfound', function(e : any) {
+      var routes = e.routes;
+      var summary = routes[0].summary;
+      alert('Total distance is ' + summary.totalDistance / 1000 + ' km and total time is ' + Math.round(summary.totalTime % 3600 / 60) + ' minutes');
+    });
+>>>>>>> Stashed changes
   }
 
   /*loadVehicles(): void {

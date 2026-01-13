@@ -11,6 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+<<<<<<< Updated upstream
+=======
+import rs.getgo.backend.services.AdminService;
+import rs.getgo.backend.services.AuthService;
+import rs.getgo.backend.services.Impl.AdminServiceImpl;
+>>>>>>> Stashed changes
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +26,11 @@ import java.util.List;
 @RequestMapping("/api/admin")
 public class AdminController {
 
+<<<<<<< Updated upstream
+=======
+    public final AdminService adminService = new AdminServiceImpl();
+
+>>>>>>> Stashed changes
     // 2.9.3 – Block user
     @PutMapping("/users/{id}/block")
     public ResponseEntity<CreatedUserDTO> blockUser(@PathVariable Long id) {
@@ -87,6 +98,7 @@ public class AdminController {
         UpdatedAdminDTO response = new UpdatedAdminDTO();
         response.setId(3L);
         response.setName(request.getName());
+<<<<<<< Updated upstream
 
         return ResponseEntity.ok(response);
     }
@@ -137,6 +149,98 @@ public class AdminController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedDriverChangeRequestDTO> rejectChangeRequest(
+=======
+
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Get all pending personal change requests
+    @GetMapping(value = "/driver-change-requests/personal",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<GetPersonalDriverChangeRequestDTO>> getPendingPersonalChangeRequests() {
+        List<GetPersonalDriverChangeRequestDTO> response = adminService.getPendingPersonalChangeRequests();
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Get all pending vehicle change requests
+    @GetMapping(value = "/driver-change-requests/vehicle",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<GetDriverVehicleChangeRequestDTO>> getPendingVehicleChangeRequests() {
+        List<GetDriverVehicleChangeRequestDTO> response = adminService.getPendingVehicleChangeRequests();
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Get all pending picture change requests
+    @GetMapping(value = "/driver-change-requests/picture",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<GetDriverAvatarChangeRequestDTO>> getPendingPictureChangeRequests() {
+        List<GetDriverAvatarChangeRequestDTO> response = adminService.getPendingAvatarChangeRequests();
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Get specific personal change request
+    @GetMapping(value = "/driver-change-requests/personal/{requestId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetPersonalDriverChangeRequestDTO> getPersonalChangeRequest(
+            @PathVariable Long requestId) {
+        GetPersonalDriverChangeRequestDTO response = adminService.getPersonalChangeRequest(requestId);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Get specific vehicle change request
+    @GetMapping(value = "/driver-change-requests/vehicle/{requestId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetDriverVehicleChangeRequestDTO> getVehicleChangeRequest(
+            @PathVariable Long requestId) {
+        GetDriverVehicleChangeRequestDTO response = adminService.getVehicleChangeRequest(requestId);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Get specific picture change request
+    @GetMapping(value = "/driver-change-requests/picture/{requestId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetDriverAvatarChangeRequestDTO> getPictureChangeRequest(
+            @PathVariable Long requestId) {
+        GetDriverAvatarChangeRequestDTO response = adminService.getAvatarChangeRequest(requestId);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Approve personal change request
+    @PutMapping(value = "/driver-change-requests/personal/{requestId}/approve",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> approvePersonalChangeRequest(
+            @PathVariable Long requestId) {
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        AcceptDriverChangeRequestDTO response = adminService.approvePersonalChangeRequest(requestId, adminId);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Approve vehicle change request
+    @PutMapping(value = "/driver-change-requests/vehicle/{requestId}/approve",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> approveVehicleChangeRequest(
+            @PathVariable Long requestId) {
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        AcceptDriverChangeRequestDTO response = adminService.approveVehicleChangeRequest(requestId, adminId);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Approve picture change request
+    @PutMapping(value = "/driver-change-requests/picture/{requestId}/approve",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> approvePictureChangeRequest(
+            @PathVariable Long requestId) {
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        AcceptDriverChangeRequestDTO response = adminService.approveAvatarChangeRequest(requestId, adminId);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Reject personal change request
+    @PutMapping(value = "/driver-change-requests/personal/{requestId}/reject",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> rejectPersonalChangeRequest(
+>>>>>>> Stashed changes
             @PathVariable Long requestId,
             @RequestBody RejectChangeRequestDTO request) {
 

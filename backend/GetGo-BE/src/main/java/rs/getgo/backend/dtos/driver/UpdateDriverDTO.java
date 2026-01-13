@@ -15,7 +15,6 @@ public class UpdateDriverDTO {
     private String surname;
     private String phone;
     private String address;
-    private String profilePictureUrl;
 
     // Vehicle info
     private String vehicleModel;

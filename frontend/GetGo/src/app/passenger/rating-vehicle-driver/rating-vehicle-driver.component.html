@@ -29,29 +29,32 @@
 
   <div class="ratings-summary">
     <div class="average-ratings">
-      <div class="avg-title">Vehicle Ratings
+      <div class="avg-title">Vehicle Rating
         <span class="avg-stars">&#9733; &#9733; &#9733; &#9733; &#9734;</span>
       </div>
-      <div class="avg-title">Driver Ratings
+      <div class="avg-title">Driver Rating
         <span class="avg-stars">&#9733; &#9733; &#9733; &#9733; &#9734;</span>
       </div>
     </div>
     <div class="comments-list">
-      <div class="comment-card">
-        <div class="comment-title">Vehicle Ratings <span class="comment-stars">&#9733; &#9733; &#9733; &#9733; &#9734;</span></div>
-        <div class="comment-text">Great driver! Very polite and professional, the ride was super smooth.</div>
-      </div>
-      <div class="comment-card">
-        <div class="comment-title">Vehicle Ratings <span class="comment-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</span></div>
-        <div class="comment-text">Great driver! Very polite and professional, the ride was super smooth.</div>
-      </div>
-      <div class="comment-card">
-        <div class="comment-title">Vehicle Ratings <span class="comment-stars">&#9733; &#9733; &#9733; &#9733; &#9734;</span></div>
-        <div class="comment-text">Great driver! Very polite and professional, the ride was super smooth.</div>
-      </div>
-      <div class="comment-card">
-        <div class="comment-title">Vehicle Ratings <span class="comment-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</span></div>
-        <div class="comment-text">Great driver! Very polite and professional, the ride was super smooth.</div>
+      <div class="comment-card" *ngFor="let rating of ratings">
+        <div class="comment-title">
+          Vehicle Rating
+          <span class="comment-stars">
+          <ng-container *ngFor="let star of [1,2,3,4,5]">
+            <span [innerHTML]="star <= rating.vehicleRating ? '&#9733;' : '&#9734;'"></span>
+          </ng-container>
+          </span>
+        </div>
+        <div class="comment-title">
+          Driver Rating
+          <span class="comment-stars">
+          <ng-container *ngFor="let star of [1,2,3,4,5]">
+            <span [innerHTML]="star <= rating.driverRating ? '&#9733;' : '&#9734;'"></span>
+          </ng-container>
+          </span>
+        </div>
+        <div class="comment-text">{{ rating.comment }}</div>
       </div>
     </div>
   </div>

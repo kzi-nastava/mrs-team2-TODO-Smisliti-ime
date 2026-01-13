@@ -93,29 +93,25 @@ export class UnregisteredHomeComponent implements AfterViewInit, OnDestroy {
     const detail = ce.detail;
 
     if (!detail) return;
-
     if (detail.inputType && detail.inputType !== this.activeInput) return;
+
+    const displayValue = detail.address || `${detail.lat.toFixed(5)}, ${detail.lng.toFixed(5)}`;
 
     if (this.activeInput === 'origin') {
       this.originCoords = { lat: detail.lat, lng: detail.lng };
-      this.origin = detail.address || `${detail.lat.toFixed(5)}, ${detail.lng.toFixed(5)}`;
+      this.origin = displayValue;  // Adresa u input
       console.log('Origin set to:', this.origin, 'coords:', this.originCoords);
-
-      // Force change detection immediately
-      this.cdr.detectChanges();
     } else if (this.activeInput === 'destination') {
       this.destinationCoords = { lat: detail.lat, lng: detail.lng };
-      this.destination = detail.address || `${detail.lat.toFixed(5)}, ${detail.lng.toFixed(5)}`;
+      this.destination = displayValue;  // Adresa u input
       console.log('Destination set to:', this.destination, 'coords:', this.destinationCoords);
-
-      // Force change detection immediately
-      this.cdr.detectChanges();
     }
 
-    // Reset active input after a small delay to ensure UI updates first
+    this.cdr.detectChanges();
+
+    // Reset active input
     setTimeout(() => {
       this.activeInput = null;
-
       if (this.mapEl?.nativeElement) {
         const event = new CustomEvent<{ input: ActiveInput }>('set-active-input', {
           detail: { input: null },

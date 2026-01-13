@@ -15,4 +15,9 @@ export class RatingService {
     return this.http.get<GetRatingDTO[]>(`${environment.apiHost}/api/ratings/ride/${rideId}`);
   }
 
+  createRating(rating: {driverRating: number, vehicleRating: number, comment: string, rideId: number}) {
+    return this.http.post<GetRatingDTO>(`${environment.apiHost}/api/ratings?rideId=${rating.rideId}`, rating);
+  }
+
+
 }

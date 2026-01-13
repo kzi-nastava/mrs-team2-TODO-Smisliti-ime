@@ -17,20 +17,13 @@ export class RideTrackingComponent implements OnInit{
   showReportForm = false;
   reportText = '';
 
-//   tracking = computed(() => ({
-//     startAddress: 'Zlatne grede 4',
-//     destinationAddress: 'Trg Dositeja Obradovića 7',
-//     estimatedTime: 39,
-//     completedDistance: 10,
-//     totalDistance: 50
-//   }));
 
   readonly tracking = computed(() => this.rideTrackingService.trackingResource.value());
   readonly loading = computed(() => this.rideTrackingService.trackingResource.isLoading());
 
 
   ngOnInit(): void {
-    // privremeno hardcode rideId
+    // temporary hardcode rideId
     this.rideTrackingService.startTracking(1);
 
     const logRide = computed(() => {
@@ -39,17 +32,8 @@ export class RideTrackingComponent implements OnInit{
         return ride;
       });
 
-      // da obezbedimo da se computed pokrene
       logRide();
   }
-
-//   tracking() {
-//     return this.rideTrackingService.tracking();
-//   }
-//
-//   loading() {
-//     return this.rideTrackingService.loading();
-//   }
 
   progressPercent(): number {
     const ride = this.tracking();

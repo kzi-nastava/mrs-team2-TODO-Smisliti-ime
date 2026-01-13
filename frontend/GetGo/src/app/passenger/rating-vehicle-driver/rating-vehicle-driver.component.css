@@ -158,6 +158,34 @@ button {
   height: 100%;
 }
 
+.stars-outer {
+  position: relative;
+  display: inline-block;
+  font-size: 1.5em;
+  line-height: 1;
+  color: #bbb;  /* empty stars */
+}
+
+.stars-outer::before {
+  content: '★★★★★';
+}
+
+.stars-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  color: #000; /* full stars */
+}
+
+.stars-inner::before {
+  content: '★★★★★';
+}
+
+
 
 @media (max-width: 900px) {
   .main-container {

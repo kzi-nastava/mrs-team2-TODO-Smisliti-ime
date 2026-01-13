@@ -1,36 +1,30 @@
 package rs.getgo.backend.controllers;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.beans.factory.annotation.Autowired;
 import rs.getgo.backend.dtos.admin.GetAdminDTO;
 import rs.getgo.backend.dtos.admin.UpdateAdminDTO;
 import rs.getgo.backend.dtos.admin.UpdatedAdminDTO;
+import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
+import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.*;
 import rs.getgo.backend.dtos.report.GetReportDTO;
+import rs.getgo.backend.dtos.request.*;
 import rs.getgo.backend.dtos.user.CreatedUserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-<<<<<<< Updated upstream
-=======
 import rs.getgo.backend.services.AdminService;
-import rs.getgo.backend.services.AuthService;
-import rs.getgo.backend.services.Impl.AdminServiceImpl;
->>>>>>> Stashed changes
 
-import java.util.ArrayList;
 import java.util.List;
 
-@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
 
-<<<<<<< Updated upstream
-=======
-    public final AdminService adminService = new AdminServiceImpl();
+    @Autowired
+    private AdminService adminService;
 
->>>>>>> Stashed changes
     // 2.9.3 – Block user
     @PutMapping("/users/{id}/block")
     public ResponseEntity<CreatedUserDTO> blockUser(@PathVariable Long id) {
@@ -67,24 +61,17 @@ public class AdminController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverDTO> registerDriver(
-            @RequestBody CreateDriverDTO request) {
+            @RequestBody CreateDriverDTO createDriverDTO) {
 
-        CreatedDriverDTO response = new CreatedDriverDTO();
-        response.setId(1L);
-        response.setEmail(request.getEmail());
-        response.setActivated(false);
-
+        CreatedDriverDTO response = adminService.registerDriver(createDriverDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 2.3 - User profile
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetAdminDTO> getProfile() {
-        GetAdminDTO response = new GetAdminDTO();
-        response.setId(3L);
-        response.setEmail("admin@example.com");
-        response.setName("Admin");
-
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        GetAdminDTO response = adminService.getAdminById(adminId);
         return ResponseEntity.ok(response);
     }
 
@@ -93,64 +80,23 @@ public class AdminController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedAdminDTO> updateProfile(
-            @RequestBody UpdateAdminDTO request) {
-
-        UpdatedAdminDTO response = new UpdatedAdminDTO();
-        response.setId(3L);
-        response.setName(request.getName());
-<<<<<<< Updated upstream
-
+            @RequestBody UpdateAdminDTO updateAdminDTO) {
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        UpdatedAdminDTO response = adminService.updateProfile(adminId, updateAdminDTO);
         return ResponseEntity.ok(response);
     }
 
-    // 2.3 - User profile (reviewing driver requests)
-    @GetMapping(value = "/driver-change-requests", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<GetDriverChangeRequestDTO>> getPendingChangeRequests() {
-
-        List<GetDriverChangeRequestDTO> response = new ArrayList<>();
-        GetDriverChangeRequestDTO request = new GetDriverChangeRequestDTO();
-        request.setRequestId(1L);
-        request.setDriverId(2L);
-        request.setStatus("PENDING");
-        response.add(request);
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 2.3 - User profile (reviewing driver requests)
-    @GetMapping(value = "/driver-change-requests/{requestId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GetDriverChangeRequestDTO> getChangeRequest(
-            @PathVariable Long requestId) {
-
-        GetDriverChangeRequestDTO response = new GetDriverChangeRequestDTO();
-        response.setRequestId(requestId);
-        response.setDriverId(2L);
-        response.setCurrentName("Jane");
-        response.setRequestedName("Janet");
-        response.setStatus("PENDING");
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 2.3 - User profile (reviewing driver requests)
-    @PutMapping(value = "/driver-change-requests/{requestId}/approve", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<UpdatedDriverChangeRequestDTO> approveChangeRequest(
-            @PathVariable Long requestId) {
-
-        UpdatedDriverChangeRequestDTO response = new UpdatedDriverChangeRequestDTO();
-        response.setRequestId(requestId);
-        response.setStatus("APPROVED");
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 2.3 - Reject driver change request
-    @PutMapping(value = "/driver-change-requests/{requestId}/reject",
+    // 2.3 - User profile (Change admin password)
+    @PutMapping(value = "/profile/password",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<UpdatedDriverChangeRequestDTO> rejectChangeRequest(
-=======
-
+    public ResponseEntity<UpdatedPasswordDTO> updatePassword(
+            @RequestBody UpdatePasswordDTO updatePasswordDTO) {
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        UpdatedPasswordDTO response = adminService.updatePassword(adminId, updatePasswordDTO);
+        if (!response.getSuccess()) {
+            return ResponseEntity.badRequest().body(response);
+        }
         return ResponseEntity.ok(response);
     }
 
@@ -240,16 +186,37 @@ public class AdminController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> rejectPersonalChangeRequest(
->>>>>>> Stashed changes
             @PathVariable Long requestId,
-            @RequestBody RejectChangeRequestDTO request) {
-
-        UpdatedDriverChangeRequestDTO response = new UpdatedDriverChangeRequestDTO();
-        response.setRequestId(requestId);
-        response.setStatus("REJECTED");
-        response.setRejectionReason(request.getReason());
-
+            @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        AcceptDriverChangeRequestDTO response = adminService.rejectPersonalChangeRequest(
+                requestId, adminId, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);
     }
 
+    // 2.3 - Reject vehicle change request
+    @PutMapping(value = "/driver-change-requests/vehicle/{requestId}/reject",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> rejectVehicleChangeRequest(
+            @PathVariable Long requestId,
+            @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        AcceptDriverChangeRequestDTO response = adminService.rejectVehicleChangeRequest(
+                requestId, adminId, rejectDriverChangeRequestDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Reject picture change request
+    @PutMapping(value = "/driver-change-requests/picture/{requestId}/reject",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> rejectPictureChangeRequest(
+            @PathVariable Long requestId,
+            @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
+        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+        AcceptDriverChangeRequestDTO response = adminService.rejectAvatarChangeRequest(
+                requestId, adminId, rejectDriverChangeRequestDTO);
+        return ResponseEntity.ok(response);
+    }
 }

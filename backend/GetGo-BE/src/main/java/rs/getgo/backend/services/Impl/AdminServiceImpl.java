@@ -12,8 +12,6 @@ import rs.getgo.backend.model.entities.Administrator;
 import rs.getgo.backend.repositories.AdministratorRepository;
 import rs.getgo.backend.services.AdminService;
 
-<<<<<<< Updated upstream
-=======
 // --- ADDED IMPORTS ---
 import java.util.List;
 import java.util.UUID;
@@ -48,19 +46,12 @@ import rs.getgo.backend.services.FileStorageService;
 import rs.getgo.backend.services.EmailService;
 // --- END ADDED IMPORTS ---
 
->>>>>>> Stashed changes
 @Service
 public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private AdministratorRepository adminRepo;
-<<<<<<< Updated upstream
 
-    @Autowired
-    private ModelMapper modelMapper;
-
-    @Override
-=======
     @Autowired
     private DriverRepository driverRepo;
     @Autowired
@@ -73,11 +64,12 @@ public class AdminServiceImpl implements AdminService {
     private DriverActivationTokenRepository driverActivationTokenRepo;
     @Autowired
     private FileStorageService fileStorageService;
-    @Autowired
+    @Autowired(required=false)
     private EmailService emailService;
     @Autowired
     private ModelMapper modelMapper;
 
+    @Override
     public CreatedDriverDTO registerDriver(CreateDriverDTO createDriverDTO) {
         Vehicle vehicle = fillVehicle(createDriverDTO);
         Driver driver = fillDriver(createDriverDTO, vehicle);
@@ -86,7 +78,9 @@ public class AdminServiceImpl implements AdminService {
         DriverActivationToken token = createDriverActivationToken(savedDriver);
         driverActivationTokenRepo.save(token);
 
-        emailService.sendActivationEmail(savedDriver.getEmail(), token.getToken());
+        if (emailService != null) {
+            emailService.sendActivationEmail(savedDriver.getEmail(), token.getToken());
+        }
 
         return modelMapper.map(savedDriver, CreatedDriverDTO.class);
     }
@@ -131,7 +125,7 @@ public class AdminServiceImpl implements AdminService {
         return driver;
     }
 
->>>>>>> Stashed changes
+    @Override
     public GetAdminDTO getAdminById(Long adminId) {
         Administrator admin = adminRepo.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
@@ -139,10 +133,7 @@ public class AdminServiceImpl implements AdminService {
         return modelMapper.map(admin, GetAdminDTO.class);
     }
 
-<<<<<<< Updated upstream
     @Override
-=======
->>>>>>> Stashed changes
     public UpdatedAdminDTO updateProfile(Long adminId, UpdateAdminDTO updateAdminDTO) {
         Administrator admin = adminRepo.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
@@ -164,10 +155,7 @@ public class AdminServiceImpl implements AdminService {
         return modelMapper.map(savedAdmin, UpdatedAdminDTO.class);
     }
 
-<<<<<<< Updated upstream
     @Override
-=======
->>>>>>> Stashed changes
     public UpdatedPasswordDTO updatePassword(Long adminId, UpdatePasswordDTO updatePasswordDTO) {
         if (!updatePasswordDTO.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
             return new UpdatedPasswordDTO(false, "Passwords do not match");
@@ -186,9 +174,7 @@ public class AdminServiceImpl implements AdminService {
         return new UpdatedPasswordDTO(true, "Password updated successfully");
     }
 
-<<<<<<< Updated upstream
     @Override
-=======
     public List<GetPersonalDriverChangeRequestDTO> getPendingPersonalChangeRequests() {
         List<PersonalChangeRequest> requests = personalChangeRequestRepo.findByStatus(RequestStatus.PENDING);
 
@@ -220,6 +206,7 @@ public class AdminServiceImpl implements AdminService {
         }).collect(Collectors.toList());
     }
 
+    @Override
     public List<GetDriverVehicleChangeRequestDTO> getPendingVehicleChangeRequests() {
         List<VehicleChangeRequest> requests = vehicleChangeRequestRepo.findByStatus(RequestStatus.PENDING);
 
@@ -258,6 +245,7 @@ public class AdminServiceImpl implements AdminService {
         }).collect(Collectors.toList());
     }
 
+    @Override
     public List<GetDriverAvatarChangeRequestDTO> getPendingAvatarChangeRequests() {
         List<AvatarChangeRequest> requests = avatarChangeRequestRepo.findByStatus(RequestStatus.PENDING);
 
@@ -283,6 +271,7 @@ public class AdminServiceImpl implements AdminService {
         }).collect(Collectors.toList());
     }
 
+    @Override
     public GetPersonalDriverChangeRequestDTO getPersonalChangeRequest(Long requestId) {
         PersonalChangeRequest request = personalChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Personal change request not found with id: " + requestId));
@@ -311,6 +300,7 @@ public class AdminServiceImpl implements AdminService {
         return dto;
     }
 
+    @Override
     public GetDriverVehicleChangeRequestDTO getVehicleChangeRequest(Long requestId) {
         VehicleChangeRequest request = vehicleChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Vehicle change request not found with id: " + requestId));
@@ -346,6 +336,7 @@ public class AdminServiceImpl implements AdminService {
         return dto;
     }
 
+    @Override
     public GetDriverAvatarChangeRequestDTO getAvatarChangeRequest(Long requestId) {
         AvatarChangeRequest request = avatarChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Avatar change request not found with id: " + requestId));
@@ -367,6 +358,7 @@ public class AdminServiceImpl implements AdminService {
         return dto;
     }
 
+    @Override
     public AcceptDriverChangeRequestDTO approvePersonalChangeRequest(Long requestId, Long adminId) {
         PersonalChangeRequest request = personalChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Personal change request not found with id: " + requestId));
@@ -398,6 +390,7 @@ public class AdminServiceImpl implements AdminService {
         );
     }
 
+    @Override
     public AcceptDriverChangeRequestDTO approveVehicleChangeRequest(Long requestId, Long adminId) {
         VehicleChangeRequest request = vehicleChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Vehicle change request not found with id: " + requestId));
@@ -436,6 +429,7 @@ public class AdminServiceImpl implements AdminService {
         );
     }
 
+    @Override
     public AcceptDriverChangeRequestDTO approveAvatarChangeRequest(Long requestId, Long adminId) {
         AvatarChangeRequest request = avatarChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Avatar change request not found with id: " + requestId));
@@ -469,6 +463,7 @@ public class AdminServiceImpl implements AdminService {
         );
     }
 
+    @Override
     public AcceptDriverChangeRequestDTO rejectPersonalChangeRequest(Long requestId, Long adminId, RejectDriverChangeRequestDTO rejectDTO) {
         PersonalChangeRequest request = personalChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Personal change request not found with id: " + requestId));
@@ -491,6 +486,7 @@ public class AdminServiceImpl implements AdminService {
         );
     }
 
+    @Override
     public AcceptDriverChangeRequestDTO rejectVehicleChangeRequest(Long requestId, Long adminId, RejectDriverChangeRequestDTO rejectDTO) {
         VehicleChangeRequest request = vehicleChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Vehicle change request not found with id: " + requestId));
@@ -513,6 +509,7 @@ public class AdminServiceImpl implements AdminService {
         );
     }
 
+    @Override
     public AcceptDriverChangeRequestDTO rejectAvatarChangeRequest(Long requestId, Long adminId, RejectDriverChangeRequestDTO rejectDTO) {
         AvatarChangeRequest request = avatarChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Avatar change request not found with id: " + requestId));
@@ -538,32 +535,23 @@ public class AdminServiceImpl implements AdminService {
         );
     }
 
->>>>>>> Stashed changes
+    @Override
     public void blockUser() {
-        // TODO
+        // TODO: implement block user logic
     }
 
-<<<<<<< Updated upstream
     @Override
-=======
->>>>>>> Stashed changes
     public void unblockUser() {
-        // TODO
+        // TODO: implement unblock user logic
     }
 
-<<<<<<< Updated upstream
     @Override
-=======
->>>>>>> Stashed changes
     public void getReports() {
-        // TODO
+        // TODO: implement get reports logic
     }
 
-<<<<<<< Updated upstream
     @Override
-=======
->>>>>>> Stashed changes
     public void createAdmin() {
-        // TODO
+        // TODO: implement create admin logic
     }
 }

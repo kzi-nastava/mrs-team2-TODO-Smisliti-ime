@@ -4,18 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestTemplate;
 import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
 import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
 import rs.getgo.backend.model.entities.RideEstimate;
 import rs.getgo.backend.repositories.RideEstimateRepository;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.List;
 
 import rs.getgo.backend.services.RideEstimateService;
 
@@ -44,35 +40,77 @@ public class RideEstimateServiceImpl implements RideEstimateService {
             throw new IllegalArgumentException("Need at least 2 coordinates: start and destination");
         }
 
-        var start = request.getCoordinates().get(0);
-        var dest = request.getCoordinates().get(1);
+        List<?> coords = request.getCoordinates();
+        int n = coords.size();
 
-        CreateRideEstimateDTO dto = new CreateRideEstimateDTO();
-        dto.setCoordinates(Arrays.asList(start, dest));
+        // compute straight-line meters per segment and minutes per segment
+        double totalStraightMeters = 0.0;
+        StringBuilder breakdown = new StringBuilder();
+        int totalMinutes = 0;
 
-        double straightMeters = haversineMeters(start.getLat(), start.getLng(), dest.getLat(), dest.getLng());
-        double approxRoadMeters = straightMeters * ROUTE_FACTOR;
+        for (int i = 0; i < n - 1; i++) {
+            // assuming coordinate objects have getLat() and getLng()
+            var a = request.getCoordinates().get(i);
+            var b = request.getCoordinates().get(i + 1);
 
-        double hours = (approxRoadMeters / 1000.0) / DEFAULT_AVG_SPEED_KMH;
-        long estimatedSeconds = Math.max(60L, Math.round(hours * 3600.0));
-        int estimatedMinutes = (int) (estimatedSeconds / 60);
+            double latA = ((Number) invokeGetter(a, "getLat")).doubleValue();
+            double lonA = ((Number) invokeGetter(a, "getLng")).doubleValue();
+            double latB = ((Number) invokeGetter(b, "getLat")).doubleValue();
+            double lonB = ((Number) invokeGetter(b, "getLng")).doubleValue();
 
-        double km = approxRoadMeters / 1000.0;
+            double segMeters = haversineMeters(latA, lonA, latB, lonB);
+            totalStraightMeters += segMeters;
+
+            double segKm = Math.round((segMeters / 1000.0) * 100.0) / 100.0;
+            int segMinutes = (int) Math.max(1L, Math.round((segKm / DEFAULT_AVG_SPEED_KMH) * 60.0));
+            totalMinutes += segMinutes;
+
+            if (i > 0) breakdown.append("; ");
+            breakdown.append(String.format("%d->%d: %.2f km, %d min", i + 1, i + 2, segKm, segMinutes));
+        }
+
+        // approximate road meters and compute totals
+        double approxRoadMeters = totalStraightMeters * ROUTE_FACTOR;
+        double km = Math.round((approxRoadMeters / 1000.0) * 100.0) / 100.0;
         double price = Math.round((BASE_FARE + PER_KM_RATE * km) * 100.0) / 100.0;
 
+        // persist entity with start = first coord and dest = last coord
+        var start = request.getCoordinates().get(0);
+        var dest = request.getCoordinates().get(n - 1);
+
+        double startLat = ((Number) invokeGetter(start, "getLat")).doubleValue();
+        double startLon = ((Number) invokeGetter(start, "getLng")).doubleValue();
+        double destLat = ((Number) invokeGetter(dest, "getLat")).doubleValue();
+        double destLon = ((Number) invokeGetter(dest, "getLng")).doubleValue();
+
         RideEstimate entity = new RideEstimate();
-        entity.setStartLat(start.getLat());
-        entity.setStartLon(start.getLng());
-        entity.setDestLat(dest.getLat());
-        entity.setDestLon(dest.getLng());
+        entity.setStartLat(startLat);
+        entity.setStartLon(startLon);
+        entity.setDestLat(destLat);
+        entity.setDestLon(destLon);
         entity.setDistanceMeters(approxRoadMeters);
-        entity.setEstimatedTimeMinutes(estimatedMinutes);
+        entity.setEstimatedTimeMinutes(totalMinutes);
         entity.setPrice(price);
         entity.setCreatedAt(LocalDateTime.now());
 
         repository.save(entity);
 
-        return new CreatedRideEstimateDTO(km, estimatedMinutes, price);
+        // append total to breakdown
+        breakdown.append(String.format("; Total: %d min", totalMinutes));
+
+        return new CreatedRideEstimateDTO(km, totalMinutes, price, breakdown.toString());
+    }
+
+    /**
+     * Helper to call getter reflectively without creating a direct dependency on DTO class.
+     * Expects methodName like "getLat" or "getLng" that returns Number.
+     */
+    private Object invokeGetter(Object obj, String methodName) {
+        try {
+            return obj.getClass().getMethod(methodName).invoke(obj);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Coordinate object must have " + methodName + "() returning Number", ex);
+        }
     }
 
     private String requireNotBlank(String value, String field) {
@@ -92,3 +130,4 @@ public class RideEstimateServiceImpl implements RideEstimateService {
         return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     }
 }
+

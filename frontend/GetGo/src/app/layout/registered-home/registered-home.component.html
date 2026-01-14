@@ -1,3 +1,5 @@
+<app-nav-bar></app-nav-bar>
+
 <form [formGroup]="travelForm" (ngSubmit)="submit()">
   <div class="home">
     <div class="left">
@@ -5,18 +7,34 @@
 
       <div class="destinations" formArrayName="destinations">
         <div *ngFor="let dest of destinations.controls; let i = index" [formGroupName]="i" class="dest-row">
-          <input type="text" formControlName="name"
-                 [placeholder]="i === 0 ? 'Starting point' : (i === destinations.length - 1 ? 'Destination' : 'Waypoint')" />
+          <input
+            type="text"
+            formControlName="name"
+            [placeholder]="i === 0 ? 'Starting point' : (i === destinations.length - 1 ? 'Destination' : 'Waypoint ' + i)"
+            (focus)="setActive(i)"
+          />
 
-          <!-- dugmad su uvek vidljiva -->
-          <button type="button" class="mini">+</button>
-          <button type="button" class="mini">-</button>
+          <button type="button" class="mini" (click)="addDestination(i)">+</button>
+          <button
+            type="button"
+            class="mini"
+            (click)="removeDestination(i)"
+            [disabled]="destinations.length <= 2"
+          >-</button>
+
+          <div class="error" *ngIf="dest.get('name')?.invalid && dest.get('name')?.touched">
+            {{ i === 0 ? 'Starting point' : (i === destinations.length - 1 ? 'Destination' : 'Waypoint') }} is required
+          </div>
         </div>
+      </div>
+
+      <div *ngIf="activeInputIndex !== null" class="hint">
+        Click on the map to pick location for {{ activeInputIndex === 0 ? 'Starting point' : (activeInputIndex === destinations.length - 1 ? 'Destination' : 'Waypoint ' + activeInputIndex) }}.
       </div>
 
       <div class="form-group">
         <label>Order Timing</label>
-        <select>
+        <select formControlName="orderTiming">
           <option value="now">Order now</option>
           <option value="later">Order later</option>
         </select>
@@ -24,19 +42,27 @@
 
       <div class="form-group">
         <label>Travel Option</label>
-        <select>
+        <select formControlName="travelOption">
           <option value="alone">Alone</option>
           <option value="friends">With friends</option>
         </select>
       </div>
 
       <div class="form-actions">
-        <button type="submit">Calculate Time</button>
+        <button type="submit" [disabled]="isLoading">Calculate Time</button>
+        <button type="button" (click)="cancel()" [disabled]="isLoading">Cancel</button>
+      </div>
+
+      <div *ngIf="isLoading">Loading estimate...</div>
+      <div *ngIf="serverError" class="error">{{ serverError }}</div>
+
+      <div class="estimate" *ngIf="estimateMinutes !== null">
+        Estimated driving time: <strong>{{ estimateMinutes }} min</strong>
       </div>
     </div>
 
     <div class="right">
-      <img src="/assets/images/map.jpeg" alt="Map" />
+      <app-map #appMap></app-map>
     </div>
   </div>
 </form>

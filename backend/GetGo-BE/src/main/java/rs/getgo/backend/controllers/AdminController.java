@@ -1,6 +1,7 @@
 package rs.getgo.backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.admin.GetAdminDTO;
 import rs.getgo.backend.dtos.admin.UpdateAdminDTO;
 import rs.getgo.backend.dtos.admin.UpdatedAdminDTO;
@@ -18,6 +19,7 @@ import rs.getgo.backend.services.AdminService;
 
 import java.util.List;
 
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -28,14 +30,14 @@ public class AdminController {
     // 2.9.3 – Block user
     @PutMapping("/users/{id}/block")
     public ResponseEntity<CreatedUserDTO> blockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Blocked", "User", "+38178687868");
+        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", true);
         return ResponseEntity.ok(response);
     }
 
     // 2.9.3 – Unblock user
     @PutMapping("/users/{id}/unblock")
     public ResponseEntity<CreatedUserDTO> unblockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "unblocked@getgo.com", "Active", "User", "+38178687868");
+        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", false);
         return ResponseEntity.ok(response);
     }
 
@@ -52,7 +54,7 @@ public class AdminController {
     // 2.9.3 – Create admin profile
     @PostMapping("/create")
     public ResponseEntity<CreatedUserDTO> createAdmin() {
-        CreatedUserDTO response = new CreatedUserDTO(10L, "admin@getgo.com", "Admin", "User", "+38178687868");
+        CreatedUserDTO response = new CreatedUserDTO(10L, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", true);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

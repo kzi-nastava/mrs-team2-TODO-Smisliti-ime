@@ -2,6 +2,7 @@ package rs.getgo.backend.controllers;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
@@ -26,6 +27,7 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/api/drivers")
 public class DriverController {
+
 
     @Autowired
     private DriverServiceImpl driverService;
@@ -66,6 +68,7 @@ public class DriverController {
     }
 
     // 2.2.3 - Driver registration
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/activate/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetActivationTokenDTO> validateActivationToken(
             @PathVariable String token) {
@@ -78,6 +81,7 @@ public class DriverController {
     }
 
     // 2.2.3 - Driver registration
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/activate",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -146,6 +150,7 @@ public class DriverController {
     }
 
     // 2.4.1 - Calling a ride
+    @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/active-locations", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetActiveDriverLocationDTO>> getActiveDriverLocations() {
 
@@ -158,6 +163,4 @@ public class DriverController {
 
         return ResponseEntity.ok(response);
     }
-
-
 }

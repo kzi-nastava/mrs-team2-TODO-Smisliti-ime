@@ -11,5 +11,7 @@ public class CreatedUserDTO {
     private String email;
     private String name;
     private String surname;
-    private String phone;
+    private String address;
+    private String phoneNumber;
+    private Boolean blocked;
 }

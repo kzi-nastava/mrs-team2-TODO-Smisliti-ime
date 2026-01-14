@@ -63,7 +63,7 @@ export class MapComponent implements AfterViewInit{
 
     this.registerOnClick();
     this.setRoute();
-    //this.loadVehicles();
+    this.loadVehicles();
   }
 
   searchStreet(street: string): Observable<any> {
@@ -151,15 +151,43 @@ export class MapComponent implements AfterViewInit{
   setRoute(): void {
   }
 
-  /*loadVehicles(): void {
-    this.vehicleService.getVehicles().subscribe({
-      next: (vehicles: GetVehicleDTO[]) => {
-        console.log('Vehicles loaded:', vehicles);
-        // Here you would add code to display vehicles on the map
-      },
-      error: (err) => {
-        console.error('Error loading vehicles:', err);
-      }
+  private addVehicleMarker(vehicle: GetVehicleDTO): L.Marker {
+    const lat = Number(vehicle.latitude);
+    const lng = Number(vehicle.longitude);
+
+    const iconUrl = vehicle.isAvailable
+      ? 'assets/images/green_car.svg'
+      : 'assets/images/red_car.svg';
+
+    const icon = L.icon({
+      iconUrl: iconUrl,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -16]
     });
-  }*/
+
+    // Create the marker with the icon and bind a popup
+    const marker = L.marker([lat, lng], { icon })
+      .bindPopup(`${vehicle.model} - ${vehicle.isAvailable ? 'Free' : 'Busy'}`);
+
+    return marker;
+  }
+
+  private loadVehicles(): void {
+    console.log('Trying to load vehicles...');
+    this.vehicleService.getActiveVehicles().subscribe({
+      next: (vehicles: GetVehicleDTO[]) => {
+        console.log('Loaded vehicles:', vehicles);
+        if (!vehicles || vehicles.length === 0) return;
+
+        // Create a feature group to hold all vehicle markers
+        const markers = vehicles.map(vehicle => this.addVehicleMarker(vehicle));
+        const group = L.featureGroup(markers).addTo(this.map);
+
+        // Automatically adjust map view to fit all markers with padding
+        this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
+      },
+      error: (err) => console.error(err)
+    });
+  }
 }

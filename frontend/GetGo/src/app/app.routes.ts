@@ -16,23 +16,28 @@ import { FavoriteRides } from './passenger/favorite-rides/favorite-rides';
 import { RatingVehicleDriverComponent } from './passenger/rating-vehicle-driver/rating-vehicle-driver.component';
 // import { InRideComponent } from './passenger/in-ride/in-ride.component';
 import { RideTrackingComponent } from './passenger/ride-tracking/ride-tracking.component';
+import { AuthGuard } from './pages/authentication/auth.guard';
+import { homeGuard } from './pages/authentication/home.guard';
+import { UserRole } from './model/user.model';
 
 export const routes: Routes = [
-  { path: '', component: UnregisteredHomeComponent },
-  { path: 'home', component: RegisteredHomeComponent },
+  { path: '', redirectTo: '/home', pathMatch: 'full' },
+  { path: 'home', canActivate: [homeGuard], children: [] },
+  { path: 'unregistered-home', component: UnregisteredHomeComponent },
+  { path: 'registered-home', component: RegisteredHomeComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger, UserRole.Driver, UserRole.Admin] } },
   { path: 'login', component: LoginComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'register', component: RegisterComponent },
-  { path: 'ride', component: RideComponent},
-  { path: 'driver/rides/:id', component: RideDetailsComponent},
-  { path: 'passenger/passenger-profile', component: PassengerProfileInfo},
-  { path: 'passenger/rating-vehicle-driver', component: RatingVehicleDriverComponent},
-//   { path: 'passenger/in-ride', component: InRideComponent},
-  { path: 'passenger/ride-tracking', component: RideTrackingComponent},
-  { path: 'driver/driver-profile', component: DriverProfile},
-  { path: 'admin/admin-profile', component: AdminProfile},
-  { path: 'admin/driver-registration', component: DriverRegistration},
-  { path: 'order-ride', component: OrderRide},
-  { path: 'favorite-rides', component:FavoriteRides},
+  { path: 'ride', component: RideComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
+  { path: 'driver/rides/:id', component: RideDetailsComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
+  { path: 'passenger/passenger-profile', component: PassengerProfileInfo, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
+  { path: 'passenger/rating-vehicle-driver', component: RatingVehicleDriverComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
+//   { path: 'passenger/in-ride', component: InRideComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
+  { path: 'passenger/ride-tracking', component: RideTrackingComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
+  { path: 'driver/driver-profile', component: DriverProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
+  { path: 'admin/admin-profile', component: AdminProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
+  { path: 'admin/driver-registration', component: DriverRegistration, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
+  { path: 'order-ride', component: OrderRide, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
+  { path: 'favorite-rides', component: FavoriteRides, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: '**', component: NotFoundComponent }
 ];

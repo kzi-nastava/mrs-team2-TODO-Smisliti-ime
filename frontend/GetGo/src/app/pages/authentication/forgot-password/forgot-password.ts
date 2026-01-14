@@ -5,19 +5,19 @@ import {Router, RouterLink} from '@angular/router';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatIcon} from '@angular/material/icon';
 import {MatButton} from '@angular/material/button';
-import { HttpClient } from '@angular/common/http'; // added
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-forgot-password',
   imports: [
+    CommonModule,
     RouterLink,
     MatFormField,
     MatLabel,
     ReactiveFormsModule,
     MatIcon,
     MatInput,
-    MatButton,
-    CommonModule
+    MatButton
   ],
   templateUrl: './forgot-password.html',
   styleUrls: ['./forgot-password.css']

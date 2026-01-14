@@ -65,7 +65,7 @@ public class DriverServiceImpl {
                 List<Passenger> passengers = passengerRepository.findAllById(r.getLinkedPassengerIds());
 
                 for (Passenger p : passengers) {
-                    passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getUsername()));
+                    passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getEmail()));
                 }
             }
 

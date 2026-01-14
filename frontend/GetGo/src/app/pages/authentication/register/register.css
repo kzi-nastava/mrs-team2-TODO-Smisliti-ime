@@ -29,7 +29,7 @@ form {
   z-index: 1;
   width: 92%;
   max-width: 420px;
-  padding: 32px 32px;
+  padding: 24px 28px; /* reduced from 32px */
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(12px) saturate(180%);
@@ -38,10 +38,11 @@ form {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px; /* reduced from 14px */
   color: #ffffff;
   animation: popup 400ms cubic-bezier(0.2, 0.9, 0.2, 1);
   transition: transform 300ms ease, box-shadow 300ms ease;
+  margin-top: 80px; /* adjust based on navbar height */
 }
 
 form:hover {
@@ -74,8 +75,8 @@ form:hover {
 }
 
 .avatar-button {
-  width: 80px;
-  height: 80px;
+  width: 70px; /* reduced from 80px */
+  height: 70px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.85);
   background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.35), transparent 55%),
@@ -88,6 +89,8 @@ form:hover {
   outline: none;
   transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+  position: relative;
+  overflow: hidden;
 }
 
 .avatar-button:hover {
@@ -102,15 +105,31 @@ form:hover {
 }
 
 .avatar-button mat-icon {
-  font-size: 40px;
-  width: 40px;
-  height: 40px;
+  font-size: 36px; /* reduced from 40px */
+  width: 36px;
+  height: 36px;
   color: #e5f2ff;
+  position: relative;
+  z-index: 2;
+}
+
+.avatar-button img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.avatar-button input[type="file"] {
+  display: none;
 }
 
 h1 {
-  margin: 0 0 4px 0;
-  font-size: 28px;
+  margin: 0 0 2px 0; /* reduced from 4px */
+  font-size: 24px; /* reduced from 28px */
   font-weight: 700;
   text-align: center;
   color: #ffffff;
@@ -118,8 +137,8 @@ h1 {
 }
 
 .subtitle {
-  margin: 0 0 12px 0;
-  font-size: 14px;
+  margin: 0 0 8px 0; /* reduced from 12px */
+  font-size: 13px; /* reduced from 14px */
   text-align: center;
   color: rgba(255, 255, 255, 0.8);
   font-weight: 300;
@@ -127,12 +146,12 @@ h1 {
 
 /* only inputs area scrolls */
 .form-scroll {
-  max-height: 50vh;
+  max-height: 42vh; /* reduced from 50vh */
   overflow-y: auto;
   padding-right: 6px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px; /* reduced from 12px */
 }
 
 /* nice white/transparent scrollbar for inputs area only */
@@ -169,7 +188,7 @@ mat-form-field {
 ::ng-deep mat-form-field .mat-mdc-form-field-infix {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
-  min-height: 48px !important; /* smaller than login 56px */
+  min-height: 42px !important; /* reduced from 48px */
   display: flex !important;
   align-items: center !important;
 }
@@ -241,12 +260,12 @@ mat-form-field {
 
 button[type="submit"] {
   width: 100%;
-  height: 44px;
-  margin-top: 8px;
+  height: 40px; /* reduced from 44px */
+  margin-top: 6px; /* reduced from 8px */
   background-color: #024aa8;
   color: #ffffff;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px; /* reduced from 15px */
   border: 2px solid #ffffff;
   border-radius: 24px;
   transition: all 200ms ease;
@@ -267,10 +286,10 @@ button[type="submit"]:disabled {
 
 .register-section {
   text-align: center;
-  font-size: 14px;
+  font-size: 13px; /* reduced from 14px */
   color: rgba(255, 255, 255, 0.9);
-  margin-top: 12px;
-  padding-top: 16px;
+  margin-top: 8px; /* reduced from 12px */
+  padding-top: 12px; /* reduced from 16px */
   border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -303,19 +322,19 @@ button[type="submit"]:disabled {
 
 @media (max-width: 480px) {
   form {
-    padding: 28px 20px;
+    padding: 20px 18px; /* reduced */
     max-width: 96%;
   }
 
   h1 {
-    font-size: 24px;
+    font-size: 22px; /* reduced */
   }
 
   .subtitle {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .form-scroll {
-    max-height: 52vh;
+    max-height: 45vh; /* adjusted */
   }
 }

@@ -181,7 +181,7 @@ public class DriverServiceImpl {
         Driver driver = driverRepo.findById(driverId)
                 .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
 
-        if (!driver.getPassword().equals(updatePasswordDTO.getOldPassword())) {
+        if (!driver.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
         }
 

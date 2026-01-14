@@ -58,8 +58,8 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(request.getEmail());
         // hash password before saving
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
+        user.setName(request.getName());
+        user.setSurname(request.getSurname());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setAddress(request.getAddress());
         user.setRole(UserRole.PASSENGER);
@@ -70,8 +70,8 @@ public class AuthServiceImpl implements AuthService {
         return new CreatedUserDTO(
                 saved.getId(),
                 saved.getEmail(),
-                saved.getFirstName(),
-                saved.getLastName(),
+                saved.getName(),
+                saved.getSurname(),
                 saved.getAddress(),
                 saved.getPhoneNumber(),
                 saved.isBlocked()

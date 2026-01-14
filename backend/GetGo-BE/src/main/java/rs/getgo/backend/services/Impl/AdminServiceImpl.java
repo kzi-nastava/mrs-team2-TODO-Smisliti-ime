@@ -87,9 +87,8 @@ public class AdminServiceImpl implements AdminService {
     private Driver fillDriver(CreateDriverDTO createDriverDTO, Vehicle vehicle) {
         Driver driver = new Driver();
         driver.setEmail(createDriverDTO.getEmail());
-        // changed to firstName/lastName/phoneNumber
-        driver.setFirstName(createDriverDTO.getName());
-        driver.setLastName(createDriverDTO.getSurname());
+        driver.setName(createDriverDTO.getName());
+        driver.setSurname(createDriverDTO.getSurname());
         driver.setPhoneNumber(createDriverDTO.getPhone());
         driver.setAddress(createDriverDTO.getAddress());
         driver.setProfilePictureUrl(fileStorageService.getDefaultProfilePicture());
@@ -115,10 +114,10 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
 
         if (updateAdminDTO.getName() != null && !updateAdminDTO.getName().trim().isEmpty()) {
-            admin.setFirstName(updateAdminDTO.getName().trim());
+            admin.setName(updateAdminDTO.getName().trim());
         }
         if (updateAdminDTO.getSurname() != null && !updateAdminDTO.getSurname().trim().isEmpty()) {
-            admin.setLastName(updateAdminDTO.getSurname().trim());
+            admin.setSurname(updateAdminDTO.getSurname().trim());
         }
         if (updateAdminDTO.getPhone() != null && !updateAdminDTO.getPhone().trim().isEmpty()) {
             admin.setPhoneNumber(updateAdminDTO.getPhone().trim());
@@ -140,7 +139,7 @@ public class AdminServiceImpl implements AdminService {
         Administrator admin = adminRepo.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
 
-        if (!admin.getPassword().equals(updatePasswordDTO.getOldPassword())) {
+        if (!admin.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
         }
 
@@ -161,12 +160,11 @@ public class AdminServiceImpl implements AdminService {
             dto.setRequestId(request.getId());
             dto.setDriverId(driver.getId());
             dto.setDriverEmail(driver.getEmail());
-            // use firstName/lastName
-            dto.setDriverName(driver.getFirstName() + " " + driver.getLastName());
+            dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
             // Current data
-            dto.setCurrentName(driver.getFirstName());
-            dto.setCurrentSurname(driver.getLastName());
+            dto.setCurrentName(driver.getName());
+            dto.setCurrentSurname(driver.getSurname());
             dto.setCurrentPhone(driver.getPhoneNumber());
             dto.setCurrentAddress(driver.getAddress());
 
@@ -195,7 +193,7 @@ public class AdminServiceImpl implements AdminService {
             dto.setRequestId(request.getId());
             dto.setDriverId(driver.getId());
             dto.setDriverEmail(driver.getEmail());
-            dto.setDriverName(driver.getFirstName() + " " + driver.getLastName());
+            dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
             // Current vehicle data
             if (vehicle != null) {
@@ -233,7 +231,7 @@ public class AdminServiceImpl implements AdminService {
             dto.setRequestId(request.getId());
             dto.setDriverId(driver.getId());
             dto.setDriverEmail(driver.getEmail());
-            dto.setDriverName(driver.getFirstName() + " " + driver.getLastName());
+            dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
             // Current profile picture
             dto.setCurrentProfilePictureUrl(fileStorageService.getFileUrl(driver.getProfilePictureUrl()));
@@ -259,10 +257,10 @@ public class AdminServiceImpl implements AdminService {
         dto.setRequestId(request.getId());
         dto.setDriverId(driver.getId());
         dto.setDriverEmail(driver.getEmail());
-        dto.setDriverName(driver.getFirstName() + " " + driver.getLastName());
+        dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
-        dto.setCurrentName(driver.getFirstName());
-        dto.setCurrentSurname(driver.getLastName());
+        dto.setCurrentName(driver.getName());
+        dto.setCurrentSurname(driver.getSurname());
         dto.setCurrentPhone(driver.getPhoneNumber());
         dto.setCurrentAddress(driver.getAddress());
 
@@ -289,7 +287,7 @@ public class AdminServiceImpl implements AdminService {
         dto.setRequestId(request.getId());
         dto.setDriverId(driver.getId());
         dto.setDriverEmail(driver.getEmail());
-        dto.setDriverName(driver.getFirstName() + " " + driver.getLastName());
+        dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
         if (vehicle != null) {
             dto.setCurrentVehicleModel(vehicle.getModel());
@@ -324,7 +322,7 @@ public class AdminServiceImpl implements AdminService {
         dto.setRequestId(request.getId());
         dto.setDriverId(driver.getId());
         dto.setDriverEmail(driver.getEmail());
-        dto.setDriverName(driver.getFirstName() + " " + driver.getLastName());
+        dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
         dto.setCurrentProfilePictureUrl(fileStorageService.getFileUrl(driver.getProfilePictureUrl()));
         dto.setRequestedProfilePictureUrl(fileStorageService.getFileUrl(request.getRequestedProfilePictureUrl()));
@@ -346,8 +344,8 @@ public class AdminServiceImpl implements AdminService {
         Driver driver = request.getDriver();
 
         // Apply changes to driver using firstName/lastName/phoneNumber
-        driver.setFirstName(request.getRequestedName());
-        driver.setLastName(request.getRequestedSurname());
+        driver.setName(request.getRequestedName());
+        driver.setSurname(request.getRequestedSurname());
         driver.setPhoneNumber(request.getRequestedPhone());
         driver.setAddress(request.getRequestedAddress());
         driverRepo.save(driver);

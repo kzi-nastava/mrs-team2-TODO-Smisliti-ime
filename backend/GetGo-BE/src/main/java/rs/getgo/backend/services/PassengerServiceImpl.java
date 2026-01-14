@@ -37,10 +37,10 @@ public class PassengerServiceImpl {
                 .orElseThrow(() -> new RuntimeException("Passenger not found with id: " + passengerId));
 
         if (updatePassengerDTO.getName() != null && !updatePassengerDTO.getName().trim().isEmpty()) {
-            passenger.setFirstName(updatePassengerDTO.getName().trim());
+            passenger.setName(updatePassengerDTO.getName().trim());
         }
         if (updatePassengerDTO.getSurname() != null && !updatePassengerDTO.getSurname().trim().isEmpty()) {
-            passenger.setLastName(updatePassengerDTO.getSurname().trim());
+            passenger.setSurname(updatePassengerDTO.getSurname().trim());
         }
         if (updatePassengerDTO.getPhone() != null && !updatePassengerDTO.getPhone().trim().isEmpty()) {
             passenger.setPhoneNumber(updatePassengerDTO.getPhone().trim());
@@ -61,7 +61,7 @@ public class PassengerServiceImpl {
         Passenger passenger = passengerRepo.findById(passengerId)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with id: " + passengerId));
 
-        if (!passenger.getPassword().equals(updatePasswordDTO.getOldPassword())) {
+        if (!passenger.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
         }
 

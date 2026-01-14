@@ -43,7 +43,14 @@ export class RideTrackingService {
 
     if (!rideId) throw new Error('No active ride ID set');
 
-    return this.http.post<CreatedInconsistencyReportDTO>(`${environment.apiHost}/api/rides/${rideId}/inconsistencies`, dto);
+    const token = localStorage.getItem('authToken');
+    return this.http.post<CreatedInconsistencyReportDTO>(`${environment.apiHost}/api/rides/${rideId}/inconsistencies`, dto,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      }
+    );
   }
 
   // loading signal (spinner)

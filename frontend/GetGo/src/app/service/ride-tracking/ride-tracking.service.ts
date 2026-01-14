@@ -21,7 +21,14 @@ export class RideTrackingService {
        return id ? { id } : null;
     },
     stream: ({ params }) => {
-      return this.http.get<RideTracking>(`${environment.apiHost}/api/rides/${params!.id}/tracking`);
+      const token = localStorage.getItem('authToken');
+      return this.http.get<RideTracking>(`${environment.apiHost}/api/rides/${params!.id}/tracking`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        }
+        );
     },
   });
 

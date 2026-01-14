@@ -3,8 +3,8 @@ import * as L from 'leaflet';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
 import 'leaflet-routing-machine';
-import { VehicleService } from '../../service/vehicle-service/vehicle.service';
-import { GetVehicleDTO } from '../../service/vehicle-service/get-vehicle-dto.interface';
+import {VehicleService} from '../../service/vehicle-service/vehicle.service';
+import {GetVehicleDTO} from '../../service/vehicle-service/get-vehicle-dto.interface';
 
 @Component({
   selector: 'app-map',
@@ -45,6 +45,13 @@ export class MapComponent implements AfterViewInit{
   }
 
   ngAfterViewInit(): void {
+
+    L.Marker.prototype.options.icon = L.icon({
+      iconUrl: 'https://unpkg.com/leaflet@1.6.0/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.6.0/dist/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41]
+    });
     this.initMap();
 
     // Listen for set-active-input event (unregistered home)

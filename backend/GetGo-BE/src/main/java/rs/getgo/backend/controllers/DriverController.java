@@ -28,9 +28,10 @@ import java.util.List;
 @RequestMapping("/api/drivers")
 public class DriverController {
 
-
     @Autowired
     private DriverServiceImpl driverService;
+
+    Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
 
     public DriverController(DriverServiceImpl driverService) {
         this.driverService = driverService;
@@ -97,7 +98,7 @@ public class DriverController {
     // 2.3 - User profile
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverDTO> getProfile() {
-        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+
         GetDriverDTO response = driverService.getDriverById(driverId);
         return ResponseEntity.ok(response);
     }
@@ -108,7 +109,7 @@ public class DriverController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverChangeRequestDTO> updatePersonalInfo(
             @RequestBody UpdateDriverPersonalDTO updateDriverPersonalDTO) {
-        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+
         CreatedDriverChangeRequestDTO response = driverService.requestPersonalInfoChange(driverId, updateDriverPersonalDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -119,7 +120,7 @@ public class DriverController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverChangeRequestDTO> updateVehicleInfo(
             @RequestBody UpdateDriverVehicleDTO updateDriverVehicleDTO) {
-        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+
         CreatedDriverChangeRequestDTO response = driverService.requestVehicleInfoChange(driverId, updateDriverVehicleDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -130,7 +131,7 @@ public class DriverController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverChangeRequestDTO> uploadProfilePicture(
             @RequestParam("file") MultipartFile file) {
-        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+
         CreatedDriverChangeRequestDTO response = driverService.requestProfilePictureChange(driverId, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -141,7 +142,7 @@ public class DriverController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
             @RequestBody UpdatePasswordDTO updatePasswordDTO) {
-        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+
         UpdatedPasswordDTO response = driverService.updatePassword(driverId, updatePasswordDTO);
         if (!response.getSuccess()) {
             return ResponseEntity.badRequest().body(response);

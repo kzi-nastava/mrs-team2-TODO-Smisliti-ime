@@ -20,11 +20,12 @@ public class PassengerController {
     @Autowired
     private PassengerServiceImpl passengerService;
 
+    Long passengerId = 1L; // TODO: get from cookie/whatever we decide to use
+
     // 2.3 - User profile
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetPassengerDTO> getProfile() {
 
-        Long passengerId = 1L; // TODO: get from cookie/whatever we decide to use
         GetPassengerDTO response = passengerService.getPassengerById(passengerId);
 
         return ResponseEntity.ok(response);
@@ -37,7 +38,6 @@ public class PassengerController {
     public ResponseEntity<UpdatedPassengerDTO> updateProfile(
             @RequestBody UpdatePassengerDTO updatePassengerDTO) {
 
-        Long passengerId = 1L; // TODO: get from cookie/whatever we decide to use
         UpdatedPassengerDTO response = passengerService.updateProfile(passengerId, updatePassengerDTO);
 
         return ResponseEntity.ok(response);
@@ -50,7 +50,6 @@ public class PassengerController {
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
             @RequestBody UpdatePasswordDTO updatePasswordDTO) {
 
-        Long passengerId = 1L; // TODO: get from cookie/whatever we decide to use
         UpdatedPasswordDTO response = passengerService.updatePassword(passengerId, updatePasswordDTO);
         if (!response.getSuccess()) {
             return ResponseEntity.badRequest().body(response);
@@ -66,7 +65,6 @@ public class PassengerController {
     public ResponseEntity<UpdatedProfilePictureDTO> uploadProfilePicture(
             @RequestParam("file") MultipartFile file) {
 
-        Long passengerId = 1L; // TODO: get from cookie/whatever we decide to us
         UpdatedProfilePictureDTO response = passengerService.uploadProfilePicture(passengerId, file);
 
         return ResponseEntity.ok(response);

@@ -17,14 +17,16 @@ import rs.getgo.backend.services.AdminService;
 
 import java.util.List;
 
-// TODO: return row after authentication is implemented
-// @PreAuthorize("hasRole('ADMIN')")
+// TODO: return later
+//@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
 
     @Autowired
     private AdminService adminService;
+
+    Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
 
     // 2.9.3 – Block user
     @PutMapping("/users/{id}/block")
@@ -72,7 +74,7 @@ public class AdminController {
     // 2.3 - User profile
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetAdminDTO> getProfile() {
-        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+
         GetAdminDTO response = adminService.getAdminById(adminId);
         return ResponseEntity.ok(response);
     }
@@ -83,7 +85,7 @@ public class AdminController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedAdminDTO> updateProfile(
             @RequestBody UpdateAdminDTO updateAdminDTO) {
-        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+
         UpdatedAdminDTO response = adminService.updateProfile(adminId, updateAdminDTO);
         return ResponseEntity.ok(response);
     }
@@ -94,7 +96,7 @@ public class AdminController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
             @RequestBody UpdatePasswordDTO updatePasswordDTO) {
-        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+
         UpdatedPasswordDTO response = adminService.updatePassword(adminId, updatePasswordDTO);
         if (!response.getSuccess()) {
             return ResponseEntity.badRequest().body(response);
@@ -158,7 +160,7 @@ public class AdminController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approvePersonalChangeRequest(
             @PathVariable Long requestId) {
-        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+
         AcceptDriverChangeRequestDTO response = adminService.approvePersonalChangeRequest(requestId, adminId);
         return ResponseEntity.ok(response);
     }
@@ -168,7 +170,7 @@ public class AdminController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approveVehicleChangeRequest(
             @PathVariable Long requestId) {
-        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+
         AcceptDriverChangeRequestDTO response = adminService.approveVehicleChangeRequest(requestId, adminId);
         return ResponseEntity.ok(response);
     }
@@ -178,7 +180,7 @@ public class AdminController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approvePictureChangeRequest(
             @PathVariable Long requestId) {
-        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+
         AcceptDriverChangeRequestDTO response = adminService.approveAvatarChangeRequest(requestId, adminId);
         return ResponseEntity.ok(response);
     }
@@ -190,7 +192,7 @@ public class AdminController {
     public ResponseEntity<AcceptDriverChangeRequestDTO> rejectPersonalChangeRequest(
             @PathVariable Long requestId,
             @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
-        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+
         AcceptDriverChangeRequestDTO response = adminService.rejectPersonalChangeRequest(
                 requestId, adminId, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);
@@ -203,7 +205,7 @@ public class AdminController {
     public ResponseEntity<AcceptDriverChangeRequestDTO> rejectVehicleChangeRequest(
             @PathVariable Long requestId,
             @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
-        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+
         AcceptDriverChangeRequestDTO response = adminService.rejectVehicleChangeRequest(
                 requestId, adminId, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);
@@ -216,7 +218,7 @@ public class AdminController {
     public ResponseEntity<AcceptDriverChangeRequestDTO> rejectPictureChangeRequest(
             @PathVariable Long requestId,
             @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
-        Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+
         AcceptDriverChangeRequestDTO response = adminService.rejectAvatarChangeRequest(
                 requestId, adminId, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);

@@ -1,12 +1,12 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminNavBarComponent } from '../../layout/admin-nav-bar/admin-nav-bar.component';
-import { AdminService, GetAdminDTO } from '../service/admin.service';
+import { AdminService, GetAdminDTO, UpdateAdminDTO } from '../service/admin.service';
 
 @Component({
   selector: 'app-admin-profile',
-  imports: [AdminNavBarComponent, CommonModule, FormsModule],
+  standalone: true,
+  imports: [FormsModule, AdminNavBarComponent],
   templateUrl: './admin-profile.html',
   styleUrl: './admin-profile.css',
 })
@@ -20,7 +20,10 @@ export class AdminProfile implements OnInit {
     address: ''
   };
 
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadProfile();
@@ -30,6 +33,7 @@ export class AdminProfile implements OnInit {
     this.adminService.getProfile().subscribe({
       next: (data) => {
         this.admin = data;
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error loading profile:', error);
@@ -38,7 +42,27 @@ export class AdminProfile implements OnInit {
   }
 
   saveProfile(): void {
-    // TODO: Implement save functionality
-    console.log('Saving profile:', this.admin);
+      const updateData: UpdateAdminDTO = {
+        name: this.admin.name,
+        surname: this.admin.surname,
+        phone: this.admin.phone,
+        address: this.admin.address
+      };
+
+      console.log('Saving profile:', updateData);
+
+      this.adminService.updateProfile(updateData).subscribe({
+        next: (response) => {
+          console.log('Profile updated successfully:', response);
+          // Update local data with response
+          this.admin = response;
+          this.cdr.detectChanges();
+          alert('Profile updated successfully!'); // Simple feedback
+        },
+        error: (error) => {
+          console.error('Error updating profile:', error);
+          alert('Failed to update profile. Please try again.');
+        }
+      });
   }
 }

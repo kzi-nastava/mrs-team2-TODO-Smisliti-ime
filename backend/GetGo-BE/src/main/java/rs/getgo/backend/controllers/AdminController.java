@@ -2,9 +2,7 @@ package rs.getgo.backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import rs.getgo.backend.dtos.admin.GetAdminDTO;
-import rs.getgo.backend.dtos.admin.UpdateAdminDTO;
-import rs.getgo.backend.dtos.admin.UpdatedAdminDTO;
+import rs.getgo.backend.dtos.admin.*;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.*;
@@ -19,7 +17,8 @@ import rs.getgo.backend.services.AdminService;
 
 import java.util.List;
 
-@PreAuthorize("hasRole('ADMIN')")
+// TODO: return row after authentication is implemented
+// @PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -53,8 +52,9 @@ public class AdminController {
 
     // 2.9.3 – Create admin profile
     @PostMapping("/create")
-    public ResponseEntity<CreatedUserDTO> createAdmin() {
-        CreatedUserDTO response = new CreatedUserDTO(10L, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", true);
+    public ResponseEntity<CreatedAdminDTO> createAdmin(@RequestBody CreateAdminDTO createAdminDTO) {
+
+        CreatedAdminDTO response = adminService.createAdmin(createAdminDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

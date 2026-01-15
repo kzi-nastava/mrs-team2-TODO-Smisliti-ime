@@ -3,9 +3,7 @@ package rs.getgo.backend.services.Impl;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import rs.getgo.backend.dtos.admin.GetAdminDTO;
-import rs.getgo.backend.dtos.admin.UpdateAdminDTO;
-import rs.getgo.backend.dtos.admin.UpdatedAdminDTO;
+import rs.getgo.backend.dtos.admin.*;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.CreateDriverDTO;
@@ -13,6 +11,7 @@ import rs.getgo.backend.dtos.driver.CreatedDriverDTO;
 import rs.getgo.backend.dtos.request.*;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
+import rs.getgo.backend.model.enums.UserRole;
 import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.AdminService;
@@ -45,6 +44,23 @@ public class AdminServiceImpl implements AdminService {
     private EmailService emailService;
     @Autowired
     private ModelMapper modelMapper;
+
+    @Override
+    public CreatedAdminDTO createAdmin(CreateAdminDTO createAdminDTO) {
+        Administrator admin = new Administrator();
+        admin.setEmail(createAdminDTO.getEmail());
+        admin.setPassword(createAdminDTO.getPassword());
+        admin.setName(createAdminDTO.getName());
+        admin.setSurname(createAdminDTO.getSurname());
+        admin.setAddress(createAdminDTO.getAddress());
+        admin.setPhoneNumber(createAdminDTO.getPhoneNumber());
+        admin.setRole(UserRole.ADMIN);
+        admin.setBlocked(false);
+
+        Administrator savedAdmin = adminRepo.save(admin);
+
+        return modelMapper.map(savedAdmin, CreatedAdminDTO.class);
+    }
 
     @Override
     public CreatedDriverDTO registerDriver(CreateDriverDTO createDriverDTO) {
@@ -522,11 +538,6 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public void getReports() {
-        // TODO
-    }
-
-    @Override
-    public void createAdmin() {
         // TODO
     }
 }

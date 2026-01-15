@@ -82,11 +82,26 @@ public class WebSecurityConfig {
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/register")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/rides/estimate")).permitAll()
                     .requestMatchers("/error").permitAll()
-                    .anyRequest().authenticated();
+                    .anyRequest().permitAll();  // CHANGED THIS
         });
         http.addFilterBefore(new TokenAuthenticationFilter(tokenUtils, userDetailsService()), UsernamePasswordAuthenticationFilter.class);
         http.authenticationProvider(authenticationProvider());
         return http.build();
+        // TODO: RETURN BACK
+//        http.cors(Customizer.withDefaults());
+//        http.csrf(AbstractHttpConfigurer::disable);
+//        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+//        http.exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(restAuthenticationEntryPoint));
+//        http.authorizeHttpRequests(request -> {
+//            request.requestMatchers(new AntPathRequestMatcher("/api/auth/login")).permitAll()
+//                    .requestMatchers(new AntPathRequestMatcher("/api/auth/register")).permitAll()
+//                    .requestMatchers(new AntPathRequestMatcher("/api/rides/estimate")).permitAll()
+//                    .requestMatchers("/error").permitAll()
+//                    .anyRequest().authenticated();
+//        });
+//        http.addFilterBefore(new TokenAuthenticationFilter(tokenUtils, userDetailsService()), UsernamePasswordAuthenticationFilter.class);
+//        http.authenticationProvider(authenticationProvider());
+//        return http.build();
     }
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {

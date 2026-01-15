@@ -1,8 +1,6 @@
 package rs.getgo.backend.services;
 
-import rs.getgo.backend.dtos.admin.GetAdminDTO;
-import rs.getgo.backend.dtos.admin.UpdateAdminDTO;
-import rs.getgo.backend.dtos.admin.UpdatedAdminDTO;
+import rs.getgo.backend.dtos.admin.*;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.CreateDriverDTO;
@@ -52,5 +50,5 @@ public interface AdminService {
 
     void getReports();
 
-    void createAdmin();
+    CreatedAdminDTO createAdmin(CreateAdminDTO createAdminDTO);
 }

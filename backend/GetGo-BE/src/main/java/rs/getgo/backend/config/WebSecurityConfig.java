@@ -81,6 +81,7 @@ public class WebSecurityConfig {
             request.requestMatchers(new AntPathRequestMatcher("/api/auth/login")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/register")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/rides/estimate")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/vehicles/active")).permitAll()
                     .requestMatchers("/error").permitAll()
                     .anyRequest().permitAll();  // CHANGED THIS
         });

@@ -7,7 +7,9 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import { HttpClient } from '@angular/common/http';
 import {CommonModule} from '@angular/common';
-import {AuthService} from '../auth-service/auth.service';
+import {AuthService} from '../../../service/auth-service/auth.service';
+import {environment} from '../../../../env/environment';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-register',
@@ -33,7 +35,14 @@ export class RegisterComponent {
   selectedFile: File | null = null;
   profileImageUrl: string | null = null;
 
-  constructor(private fb: FormBuilder, private http: HttpClient, private cdr: ChangeDetectorRef, private auth: AuthService, private router: Router) {
+  constructor(
+    private fb: FormBuilder,
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef,
+    private auth: AuthService,
+    private router: Router,
+    private snackBar: MatSnackBar
+  ) {
     this.form = this.fb.group(
       {
         email: ['', [Validators.required, Validators.email]],
@@ -141,6 +150,14 @@ export class RegisterComponent {
       this.logValidationErrors();
       this.form.markAllAsTouched();
       console.log('Register: form invalid, abort submit');
+
+      this.snackBar.open('Please fill in all required fields correctly.', 'Close', {
+        duration: 4000,
+        horizontalPosition: 'end',
+        verticalPosition: 'bottom',
+        panelClass: ['error-snackbar']
+      });
+
       return;
     }
 
@@ -166,11 +183,18 @@ export class RegisterComponent {
 
     type RegisterResponse = { id?: string };
 
-    this.http.post<RegisterResponse>('/api/auth/register', user).subscribe({
+    this.http.post<RegisterResponse>(`${environment.apiHost}/api/auth/register`, user).subscribe({
       next: (res) => {
         this.isSubmitting = false;
         this.cdr.detectChanges();
         console.log('Register: success, redirecting to login', res);
+
+        this.snackBar.open('Registration successful! Please login.', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'bottom',
+          panelClass: ['success-snackbar']
+        });
 
         this.router.navigate(['/login']);
       },
@@ -178,6 +202,22 @@ export class RegisterComponent {
         this.isSubmitting = false;
         this.cdr.detectChanges();
         console.error('Register: failed', err);
+
+        let errorMessage = 'Registration failed. Please try again.';
+        if (err.status === 409) {
+          errorMessage = 'Email already exists.';
+        } else if (err.status === 0) {
+          errorMessage = 'Cannot connect to server.';
+        } else if (err.error?.message) {
+          errorMessage = err.error.message;
+        }
+
+        this.snackBar.open(errorMessage, 'Close', {
+          duration: 5000,
+          horizontalPosition: 'end',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        });
       }
     });
   }

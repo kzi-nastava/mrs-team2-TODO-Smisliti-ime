@@ -55,6 +55,4 @@ export class RideTrackingService {
 
   // loading signal (spinner)
   loading = computed(() => this.trackingResource.isLoading());
-
-
 }

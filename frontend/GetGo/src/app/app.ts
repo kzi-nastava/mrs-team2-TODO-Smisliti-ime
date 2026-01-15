@@ -1,7 +1,7 @@
 import { Component, signal, computed, effect } from '@angular/core';
 import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { AuthService } from './pages/authentication/auth-service/auth.service';
+import { AuthService } from './service/auth-service/auth.service';
 import { UserRole } from './model/user.model';
 import { CommonModule } from '@angular/common';
 import { NavBarComponent } from './layout/nav-bar/nav-bar.component';

@@ -13,13 +13,14 @@ import rs.getgo.backend.dtos.login.CreatedLoginDTO;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import rs.getgo.backend.services.AuthService;
+import rs.getgo.backend.model.entities.Driver;
+import rs.getgo.backend.repositories.DriverRepository;
+import rs.getgo.backend.services.EmailService;
 
 import java.util.UUID;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.time.Instant;
-import java.io.*;
-import java.net.Socket;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -38,9 +39,19 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private final BCryptPasswordEncoder passwordEncoder;
 
+    @Autowired
+    private DriverRepository driverRepo;
+
+    @Autowired
+    private EmailService emailService;
+
     // simple in-memory token store for development (token -> TokenInfo)
     private final Map<String, TokenInfo> resetTokens = new ConcurrentHashMap<>();
-    private static final long TOKEN_TTL_SECONDS = 15 * 60; // 15 minutes
+    private static final long RESET_TOKEN_TTL_SECONDS = 15 * 60; // 15 minutes
+
+    // activation tokens (token -> TokenInfo) for email activation (24h)
+    private final Map<String, TokenInfo> activationTokens = new ConcurrentHashMap<>();
+    private static final long ACTIVATION_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 
     // inject TokenUtils and password encoder (BCrypt strength default 10)
     public AuthServiceImpl(UserRepository userRepository, TokenUtils tokenUtils, BCryptPasswordEncoder passwordEncoder) {
@@ -70,9 +81,24 @@ public class AuthServiceImpl implements AuthService {
         user.setPhoneNumber(request.getPhoneNumber());
         user.setAddress(request.getAddress());
         user.setRole(UserRole.PASSENGER);
-        user.setBlocked(false);
+
+        // newly registered users must activate via email before they can login
+        user.setBlocked(false);            // not admin-blocked by default
+        user.setCanAccessSystem(false);    // cannot access until activation
 
         User saved = userRepository.save(user);
+
+        // generate activation token (24h) and send activation email via EmailService
+        String activationToken = UUID.randomUUID().toString();
+        long expiry = Instant.now().getEpochSecond() + ACTIVATION_TTL_SECONDS;
+        activationTokens.put(activationToken, new TokenInfo(saved.getId(), expiry));
+
+        try {
+            emailService.sendActivationEmail(saved.getEmail(), activationToken);
+        } catch (Exception e) {
+            System.err.println("Failed to send activation email: " + e.getMessage());
+            // optionally cleanup saved user if desired
+        }
 
         return new CreatedUserDTO(
                 saved.getId(),
@@ -110,6 +136,33 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
+        if (!user.isCanAccessSystem()) {
+            // check if there exists a valid activation token for this user
+            boolean hasValidActivation = activationTokens.values().stream()
+                    .anyMatch(ti -> ti.userId.equals(user.getId()) && Instant.now().getEpochSecond() <= ti.expirySeconds);
+
+            if (!hasValidActivation) {
+                // activation window expired -> remove the unactivated user and deny login
+                try {
+                    userRepository.deleteById(user.getId());
+                } catch (Exception ignored) {}
+                throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Activation expired. Please register again."
+                );
+            } else {
+                // user still within activation window but not activated
+                throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Account not activated. Check your email for activation link."
+                );
+            }
+        }
+
+        if (user.getRole() == UserRole.DRIVER) {
+            ((Driver) user).setActive(true);
+        }
+
         // generate JWT token using TokenUtils
         String jwt = tokenUtils.generateToken(user);
 
@@ -123,22 +176,16 @@ public class AuthServiceImpl implements AuthService {
         // find user; if not found, return without indicating that to caller (protects against enumeration)
         userRepository.findByEmail(email).ifPresent(user -> {
             String token = UUID.randomUUID().toString();
-            long expiry = Instant.now().getEpochSecond() + TOKEN_TTL_SECONDS;
+            long expiry = Instant.now().getEpochSecond() + RESET_TOKEN_TTL_SECONDS;
             resetTokens.put(token, new TokenInfo(user.getId(), expiry));
 
             // build reset link (frontend route)
             String encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8);
             String resetUrl = "http://localhost:4200/user/reset-password?token=" + token + "&email=" + encodedEmail;
 
-            String subject = "GetGo - Password reset";
-            String body = "Hello,\n\nTo reset your password click the link below (valid for 15 minutes):\n\n"
-                    + resetUrl + "\n\nIf you didn't request this, ignore this email.\n\nRegards,\nGetGo Team";
-
-            // send via Mailpit running on localhost:1025 (simple SMTP)
             try {
-                sendViaSmtp("no-reply@getgo.local", email, subject, body, "localhost", 1025);
+                emailService.sendResetEmail(email, resetUrl);
             } catch (Exception e) {
-                // log or ignore in dev; do not leak details to caller
                 System.err.println("Failed to send reset email: " + e.getMessage());
             }
         });
@@ -158,43 +205,31 @@ public class AuthServiceImpl implements AuthService {
         return info.userId;
     }
 
-    // simple SMTP sender (suitable for local Mailpit on 1025)
-    private void sendViaSmtp(String from, String to, String subject, String body, String smtpHost, int smtpPort) throws IOException {
-        try (Socket socket = new Socket(smtpHost, smtpPort);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
-             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.US_ASCII))) {
-
-            String response = reader.readLine(); // server greeting
-
-            sendCmd(writer, reader, "EHLO localhost");
-            sendCmd(writer, reader, "MAIL FROM:<" + from + ">");
-            sendCmd(writer, reader, "RCPT TO:<" + to + ">");
-            sendCmd(writer, reader, "DATA");
-
-            // write headers and body
-            writer.write("From: " + from + "\r\n");
-            writer.write("To: " + to + "\r\n");
-            writer.write("Subject: " + subject + "\r\n");
-            writer.write("Content-Type: text/plain; charset=UTF-8\r\n");
-            writer.write("\r\n");
-            writer.write(body.replace("\n", "\r\n") + "\r\n");
-            writer.write(".\r\n");
-            writer.flush();
-            response = reader.readLine(); // response after data
-            sendCmd(writer, reader, "QUIT");
+    // Activation endpoint used by frontend -> controller should call this service method
+    public boolean activateAccount(String token) {
+        TokenInfo info = activationTokens.get(token);
+        if (info == null) {
+            return false;
         }
-    }
-
-    private void sendCmd(BufferedWriter writer, BufferedReader reader, String cmd) throws IOException {
-        writer.write(cmd + "\r\n");
-        writer.flush();
-        // read response lines until a line that doesn't have '-' after the status code (simple)
-        String line;
-        while ((line = reader.readLine()) != null) {
-            if (line.length() >= 4 && line.charAt(3) != '-') {
-                break;
-            }
+        if (Instant.now().getEpochSecond() > info.expirySeconds) {
+            activationTokens.remove(token);
+            // expired -> delete unactivated user
+            try {
+                userRepository.deleteById(info.userId);
+            } catch (Exception ignored) {}
+            return false;
         }
+        // activate user
+        User user = userRepository.findById(info.userId).orElse(null);
+        if (user == null) {
+            activationTokens.remove(token);
+            return false;
+        }
+        // allow access after activation
+        user.setCanAccessSystem(true);
+        userRepository.save(user);
+        activationTokens.remove(token);
+        return true;
     }
 
     // internal token info
@@ -205,5 +240,28 @@ public class AuthServiceImpl implements AuthService {
             this.userId = userId;
             this.expirySeconds = expirySeconds;
         }
+    }
+
+    /**
+     * Returns true if logout is allowed for the user with given username,
+     * or false if logout should be blocked (e.g. driver is active).
+     */
+    public boolean canLogout(String username) {
+        // try to find user by email/username; adjust repository method if different
+        User user = userRepository.findByEmail(username).orElse(null);
+        if (user == null) {
+            // no user found -> allow logout (client can clear tokens)
+            return true;
+        }
+        if (user instanceof Driver) {
+            Driver driver = (Driver) user;
+            // If driver is active, do not allow logout
+            Boolean active = driver.getActive(); // or driver.isActive() depending on your entity
+            if (active != null && active) {
+                return false;
+            }
+        }
+        // default: allow logout
+        return true;
     }
 }

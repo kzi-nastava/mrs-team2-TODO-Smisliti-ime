@@ -19,10 +19,14 @@ import { RideTrackingComponent } from './passenger/ride-tracking/ride-tracking.c
 import { AuthGuard } from './pages/authentication/auth.guard';
 import { homeGuard } from './pages/authentication/home.guard';
 import { UserRole } from './model/user.model';
+import {ResetPasswordComponent} from './pages/authentication/reset-password/reset-password';
+import {ActivateComponent} from './pages/authentication/activate/activate';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: 'home', canActivate: [homeGuard], children: [] },
+  { path: 'activate', component: ActivateComponent },
+  { path: 'user/reset-password', component: ResetPasswordComponent },
   { path: 'unregistered-home', component: UnregisteredHomeComponent },
   { path: 'registered-home', component: RegisteredHomeComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger, UserRole.Driver, UserRole.Admin] } },
   { path: 'login', component: LoginComponent },

@@ -1,7 +1,9 @@
 import {Injectable, signal} from '@angular/core';
 import {UserRole} from '../../model/user.model';
 import {JwtHelperService} from '@auth0/angular-jwt';
-import {computed} from '@angular/core';
+import {environment} from '../../../env/environment';
+import {HttpClient} from '@angular/common/http';
+import {Router} from '@angular/router';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -11,7 +13,7 @@ export class AuthService {
   private roleSignal = signal<UserRole>(UserRole.Guest);
   public role = this.roleSignal.asReadonly();
 
-  constructor() {
+  constructor(private http: HttpClient, private router: Router) {
     // Load token from either storage
     const token = localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.TOKEN_KEY);
     if (token) {
@@ -39,10 +41,25 @@ export class AuthService {
 
   logout() {
     console.log('AuthService: logout called');
+
+    this.http.post(`${environment.apiHost}/api/auth/logout`, {}).subscribe({
+      next: () => {
+        this.finishLogout();
+      },
+      error: (err) => {
+        console.error('AuthService: logout request failed', err);
+      }
+    });
+  }
+
+  private finishLogout() {
     localStorage.removeItem(this.TOKEN_KEY);
     sessionStorage.removeItem(this.TOKEN_KEY);
+
     this.roleSignal.set(UserRole.Guest);
     console.log('AuthService: role set to Guest after logout');
+
+    this.router.navigate(['/']);
   }
 
   isLoggedIn(): boolean {

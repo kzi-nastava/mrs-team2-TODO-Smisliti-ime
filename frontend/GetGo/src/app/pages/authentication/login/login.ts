@@ -11,6 +11,7 @@ import { AuthService } from '../../../service/auth-service/auth.service';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import {environment} from '../../../../env/environment';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-login',
@@ -32,7 +33,12 @@ export class LoginComponent {
   // keep saving credentials locally for debugging/storage
   pendingCredentials: { email: string | undefined | null; password: string | undefined | null } | null = null;
 
-  constructor(private auth: AuthService, private router: Router, private http: HttpClient) {}
+  constructor(
+    private auth: AuthService,
+    private router: Router,
+    private http: HttpClient,
+    private snackBar: MatSnackBar
+  ) {}
 
   create() {
     if (this.createLoginForm.valid) {
@@ -106,6 +112,12 @@ export class LoginComponent {
 
         if (!res?.token) {
           console.error('Login: token missing in response');
+          this.snackBar.open('Login failed: No token received', 'Close', {
+            duration: 4000,
+            horizontalPosition: 'end',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          });
           return;
         }
 
@@ -126,6 +138,22 @@ export class LoginComponent {
       },
       error: (err) => {
         console.error('Login: request failed', err);
+
+        let errorMessage = 'Login failed. Please try again.';
+        if (err.status === 401) {
+          errorMessage = 'Invalid email or password.';
+        } else if (err.status === 0) {
+          errorMessage = 'Cannot connect to server.';
+        } else if (err.error?.message) {
+          errorMessage = err.error.message;
+        }
+
+        this.snackBar.open(errorMessage, 'Close', {
+          duration: 5000,
+          horizontalPosition: 'end',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        });
       }
     });
   }

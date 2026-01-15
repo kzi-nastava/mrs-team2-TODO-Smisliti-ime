@@ -1,19 +1,24 @@
 <app-user-nav-bar></app-user-nav-bar>
 <div class="user-info">
-    <p class="profile-title">Edit Personal Information</p>
-    <div class="profile-picture">
-        <img [src]="profileImageUrl" alt="Profile Picture" class="avatar-image" (click)="onImageClick()" />
-        <input type="file" id="fileInput" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
-    </div>
-    <form class="profile-form">
-      <input type="email" placeholder="E-mail" class="form-input" />
-      <input type="text" placeholder="First Name" class="form-input" />
-      <input type="text" placeholder="Last Name" class="form-input" />
-      <input type="tel" placeholder="Phone" class="form-input" />
-      <input type="text" placeholder="Address" class="form-input" />
-      
-      <a href="#" class="change-password-link">Change Password</a>
-      
-      <button type="button" class="save-button" (click)="onSave()">Save</button>
-    </form>
+  <p class="profile-title">Edit Personal Information</p>
+  <div class="profile-picture">
+    <img [src]="profileImageUrl" alt="Profile Picture" class="avatar-image" (click)="onImageClick()" />
+    <input type="file" id="fileInput" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
+  </div>
+  <form class="profile-form">
+    <input type="email" placeholder="E-mail" class="form-input"
+           [(ngModel)]="passenger.email" name="email" [disabled]="true" />
+    <input type="text" placeholder="First Name" class="form-input"
+           [(ngModel)]="passenger.name" name="name" />
+    <input type="text" placeholder="Last Name" class="form-input"
+           [(ngModel)]="passenger.surname" name="surname" />
+    <input type="tel" placeholder="Phone" class="form-input"
+           [(ngModel)]="passenger.phone" name="phone" />
+    <input type="text" placeholder="Address" class="form-input"
+           [(ngModel)]="passenger.address" name="address" />
+
+    <a [routerLink]="['/passenger/change-password']" class="change-password-link">Change Password</a>
+
+    <button type="button" class="save-button" (click)="onSave()">Save</button>
+  </form>
 </div>

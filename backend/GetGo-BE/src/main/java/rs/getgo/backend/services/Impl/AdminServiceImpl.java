@@ -2,6 +2,7 @@ package rs.getgo.backend.services.Impl;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import rs.getgo.backend.dtos.admin.*;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
@@ -44,12 +45,14 @@ public class AdminServiceImpl implements AdminService {
     private EmailService emailService;
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public CreatedAdminDTO createAdmin(CreateAdminDTO createAdminDTO) {
         Administrator admin = new Administrator();
         admin.setEmail(createAdminDTO.getEmail());
-        admin.setPassword(createAdminDTO.getPassword());
+        admin.setPassword(passwordEncoder.encode(createAdminDTO.getPassword()));
         admin.setName(createAdminDTO.getName());
         admin.setSurname(createAdminDTO.getSurname());
         admin.setAddress(createAdminDTO.getAddress());
@@ -155,11 +158,11 @@ public class AdminServiceImpl implements AdminService {
         Administrator admin = adminRepo.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
 
-        if (!admin.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
+        if (!passwordEncoder.matches(updatePasswordDTO.getOldPassword(), admin.getPassword())) {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
         }
 
-        admin.setPassword(updatePasswordDTO.getPassword());
+        admin.setPassword(passwordEncoder.encode(updatePasswordDTO.getPassword()));
         adminRepo.save(admin);
 
         return new UpdatedPasswordDTO(true, "Password updated successfully");

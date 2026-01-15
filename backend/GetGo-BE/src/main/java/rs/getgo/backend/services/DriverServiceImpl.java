@@ -2,6 +2,7 @@ package rs.getgo.backend.services;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
@@ -45,6 +46,8 @@ public class DriverServiceImpl {
     private ModelMapper modelMapper;
     @Autowired
     private FileStorageService fileStorageService;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     public List<GetRideDTO> getDriverRides(Long driverId, LocalDate startDate) {
         List<CompletedRide> rides = completedRideRepository.findByDriverId(driverId);
@@ -136,7 +139,7 @@ public class DriverServiceImpl {
 
         // Set password and activate driver
         Driver driver = activationToken.getDriver();
-        driver.setPassword(passwordDTO.getPassword());
+        driver.setPassword(passwordEncoder.encode(passwordDTO.getPassword()));
         driver.setActivated(true);
         driverRepo.save(driver);
 
@@ -181,7 +184,7 @@ public class DriverServiceImpl {
         Driver driver = driverRepo.findById(driverId)
                 .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
 
-        if (!driver.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
+        if (!passwordEncoder.matches(updatePasswordDTO.getOldPassword(), driver.getPassword())) {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
         }
 

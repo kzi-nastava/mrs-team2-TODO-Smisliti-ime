@@ -195,7 +195,13 @@ export class RideService {
         url += `?startDate=${dateStr}`;
       }
 
-      this.http.get<GetRideDTO[]>(url)
+      const token = localStorage.getItem('authToken');
+      this.http.get<GetRideDTO[]>(url,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        })
         .subscribe({
           next: (rides) => {
             console.log('Rides from API:', rides);

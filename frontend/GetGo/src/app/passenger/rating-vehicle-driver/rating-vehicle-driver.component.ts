@@ -13,18 +13,12 @@ import { NgForm } from '@angular/forms';
   styleUrl: './rating-vehicle-driver.component.css',
 })
 export class RatingVehicleDriverComponent{
-//   ratings: GetRatingDTO[] = [];
+
   rideId = 1; // temporary hardcoded value
-//   driverRating: number | null = null;
-//   vehicleRating: number | null = null;
-//   commentText: string = '';
 
   driverRating = signal<number | null>(null);
   vehicleRating = signal<number | null>(null);
   commentText = signal<string>('');
-
-//   avgVehicleRating = 0;
-//   avgDriverRating = 0;
 
   private ratingService = inject(RatingService);
 
@@ -40,29 +34,7 @@ export class RatingVehicleDriverComponent{
     effect(() => {
       console.log("Ratings changed: ", this.ratings());
     })
-
-//     effect(() => {
-//       console.log('Driver rating input:', this.driverRating());
-//       console.log('Vehicle rating input:', this.vehicleRating());
-//       console.log('Comment input:', this.commentText());
-//     });
   }
-
-
-//   ngOnInit(): void {
-//     this.loadRatings();
-//   }
-//
-//   loadRatings() {
-//     this.ratingService.getRatingsByRide(this.rideId).subscribe({
-//       next: (data) => {
-//         console.log("Ratings from backend:", data);
-//         this.ratings = data.slice().reverse(); // show newest first
-//         this.calculateAverages();
-//         },
-//       error: (err) => console.error(err)
-//     });
-//   }
 
   submitRating() {
     if (this.driverRating() === null || this.vehicleRating() === null || !this.commentText().trim()) {
@@ -84,33 +56,8 @@ export class RatingVehicleDriverComponent{
         this.driverRating.set(null);
         this.vehicleRating.set(null);
         this.commentText.set('');
-//           this.ratings = [saved, ...this.ratings];
-//           this.calculateAverages();
-//           form.resetForm();
       },
       error: (err) => console.error(err),
     });
   }
-
-//   calculateAverages() {
-//     if (this.ratings.length === 0) {
-//       this.avgVehicleRating = 0;
-//       this.avgDriverRating = 0;
-//       return;
-//     }
-//
-//     const vehicleSum = this.ratings.reduce(
-//       (sum, r) => sum + r.vehicleRating,
-//       0
-//     );
-//
-//     const driverSum = this.ratings.reduce(
-//       (sum, r) => sum + r.driverRating,
-//       0
-//     );
-//
-//     this.avgVehicleRating = vehicleSum / this.ratings.length;
-//     this.avgDriverRating = driverSum / this.ratings.length;
-//   }
-
 }

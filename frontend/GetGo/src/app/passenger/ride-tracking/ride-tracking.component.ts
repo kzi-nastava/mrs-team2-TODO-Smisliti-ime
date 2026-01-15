@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {RideTrackingMapComponent} from '../../layout/ride-tracking-map/ride-tracking-map.component';
@@ -10,7 +10,7 @@ import { RideTrackingService } from '../../service/ride-tracking/ride-tracking.s
   templateUrl: './ride-tracking.component.html',
   styleUrl: './ride-tracking.component.css',
 })
-export class RideTrackingComponent implements OnInit{
+export class RideTrackingComponent{
 
   private rideTrackingService = inject(RideTrackingService);
 
@@ -18,8 +18,8 @@ export class RideTrackingComponent implements OnInit{
   reportText = '';
 
 
-  readonly tracking = computed(() => this.rideTrackingService.trackingResource.value());
-  readonly loading = computed(() => this.rideTrackingService.trackingResource.isLoading());
+  readonly tracking = this.rideTrackingService.tracking;
+  readonly loading = this.rideTrackingService.loading;
 
 
   ngOnInit(): void {
@@ -33,6 +33,11 @@ export class RideTrackingComponent implements OnInit{
       });
 
       logRide();
+
+//     effect (() => {
+//       const ride = this.rideTrackingService.tracking();
+//       if (ride) console.log('Ride data:', ride);
+//     });
   }
 
   progressPercent(): number {
@@ -45,8 +50,6 @@ export class RideTrackingComponent implements OnInit{
 
 
   submitReport() {
-//     this.showReportForm = false;
-//     this.reportText = '';
 
   if (!this.reportText.trim()) return;
 

@@ -10,6 +10,7 @@ import {RegisteredHomeComponent} from './layout/registered-home/registered-home.
 import { PassengerProfileInfo } from './passenger/passenger-profile-info/passenger-profile-info';
 import { DriverProfile } from './driver/driver-profile/driver-profile';
 import { AdminProfile } from './admin/admin-profile/admin-profile';
+import { AdminChangePassword } from './admin/admin-change-password/admin-change-password';
 import { DriverRegistration } from './admin/driver-registration/driver-registration';
 import { OrderRide } from './passenger/order-ride/order-ride';
 import { FavoriteRides } from './passenger/favorite-rides/favorite-rides';
@@ -36,6 +37,7 @@ export const routes: Routes = [
   { path: 'passenger/ride-tracking', component: RideTrackingComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'driver/driver-profile', component: DriverProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'admin/admin-profile', component: AdminProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
+  { path: 'admin/change-password', component: AdminChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/driver-registration', component: DriverRegistration, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'order-ride', component: OrderRide, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'favorite-rides', component: FavoriteRides, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },

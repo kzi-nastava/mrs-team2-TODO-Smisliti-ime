@@ -8,7 +8,7 @@
       <input type="tel" placeholder="Phone" class="form-input" [(ngModel)]="admin.phone" name="phone" />
       <input type="text" placeholder="Address" class="form-input" [(ngModel)]="admin.address" name="address" />
 
-      <a href="#" class="change-password-link">Change Password</a>
+      <a [routerLink]="['/admin/change-password']" class="change-password-link">Change Password</a>
 
       <button type="button" class="save-button" (click)="saveProfile()">Save</button>
     </form>

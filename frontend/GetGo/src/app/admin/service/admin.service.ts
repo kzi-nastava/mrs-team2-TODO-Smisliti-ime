@@ -27,6 +27,17 @@ export interface UpdatedAdminDTO {
   address: string;
 }
 
+export interface UpdatePasswordDTO {
+  oldPassword: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface UpdatedPasswordDTO {
+  success: boolean;
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -42,4 +53,9 @@ export class AdminService {
   updateProfile(updateData: UpdateAdminDTO): Observable<UpdatedAdminDTO> {
     return this.http.put<UpdatedAdminDTO>(`${this.apiUrl}/profile`, updateData);
   }
+
+  updatePassword(passwordData: UpdatePasswordDTO): Observable<UpdatedPasswordDTO> {
+    return this.http.put<UpdatedPasswordDTO>(`${this.apiUrl}/profile/password`, passwordData);
+  }
+
 }

@@ -2,11 +2,12 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminNavBarComponent } from '../../layout/admin-nav-bar/admin-nav-bar.component';
 import { AdminService, GetAdminDTO, UpdateAdminDTO } from '../service/admin.service';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-admin-profile',
   standalone: true,
-  imports: [FormsModule, AdminNavBarComponent],
+  imports: [FormsModule, AdminNavBarComponent, RouterLink],
   templateUrl: './admin-profile.html',
   styleUrl: './admin-profile.css',
 })
@@ -32,6 +33,7 @@ export class AdminProfile implements OnInit {
   loadProfile(): void {
     this.adminService.getProfile().subscribe({
       next: (data) => {
+        console.log("Admin profile updated successfully")
         this.admin = data;
         this.cdr.detectChanges();
       },

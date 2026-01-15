@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.rating.CreateRatingDTO;
 import rs.getgo.backend.dtos.rating.CreatedRatingDTO;
 import rs.getgo.backend.dtos.rating.GetRatingDTO;
@@ -16,6 +17,7 @@ import java.util.Collection;
 public class RatingController {
 
     // 2.8 Vehicle and driver rating
+    @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetRatingDTO>> getRatings() {
         Collection<GetRatingDTO> ratings = new ArrayList<>() ;
@@ -30,6 +32,7 @@ public class RatingController {
     }
 
     // 2.8 Vehicle and driver rating
+    @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetRatingDTO> getRating(@PathVariable("id") Long id) {
 
@@ -39,6 +42,7 @@ public class RatingController {
     }
 
     // 2.8 Vehicle and driver rating
+    @PreAuthorize("hasRole('PASSENGER')")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedRatingDTO> createRating(@RequestBody CreateRatingDTO rating) throws Exception {
 //        CreatedRatingDTO savedRating = new CreatedRatingDTO();

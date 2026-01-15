@@ -7,9 +7,10 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import {RouterLink} from '@angular/router';
-import { AuthService } from '../auth-service/auth.service';
+import { AuthService } from '../../../service/auth-service/auth.service';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import {environment} from '../../../../env/environment';
 
 @Component({
   selector: 'app-login',
@@ -25,6 +26,7 @@ export class LoginComponent {
   createLoginForm = new FormGroup({
     email: new FormControl('', Validators.required),
     password: new FormControl('', Validators.required),
+    stayLoggedIn: new FormControl(false), // Add checkbox control
   });
 
   // keep saving credentials locally for debugging/storage
@@ -39,7 +41,6 @@ export class LoginComponent {
   }
 
   login() {
-    // New: per-field validation logs before proceeding
     const emailControl = this.createLoginForm.get('email');
     const passwordControl = this.createLoginForm.get('password');
 
@@ -83,7 +84,10 @@ export class LoginComponent {
       password: this.createLoginForm.value.password ?? null
     };
 
+    const stayLoggedIn = this.createLoginForm.value.stayLoggedIn ?? false;
+
     console.log('Login: collected credentials', this.pendingCredentials);
+    console.log('Login: stayLoggedIn =', stayLoggedIn);
 
     // Build payload and send immediately (no role-selection UI). Default role is 'passenger'.
     const payload = {
@@ -96,7 +100,7 @@ export class LoginComponent {
 
     type LoginResponse = { token?: string; role?: 'admin' | 'driver' | 'passenger' };
 
-    this.http.post<LoginResponse>('/api/auth/login', payload).subscribe({
+    this.http.post<LoginResponse>(`${environment.apiHost}/api/auth/login`, payload).subscribe({
       next: (res) => {
         console.log('Login: server response', res);
 
@@ -105,11 +109,19 @@ export class LoginComponent {
           return;
         }
 
-        this.auth.setToken(res.token);
+        // Save token based on stayLoggedIn checkbox
+        if (stayLoggedIn) {
+          localStorage.setItem('authToken', res.token);
+          console.log('Login: token saved to localStorage (persistent)');
+        } else {
+          sessionStorage.setItem('authToken', res.token);
+          console.log('Login: token saved to sessionStorage (session only)');
+        }
+
+        this.auth.setToken(res.token, stayLoggedIn);
 
         console.log('Login: token saved & role extracted from JWT');
-
-        console.log("Current role:", res.role)
+        console.log("Current role:", res.role);
         this.router.navigate(['/home']);
       },
       error: (err) => {

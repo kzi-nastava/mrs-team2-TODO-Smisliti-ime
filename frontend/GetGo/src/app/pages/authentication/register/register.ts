@@ -7,7 +7,8 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import { HttpClient } from '@angular/common/http';
 import {CommonModule} from '@angular/common';
-import {AuthService} from '../auth-service/auth.service';
+import {AuthService} from '../../../service/auth-service/auth.service';
+import {environment} from '../../../../env/environment';
 
 @Component({
   selector: 'app-register',
@@ -166,7 +167,7 @@ export class RegisterComponent {
 
     type RegisterResponse = { id?: string };
 
-    this.http.post<RegisterResponse>('/api/auth/register', user).subscribe({
+    this.http.post<RegisterResponse>(`${environment.apiHost}/api/auth/register`, user).subscribe({
       next: (res) => {
         this.isSubmitting = false;
         this.cdr.detectChanges();

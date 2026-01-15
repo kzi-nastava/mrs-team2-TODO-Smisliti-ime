@@ -219,6 +219,4 @@ export class RideService {
    resetFilter(driverId: number) {
      this.loadRides(driverId);
    }
-
-
 }

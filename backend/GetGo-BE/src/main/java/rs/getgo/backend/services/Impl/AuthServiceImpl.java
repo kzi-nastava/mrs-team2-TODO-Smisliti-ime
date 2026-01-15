@@ -1,6 +1,8 @@
 package rs.getgo.backend.services.Impl;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import rs.getgo.backend.model.entities.Passenger;
 import rs.getgo.backend.model.enums.UserRole;
 import rs.getgo.backend.repositories.UserRepository;
 import rs.getgo.backend.model.entities.User;
@@ -27,8 +29,13 @@ import rs.getgo.backend.utils.TokenUtils;
 @Service
 public class AuthServiceImpl implements AuthService {
 
+    @Autowired
     private final UserRepository userRepository;
+
+    @Autowired
     private final TokenUtils tokenUtils;
+
+    @Autowired
     private final BCryptPasswordEncoder passwordEncoder;
 
     // simple in-memory token store for development (token -> TokenInfo)
@@ -54,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
                     );
                 });
 
-        User user = new User();
+        Passenger user = new Passenger();
         user.setEmail(request.getEmail());
         // hash password before saving
         user.setPassword(passwordEncoder.encode(request.getPassword()));

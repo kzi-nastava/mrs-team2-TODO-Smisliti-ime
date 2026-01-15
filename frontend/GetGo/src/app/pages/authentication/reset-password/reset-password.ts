@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { HttpClient } from '@angular/common/http';
+import {environment} from '../../../../env/environment';
 
 @Component({
   selector: 'app-reset-password',
@@ -135,7 +136,7 @@ export class ResetPasswordComponent implements OnInit {
 
     type ResetResponse = { message?: string };
 
-    this.http.post<ResetResponse>('/api/auth/reset-password', payload).subscribe({
+    this.http.post<ResetResponse>(`${environment.apiHost}/api/auth/reset-password`, payload).subscribe({
       next: (res) => {
         this.isSubmitting = false;
         console.log('ResetPassword: server response', res);

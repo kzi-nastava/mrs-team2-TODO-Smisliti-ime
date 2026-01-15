@@ -37,6 +37,7 @@ public class DriverController {
     }
 
     // 2.9.2
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/{id}/rides", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetRideDTO>> getDriverRides(
             @PathVariable("id") Long id,
@@ -68,7 +69,7 @@ public class DriverController {
     }
 
     // 2.2.3 - Driver registration
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/activate/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetActivationTokenDTO> validateActivationToken(
             @PathVariable String token) {
@@ -81,7 +82,7 @@ public class DriverController {
     }
 
     // 2.2.3 - Driver registration
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('DRIVER')")
     @PostMapping(value = "/activate",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -95,6 +96,7 @@ public class DriverController {
     }
 
     // 2.3 - User profile
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverDTO> getProfile() {
         Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
@@ -103,6 +105,7 @@ public class DriverController {
     }
 
     // 2.3 - User profile (Request personal info change)
+    @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/profile/personal",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -114,6 +117,7 @@ public class DriverController {
     }
 
     // 2.3 - User profile (Request vehicle info change)
+    @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/profile/vehicle",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -125,6 +129,7 @@ public class DriverController {
     }
 
     // 2.3 - User profile (Request profile picture change)
+    @PreAuthorize("hasRole('DRIVER')")
     @PostMapping(value = "/profile/picture",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -136,6 +141,7 @@ public class DriverController {
     }
 
     // 2.3 - User profile (Change driver password)
+    @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/profile/password",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -150,7 +156,7 @@ public class DriverController {
     }
 
     // 2.4.1 - Calling a ride
-    @PreAuthorize("hasRole('PASSENGER')")
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/active-locations", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetActiveDriverLocationDTO>> getActiveDriverLocations() {
 

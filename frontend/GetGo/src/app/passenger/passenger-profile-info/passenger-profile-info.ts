@@ -3,7 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { UserNavBarComponent } from '../../layout/user-nav-bar/user-nav-bar.component';
 import { PassengerService, GetPassengerDTO, UpdatePassengerDTO, UpdatedPassengerDTO, UpdatedProfilePictureDTO } from '../service/passenger.service';
-import { forkJoin } from 'rxjs';
+import { switchMap, of } from 'rxjs';
+import { environment } from "../../../env/environment"
 
 @Component({
   selector: 'app-passenger-profile-info',
@@ -38,11 +39,8 @@ export class PassengerProfileInfo implements OnInit {
   loadProfile(): void {
     this.passengerService.getProfile().subscribe({
       next: (data: GetPassengerDTO) => {
-        console.log('Passenger profile loaded:', data);
         this.passenger = data;
-        if (data.profilePictureUrl) {
-          this.profileImageUrl = data.profilePictureUrl;
-        }
+        this.updateProfileImage(data.profilePictureUrl);
         this.cdr.detectChanges();
       },
       error: (error: any) => {
@@ -51,12 +49,20 @@ export class PassengerProfileInfo implements OnInit {
     });
   }
 
-  onImageClick() {
+  private updateProfileImage(pictureUrl: string | null | undefined): void {
+    if (pictureUrl) {
+      this.profileImageUrl = `${environment.apiHost}${pictureUrl}`;
+    } else {
+      this.profileImageUrl = 'assets/images/pfp.png';
+    }
+  }
+
+  onImageClick(): void {
     const fileInput = document.getElementById('fileInput') as HTMLInputElement;
     fileInput.click();
   }
 
-  onFileSelected(event: Event) {
+  onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       this.selectedFile = input.files[0];
@@ -78,45 +84,35 @@ export class PassengerProfileInfo implements OnInit {
       address: this.passenger.address
     };
 
-    console.log('Saving profile:', updateData);
+    // Update profile first, then conditionally upload picture
+    this.passengerService.updateProfile(updateData).pipe(
+      switchMap((profileResponse: UpdatedPassengerDTO) => {
+        // Update passenger data from response
+        this.passenger = profileResponse;
 
-    // If there's a new profile picture, save both; otherwise just save profile info
-    if (this.selectedFile) {
-      // Save both profile info and picture
-      forkJoin({
-        profile: this.passengerService.updateProfile(updateData),
-        picture: this.passengerService.uploadProfilePicture(this.selectedFile)
-      }).subscribe({
-        next: (response: { profile: UpdatedPassengerDTO; picture: UpdatedProfilePictureDTO }) => {
-          console.log('Profile and picture updated:', response);
-          this.passenger = response.profile;
-          if (response.picture.pictureUrl) {
-            this.profileImageUrl = response.picture.pictureUrl;
-            this.passenger.profilePictureUrl = response.picture.pictureUrl;
-          }
+        // If file is selected, upload it
+        if (this.selectedFile) {
+          return this.passengerService.uploadProfilePicture(this.selectedFile);
+        } else {
+          return of(null);
+        }
+      })
+    ).subscribe({
+      next: (pictureResponse: UpdatedProfilePictureDTO | null) => {
+        // If picture was uploaded, update the URLs
+        if (pictureResponse && pictureResponse.pictureUrl) {
+          this.passenger.profilePictureUrl = pictureResponse.pictureUrl;
+          this.updateProfileImage(pictureResponse.pictureUrl);
           this.selectedFile = null;
-          this.cdr.detectChanges();
-          alert('Profile updated successfully!');
-        },
-        error: (error: any) => {  // ADD TYPE
-          console.error('Error updating profile:', error);
-          alert('Failed to update profile. Please try again.');
         }
-      });
-    } else {
-      // Only save profile info
-      this.passengerService.updateProfile(updateData).subscribe({
-        next: (response: UpdatedPassengerDTO) => {
-          console.log('Profile updated:', response);
-          this.passenger = response;
-          this.cdr.detectChanges();
-          alert('Profile updated successfully!');
-        },
-        error: (error: any) => {
-          console.error('Error updating profile:', error);
-          alert('Failed to update profile. Please try again.');
-        }
-      });
-    }
+
+        this.cdr.detectChanges();
+        alert('Profile updated successfully!');
+      },
+      error: (error: any) => {
+        console.error('Error updating profile:', error);
+        alert('Failed to update profile. Please try again.');
+      }
+    });
   }
 }

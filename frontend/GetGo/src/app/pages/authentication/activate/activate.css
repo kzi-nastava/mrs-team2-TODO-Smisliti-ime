@@ -1,0 +1,55 @@
+/* Fullscreen fixed overlay */
+.activation {
+  position: fixed; /* stay fixed on screen */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #8FABD4;
+
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+
+  margin: 0; /* remove any default margins */
+  overflow: hidden; /* prevent scroll */
+}
+
+/* Activation text */
+.activation p {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+/* Spinner */
+.activation .loader {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 8px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #ffffff;
+  animation: spin 0.9s linear infinite;
+}
+
+/* Spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Larger on big screens */
+@media (min-width: 1024px) {
+  .activation p { font-size: 2.5rem; }
+  .activation .loader { width: 80px; height: 80px; border-width: 10px; }
+}
+
+/* Optional: remove scroll from body just in case */
+body {
+  margin: 0;
+  overflow: hidden;
+}

@@ -9,11 +9,8 @@ import {MatSnackBar} from '@angular/material/snack-bar';
   selector: 'app-activate',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  template: `
-    <div style="text-align:center; padding: 3rem;">
-      <p>Activating your account...</p>
-    </div>
-  `
+  templateUrl: './activate.html',
+  styleUrl: './activate.css'
 })
 export class ActivateComponent implements OnInit {
 

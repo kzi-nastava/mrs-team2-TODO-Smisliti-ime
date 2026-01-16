@@ -78,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setName(request.getName());
         user.setSurname(request.getSurname());
-        user.setPhoneNumber(request.getPhoneNumber());
+        user.setPhone(request.getPhone());
         user.setAddress(request.getAddress());
         user.setRole(UserRole.PASSENGER);
 
@@ -106,7 +106,7 @@ public class AuthServiceImpl implements AuthService {
                 saved.getName(),
                 saved.getSurname(),
                 saved.getAddress(),
-                saved.getPhoneNumber(),
+                saved.getPhone(),
                 saved.isBlocked()
         );
     }

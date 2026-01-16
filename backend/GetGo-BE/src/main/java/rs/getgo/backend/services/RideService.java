@@ -8,6 +8,7 @@ public interface RideService {
     public CreatedRideStatusDTO cancelRide(Long rideId, CancelRideDTO req);
 
     // estimate and stop are left as void hooks (implementation may extend)
-    public void estimateRide();
     public void stopRide();
+
+    void triggerPanic(Long rideId, String triggeredByUserId);
 }

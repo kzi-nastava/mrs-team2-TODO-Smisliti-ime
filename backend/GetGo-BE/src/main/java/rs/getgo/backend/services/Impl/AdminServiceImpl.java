@@ -89,7 +89,7 @@ public class AdminServiceImpl implements AdminService {
         driver.setEmail(createDriverDTO.getEmail());
         driver.setName(createDriverDTO.getName());
         driver.setSurname(createDriverDTO.getSurname());
-        driver.setPhoneNumber(createDriverDTO.getPhone());
+        driver.setPhone(createDriverDTO.getPhone());
         driver.setAddress(createDriverDTO.getAddress());
         driver.setProfilePictureUrl(fileStorageService.getDefaultProfilePicture());
         driver.setActive(false);
@@ -120,7 +120,7 @@ public class AdminServiceImpl implements AdminService {
             admin.setSurname(updateAdminDTO.getSurname().trim());
         }
         if (updateAdminDTO.getPhone() != null && !updateAdminDTO.getPhone().trim().isEmpty()) {
-            admin.setPhoneNumber(updateAdminDTO.getPhone().trim());
+            admin.setPhone(updateAdminDTO.getPhone().trim());
         }
         if (updateAdminDTO.getAddress() != null && !updateAdminDTO.getAddress().trim().isEmpty()) {
             admin.setAddress(updateAdminDTO.getAddress().trim());
@@ -165,7 +165,7 @@ public class AdminServiceImpl implements AdminService {
             // Current data
             dto.setCurrentName(driver.getName());
             dto.setCurrentSurname(driver.getSurname());
-            dto.setCurrentPhone(driver.getPhoneNumber());
+            dto.setCurrentPhone(driver.getPhone());
             dto.setCurrentAddress(driver.getAddress());
 
             // Requested data (kept as-is on request)
@@ -261,7 +261,7 @@ public class AdminServiceImpl implements AdminService {
 
         dto.setCurrentName(driver.getName());
         dto.setCurrentSurname(driver.getSurname());
-        dto.setCurrentPhone(driver.getPhoneNumber());
+        dto.setCurrentPhone(driver.getPhone());
         dto.setCurrentAddress(driver.getAddress());
 
         dto.setRequestedName(request.getRequestedName());
@@ -346,7 +346,7 @@ public class AdminServiceImpl implements AdminService {
         // Apply changes to driver using firstName/lastName/phoneNumber
         driver.setName(request.getRequestedName());
         driver.setSurname(request.getRequestedSurname());
-        driver.setPhoneNumber(request.getRequestedPhone());
+        driver.setPhone(request.getRequestedPhone());
         driver.setAddress(request.getRequestedAddress());
         driverRepo.save(driver);
 

@@ -60,7 +60,6 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // Forgot password - sends reset link via Mailpit (development SMTP)
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(@RequestBody ForgotPasswordDTO request) {
         authService.forgotPassword(request.getEmail());

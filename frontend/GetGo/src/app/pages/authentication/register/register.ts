@@ -52,6 +52,7 @@ export class RegisterComponent {
         phoneNumber: ['', [Validators.required]],
         password: ['', [Validators.required, Validators.minLength(6)]],
         confirmPassword: ['', [Validators.required]],
+        imageUrl: ['']
       },
       {validators: this.passwordsMatchValidator}
     );
@@ -168,11 +169,12 @@ export class RegisterComponent {
     const user: User = {
       email: this.form.value.email,
       username: this.form.value.username || this.form.value.email,
-      firstName: this.form.value.firstName,
-      lastName: this.form.value.lastName,
+      name: this.form.value.firstName,
+      surname: this.form.value.lastName,
       password: this.form.value.password,
       address: this.form.value.address,
-      phoneNumber: this.form.value.phoneNumber,
+      phone: this.form.value.phoneNumber,
+      profilePictureUrl: this.form.value.imageUrl,
       role: this.form.value.role || UserRole.Passenger
     };
 

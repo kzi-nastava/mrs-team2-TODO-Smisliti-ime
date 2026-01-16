@@ -10,5 +10,6 @@ import lombok.Setter;
 @Table(name="passengers")
 @NoArgsConstructor
 public class Passenger extends User {
+    @Column(name = "image_url")
     private String profilePictureUrl;
 }

@@ -80,15 +80,11 @@ public class PassengerServiceImpl {
         if (passenger.getProfilePictureUrl() != null) {
             fileStorageService.deleteFile(passenger.getProfilePictureUrl());
         }
-
-        // Store new picture
-        String filename = fileStorageService.storeFile(file, "passenger_" + passengerId);
-
-        passenger.setProfilePictureUrl(filename);
+        String fileUrl = fileStorageService.storeFile(file, "passenger_" + passengerId);
+        passenger.setProfilePictureUrl(fileUrl);
         passengerRepo.save(passenger);
-
         return new UpdatedProfilePictureDTO(
-                fileStorageService.getFileUrl(filename),
+                fileUrl,
                 "Profile picture updated successfully");
     }
 }

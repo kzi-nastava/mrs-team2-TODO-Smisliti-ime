@@ -253,10 +253,10 @@ public class AdminServiceImpl implements AdminService {
             dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
             // Current profile picture
-            dto.setCurrentProfilePictureUrl(fileStorageService.getFileUrl(driver.getProfilePictureUrl()));
+            dto.setCurrentProfilePictureUrl(driver.getProfilePictureUrl());
 
             // Requested profile picture
-            dto.setRequestedProfilePictureUrl(fileStorageService.getFileUrl(request.getRequestedProfilePictureUrl()));
+            dto.setRequestedProfilePictureUrl(request.getRequestedProfilePictureUrl());
 
             dto.setStatus(request.getStatus().toString());
             dto.setCreatedAt(request.getCreatedAt());
@@ -343,8 +343,8 @@ public class AdminServiceImpl implements AdminService {
         dto.setDriverEmail(driver.getEmail());
         dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
-        dto.setCurrentProfilePictureUrl(fileStorageService.getFileUrl(driver.getProfilePictureUrl()));
-        dto.setRequestedProfilePictureUrl(fileStorageService.getFileUrl(request.getRequestedProfilePictureUrl()));
+        dto.setCurrentProfilePictureUrl(driver.getProfilePictureUrl());
+        dto.setRequestedProfilePictureUrl(request.getRequestedProfilePictureUrl());
 
         dto.setStatus(request.getStatus().toString());
         dto.setCreatedAt(request.getCreatedAt());

@@ -167,8 +167,7 @@ public class DriverServiceImpl {
             dto.setVehicleAllowsPets(driver.getVehicle().getIsPetFriendly());
         }
 
-        // Get full URL so <img src=""> can load it
-        dto.setProfilePictureUrl(fileStorageService.getFileUrl(driver.getProfilePictureUrl()));
+        dto.setProfilePictureUrl(driver.getProfilePictureUrl());
 
         // TODO: Calculate recent hours worked in last 24h
         dto.setRecentHoursWorked(0);

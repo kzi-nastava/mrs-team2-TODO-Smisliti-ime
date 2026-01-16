@@ -1,7 +1,9 @@
 package rs.getgo.backend.services.Impl;
 
 import org.springframework.stereotype.Service;
+import rs.getgo.backend.model.entities.Passenger;
 import rs.getgo.backend.model.enums.UserRole;
+import rs.getgo.backend.repositories.PassengerRepository;
 import rs.getgo.backend.repositories.UserRepository;
 import rs.getgo.backend.model.entities.User;
 import rs.getgo.backend.dtos.user.CreateUserDTO;
@@ -28,6 +30,7 @@ import rs.getgo.backend.utils.TokenUtils;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final PassengerRepository passengerRepository;
     private final TokenUtils tokenUtils;
     private final BCryptPasswordEncoder passwordEncoder;
 
@@ -36,9 +39,10 @@ public class AuthServiceImpl implements AuthService {
     private static final long TOKEN_TTL_SECONDS = 15 * 60; // 15 minutes
 
     // inject TokenUtils and password encoder (BCrypt strength default 10)
-    public AuthServiceImpl(UserRepository userRepository, TokenUtils tokenUtils, BCryptPasswordEncoder passwordEncoder) {
+    public AuthServiceImpl(UserRepository userRepository, TokenUtils tokenUtils, PassengerRepository passengerRepository, BCryptPasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.tokenUtils = tokenUtils;
+        this.passengerRepository = passengerRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -54,18 +58,18 @@ public class AuthServiceImpl implements AuthService {
                     );
                 });
 
-        User user = new User();
-        user.setEmail(request.getEmail());
-        // hash password before saving
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setName(request.getName());
-        user.setSurname(request.getSurname());
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setAddress(request.getAddress());
-        user.setRole(UserRole.PASSENGER);
-        user.setBlocked(false);
+        Passenger passenger = new Passenger();
+        passenger.setEmail(request.getEmail());
+        passenger.setPassword(passwordEncoder.encode(request.getPassword()));
+        passenger.setName(request.getName());
+        passenger.setSurname(request.getSurname());
+        passenger.setPhoneNumber(request.getPhoneNumber());
+        passenger.setAddress(request.getAddress());
+        passenger.setRole(UserRole.PASSENGER);
+        passenger.setBlocked(false);
+        passenger.setProfilePictureUrl(null);  // Initialize with null
 
-        User saved = userRepository.save(user);
+        Passenger saved = passengerRepository.save(passenger);
 
         return new CreatedUserDTO(
                 saved.getId(),

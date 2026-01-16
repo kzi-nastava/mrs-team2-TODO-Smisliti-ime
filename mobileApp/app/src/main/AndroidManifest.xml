@@ -26,7 +26,6 @@
             </intent-filter>
         </activity>
 
-<<<<<<< Updated upstream
         <activity
             android:name=".LoginActivity"
             android:exported="true">
@@ -40,11 +39,8 @@
             android:name=".MainActivity"
             android:exported="false">
         </activity>
-=======
-        <activity android:name=".LoginActivity" />
-        <activity android:name=".RegisterActivity" />
+
         <activity android:name=".ResetPasswordActivity"/>
->>>>>>> Stashed changes
 
     </application>
 

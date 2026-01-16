@@ -13,20 +13,20 @@ export class AuthService {
   private roleSignal = signal<UserRole>(UserRole.Guest);
   public role = this.roleSignal.asReadonly();
 
+  private fullNameSignal = signal<string>('');
+  public fullName = this.fullNameSignal.asReadonly();
+
   constructor(private http: HttpClient, private router: Router) {
-    // Load token from either storage
     const token = localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.TOKEN_KEY);
     if (token) {
-      this.loadRoleFromToken(token);
+      this.loadRoleAndNameFromToken(token);
     } else {
       this.roleSignal.set(UserRole.Guest);
+      this.fullNameSignal.set('');
     }
   }
 
   setToken(token: string, persistent: boolean = false) {
-    console.log('SET TOKEN CALLED, persistent =', persistent);
-
-    // Save to proper storage
     if (persistent) {
       localStorage.setItem(this.TOKEN_KEY, token);
       sessionStorage.removeItem(this.TOKEN_KEY);
@@ -35,19 +35,15 @@ export class AuthService {
       localStorage.removeItem(this.TOKEN_KEY);
     }
 
-    this.loadRoleFromToken(token);
-    console.log('ROLE AFTER SET:', this.roleSignal());
+    this.loadRoleAndNameFromToken(token);
   }
 
   logout() {
-    console.log('AuthService: logout called');
-
     this.http.post(`${environment.apiHost}/api/auth/logout`, {}).subscribe({
-      next: () => {
-        this.finishLogout();
-      },
+      next: () => this.finishLogout(),
       error: (err) => {
         console.error('AuthService: logout request failed', err);
+        this.finishLogout(); // optional fallback
       }
     });
   }
@@ -57,8 +53,7 @@ export class AuthService {
     sessionStorage.removeItem(this.TOKEN_KEY);
 
     this.roleSignal.set(UserRole.Guest);
-    console.log('AuthService: role set to Guest after logout');
-
+    this.fullNameSignal.set('');
     this.router.navigate(['/']);
   }
 
@@ -67,20 +62,27 @@ export class AuthService {
     return !!token && !this.jwtHelper.isTokenExpired(token);
   }
 
-  private loadRoleFromToken(token: string) {
+  private loadRoleAndNameFromToken(token: string) {
     try {
-      const decoded = this.jwtHelper.decodeToken(token);
+      const decoded: any = this.jwtHelper.decodeToken(token);
+
+      // ROLE
       const roleFromToken = decoded?.role;
-
       let mappedRole: UserRole = UserRole.Guest;
-      if (roleFromToken === 'admin' || roleFromToken === 'ADMIN') mappedRole = UserRole.Admin;
-      else if (roleFromToken === 'driver' || roleFromToken === 'DRIVER') mappedRole = UserRole.Driver;
-      else if (roleFromToken === 'passenger' || roleFromToken === 'PASSENGER') mappedRole = UserRole.Passenger;
-
+      if (roleFromToken?.toLowerCase() === 'admin') mappedRole = UserRole.Admin;
+      else if (roleFromToken?.toLowerCase() === 'driver') mappedRole = UserRole.Driver;
+      else if (roleFromToken?.toLowerCase() === 'passenger') mappedRole = UserRole.Passenger;
       this.roleSignal.set(mappedRole);
+
+      // FULL NAME
+      const firstName = decoded?.firstName || '';
+      const lastName = decoded?.lastName || '';
+      this.fullNameSignal.set(`${firstName} ${lastName}`.trim());
+
     } catch (err) {
-      console.error('loadRoleFromToken: failed to decode token', err);
+      console.error('loadRoleAndNameFromToken: failed to decode token', err);
       this.roleSignal.set(UserRole.Guest);
+      this.fullNameSignal.set('');
     }
   }
 

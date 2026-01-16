@@ -107,7 +107,8 @@ public class AuthServiceImpl implements AuthService {
                 saved.getSurname(),
                 saved.getAddress(),
                 saved.getPhone(),
-                saved.isBlocked()
+                saved.isBlocked(),
+                saved instanceof Passenger ? ((Passenger) saved).getProfilePictureUrl() : null
         );
     }
 

@@ -60,3 +60,10 @@ mat-toolbar span{
   cursor: pointer;
   margin-left: 10px;
 }
+
+.username{
+  font-weight: bold;
+  font-size: 20px;
+  cursor: pointer;
+  color: white;
+}

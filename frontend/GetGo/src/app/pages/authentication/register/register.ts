@@ -149,77 +149,31 @@ export class RegisterComponent {
   submit(): void {
     if (this.form.invalid) {
       this.logValidationErrors();
-      this.form.markAllAsTouched();
-      console.log('Register: form invalid, abort submit');
-
-      this.snackBar.open('Please fill in all required fields correctly.', 'Close', {
-        duration: 4000,
-        horizontalPosition: 'end',
-        verticalPosition: 'bottom',
-        panelClass: ['error-snackbar']
-      });
-
       return;
     }
 
-    this.isSubmitting = true;
-    this.cdr.detectChanges();
-    console.log('Register: isSubmitting set to true');
+    const formData = new FormData();
+    formData.append('email', this.form.value.email);
+    formData.append('firstName', this.form.value.firstName);
+    formData.append('lastName', this.form.value.lastName);
+    formData.append('password', this.form.value.password);
+    formData.append('phone', this.form.value.phoneNumber);
+    formData.append('address', this.form.value.address);
 
-    const user: User = {
-      email: this.form.value.email,
-      username: this.form.value.username || this.form.value.email,
-      name: this.form.value.firstName,
-      surname: this.form.value.lastName,
-      password: this.form.value.password,
-      address: this.form.value.address,
-      phone: this.form.value.phoneNumber,
-      profilePictureUrl: this.form.value.imageUrl,
-      role: this.form.value.role || UserRole.Passenger
-    };
-
-    console.log('Register: sending user to /api/auth/register', user);
     if (this.selectedFile) {
-      console.log('Register: profile image will be uploaded:', this.selectedFile.name);
+      formData.append('file', this.selectedFile, this.selectedFile.name);
     }
 
-    type RegisterResponse = { id?: string };
+    this.isSubmitting = true;
 
-    this.http.post<RegisterResponse>(`${environment.apiHost}/api/auth/register`, user).subscribe({
+    this.http.post(`${environment.apiHost}/api/auth/register`, formData).subscribe({
       next: (res) => {
         this.isSubmitting = false;
-        this.cdr.detectChanges();
-        console.log('Register: success, redirecting to login', res);
-
-        this.snackBar.open('Registration successful! Please login.', 'Close', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'bottom',
-          panelClass: ['success-snackbar']
-        });
-
         this.router.navigate(['/login']);
       },
       error: (err) => {
         this.isSubmitting = false;
-        this.cdr.detectChanges();
-        console.error('Register: failed', err);
-
-        let errorMessage = 'Registration failed. Please try again.';
-        if (err.status === 409) {
-          errorMessage = 'Email already exists.';
-        } else if (err.status === 0) {
-          errorMessage = 'Cannot connect to server.';
-        } else if (err.error?.message) {
-          errorMessage = err.error.message;
-        }
-
-        this.snackBar.open(errorMessage, 'Close', {
-          duration: 5000,
-          horizontalPosition: 'end',
-          verticalPosition: 'bottom',
-          panelClass: ['error-snackbar']
-        });
+        console.error(err);
       }
     });
   }

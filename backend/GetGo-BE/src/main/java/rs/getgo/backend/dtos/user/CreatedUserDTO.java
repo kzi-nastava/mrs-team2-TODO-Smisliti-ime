@@ -14,4 +14,5 @@ public class CreatedUserDTO {
     private String address;
     private String phone;
     private Boolean blocked;
+    private String profilePictureUrl;
 }

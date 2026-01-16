@@ -16,7 +16,15 @@ import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.dtos.user.ForgotPasswordDTO;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.UUID;
+
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
@@ -54,10 +62,43 @@ public class AuthController {
     }
 
     // 2.2.2 – Register
-    @PostMapping("/register")
-    public ResponseEntity<CreatedUserDTO> register(@RequestBody CreateUserDTO request) {
-        CreatedUserDTO response = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    @PostMapping(value = "/register", consumes = {"multipart/form-data"})
+    public ResponseEntity<CreatedUserDTO> registerWithFile(
+            @RequestParam("email") String email,
+            @RequestParam("password") String password,
+            @RequestParam("firstName") String firstName,
+            @RequestParam("lastName") String lastName,
+            @RequestParam("phone") String phone,
+            @RequestParam("address") String address,
+            @RequestParam(value = "file", required = false) MultipartFile file
+    ) {
+        String profilePictureUrl = null;
+
+        // čuvanje fajla na server
+        if (file != null && !file.isEmpty()) {
+            try {
+                String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+                Path uploadPath = Paths.get("uploads/" + filename);
+                Files.createDirectories(uploadPath.getParent());
+                Files.write(uploadPath, file.getBytes());
+                profilePictureUrl = "/uploads/" + filename; // link koji ide u DTO
+            } catch (IOException e) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save profile image");
+            }
+        }
+
+        // napravi DTO i prosledi AuthService-u
+        CreateUserDTO dto = new CreateUserDTO();
+        dto.setEmail(email);
+        dto.setPassword(password);
+        dto.setName(firstName);
+        dto.setSurname(lastName);
+        dto.setPhone(phone);
+        dto.setAddress(address);
+        dto.setProfilePictureUrl(profilePictureUrl); // OVDE ide link
+
+        CreatedUserDTO created = authService.register(dto); // AuthService ostaje NETAKNUT
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PostMapping("/forgot-password")

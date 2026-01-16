@@ -30,7 +30,7 @@ public class FileStorageService {
         }
 
         baseUrl = "/uploads/";
-        defaultProfilePicture = "default-avatar.png";
+        defaultProfilePicture = "/uploads/default-avatar.png";
     }
 
     public String storeFile(MultipartFile file, String prefix) {
@@ -49,15 +49,17 @@ public class FileStorageService {
             Path targetLocation = this.fileStorageLocation.resolve(newFilename);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            return newFilename;
+            return baseUrl + newFilename;
         } catch (IOException ex) {
             throw new RuntimeException("Failed to store file", ex);
         }
     }
 
-    public void deleteFile(String filename) {
+    public void deleteFile(String fileUrl) {
         try {
-            if (filename != null && !filename.equals(defaultProfilePicture)) {
+            if (fileUrl != null && !fileUrl.equals(defaultProfilePicture)) {
+                // Extract filename from URL
+                String filename = fileUrl.replace(baseUrl, "");
                 Path filePath = this.fileStorageLocation.resolve(filename).normalize();
                 Files.deleteIfExists(filePath);
             }
@@ -65,9 +67,4 @@ public class FileStorageService {
             throw new RuntimeException("Failed to delete file", ex);
         }
     }
-
-    public String getFileUrl(String filename) {
-        return baseUrl + filename;
-    }
-
 }

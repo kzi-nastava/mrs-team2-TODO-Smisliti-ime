@@ -23,11 +23,8 @@ public class User {
     private String name;
     private String surname;
     private String address;
-    private String phoneNumber;
+    private String phone;
     private UserRole role;
-
-    @Column(nullable = false)
-    private boolean canAccessSystem; // whether user can log in
 
     private boolean isBlocked; // quick check for whether user is blocked, for details check block note
 

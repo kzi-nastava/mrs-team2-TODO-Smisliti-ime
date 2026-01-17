@@ -11,6 +11,7 @@ public class CreateUserDTO {
     private String password;
     private String name;
     private String surname;
-    private String phoneNumber;
+    private String phone;
+    private String profilePictureUrl;
     private String address;
 }

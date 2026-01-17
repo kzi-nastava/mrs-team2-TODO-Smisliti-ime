@@ -40,12 +40,6 @@ export class LoginComponent {
     private snackBar: MatSnackBar
   ) {}
 
-  create() {
-    if (this.createLoginForm.valid) {
-      // TODO: Implement actual login logic here
-    }
-  }
-
   login() {
     const emailControl = this.createLoginForm.get('email');
     const passwordControl = this.createLoginForm.get('password');

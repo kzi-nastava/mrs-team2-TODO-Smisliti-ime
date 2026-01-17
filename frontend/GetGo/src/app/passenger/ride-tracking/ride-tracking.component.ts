@@ -68,6 +68,17 @@ export class RideTrackingComponent implements OnInit{
         this.showReportForm = true;
       }
     });
-
   }
+
+  submitPanic(): void {
+    this.rideTrackingService.createPanicAlert().subscribe({
+      next: () => {
+        console.log('PANIC sent');
+      },
+      error: (err) => {
+        console.error('Failed to send PANIC', err);
+      }
+    });
+  }
+
 }

@@ -1,4 +1,4 @@
-package rs.getgo.backend.services.Impl;
+package rs.getgo.backend.services.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;

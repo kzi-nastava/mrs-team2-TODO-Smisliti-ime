@@ -5,6 +5,7 @@ import { environment } from '../../../env/environment';
 import { RideTracking } from '../../model/ride-tracking.model';
 import { Observable } from 'rxjs';
 import { CreateInconsistencyReportDTO, CreatedInconsistencyReportDTO } from '../../model/inconsistency-report.model';
+import {User} from '../../model/user.model';
 
 @Injectable({
   providedIn: 'root',
@@ -55,4 +56,38 @@ export class RideTrackingService {
 
   // loading signal (spinner)
   loading = computed(() => this.trackingResource.isLoading());
+
+  private getUserIdFromToken(): string {
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    if (!token) throw new Error('No auth token found');
+
+    try {
+      const email:string = JSON.parse(atob(token.split('.')[1])).email;
+      if (!email) throw new Error('userId not found in token');
+      return email;
+    } catch (e) {
+      console.error('Failed to decode token:', e);
+      throw new Error('Invalid token');
+    }
+  }
+
+  createPanicAlert(): Observable<void> {
+    const rideId = this.rideId();
+    if (!rideId) {
+      throw new Error('No active ride ID set');
+    }
+
+    const email = this.getUserIdFromToken();
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+
+    return this.http.post<void>(
+      `${environment.apiHost}/api/rides/${rideId}/panic`,
+      { rideId, email },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      }
+    );
+  }
 }

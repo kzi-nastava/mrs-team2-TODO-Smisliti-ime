@@ -13,20 +13,24 @@ export class AuthService {
   private roleSignal = signal<UserRole>(UserRole.Guest);
   public role = this.roleSignal.asReadonly();
 
+  private fullNameSignal = signal<string>('');
+  public fullName = this.fullNameSignal.asReadonly();
+
+  private profilePictureSignal = signal<string>('');
+  public userProfilePictureUrl = this.profilePictureSignal.asReadonly();
+
   constructor(private http: HttpClient, private router: Router) {
-    // Load token from either storage
-    const token = localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.TOKEN_KEY);
-    if (token) {
-      this.loadRoleFromToken(token);
-    } else {
-      this.roleSignal.set(UserRole.Guest);
-    }
+  const token = this.getToken();
+  if (token) {
+    this.loadRoleFromToken(token);
+  } else {
+    this.roleSignal.set(UserRole.Guest);
+    this.fullNameSignal.set('');
+    this.profilePictureSignal.set('/assets/images/sussy_cat.png');
   }
+}
 
   setToken(token: string, persistent: boolean = false) {
-    console.log('SET TOKEN CALLED, persistent =', persistent);
-
-    // Save to proper storage
     if (persistent) {
       localStorage.setItem(this.TOKEN_KEY, token);
       sessionStorage.removeItem(this.TOKEN_KEY);
@@ -36,18 +40,14 @@ export class AuthService {
     }
 
     this.loadRoleFromToken(token);
-    console.log('ROLE AFTER SET:', this.roleSignal());
   }
 
   logout() {
-    console.log('AuthService: logout called');
-
     this.http.post(`${environment.apiHost}/api/auth/logout`, {}).subscribe({
-      next: () => {
-        this.finishLogout();
-      },
+      next: () => this.finishLogout(),
       error: (err) => {
         console.error('AuthService: logout request failed', err);
+        this.finishLogout(); // optional fallback
       }
     });
   }
@@ -57,8 +57,7 @@ export class AuthService {
     sessionStorage.removeItem(this.TOKEN_KEY);
 
     this.roleSignal.set(UserRole.Guest);
-    console.log('AuthService: role set to Guest after logout');
-
+    this.fullNameSignal.set('');
     this.router.navigate(['/']);
   }
 
@@ -69,20 +68,50 @@ export class AuthService {
 
   private loadRoleFromToken(token: string) {
     try {
-      const decoded = this.jwtHelper.decodeToken(token);
+      const decoded: any = this.jwtHelper.decodeToken(token);
+
+      // ROLE
       const roleFromToken = decoded?.role;
-
       let mappedRole: UserRole = UserRole.Guest;
-      if (roleFromToken === 'admin' || roleFromToken === 'ADMIN') mappedRole = UserRole.Admin;
-      else if (roleFromToken === 'driver' || roleFromToken === 'DRIVER') mappedRole = UserRole.Driver;
-      else if (roleFromToken === 'passenger' || roleFromToken === 'PASSENGER') mappedRole = UserRole.Passenger;
-
+      if (roleFromToken?.toLowerCase() === 'admin') mappedRole = UserRole.Admin;
+      else if (roleFromToken?.toLowerCase() === 'driver') mappedRole = UserRole.Driver;
+      else if (roleFromToken?.toLowerCase() === 'passenger') mappedRole = UserRole.Passenger;
       this.roleSignal.set(mappedRole);
+
     } catch (err) {
       console.error('loadRoleFromToken: failed to decode token', err);
       this.roleSignal.set(UserRole.Guest);
     }
+
+    this.fetchUserProfile();
   }
+
+  fetchUserProfile() {
+    const token = this.getToken();
+    if (!token) return;
+
+    const headers = { Authorization: `Bearer ${token}` };
+
+    this.http.get<{ fullName: string, profilePictureUrl: string }>(
+        `${environment.apiHost}/api/users/me`,
+        { headers }
+    ).subscribe({
+      next: (res) => {
+        this.fullNameSignal.set(res.fullName || '');
+
+        const pictureUrl = res.profilePictureUrl || '/assets/images/sussy_cat.png';
+
+        this.profilePictureSignal.set(pictureUrl);
+        console.log('Profile picture URL:', pictureUrl);
+        console.log('Full profile response:', res);
+      },
+      error: (err) => {
+        console.error('fetchUserProfile failed', err);
+        this.fullNameSignal.set('');
+        this.profilePictureSignal.set('/assets/images/sussy_cat.png');
+      }
+    });
+}
 
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.TOKEN_KEY);

@@ -20,4 +20,8 @@ export class AdminNavBarComponent {
     this.auth.logout();
     this.router.navigate(['/']);
   }
+
+  get fullName(): string {
+    return this.auth.fullName();
+  }
 }

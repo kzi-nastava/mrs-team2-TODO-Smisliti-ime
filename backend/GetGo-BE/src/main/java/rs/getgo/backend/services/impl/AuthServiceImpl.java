@@ -1,9 +1,10 @@
-package rs.getgo.backend.services.Impl;
+package rs.getgo.backend.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import rs.getgo.backend.model.entities.Passenger;
 import rs.getgo.backend.model.enums.UserRole;
+import rs.getgo.backend.repositories.PassengerRepository;
 import rs.getgo.backend.repositories.UserRepository;
 import rs.getgo.backend.model.entities.User;
 import rs.getgo.backend.dtos.user.CreateUserDTO;
@@ -45,6 +46,9 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private PassengerRepository passengerRepository;
+
     // simple in-memory token store for development (token -> TokenInfo)
     private final Map<String, TokenInfo> resetTokens = new ConcurrentHashMap<>();
     private static final long RESET_TOKEN_TTL_SECONDS = 15 * 60; // 15 minutes
@@ -78,15 +82,16 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setName(request.getName());
         user.setSurname(request.getSurname());
-        user.setPhoneNumber(request.getPhoneNumber());
+        user.setPhone(request.getPhone());
         user.setAddress(request.getAddress());
         user.setRole(UserRole.PASSENGER);
+        user.setProfilePictureUrl(request.getProfilePictureUrl()); // preserve profile picture if sent
 
         // newly registered users must activate via email before they can login
         user.setBlocked(false);            // not admin-blocked by default
-        user.setCanAccessSystem(false);    // cannot access until activation
+        user.setCanAccessSystem(false);    // CANNOT access until activation (this is correct)
 
-        User saved = userRepository.save(user);
+        Passenger saved = passengerRepository.save(user);  // Fixed: save as Passenger via passengerRepository
 
         // generate activation token (24h) and send activation email via EmailService
         String activationToken = UUID.randomUUID().toString();
@@ -95,9 +100,10 @@ public class AuthServiceImpl implements AuthService {
 
         try {
             emailService.sendActivationEmail(saved.getEmail(), activationToken);
+            System.out.println("Activation email sent to: " + saved.getEmail() + " with token: " + activationToken);
         } catch (Exception e) {
             System.err.println("Failed to send activation email: " + e.getMessage());
-            // optionally cleanup saved user if desired
+            e.printStackTrace();
         }
 
         return new CreatedUserDTO(
@@ -106,8 +112,9 @@ public class AuthServiceImpl implements AuthService {
                 saved.getName(),
                 saved.getSurname(),
                 saved.getAddress(),
-                saved.getPhoneNumber(),
-                saved.isBlocked()
+                saved.getPhone(),
+                saved.isBlocked(),
+                saved.getProfilePictureUrl()
         );
     }
 
@@ -136,31 +143,38 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
-        if (!user.isCanAccessSystem()) {
-            // check if there exists a valid activation token for this user
-            boolean hasValidActivation = activationTokens.values().stream()
-                    .anyMatch(ti -> ti.userId.equals(user.getId()) && Instant.now().getEpochSecond() <= ti.expirySeconds);
+        if (user.getRole() == UserRole.PASSENGER) {
+            Passenger passenger = (Passenger) user;
+            if (!passenger.isCanAccessSystem()) {
+                // check if there exists a valid activation token for this user
+                boolean hasValidActivation = activationTokens.values().stream()
+                        .anyMatch(ti -> ti.userId.equals(user.getId()) && Instant.now().getEpochSecond() <= ti.expirySeconds);
 
-            if (!hasValidActivation) {
-                // activation window expired -> remove the unactivated user and deny login
-                try {
-                    userRepository.deleteById(user.getId());
-                } catch (Exception ignored) {}
-                throw new ResponseStatusException(
-                        HttpStatus.FORBIDDEN,
-                        "Activation expired. Please register again."
-                );
-            } else {
-                // user still within activation window but not activated
-                throw new ResponseStatusException(
-                        HttpStatus.FORBIDDEN,
-                        "Account not activated. Check your email for activation link."
-                );
+                if (!hasValidActivation) {
+                    // activation window expired -> remove the unactivated user and deny login
+                    try {
+                        userRepository.deleteById(user.getId());
+                        System.out.println("Deleted expired unactivated user: " + user.getEmail());
+                    } catch (Exception ignored) {
+                    }
+                    throw new ResponseStatusException(
+                            HttpStatus.FORBIDDEN,
+                            "Activation expired. Please register again."
+                    );
+                } else {
+                    // user still within activation window but not activated
+                    throw new ResponseStatusException(
+                            HttpStatus.FORBIDDEN,
+                            "Account not activated. Check your email for activation link."
+                    );
+                }
             }
         }
 
         if (user.getRole() == UserRole.DRIVER) {
-            ((Driver) user).setActive(true);
+            Driver driver = (Driver) user;
+            driver.setActive(true);
+            driverRepo.save(driver);
         }
 
         // generate JWT token using TokenUtils
@@ -207,12 +221,15 @@ public class AuthServiceImpl implements AuthService {
 
     // Activation endpoint used by frontend -> controller should call this service method
     public boolean activateAccount(String token) {
+        System.out.println("Attempting activation with token: " + token);
         TokenInfo info = activationTokens.get(token);
         if (info == null) {
+            System.err.println("Activation token not found: " + token);
             return false;
         }
         if (Instant.now().getEpochSecond() > info.expirySeconds) {
             activationTokens.remove(token);
+            System.err.println("Activation token expired: " + token);
             // expired -> delete unactivated user
             try {
                 userRepository.deleteById(info.userId);
@@ -223,11 +240,16 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(info.userId).orElse(null);
         if (user == null) {
             activationTokens.remove(token);
+            System.err.println("User not found for activation token: " + token);
             return false;
         }
         // allow access after activation
-        user.setCanAccessSystem(true);
-        userRepository.save(user);
+        if (user instanceof Passenger) {
+            Passenger passenger = (Passenger) user;
+            passenger.setCanAccessSystem(true);  // GRANT access
+            passengerRepository.save(passenger);
+            System.out.println("User activated successfully: " + user.getEmail());
+        }
         activationTokens.remove(token);
         return true;
     }

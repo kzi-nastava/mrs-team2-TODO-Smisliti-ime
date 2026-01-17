@@ -8,11 +8,8 @@ import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
 import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
-import rs.getgo.backend.model.entities.InconsistencyReport;
 import rs.getgo.backend.services.RideEstimateService;
 import rs.getgo.backend.services.RideService;
-import rs.getgo.backend.services.Impl.RideEstimateServiceImpl;
-import rs.getgo.backend.services.Impl.RideServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -103,6 +100,17 @@ public class RideController {
     public ResponseEntity<CreatedRideStatusDTO> stopRide(@PathVariable Long rideId) {
         CreatedRideStatusDTO response = new CreatedRideStatusDTO(rideId, "FINISHED");
         return ResponseEntity.ok(response);
+    }
+
+    // 2.6.3 - PANIC button
+    @PreAuthorize("hasRole('DRIVER') or hasRole('PASSENGER')")
+    @PostMapping("/{rideId}/panic")
+    public ResponseEntity<Void> createPanic(
+            @PathVariable Long rideId,
+            @PathVariable String email
+    ) {
+        rideService.triggerPanic(rideId, email);
+        return ResponseEntity.ok().build();
     }
 
     // 2.6.1 - Start ride

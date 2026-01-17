@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.RatingBar;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.example.getgo.R;
 import com.example.getgo.adapters.RatingAdapter;
@@ -43,6 +44,10 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
     private RatingBar ratingVehicle, ratingDriver;
     private EditText commentInput;
     private Button submitBtn;
+
+    private RatingBar ratingBarAvgVehicle;
+    private RatingBar ratingBarAvgDriver;
+
 
 
 
@@ -83,6 +88,10 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
 
         submitBtn.setOnClickListener(v -> submitRating());
 
+        ratingBarAvgVehicle = view.findViewById(R.id.ratingBarAvgVehicle);
+        ratingBarAvgDriver = view.findViewById(R.id.ratingBarAvgDriver);
+
+
         if (rideId != null) {
             loadRatings();
         }
@@ -103,20 +112,28 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
                 if (response.isSuccessful() && response.body() != null) {
                     List<GetRatingDTO> ratings = response.body();
 
-                    try {
-                        Log.d("RATINGS_JSON", new Gson().toJson(ratings));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
                     ratingAdapter.setRatings(ratings);
-                    for (GetRatingDTO r : ratings) {
-                        Log.d("RATINGS", r.getComment());
+                    if (ratings != null && !ratings.isEmpty()) {
+                        float sumVehicle = 0f;
+                        float sumDriver = 0f;
+
+                        for (GetRatingDTO r : ratings) {
+                            sumVehicle += r.getVehicleRating();
+                            sumDriver += r.getDriverRating();
+                        }
+
+                        float avgVehicle = sumVehicle / ratings.size();
+                        float avgDriver = sumDriver / ratings.size();
+
+                        ratingBarAvgVehicle.setRating(avgVehicle);
+                        ratingBarAvgDriver.setRating(avgDriver);
+
+                        TextView tvAvgVehicleNumber = getView().findViewById(R.id.tvAvgVehicleNumber);
+                        TextView tvAvgDriverNumber = getView().findViewById(R.id.tvAvgDriverNumber);
+
+                        tvAvgVehicleNumber.setText(String.format("%.1f", avgVehicle));
+                        tvAvgDriverNumber.setText(String.format("%.1f", avgDriver));
                     }
-
-                    Log.d("RATINGS", response.body().toString());
-
-                    Log.d("RATINGS", "Loaded ratings: " + ratings.size());
                 } else {
                     Log.e("RATINGS", "Response error: " + response.code());
                 }
@@ -128,6 +145,14 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
                 t.printStackTrace();
             }
         });
+    }
+
+    private String getStars(double rating) {
+        StringBuilder sb = new StringBuilder();
+        int fullStars = (int) rating;
+        for (int i = 0; i < fullStars; i++) sb.append("★");
+        for (int i = fullStars; i < 5; i++) sb.append("☆");
+        return sb.toString();
     }
 
     private void submitRating() {

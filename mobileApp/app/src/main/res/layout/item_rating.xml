@@ -1,27 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="8dp"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground">
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/blue_card">
 
     <TextView
         android:id="@+id/tvVehicleRating"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Vehicle: ★★★★☆"/>
+        android:text="Vehicle: ★★★★☆"
+        android:textStyle="bold"/>
 
     <TextView
         android:id="@+id/tvDriverRating"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Driver: ★★★☆☆"/>
+        android:text="Driver: ★★★☆☆"
+        android:layout_marginTop="4dp"/>
 
     <TextView
         android:id="@+id/tvComment"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Comment here"/>
+        android:text="Comment here"
+        android:layout_marginTop="6dp"/>
 </LinearLayout>

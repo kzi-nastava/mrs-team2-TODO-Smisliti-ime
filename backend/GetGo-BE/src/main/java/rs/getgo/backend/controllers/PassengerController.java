@@ -20,7 +20,7 @@ public class PassengerController {
     @Autowired
     private PassengerServiceImpl passengerService;
 
-    Long passengerId = 1L; // TODO: get from cookie/whatever we decide to use
+    Long passengerId = 5L; // TODO: get from cookie/whatever we decide to use
 
     // 2.3 - User profile
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)

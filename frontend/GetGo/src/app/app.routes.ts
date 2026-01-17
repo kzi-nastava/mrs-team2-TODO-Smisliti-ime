@@ -8,6 +8,7 @@ import {UnregisteredHomeComponent} from './layout/unregistered-home/unregistered
 import {RideDetailsComponent} from './driver/ride-details/ride-details.component';
 import {RegisteredHomeComponent} from './layout/registered-home/registered-home.component';
 import { PassengerProfileInfo } from './passenger/passenger-profile-info/passenger-profile-info';
+import { PassengerChangePassword } from './passenger/passenger-change-password/passenger-change-password';
 import { DriverProfile } from './driver/driver-profile/driver-profile';
 import { AdminProfile } from './admin/admin-profile/admin-profile';
 import { AdminChangePassword } from './admin/admin-change-password/admin-change-password';
@@ -32,6 +33,7 @@ export const routes: Routes = [
   { path: 'ride', component: RideComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'driver/rides/:id', component: RideDetailsComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'passenger/passenger-profile', component: PassengerProfileInfo, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
+  { path: 'passenger/change-password', component: PassengerChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'passenger/rating-vehicle-driver', component: RatingVehicleDriverComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
 //   { path: 'passenger/in-ride', component: InRideComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'passenger/ride-tracking', component: RideTrackingComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },

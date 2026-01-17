@@ -2,6 +2,7 @@ package rs.getgo.backend.services;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
@@ -24,6 +25,9 @@ public class PassengerServiceImpl {
 
     @Autowired
     private FileStorageService fileStorageService;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     public GetPassengerDTO getPassengerById(Long passengerId) {
         Passenger passenger = passengerRepo.findById(passengerId)
@@ -61,11 +65,11 @@ public class PassengerServiceImpl {
         Passenger passenger = passengerRepo.findById(passengerId)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with id: " + passengerId));
 
-        if (!passenger.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
+        if (!passwordEncoder.matches(updatePasswordDTO.getOldPassword(), passenger.getPassword())) {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
         }
 
-        passenger.setPassword(updatePasswordDTO.getPassword());
+        passenger.setPassword(passwordEncoder.encode(updatePasswordDTO.getPassword()));
         passengerRepo.save(passenger);
 
         return new UpdatedPasswordDTO(true, "Password updated successfully");

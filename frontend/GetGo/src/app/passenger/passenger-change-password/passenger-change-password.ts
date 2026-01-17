@@ -1,24 +1,23 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AdminNavBarComponent } from '../../layout/admin-nav-bar/admin-nav-bar.component';
-import { AdminService } from '../service/admin.service';
+import { PassengerService } from '../service/passenger.service'
 
 @Component({
-  selector: 'app-admin-change-password',
+  selector: 'app-passenger-change-password',
   standalone: true,
-  imports: [FormsModule, AdminNavBarComponent],
-  templateUrl: './admin-change-password.html',
-  styleUrl: './admin-change-password.css',
+  imports: [FormsModule],
+  templateUrl: './passenger-change-password.html',
+  styleUrl: './passenger-change-password.css',
 })
-export class AdminChangePassword {
-  passwordData = {
+export class PassengerChangePassword {
+passwordData = {
     oldPassword: '',
     password: '',
     confirmPassword: ''
   };
 
   constructor(
-    private adminService: AdminService,
+    private passengerService: PassengerService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -33,7 +32,7 @@ export class AdminChangePassword {
       return;
     }
 
-    this.adminService.updatePassword(this.passwordData).subscribe({
+    this.passengerService.updatePassword(this.passwordData).subscribe({
       next: (response) => {
         console.log('Password changed successfully:', response);
         alert('Password changed successfully!');

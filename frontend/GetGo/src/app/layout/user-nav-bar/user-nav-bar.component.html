@@ -10,7 +10,7 @@
 <!--  <button mat-raised-button [routerLink]="['/ride']" >Ride</button>-->
   <span class="username">{{ fullName }}</span>
 <!--  <h2><img class="account-icon" src="/finish-flag.svg" alt="Destination flag"></h2>-->
-  <img class="profile-icon" src="/Profile.svg" alt="Profile icon">
+  <img class="profile-icon" [src]="auth.userProfilePictureUrl() || '/assets/images/sussy_cat.png'" alt="Profile icon">
 </mat-toolbar>
 
 <mat-menu #menu="matMenu">

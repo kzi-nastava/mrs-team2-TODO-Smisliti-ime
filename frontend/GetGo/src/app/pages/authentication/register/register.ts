@@ -1,6 +1,5 @@
 import {Component, ChangeDetectorRef} from '@angular/core';
 import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {User, UserRole} from '../../../model/user.model';
 import {Router, RouterLink} from '@angular/router';
 import {MatButtonModule, MatIconButton} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';

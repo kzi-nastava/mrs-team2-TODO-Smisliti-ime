@@ -1,7 +1,6 @@
 package rs.getgo.backend.controllers;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import rs.getgo.backend.dtos.favorite.CreatedFavoriteDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
@@ -9,18 +8,14 @@ import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
 import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
-import rs.getgo.backend.model.entities.InconsistencyReport;
 import rs.getgo.backend.services.RideEstimateService;
 import rs.getgo.backend.services.RideService;
-import rs.getgo.backend.services.Impl.RideEstimateServiceImpl;
-import rs.getgo.backend.services.Impl.RideServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.services.RideTrackingService;
 
-import java.nio.file.attribute.UserPrincipal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;

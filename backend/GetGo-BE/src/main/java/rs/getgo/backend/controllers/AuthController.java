@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 import rs.getgo.backend.dtos.login.CreateLoginDTO;
@@ -9,7 +10,7 @@ import rs.getgo.backend.dtos.user.CreateUserDTO;
 import rs.getgo.backend.dtos.user.CreatedUserDTO;
 import rs.getgo.backend.model.entities.User;
 import rs.getgo.backend.repositories.UserRepository;
-import rs.getgo.backend.services.Impl.AuthServiceImpl;
+import rs.getgo.backend.services.impl.AuthServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,8 +30,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:4200") // allow Angular dev server
+@CrossOrigin(origins = "http://localhost:4200")
 public class AuthController {
+
+    @Value("${upload.dir}")
+    private String uploadDir;
 
     private final AuthServiceImpl authService;
     private final UserRepository userRepository;
@@ -74,20 +78,18 @@ public class AuthController {
     ) {
         String profilePictureUrl = null;
 
-        // čuvanje fajla na server
         if (file != null && !file.isEmpty()) {
             try {
                 String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-                Path uploadPath = Paths.get("uploads/" + filename);
+                Path uploadPath = Paths.get(uploadDir).resolve(filename);
                 Files.createDirectories(uploadPath.getParent());
                 Files.write(uploadPath, file.getBytes());
-                profilePictureUrl = "/uploads/" + filename; // link koji ide u DTO
+                profilePictureUrl = "/uploads/" + filename;
             } catch (IOException e) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save profile image");
             }
         }
 
-        // napravi DTO i prosledi AuthService-u
         CreateUserDTO dto = new CreateUserDTO();
         dto.setEmail(email);
         dto.setPassword(password);
@@ -95,9 +97,9 @@ public class AuthController {
         dto.setSurname(lastName);
         dto.setPhone(phone);
         dto.setAddress(address);
-        dto.setProfilePictureUrl(profilePictureUrl); // OVDE ide link
+        dto.setProfilePictureUrl(profilePictureUrl);
 
-        CreatedUserDTO created = authService.register(dto); // AuthService ostaje NETAKNUT
+        CreatedUserDTO created = authService.register(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 

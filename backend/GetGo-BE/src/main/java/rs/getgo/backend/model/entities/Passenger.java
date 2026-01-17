@@ -12,4 +12,7 @@ import lombok.Setter;
 public class Passenger extends User {
     @Column(name = "image_url")
     private String profilePictureUrl;
+
+    @Column(nullable = false)
+    private boolean canAccessSystem; // whether user can log in
 }

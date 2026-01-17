@@ -16,15 +16,19 @@ export class AuthService {
   private fullNameSignal = signal<string>('');
   public fullName = this.fullNameSignal.asReadonly();
 
+  private profilePictureSignal = signal<string>('');
+  public userProfilePictureUrl = this.profilePictureSignal.asReadonly();
+
   constructor(private http: HttpClient, private router: Router) {
-    const token = localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.TOKEN_KEY);
-    if (token) {
-      this.loadRoleAndNameFromToken(token);
-    } else {
-      this.roleSignal.set(UserRole.Guest);
-      this.fullNameSignal.set('');
-    }
+  const token = this.getToken();
+  if (token) {
+    this.loadRoleFromToken(token);
+  } else {
+    this.roleSignal.set(UserRole.Guest);
+    this.fullNameSignal.set('');
+    this.profilePictureSignal.set('/assets/images/sussy_cat.png');
   }
+}
 
   setToken(token: string, persistent: boolean = false) {
     if (persistent) {
@@ -35,7 +39,7 @@ export class AuthService {
       localStorage.removeItem(this.TOKEN_KEY);
     }
 
-    this.loadRoleAndNameFromToken(token);
+    this.loadRoleFromToken(token);
   }
 
   logout() {
@@ -62,7 +66,7 @@ export class AuthService {
     return !!token && !this.jwtHelper.isTokenExpired(token);
   }
 
-  private loadRoleAndNameFromToken(token: string) {
+  private loadRoleFromToken(token: string) {
     try {
       const decoded: any = this.jwtHelper.decodeToken(token);
 
@@ -74,17 +78,40 @@ export class AuthService {
       else if (roleFromToken?.toLowerCase() === 'passenger') mappedRole = UserRole.Passenger;
       this.roleSignal.set(mappedRole);
 
-      // FULL NAME
-      const firstName = decoded?.firstName || '';
-      const lastName = decoded?.lastName || '';
-      this.fullNameSignal.set(`${firstName} ${lastName}`.trim());
-
     } catch (err) {
-      console.error('loadRoleAndNameFromToken: failed to decode token', err);
+      console.error('loadRoleFromToken: failed to decode token', err);
       this.roleSignal.set(UserRole.Guest);
-      this.fullNameSignal.set('');
     }
+
+    this.fetchUserProfile();
   }
+
+  fetchUserProfile() {
+    const token = this.getToken();
+    if (!token) return;
+
+    const headers = { Authorization: `Bearer ${token}` };
+
+    this.http.get<{ fullName: string, profilePictureUrl: string }>(
+        `${environment.apiHost}/api/users/me`,
+        { headers }
+    ).subscribe({
+      next: (res) => {
+        this.fullNameSignal.set(res.fullName || '');
+
+        const pictureUrl = res.profilePictureUrl || '/assets/images/sussy_cat.png';
+
+        this.profilePictureSignal.set(pictureUrl);
+        console.log('Profile picture URL:', pictureUrl);
+        console.log('Full profile response:', res);
+      },
+      error: (err) => {
+        console.error('fetchUserProfile failed', err);
+        this.fullNameSignal.set('');
+        this.profilePictureSignal.set('/assets/images/sussy_cat.png');
+      }
+    });
+}
 
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.TOKEN_KEY);

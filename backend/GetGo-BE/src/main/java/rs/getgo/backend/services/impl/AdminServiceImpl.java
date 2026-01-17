@@ -1,4 +1,4 @@
-package rs.getgo.backend.services.Impl;
+package rs.getgo.backend.services.impl;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;

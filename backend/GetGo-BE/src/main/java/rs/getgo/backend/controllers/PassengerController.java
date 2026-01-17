@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
@@ -21,6 +22,7 @@ public class PassengerController {
     private PassengerServiceImpl passengerService;
 
     // 2.3 - User profile
+    @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetPassengerDTO> getProfile() {
 
@@ -31,6 +33,7 @@ public class PassengerController {
     }
 
     // 2.3 - User profile
+    @PreAuthorize("hasRole('PASSENGER')")
     @PutMapping(value = "/profile",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -44,6 +47,7 @@ public class PassengerController {
     }
 
     // 2.3 - User profile (Change passenger password)
+    @PreAuthorize("hasRole('PASSENGER')")
     @PutMapping(value = "/profile/password",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -60,6 +64,7 @@ public class PassengerController {
     }
 
     // 2.3 - User profile
+    @PreAuthorize("hasRole('PASSENGER')")
     @PostMapping(value = "/profile/picture",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)

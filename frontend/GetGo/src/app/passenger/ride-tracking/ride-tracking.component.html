@@ -51,7 +51,10 @@
       <button type="button" (click)="submitReport()">Submit</button>
       <button class="cancel-btn" (click)="showReportForm = false">Cancel</button>
     </div>
-    <button class="panic-btn">PANIC</button>
+    <button class="panic-btn" (click)="submitPanic()">
+      PANIC
+    </button>
+
   </div>
 
   <div class="map-container">

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { MapComponent } from '../map/map.component';
 import {NavBarComponent} from '../nav-bar/nav-bar.component';
+import {environment} from '../../../env/environment';
 
 @Component({
   selector: 'app-registered-home',
@@ -157,7 +158,7 @@ export class RegisteredHomeComponent implements AfterViewInit, OnDestroy {
     this.serverError = null;
     this.estimateMinutes = null;
 
-    this.http.post<EstimateResponse>('/api/rides/estimate', payload).subscribe({
+    this.http.post<EstimateResponse>(`${environment.apiHost}/api/rides/estimate`, payload).subscribe({
       next: res => {
         console.log('Received estimate response', res);
         this.estimateMinutes = res.durationMinutes;

@@ -1,7 +1,7 @@
 import {Component, computed, effect} from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { AuthService } from '../../pages/authentication/auth-service/auth.service';
+import { AuthService } from '../../service/auth-service/auth.service';
 
 import { UnregisteredNavBarComponent } from '../unregistered-nav-bar/unregistered-nav-bar.component';
 import { DriverNavBarComponent } from '../driver-nav-bar/driver-nav-bar.component';

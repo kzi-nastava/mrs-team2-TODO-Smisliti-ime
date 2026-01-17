@@ -2,65 +2,115 @@ package com.example.getgo.fragments;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.getgo.R;
+import com.example.getgo.adapters.RatingAdapter;
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.dtos.rating.GetRatingDTO;
+import com.example.getgo.interfaces.RatingApi;
+import com.google.gson.Gson;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link PassengerRateDriverVehicleFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class PassengerRateDriverVehicleFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    private RatingApi api;
+    private Long rideId = 1L; // temporary hardcoded ride ID
+//    rideId = getArguments().getLong("rideId");
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private RecyclerView rvRatings;
+    private RatingAdapter ratingAdapter;
+
 
     public PassengerRateDriverVehicleFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment PassengerRateDriverVehicleFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static PassengerRateDriverVehicleFragment newInstance(String param1, String param2) {
-        PassengerRateDriverVehicleFragment fragment = new PassengerRateDriverVehicleFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+
+        api = ApiClient.getClient().create(RatingApi.class);
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_passenger_rate_driver_vehicle, container, false);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(
+                R.layout.fragment_passenger_rate_driver_vehicle,
+                container,
+                false
+        );
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        rvRatings = view.findViewById(R.id.rvRatings);
+        ratingAdapter = new RatingAdapter();
+
+        rvRatings.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvRatings.setAdapter(ratingAdapter);
+
+        if (rideId != null) {
+            loadRatings();
+        }
+    }
+
+
+    private void loadRatings() {
+//        String token = "Bearer " + getTokenFromStorage();
+
+//        String token = getTokenFromStorage();
+//        Log.d("TOKEN", "JWT = " + token);
+        Log.d("RATINGS", "Pozivam API za rideId = " + rideId);
+
+        api.getRatings(rideId).enqueue(new Callback<List<GetRatingDTO>>() {
+            @Override
+            public void onResponse(Call<List<GetRatingDTO>> call,
+                                   Response<List<GetRatingDTO>> response) {
+
+                if (response.isSuccessful() && response.body() != null) {
+                    List<GetRatingDTO> ratings = response.body();
+
+                    try {
+                        Log.d("RATINGS_JSON", new Gson().toJson(ratings));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    ratingAdapter.setRatings(ratings);
+                    for (GetRatingDTO r : ratings) {
+                        Log.d("RATINGS", r.getComment());
+                    }
+
+                    Log.d("RATINGS", response.body().toString());
+
+                    Log.d("RATINGS", "Loaded ratings: " + ratings.size());
+                } else {
+                    Log.e("RATINGS", "Response error: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<GetRatingDTO>> call, Throwable t) {
+                Log.e("RATINGS", "API call failed", t);
+                t.printStackTrace();
+            }
+        });
     }
 }

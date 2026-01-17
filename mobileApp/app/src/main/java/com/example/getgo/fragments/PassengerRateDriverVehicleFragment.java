@@ -12,10 +12,15 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.RatingBar;
+import android.widget.Button;
 
 import com.example.getgo.R;
 import com.example.getgo.adapters.RatingAdapter;
 import com.example.getgo.api.ApiClient;
+import com.example.getgo.dtos.rating.CreateRatingDTO;
+import com.example.getgo.dtos.rating.CreatedRatingDTO;
 import com.example.getgo.dtos.rating.GetRatingDTO;
 import com.example.getgo.interfaces.RatingApi;
 import com.google.gson.Gson;
@@ -34,6 +39,11 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
 
     private RecyclerView rvRatings;
     private RatingAdapter ratingAdapter;
+
+    private RatingBar ratingVehicle, ratingDriver;
+    private EditText commentInput;
+    private Button submitBtn;
+
 
 
     public PassengerRateDriverVehicleFragment() {
@@ -66,6 +76,13 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
         rvRatings.setLayoutManager(new LinearLayoutManager(getContext()));
         rvRatings.setAdapter(ratingAdapter);
 
+        ratingVehicle = view.findViewById(R.id.ratingVehicle);
+        ratingDriver = view.findViewById(R.id.ratingDriver);
+        commentInput = view.findViewById(R.id.commentInput);
+        submitBtn = view.findViewById(R.id.submitBtn);
+
+        submitBtn.setOnClickListener(v -> submitRating());
+
         if (rideId != null) {
             loadRatings();
         }
@@ -77,7 +94,6 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
 
 //        String token = getTokenFromStorage();
 //        Log.d("TOKEN", "JWT = " + token);
-        Log.d("RATINGS", "Pozivam API za rideId = " + rideId);
 
         api.getRatings(rideId).enqueue(new Callback<List<GetRatingDTO>>() {
             @Override
@@ -113,4 +129,51 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
             }
         });
     }
+
+    private void submitRating() {
+
+        int vehicleRating = (int) ratingVehicle.getRating();
+        int driverRating = (int) ratingDriver.getRating();
+        String comment = commentInput.getText().toString().trim();
+
+        if (vehicleRating == 0 || driverRating == 0) {
+            Log.e("RATING_POST", "Rating cannot be 0");
+            return;
+        }
+
+        CreateRatingDTO dto = new CreateRatingDTO(
+                driverRating,
+                vehicleRating,
+                comment
+        );
+
+        api.createRating(rideId, dto).enqueue(new Callback<CreatedRatingDTO>() {
+            @Override
+            public void onResponse(Call<CreatedRatingDTO> call,
+                                   Response<CreatedRatingDTO> response) {
+
+                if (response.isSuccessful() && response.body() != null) {
+                    CreatedRatingDTO created = response.body();
+
+                    Log.d("RATING_POST", "Created rating id = " + created.getId());
+
+                    // reset polja
+                    ratingVehicle.setRating(0);
+                    ratingDriver.setRating(0);
+                    commentInput.setText("");
+
+                    // refresh liste
+                    loadRatings();
+                } else {
+                    Log.e("RATING_POST", "POST error: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<CreatedRatingDTO> call, Throwable t) {
+                Log.e("RATING_POST", "POST failed", t);
+            }
+        });
+    }
+
 }

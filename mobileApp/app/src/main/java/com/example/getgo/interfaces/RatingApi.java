@@ -1,6 +1,7 @@
 package com.example.getgo.interfaces;
 
 import com.example.getgo.dtos.rating.CreateRatingDTO;
+import com.example.getgo.dtos.rating.CreatedRatingDTO;
 import com.example.getgo.dtos.rating.GetRatingDTO;
 
 import java.util.List;
@@ -19,6 +20,6 @@ public interface RatingApi {
     Call<List<GetRatingDTO>> getRatings(@Path("rideId") Long rideId);
 
     @POST("/api/ratings")
-    Call<GetRatingDTO> createRating(@Query("rideId") Long rideId, @Body CreateRatingDTO rating);
+    Call<CreatedRatingDTO> createRating(@Query("rideId") Long rideId, @Body CreateRatingDTO rating);
 }
 

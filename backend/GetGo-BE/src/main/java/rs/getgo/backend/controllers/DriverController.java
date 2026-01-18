@@ -98,10 +98,10 @@ public class DriverController {
     }
 
     // 2.3 - User profile (Request personal info change)
-    @PutMapping(value = "/profile/personal",
+    @PostMapping(value = "/profile/change-requests/personal",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedDriverChangeRequestDTO> updatePersonalInfo(
+    public ResponseEntity<CreatedDriverChangeRequestDTO> requestPersonalInfoChange(
             @RequestBody UpdateDriverPersonalDTO updateDriverPersonalDTO) {
 
         CreatedDriverChangeRequestDTO response = driverService.requestPersonalInfoChange(driverId, updateDriverPersonalDTO);
@@ -109,10 +109,10 @@ public class DriverController {
     }
 
     // 2.3 - User profile (Request vehicle info change)
-    @PutMapping(value = "/profile/vehicle",
+    @PostMapping(value = "/profile/change-requests/vehicle",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedDriverChangeRequestDTO> updateVehicleInfo(
+    public ResponseEntity<CreatedDriverChangeRequestDTO> requestVehicleInfoChange(
             @RequestBody UpdateDriverVehicleDTO updateDriverVehicleDTO) {
 
         CreatedDriverChangeRequestDTO response = driverService.requestVehicleInfoChange(driverId, updateDriverVehicleDTO);
@@ -120,10 +120,10 @@ public class DriverController {
     }
 
     // 2.3 - User profile (Request profile picture change)
-    @PostMapping(value = "/profile/picture",
+    @PostMapping(value = "/profile/change-requests/picture",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedDriverChangeRequestDTO> uploadProfilePicture(
+    public ResponseEntity<CreatedDriverChangeRequestDTO> requestProfilePictureChange(
             @RequestParam("file") MultipartFile file) {
 
         CreatedDriverChangeRequestDTO response = driverService.requestProfilePictureChange(driverId, file);

@@ -19,13 +19,22 @@ export class RatingService {
   ratingsResource = rxResource({
     params: () => ({ rideId: this.rideId() }),
     stream: ({params}) => {
-      const token = localStorage.getItem(this.TOKEN_KEY);
+      const token = sessionStorage.getItem(this.TOKEN_KEY);
       return this.http.get<GetRatingDTO[]>(
         `${environment.apiHost}/api/ratings/ride/${params.rideId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
     }
   })
+
+//   ratingsResource = rxResource({
+//       params: () => ({ rideId: this.rideId() }),
+//       stream: ({params}) => {
+//         return this.http.get<GetRatingDTO[]>(
+//           `${environment.apiHost}/api/ratings/ride/${params.rideId}`
+//         );
+//       }
+//     })
 
   ratings = computed(() => {
     const rs = this.ratingsResource.value() ?? []
@@ -50,7 +59,8 @@ export class RatingService {
   }
 
   createRating(rating: { driverRating: number, vehicleRating: number, comment: string, rideId: number }): Observable<GetRatingDTO> {
-    const token = localStorage.getItem(this.TOKEN_KEY);
+//     const token = localStorage.getItem(this.TOKEN_KEY);
+    const token = sessionStorage.getItem(this.TOKEN_KEY);
     return this.http.post<GetRatingDTO>(
       `${environment.apiHost}/api/ratings?rideId=${rating.rideId}`,
       rating,

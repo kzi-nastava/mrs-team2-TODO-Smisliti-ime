@@ -16,7 +16,7 @@ public class EmailService {
     private String fromEmail;
 
     public void sendActivationEmail(String toEmail, String activationToken) {
-        String activationLink = "http://localhost:4200/drivers/activate/" + activationToken;
+        String activationLink = "http://localhost:4200/driver/activate/" + activationToken;
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);

@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn, UrlTree } from '@angular/router';
-import { AuthService } from './auth-service/auth.service';
+import { AuthService } from '../../service/auth-service/auth.service';
 import { UserRole } from '../../model/user.model';
 
 export const homeGuard: CanActivateFn = (): boolean | UrlTree => {

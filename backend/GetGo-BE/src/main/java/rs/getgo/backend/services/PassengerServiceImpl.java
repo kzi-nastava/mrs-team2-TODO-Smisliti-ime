@@ -47,7 +47,7 @@ public class PassengerServiceImpl {
             passenger.setSurname(updatePassengerDTO.getSurname().trim());
         }
         if (updatePassengerDTO.getPhone() != null && !updatePassengerDTO.getPhone().trim().isEmpty()) {
-            passenger.setPhoneNumber(updatePassengerDTO.getPhone().trim());
+            passenger.setPhone(updatePassengerDTO.getPhone().trim());
         }
         if (updatePassengerDTO.getAddress() != null && !updatePassengerDTO.getAddress().trim().isEmpty()) {
             passenger.setAddress(updatePassengerDTO.getAddress().trim());

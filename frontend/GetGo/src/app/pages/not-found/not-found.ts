@@ -1,6 +1,6 @@
 import { Component, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../authentication/auth-service/auth.service';
+import { AuthService } from '../../service/auth-service/auth.service';
 import { UserRole } from '../../model/user.model';
 import { UnregisteredNavBarComponent } from '../../layout/unregistered-nav-bar/unregistered-nav-bar.component';
 import {NavBarComponent} from '../../layout/nav-bar/nav-bar.component';

@@ -23,7 +23,7 @@ public class User {
     private String name;
     private String surname;
     private String address;
-    private String phoneNumber;
+    private String phone;
     private UserRole role;
 
     private boolean isBlocked; // quick check for whether user is blocked, for details check block note

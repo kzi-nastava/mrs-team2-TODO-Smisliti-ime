@@ -5,7 +5,7 @@ import {MatButtonModule} from '@angular/material/button';
 import {Router, RouterLink} from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import {AuthService} from '../../pages/authentication/auth-service/auth.service';
+import {AuthService} from '../../service/auth-service/auth.service';
 
 @Component({
   selector: 'app-user-nav-bar',
@@ -19,5 +19,9 @@ export class UserNavBarComponent {
   logout() {
     this.auth.logout();
     this.router.navigate(['/']);
+  }
+
+  get fullName(): string {
+    return this.auth.fullName();
   }
 }

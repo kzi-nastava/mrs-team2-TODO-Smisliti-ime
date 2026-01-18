@@ -3,13 +3,13 @@ import { FormsModule, NgModel } from '@angular/forms';
 import { MapComponent } from '../map/map.component';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import {UnregisteredNavBarComponent} from '../unregistered-nav-bar/unregistered-nav-bar.component';
+import {environment} from '../../../env/environment';
 
 @Component({
   selector: 'app-unregistered-home',
   templateUrl: './unregistered-home.component.html',
   standalone: true,
-  imports: [CommonModule, FormsModule, MapComponent, UnregisteredNavBarComponent],
+  imports: [CommonModule, FormsModule, MapComponent],
   styleUrls: ['./unregistered-home.component.css']
 })
 export class UnregisteredHomeComponent implements AfterViewInit, OnDestroy {
@@ -149,7 +149,7 @@ export class UnregisteredHomeComponent implements AfterViewInit, OnDestroy {
     console.log('Sending estimate request with payload', payload);
     this.isLoading = true;
 
-    this.http.post<EstimateResponse>('/api/rides/estimate', payload).subscribe({
+    this.http.post<EstimateResponse>(`${environment.apiHost}/api/rides/estimate`, payload).subscribe({
       next: res => {
         console.log('Received estimate response', res);
         this.estimateMinutes = res.durationMinutes;

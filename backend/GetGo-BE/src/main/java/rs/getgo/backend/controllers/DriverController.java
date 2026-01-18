@@ -39,37 +39,18 @@ public class DriverController {
     }
 
     // 2.9.2
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/{id}/rides", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetRideDTO>> getDriverRides(
             @PathVariable("id") Long id,
             @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
-//        Collection<GetRideDTO> driverRides = new ArrayList<>() ;
-//
-//        GetRideDTO ride1 = new GetRideDTO(1L, id, new ArrayList<>(), "Belgrade", "Novi Sad",
-//                LocalDateTime.of(2025, 12, 28, 14, 0),
-//                LocalDateTime.of(2025, 12, 28, 16, 0),
-//                120, false, true, "FINISHED", 25.50);
-//
-//        GetRideDTO ride2 = new GetRideDTO(2L, id, new ArrayList<>(), "Belgrade", "Subotica",
-//                LocalDateTime.of(2025, 12, 29, 10, 0),
-//                LocalDateTime.of(2025, 12, 29, 13, 0),
-//                180, false, false, "ACTIVE", 35.00);
-//
-//        if (startDate != null) {
-//            if (!ride1.getStartingTime().toLocalDate().isBefore(startDate)) driverRides.add(ride1);
-//            if (!ride2.getStartingTime().toLocalDate().isBefore(startDate)) driverRides.add(ride2);
-//        } else {
-//            driverRides.add(ride1);
-//            driverRides.add(ride2);
-//        }
-//
-//        return new ResponseEntity<Collection<GetRideDTO>>(driverRides, HttpStatus.OK);
 
         List<GetRideDTO> rides = driverService.getDriverRides(id, startDate);
         return ResponseEntity.ok(rides);
     }
 
     // 2.2.3 - Driver registration
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/activate/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetActivationTokenDTO> validateActivationToken(
             @PathVariable String token) {
@@ -79,6 +60,7 @@ public class DriverController {
     }
 
     // 2.2.3 - Driver registration
+    @PreAuthorize("hasRole('DRIVER')")
     @PostMapping(value = "/activate",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -90,6 +72,7 @@ public class DriverController {
     }
 
     // 2.3 - User profile
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverDTO> getProfile() {
 
@@ -98,6 +81,7 @@ public class DriverController {
     }
 
     // 2.3 - User profile (Request personal info change)
+    @PreAuthorize("hasRole('DRIVER')")
     @PostMapping(value = "/profile/change-requests/personal",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -109,6 +93,7 @@ public class DriverController {
     }
 
     // 2.3 - User profile (Request vehicle info change)
+    @PreAuthorize("hasRole('DRIVER')")
     @PostMapping(value = "/profile/change-requests/vehicle",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -120,6 +105,7 @@ public class DriverController {
     }
 
     // 2.3 - User profile (Request profile picture change)
+    @PreAuthorize("hasRole('DRIVER')")
     @PostMapping(value = "/profile/change-requests/picture",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -131,6 +117,7 @@ public class DriverController {
     }
 
     // 2.3 - User profile (Change driver password)
+    @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/profile/password",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -145,6 +132,7 @@ public class DriverController {
     }
 
     // 2.4.1 - Calling a ride
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/active-locations", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetActiveDriverLocationDTO>> getActiveDriverLocations() {
 

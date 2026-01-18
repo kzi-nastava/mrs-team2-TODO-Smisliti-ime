@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {RideTrackingMapComponent} from '../../layout/ride-tracking-map/ride-tracking-map.component';
@@ -10,27 +10,20 @@ import { RideTrackingService } from '../../service/ride-tracking/ride-tracking.s
   templateUrl: './ride-tracking.component.html',
   styleUrl: './ride-tracking.component.css',
 })
-export class RideTrackingComponent implements OnInit{
+export class RideTrackingComponent{
 
   private rideTrackingService = inject(RideTrackingService);
 
   showReportForm = false;
   reportText = '';
 
-//   tracking = computed(() => ({
-//     startAddress: 'Zlatne grede 4',
-//     destinationAddress: 'Trg Dositeja Obradovića 7',
-//     estimatedTime: 39,
-//     completedDistance: 10,
-//     totalDistance: 50
-//   }));
 
-  readonly tracking = computed(() => this.rideTrackingService.trackingResource.value());
-  readonly loading = computed(() => this.rideTrackingService.trackingResource.isLoading());
+  readonly tracking = this.rideTrackingService.tracking;
+  readonly loading = this.rideTrackingService.loading;
 
 
   ngOnInit(): void {
-    // privremeno hardcode rideId
+    // temporary hardcode rideId
     this.rideTrackingService.startTracking(1);
 
     const logRide = computed(() => {
@@ -39,17 +32,13 @@ export class RideTrackingComponent implements OnInit{
         return ride;
       });
 
-      // da obezbedimo da se computed pokrene
       logRide();
-  }
 
-//   tracking() {
-//     return this.rideTrackingService.tracking();
-//   }
-//
-//   loading() {
-//     return this.rideTrackingService.loading();
-//   }
+//     effect (() => {
+//       const ride = this.rideTrackingService.tracking();
+//       if (ride) console.log('Ride data:', ride);
+//     });
+  }
 
   progressPercent(): number {
     const ride = this.tracking();
@@ -61,8 +50,6 @@ export class RideTrackingComponent implements OnInit{
 
 
   submitReport() {
-//     this.showReportForm = false;
-//     this.reportText = '';
 
   if (!this.reportText.trim()) return;
 
@@ -84,6 +71,17 @@ export class RideTrackingComponent implements OnInit{
         this.showReportForm = true;
       }
     });
-
   }
+
+  submitPanic(): void {
+    this.rideTrackingService.createPanicAlert().subscribe({
+      next: () => {
+        console.log('PANIC sent');
+      },
+      error: (err) => {
+        console.error('Failed to send PANIC', err);
+      }
+    });
+  }
+
 }

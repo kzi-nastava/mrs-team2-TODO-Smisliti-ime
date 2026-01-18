@@ -1,4 +1,4 @@
-package rs.getgo.backend.services.Impl;
+package rs.getgo.backend.services.impl;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +56,7 @@ public class AdminServiceImpl implements AdminService {
         admin.setName(createAdminDTO.getName());
         admin.setSurname(createAdminDTO.getSurname());
         admin.setAddress(createAdminDTO.getAddress());
-        admin.setPhoneNumber(createAdminDTO.getPhoneNumber());
+        admin.setPhone(createAdminDTO.getPhoneNumber());
         admin.setRole(UserRole.ADMIN);
         admin.setBlocked(false);
 
@@ -74,7 +74,7 @@ public class AdminServiceImpl implements AdminService {
         DriverActivationToken token = createDriverActivationToken(savedDriver);
         driverActivationTokenRepo.save(token);
 
-        emailService.sendActivationEmail(savedDriver.getEmail(), token.getToken());
+        emailService.sendDriverActivationEmail(savedDriver.getEmail(), token.getToken());
 
         return modelMapper.map(savedDriver, CreatedDriverDTO.class);
     }
@@ -108,7 +108,7 @@ public class AdminServiceImpl implements AdminService {
         driver.setEmail(createDriverDTO.getEmail());
         driver.setName(createDriverDTO.getName());
         driver.setSurname(createDriverDTO.getSurname());
-        driver.setPhoneNumber(createDriverDTO.getPhone());
+        driver.setPhone(createDriverDTO.getPhone());
         driver.setAddress(createDriverDTO.getAddress());
         driver.setRole(UserRole.DRIVER);
         driver.setProfilePictureUrl(fileStorageService.getDefaultProfilePicture());
@@ -140,7 +140,7 @@ public class AdminServiceImpl implements AdminService {
             admin.setSurname(updateAdminDTO.getSurname().trim());
         }
         if (updateAdminDTO.getPhone() != null && !updateAdminDTO.getPhone().trim().isEmpty()) {
-            admin.setPhoneNumber(updateAdminDTO.getPhone().trim());
+            admin.setPhone(updateAdminDTO.getPhone().trim());
         }
         if (updateAdminDTO.getAddress() != null && !updateAdminDTO.getAddress().trim().isEmpty()) {
             admin.setAddress(updateAdminDTO.getAddress().trim());
@@ -185,7 +185,7 @@ public class AdminServiceImpl implements AdminService {
             // Current data
             dto.setCurrentName(driver.getName());
             dto.setCurrentSurname(driver.getSurname());
-            dto.setCurrentPhone(driver.getPhoneNumber());
+            dto.setCurrentPhone(driver.getPhone());
             dto.setCurrentAddress(driver.getAddress());
 
             // Requested data (kept as-is on request)
@@ -281,7 +281,7 @@ public class AdminServiceImpl implements AdminService {
 
         dto.setCurrentName(driver.getName());
         dto.setCurrentSurname(driver.getSurname());
-        dto.setCurrentPhone(driver.getPhoneNumber());
+        dto.setCurrentPhone(driver.getPhone());
         dto.setCurrentAddress(driver.getAddress());
 
         dto.setRequestedName(request.getRequestedName());
@@ -366,7 +366,7 @@ public class AdminServiceImpl implements AdminService {
         // Apply changes
         driver.setName(request.getRequestedName());
         driver.setSurname(request.getRequestedSurname());
-        driver.setPhoneNumber(request.getRequestedPhone());
+        driver.setPhone(request.getRequestedPhone());
         driver.setAddress(request.getRequestedAddress());
         driverRepo.save(driver);
 

@@ -26,6 +26,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 import rs.getgo.backend.repositories.UserRepository;
 import rs.getgo.backend.security.auth.CustomUserDetailsService;
@@ -79,9 +80,17 @@ public class WebSecurityConfig {
         http.exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(restAuthenticationEntryPoint));
         http.authorizeHttpRequests(request -> {
             request.requestMatchers(new AntPathRequestMatcher("/api/auth/login")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/auth/logout")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/register")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/rides/estimate")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/users/me")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/vehicles/active")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/auth/forgot-password")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/auth/reset-password")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/auth/activate")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/uploads/*")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/ratings/**")).permitAll() // Added for test
+                    .requestMatchers(new AntPathRequestMatcher("/api/drivers/**")).permitAll() // Added for test
                     .requestMatchers("/error").permitAll()
                     .anyRequest().permitAll();  // CHANGED THIS
         });
@@ -106,10 +115,9 @@ public class WebSecurityConfig {
     }
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring()//.requestMatchers(HttpMethod.POST, "/auth/login")
-
+        return (web) -> web.ignoring()
                 .requestMatchers(HttpMethod.GET, "/", "/webjars/*", "/*.html", "favicon.ico",
-                        "/*/*.html", "/*/*.css", "/*/*.js");
+                        "/*/*.html", "/*/*.css", "/*/*.js", "/uploads/**");
     }
 
     @Bean

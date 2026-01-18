@@ -229,7 +229,7 @@ public class DriverServiceImpl {
     private boolean hasPersonalInfoChanged(Driver driver, UpdateDriverPersonalDTO updateDTO) {
         return !driver.getName().equals(updateDTO.getName()) ||
                 !driver.getSurname().equals(updateDTO.getSurname()) ||
-                !driver.getPhoneNumber().equals(updateDTO.getPhone()) ||
+                !driver.getPhone().equals(updateDTO.getPhone()) ||
                 !driver.getAddress().equals(updateDTO.getAddress());
     }
 

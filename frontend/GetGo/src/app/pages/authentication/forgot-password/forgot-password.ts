@@ -6,6 +6,7 @@ import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatIcon} from '@angular/material/icon';
 import {MatButton} from '@angular/material/button';
 import { HttpClient } from '@angular/common/http';
+import {environment} from '../../../../env/environment';
 
 @Component({
   selector: 'app-forgot-password',
@@ -63,7 +64,7 @@ export class ForgotPasswordComponent implements OnInit {
 
     type ForgotPasswordResponse = { message?: string };
 
-    this.http.post<ForgotPasswordResponse>('/api/auth/forgot-password', payload).subscribe({
+    this.http.post<ForgotPasswordResponse>(`${environment.apiHost}/api/auth/forgot-password`, payload).subscribe({
       next: (res) => {
         this.isSubmitting = false;
         console.log('ForgotPassword: server response', res);

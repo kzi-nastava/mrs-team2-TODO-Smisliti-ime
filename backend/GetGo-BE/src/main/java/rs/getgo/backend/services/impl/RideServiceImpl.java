@@ -1,10 +1,16 @@
-package rs.getgo.backend.services.Impl;
+package rs.getgo.backend.services.impl;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import rs.getgo.backend.dtos.ride.CancelRideDTO;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
+import rs.getgo.backend.model.entities.ActiveRide;
+import rs.getgo.backend.model.entities.Panic;
 import rs.getgo.backend.model.entities.RideCancellation;
+import rs.getgo.backend.repositories.ActiveRideRepository;
+import rs.getgo.backend.repositories.PanicRepository;
 import rs.getgo.backend.repositories.RideCancellationRepository;
+import rs.getgo.backend.repositories.UserRepository;
 import rs.getgo.backend.services.RideService;
 
 import java.time.LocalDateTime;
@@ -13,12 +19,18 @@ import java.time.LocalDateTime;
 public class RideServiceImpl implements RideService {
 
     private final RideCancellationRepository cancellationRepository;
+    private final PanicRepository panicRepository;
+    private final ActiveRideRepository activeRideRepository;
+    private final UserRepository userRepository;
 
     // passenger must cancel at least 10 minutes before scheduled start
     private static final long PASSENGER_CANCEL_MINUTES_BEFORE = 10L;
 
-    public RideServiceImpl(RideCancellationRepository cancellationRepository) {
+    public RideServiceImpl(RideCancellationRepository cancellationRepository, PanicRepository panicRepository, ActiveRideRepository activeRideRepository, UserRepository userRepository) {
         this.cancellationRepository = cancellationRepository;
+        this.panicRepository = panicRepository;
+        this.activeRideRepository = activeRideRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -55,12 +67,23 @@ public class RideServiceImpl implements RideService {
     }
 
     @Override
-    public void estimateRide() {
+    public void stopRide() {
         // TODO
     }
 
     @Override
-    public void stopRide() {
-        // TODO
+    public void triggerPanic(Long rideId, String email) {
+
+        ActiveRide ride = activeRideRepository.findById(rideId)
+                .orElseThrow(() -> new EntityNotFoundException("Ride not found"));
+
+        Panic panic = new Panic();
+        panic.setRide(ride);
+        panic.setTriggeredByUserId(userRepository.findIdByEmail(email));
+        panic.setTriggeredAt(LocalDateTime.now());
+
+        panicRepository.save(panic);
+
+        // TODO: notificationService.notifyAdminsAboutPanic(panic);
     }
 }

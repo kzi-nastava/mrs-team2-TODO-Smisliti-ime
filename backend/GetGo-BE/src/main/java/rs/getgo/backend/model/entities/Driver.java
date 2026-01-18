@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Getter @Setter
+@Setter @Getter
 @Table(name="drivers")
 @NoArgsConstructor @AllArgsConstructor
 public class Driver extends User {
@@ -23,4 +23,7 @@ public class Driver extends User {
     @Column(nullable = false)
     private boolean isActivated = false;
 
+    public Boolean getActive() {
+        return isActive;
+    }
 }

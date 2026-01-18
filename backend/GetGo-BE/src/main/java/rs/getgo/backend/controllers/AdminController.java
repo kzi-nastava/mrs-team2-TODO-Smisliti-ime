@@ -17,8 +17,7 @@ import rs.getgo.backend.services.AdminService;
 
 import java.util.List;
 
-// TODO: return later
-//@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -29,20 +28,23 @@ public class AdminController {
     Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
 
     // 2.9.3 – Block user
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/users/{id}/block")
     public ResponseEntity<CreatedUserDTO> blockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", true);
+        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", true, null);
         return ResponseEntity.ok(response);
     }
 
     // 2.9.3 – Unblock user
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/users/{id}/unblock")
     public ResponseEntity<CreatedUserDTO> unblockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", false);
+        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", false, null);
         return ResponseEntity.ok(response);
     }
 
     // 2.9.3 – View reports
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/reports")
     public ResponseEntity<List<GetReportDTO>> getReports(
             @RequestParam(required = false) String from,
@@ -53,6 +55,7 @@ public class AdminController {
     }
 
     // 2.9.3 – Create admin profile
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")
     public ResponseEntity<CreatedAdminDTO> createAdmin(@RequestBody CreateAdminDTO createAdminDTO) {
 
@@ -61,6 +64,7 @@ public class AdminController {
     }
 
     // 2.2.3 - Driver registration
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/drivers/register",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -72,6 +76,7 @@ public class AdminController {
     }
 
     // 2.3 - User profile
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetAdminDTO> getProfile() {
 
@@ -80,6 +85,7 @@ public class AdminController {
     }
 
     // 2.3 - User profile
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/profile",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -91,6 +97,7 @@ public class AdminController {
     }
 
     // 2.3 - User profile (Change admin password)
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/profile/password",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -105,6 +112,7 @@ public class AdminController {
     }
 
     // 2.3 - Get all pending personal change requests
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/driver-change-requests/personal",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetPersonalDriverChangeRequestDTO>> getPendingPersonalChangeRequests() {
@@ -113,6 +121,7 @@ public class AdminController {
     }
 
     // 2.3 - Get all pending vehicle change requests
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/driver-change-requests/vehicle",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetDriverVehicleChangeRequestDTO>> getPendingVehicleChangeRequests() {
@@ -121,6 +130,7 @@ public class AdminController {
     }
 
     // 2.3 - Get all pending picture change requests
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/driver-change-requests/picture",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetDriverAvatarChangeRequestDTO>> getPendingPictureChangeRequests() {
@@ -129,6 +139,7 @@ public class AdminController {
     }
 
     // 2.3 - Get specific personal change request
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/driver-change-requests/personal/{requestId}",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetPersonalDriverChangeRequestDTO> getPersonalChangeRequest(
@@ -138,6 +149,7 @@ public class AdminController {
     }
 
     // 2.3 - Get specific vehicle change request
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/driver-change-requests/vehicle/{requestId}",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverVehicleChangeRequestDTO> getVehicleChangeRequest(
@@ -147,6 +159,7 @@ public class AdminController {
     }
 
     // 2.3 - Get specific picture change request
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/driver-change-requests/picture/{requestId}",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverAvatarChangeRequestDTO> getPictureChangeRequest(
@@ -156,6 +169,7 @@ public class AdminController {
     }
 
     // 2.3 - Approve personal change request
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/driver-change-requests/personal/{requestId}/approve",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approvePersonalChangeRequest(
@@ -166,6 +180,7 @@ public class AdminController {
     }
 
     // 2.3 - Approve vehicle change request
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/driver-change-requests/vehicle/{requestId}/approve",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approveVehicleChangeRequest(
@@ -176,6 +191,7 @@ public class AdminController {
     }
 
     // 2.3 - Approve picture change request
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/driver-change-requests/picture/{requestId}/approve",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approvePictureChangeRequest(
@@ -186,6 +202,7 @@ public class AdminController {
     }
 
     // 2.3 - Reject personal change request
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/driver-change-requests/personal/{requestId}/reject",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -199,6 +216,7 @@ public class AdminController {
     }
 
     // 2.3 - Reject vehicle change request
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/driver-change-requests/vehicle/{requestId}/reject",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -212,6 +230,7 @@ public class AdminController {
     }
 
     // 2.3 - Reject picture change request
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/driver-change-requests/picture/{requestId}/reject",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -223,5 +242,4 @@ public class AdminController {
                 requestId, adminId, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);
     }
-
 }

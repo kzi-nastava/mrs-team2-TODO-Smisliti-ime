@@ -8,9 +8,9 @@
   <span [routerLink]="['/home']" class="app-title">GetGo</span>
   <span class="spacer"></span>
 <!--  <button mat-raised-button [routerLink]="['/ride']" >Ride</button>-->
-  <span>User123</span>
+  <span class="username">{{ fullName }}</span>
 <!--  <h2><img class="account-icon" src="/finish-flag.svg" alt="Destination flag"></h2>-->
-  <img class="profile-icon" src="/Profile.svg" alt="Profile icon">
+  <img class="profile-icon" [src]="auth.userProfilePictureUrl() || '/assets/images/sussy_cat.png'" alt="Profile icon">
 </mat-toolbar>
 
 <mat-menu #menu="matMenu">
@@ -37,26 +37,6 @@
   <button mat-menu-item [routerLink]="['/passenger/ride-tracking']">
     <mat-icon>navigation</mat-icon>
     <span>Ride tracking</span>
-  </button>
-
-  <button mat-menu-item [routerLink]="['/admin/admin-profile']">
-    <mat-icon>edit</mat-icon>
-    <span>TMP: Admin data</span>
-  </button>
-
-  <button mat-menu-item [routerLink]="['/driver/driver-profile']">
-    <mat-icon>edit</mat-icon>
-    <span>TMP: Driver profile</span>
-  </button>
-
-  <button mat-menu-item [routerLink]="['/login']">
-    <mat-icon>edit</mat-icon>
-    <span>TMP: Login</span>
-  </button>
-
-  <button mat-menu-item [routerLink]="['/register']">
-    <mat-icon>edit</mat-icon>
-    <span>TMP: Register</span>
   </button>
 
   <button mat-menu-item (click)="logout()">

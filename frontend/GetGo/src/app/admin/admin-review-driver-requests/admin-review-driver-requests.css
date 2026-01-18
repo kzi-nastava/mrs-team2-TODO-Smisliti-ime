@@ -216,6 +216,7 @@
   transition: all 0.3s;
   background-color: #133E87;
   color: white;
+  margin-bottom: 30px;
 }
 
 .btn-nav:hover {

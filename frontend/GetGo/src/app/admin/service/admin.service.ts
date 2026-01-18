@@ -60,6 +60,67 @@ export interface CreatedDriverDTO {
   address: string;
 }
 
+export interface GetPersonalChangeRequestDTO {
+  requestId: number;
+  driverId: number;
+  driverEmail: string;
+  driverName: string;
+  currentName: string;
+  currentSurname: string;
+  currentPhone: string;
+  currentAddress: string;
+  requestedName: string;
+  requestedSurname: string;
+  requestedPhone: string;
+  requestedAddress: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface GetVehicleChangeRequestDTO {
+  requestId: number;
+  driverId: number;
+  driverEmail: string;
+  driverName: string;
+  currentVehicleModel: string;
+  currentVehicleType: string;
+  currentVehicleLicensePlate: string;
+  currentVehicleSeats: number;
+  currentVehicleHasBabySeats: boolean;
+  currentVehicleAllowsPets: boolean;
+  requestedVehicleModel: string;
+  requestedVehicleType: string;
+  requestedVehicleLicensePlate: string;
+  requestedVehicleSeats: number;
+  requestedVehicleHasBabySeats: boolean;
+  requestedVehicleAllowsPets: boolean;
+  status: string;
+  createdAt: string;
+}
+
+export interface GetAvatarChangeRequestDTO {
+  requestId: number;
+  driverId: number;
+  driverEmail: string;
+  driverName: string;
+  currentProfilePictureUrl: string;
+  requestedProfilePictureUrl: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface RejectRequestDTO {
+  reason: string;
+}
+
+export interface ApproveRejectResponseDTO {
+  requestId: number;
+  driverId: number;
+  status: string;
+  reviewedBy: number;
+  reviewedAt: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -83,4 +144,50 @@ export class AdminService {
   registerDriver(driverData: CreateDriverDTO): Observable<CreatedDriverDTO> {
     return this.http.post<CreatedDriverDTO>(`${this.apiUrl}/drivers/register`, driverData);
   }
+
+  getPendingPersonalChangeRequests(): Observable<GetPersonalChangeRequestDTO[]> {
+    return this.http.get<GetPersonalChangeRequestDTO[]>(`${this.apiUrl}/driver-change-requests/personal`);
+  }
+
+  getPendingVehicleChangeRequests(): Observable<GetVehicleChangeRequestDTO[]> {
+    return this.http.get<GetVehicleChangeRequestDTO[]>(`${this.apiUrl}/driver-change-requests/vehicle`);
+  }
+
+  getPendingAvatarChangeRequests(): Observable<GetAvatarChangeRequestDTO[]> {
+    return this.http.get<GetAvatarChangeRequestDTO[]>(`${this.apiUrl}/driver-change-requests/picture`);
+  }
+
+  approvePersonalChangeRequest(requestId: number): Observable<ApproveRejectResponseDTO> {
+    return this.http.put<ApproveRejectResponseDTO>(`${this.apiUrl}/driver-change-requests/personal/${requestId}/approve`, {});
+  }
+
+  approveVehicleChangeRequest(requestId: number): Observable<ApproveRejectResponseDTO> {
+    return this.http.put<ApproveRejectResponseDTO>(`${this.apiUrl}/driver-change-requests/vehicle/${requestId}/approve`, {});
+  }
+
+  approveAvatarChangeRequest(requestId: number): Observable<ApproveRejectResponseDTO> {
+    return this.http.put<ApproveRejectResponseDTO>(`${this.apiUrl}/driver-change-requests/picture/${requestId}/approve`, {});
+  }
+
+  rejectPersonalChangeRequest(requestId: number, reason: string): Observable<ApproveRejectResponseDTO> {
+    return this.http.put<ApproveRejectResponseDTO>(
+      `${this.apiUrl}/driver-change-requests/personal/${requestId}/reject`,
+      { reason }
+    );
+  }
+
+  rejectVehicleChangeRequest(requestId: number, reason: string): Observable<ApproveRejectResponseDTO> {
+    return this.http.put<ApproveRejectResponseDTO>(
+      `${this.apiUrl}/driver-change-requests/vehicle/${requestId}/reject`,
+      { reason }
+    );
+  }
+
+  rejectAvatarChangeRequest(requestId: number, reason: string): Observable<ApproveRejectResponseDTO> {
+    return this.http.put<ApproveRejectResponseDTO>(
+      `${this.apiUrl}/driver-change-requests/picture/${requestId}/reject`,
+      { reason }
+    );
+  }
+
 }

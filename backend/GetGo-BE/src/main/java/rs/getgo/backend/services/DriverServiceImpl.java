@@ -187,7 +187,7 @@ public class DriverServiceImpl {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
         }
 
-        driver.setPassword(updatePasswordDTO.getPassword());
+        driver.setPassword(passwordEncoder.encode(updatePasswordDTO.getPassword()));
         driverRepo.save(driver);
 
         return new UpdatedPasswordDTO(true, "Password updated successfully");

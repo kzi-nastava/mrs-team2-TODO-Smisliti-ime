@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminNavBarComponent } from '../../layout/admin-nav-bar/admin-nav-bar.component';
+import { AdminService, CreateDriverDTO } from '../service/admin.service';
 
 @Component({
   selector: 'app-driver-registration',
@@ -30,7 +31,17 @@ export class DriverRegistration {
     allowsPets: false
   };
 
-  goToVehicle() {
+  constructor(
+      private adminService: AdminService,
+      private cdr: ChangeDetectorRef
+  ) {}
+
+  goToVehicle(): void {
+    // Validate driver data before moving to vehicle tab
+    if (!this.driverData.email || !this.driverData.firstName || !this.driverData.lastName) {
+      alert('Please fill in all driver fields');
+      return;
+    }
     this.activeTab = 'vehicle';
   }
 
@@ -39,8 +50,56 @@ export class DriverRegistration {
   }
 
   onRegister() {
-    console.log('Driver data:', this.driverData);
-    console.log('Vehicle data:', this.vehicleData);
-    // Send to backend when ready
+        // Validate vehicle data
+        if (!this.vehicleData.model || !this.vehicleData.type || !this.vehicleData.registrationNumber || !this.vehicleData.seats) {
+          alert('Please fill in all vehicle fields');
+          return;
+        }
+
+        const createDriverData: CreateDriverDTO = {
+          email: this.driverData.email,
+          name: this.driverData.firstName,
+          surname: this.driverData.lastName,
+          phone: this.driverData.phone,
+          address: this.driverData.address,
+          vehicleModel: this.vehicleData.model,
+          vehicleType: this.vehicleData.type,
+          vehicleLicensePlate: this.vehicleData.registrationNumber,
+          vehicleSeats: this.vehicleData.seats,
+          vehicleHasBabySeats: this.vehicleData.allowsBabies,
+          vehicleAllowsPets: this.vehicleData.allowsPets
+        };
+
+        console.log('Registering driver:', createDriverData);
+
+        this.adminService.registerDriver(createDriverData).subscribe({
+          next: (response) => {
+            console.log('Driver registered successfully:', response);
+            alert(`Driver registered successfully! Activation email sent to ${response.email}`);
+
+            // Reset forms
+            this.driverData = {
+              email: '',
+              firstName: '',
+              lastName: '',
+              phone: '',
+              address: ''
+            };
+            this.vehicleData = {
+              model: '',
+              type: '',
+              registrationNumber: '',
+              seats: null,
+              allowsBabies: false,
+              allowsPets: false
+            };
+            this.activeTab = 'driver';
+            this.cdr.detectChanges();
+          },
+          error: (error) => {
+            console.error('Error registering driver:', error);
+            alert('Failed to register driver. Please try again.');
+          }
+        });
   }
 }

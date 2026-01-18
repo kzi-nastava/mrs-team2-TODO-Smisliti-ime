@@ -38,6 +38,28 @@ export interface UpdatedPasswordDTO {
   message: string;
 }
 
+export interface CreateDriverDTO {
+  email: string;
+  name: string;
+  surname: string;
+  phone: string;
+  address: string;
+  vehicleModel: string;
+  vehicleType: string;
+  vehicleLicensePlate: string;
+  vehicleSeats: number;
+  vehicleHasBabySeats: boolean;
+  vehicleAllowsPets: boolean;
+}
+
+export interface CreatedDriverDTO {
+  id: number;
+  email: string;
+  name: string;
+  surname: string;
+  address: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -58,4 +80,7 @@ export class AdminService {
     return this.http.put<UpdatedPasswordDTO>(`${this.apiUrl}/profile/password`, passwordData);
   }
 
+  registerDriver(driverData: CreateDriverDTO): Observable<CreatedDriverDTO> {
+    return this.http.post<CreatedDriverDTO>(`${this.apiUrl}/drivers/register`, driverData);
+  }
 }

@@ -1,0 +1,27 @@
+<div class="user-info">
+  <p class="profile-title">Set Your Password</p>
+
+  @if (isValidating) {
+  <p class="status-message">Validating activation link...</p>
+  }
+
+  @if (validationError) {
+  <div class="error-container">
+    <p class="error-message">{{ validationError }}</p>
+    <a routerLink="/login" class="login-link">Go to Login</a>
+  </div>
+  }
+
+  @if (isValid && !isValidating) {
+  <p class="email-display">Setting password for: <strong>{{ driverEmail }}</strong></p>
+
+  <form class="profile-form">
+    <input type="password" placeholder="New Password" class="form-input"
+           [(ngModel)]="passwordData.password" name="password" />
+    <input type="password" placeholder="Confirm Password" class="form-input"
+           [(ngModel)]="passwordData.confirmPassword" name="confirmPassword" />
+
+    <button type="button" class="save-button" (click)="setPassword()">Activate Account</button>
+  </form>
+  }
+</div>

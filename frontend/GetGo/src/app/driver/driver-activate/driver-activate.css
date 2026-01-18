@@ -1,0 +1,101 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #CBDCEB;
+}
+
+.user-info {
+  width: 50vw;
+  min-height: 100vh;
+  background-color: #8FABD4;
+  margin: 0 auto;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.profile-title {
+  text-align: center;
+  font-size: 3em;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 1rem;
+}
+
+.status-message {
+  text-align: center;
+  font-size: 1.3rem;
+  color: #1E4A7F;
+  margin: 2rem 0;
+}
+
+.email-display {
+  text-align: center;
+  font-size: 1.2rem;
+  margin: 1rem 0;
+  color: #1E4A7F;
+}
+
+.error-container {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.error-message {
+  font-size: 1.3rem;
+  color: #c62828;
+  margin-bottom: 1.5rem;
+}
+
+.login-link {
+  display: inline-block;
+  padding: 10px 30px;
+  background-color: #133E87;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+}
+
+.login-link:hover {
+  background-color: #0d3170;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+}
+
+.form-input {
+  width: 90%;
+  padding: 15px 20px;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 10px;
+  background-color: #E8EEF5;
+  text-align: center;
+}
+
+.form-input::placeholder {
+  color: #A0B3C8;
+  font-size: 1.6rem;
+}
+
+.save-button {
+  align-self: flex-end;
+  margin-right: 3%;
+  padding: 15px 80px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  background-color: #133E87;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.save-button:hover {
+  background-color: #0d3170;
+}

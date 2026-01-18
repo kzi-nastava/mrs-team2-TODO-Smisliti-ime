@@ -4,6 +4,7 @@ package rs.getgo.backend.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
+import rs.getgo.backend.dtos.authentication.UpdateDriverPasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.*;
@@ -31,7 +32,7 @@ public class DriverController {
     @Autowired
     private DriverServiceImpl driverService;
 
-    Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+    Long driverId = 5L; // TODO: get from cookie/whatever we decide to use
 
     public DriverController(DriverServiceImpl driverService) {
         this.driverService = driverService;
@@ -73,10 +74,7 @@ public class DriverController {
     public ResponseEntity<GetActivationTokenDTO> validateActivationToken(
             @PathVariable String token) {
 
-        GetActivationTokenDTO response = new GetActivationTokenDTO();
-        response.setValid(true);
-        response.setEmail("driver@example.com");
-
+        GetActivationTokenDTO response = driverService.validateActivationToken(token);
         return ResponseEntity.ok(response);
     }
 
@@ -85,11 +83,9 @@ public class DriverController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> setDriverPassword(
-            @RequestBody UpdatePasswordDTO request) {
+            @RequestBody UpdateDriverPasswordDTO updateDriverPasswordDTO) {
 
-        UpdatedPasswordDTO response = new UpdatedPasswordDTO();
-        response.setSuccess(true);
-
+        UpdatedPasswordDTO response = driverService.setDriverPassword(updateDriverPasswordDTO);
         return ResponseEntity.ok(response);
     }
 

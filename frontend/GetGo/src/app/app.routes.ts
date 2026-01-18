@@ -11,6 +11,7 @@ import { PassengerProfileInfo } from './passenger/passenger-profile-info/passeng
 import { PassengerChangePassword } from './passenger/passenger-change-password/passenger-change-password';
 import { DriverActivate } from './driver/driver-activate/driver-activate';
 import { DriverProfile } from './driver/driver-profile/driver-profile';
+import { DriverChangePassword } from './driver/driver-change-password/driver-change-password';
 import { AdminProfile } from './admin/admin-profile/admin-profile';
 import { AdminChangePassword } from './admin/admin-change-password/admin-change-password';
 import { DriverRegistration } from './admin/driver-registration/driver-registration';
@@ -40,6 +41,7 @@ export const routes: Routes = [
   { path: 'passenger/ride-tracking', component: RideTrackingComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'driver/activate/:token', component: DriverActivate },
   { path: 'driver/driver-profile', component: DriverProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
+  { path: 'driver/change-password', component: DriverChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'admin/admin-profile', component: AdminProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/change-password', component: AdminChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/driver-registration', component: DriverRegistration, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },

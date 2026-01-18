@@ -60,6 +60,17 @@ export interface CreatedDriverChangeRequestDTO {
   message: string;
 }
 
+export interface UpdatePasswordDTO {
+  oldPassword: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface UpdatedPasswordDTO {
+  success: boolean;
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -92,6 +103,10 @@ export class DriverService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post<CreatedDriverChangeRequestDTO>(`${this.apiUrl}/profile/change-requests/picture`, formData);
+  }
+
+  updatePassword(passwordData: UpdatePasswordDTO): Observable<UpdatedPasswordDTO> {
+    return this.http.put<UpdatedPasswordDTO>(`${this.apiUrl}/profile/password`, passwordData);
   }
 
 }

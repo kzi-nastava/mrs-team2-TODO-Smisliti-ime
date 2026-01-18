@@ -26,6 +26,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 import rs.getgo.backend.repositories.UserRepository;
 import rs.getgo.backend.security.auth.CustomUserDetailsService;
@@ -88,6 +89,7 @@ public class WebSecurityConfig {
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/reset-password")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/activate")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/uploads/*")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/ratings/**")).permitAll() // Added for test
                     .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated();
         });

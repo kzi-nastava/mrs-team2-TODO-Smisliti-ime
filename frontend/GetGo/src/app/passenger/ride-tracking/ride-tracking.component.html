@@ -1,15 +1,14 @@
+<div class="page-bg" [ngStyle]="{ 'min-height': showReportForm ? '110vh' : '100vh' }">
 <div class="main-container">
 
   <div class="ride-status">
-<!--    <p>Loading: {{ loading() }}</p>-->
-<!--    <pre>{{ tracking() | json }}</pre>-->
-
 
     <h2>On my way</h2>
 
-    <div *ngIf="loading()"> Loading ride... </div>
+    <div *ngIf="loading(); else rideBlock"> Loading ride... </div>
 
-    <div *ngIf="tracking() as ride; else loadingBlock" class="ride-info-box">
+    <ng-template #rideBlock>
+    <div *ngIf="tracking() as ride; else noRide" class="ride-info-box">
 
       <div class="ride-address">
         <img src="assets/images/location.png" class="start-icon" />
@@ -34,6 +33,7 @@
         </div>
       </div>
     </div>
+    </ng-template>
 
 
     <ng-template #noRide>
@@ -60,4 +60,5 @@
   <div class="map-container">
     <app-ride-tracking-map></app-ride-tracking-map>
   </div>
+</div>
 </div>

@@ -72,4 +72,13 @@ public class TokenUtils {
     public int getExpiredIn() {
         return EXPIRES_IN;
     }
+
+    public String getRoleFromToken(String token) {
+        try {
+            return getAllClaims(token).get("role", String.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
 }

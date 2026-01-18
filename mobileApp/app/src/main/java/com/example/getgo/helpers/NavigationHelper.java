@@ -7,6 +7,7 @@ import com.example.getgo.fragments.AdminProfileInfoFragment;
 import com.example.getgo.fragments.DriverHomeFragment;
 import com.example.getgo.fragments.DriverProfileInfoFragment;
 import com.example.getgo.fragments.PassengerProfileInfoFragment;
+import com.example.getgo.fragments.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.RideHistoryFragment;
 import com.example.getgo.model.UserRole;
 
@@ -83,6 +84,8 @@ public class NavigationHelper {
             return new DriverHomeFragment(); // TODO: Create PassengerHomeFragment
         } else if (itemId == R.id.nav_bottom_profile) {
             return PassengerProfileInfoFragment.newInstance();
+        } else if (itemId == R.id.nav_bottom_rate_ride) {
+            return new PassengerRateDriverVehicleFragment();
         }
 
         return null;

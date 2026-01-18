@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.model.entities.CompletedRide;
 import rs.getgo.backend.repositories.CompletedRideRepository;
 import rs.getgo.backend.services.RatingService;
+import org.springframework.security.core.Authentication;
+
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,6 +31,7 @@ public class RatingController {
 
     // 2.8 Vehicle and driver rating
     @PreAuthorize("hasRole('PASSENGER')")
+//    @PreAuthorize("hasAuthority('PASSENGER')")
     @GetMapping(value="/ride/{rideId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetRatingDTO>> getRatingsByRide(@PathVariable Long rideId) {
 
@@ -38,7 +41,8 @@ public class RatingController {
     }
 
     // 2.8 Vehicle and driver rating
-    @PreAuthorize("hasRole('PASSENGER')")
+//    @PreAuthorize("hasRole('PASSENGER')")
+    @PreAuthorize("hasAuthority('PASSENGER')")
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetRatingDTO> getRating(@PathVariable("id") Long id) {
 
@@ -58,5 +62,10 @@ public class RatingController {
         CreatedRatingDTO savedRating = ratingService.create(dto, ride);
 
         return new ResponseEntity<CreatedRatingDTO>(savedRating, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/debug-auth")
+    public Object debugAuth(Authentication auth) {
+        return auth;
     }
 }

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { environment } from '../../../env/environment';
 import { RideTracking } from '../../model/ride-tracking.model';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { CreateInconsistencyReportDTO, CreatedInconsistencyReportDTO } from '../../model/inconsistency-report.model';
 import {User} from '../../model/user.model';
 
@@ -34,6 +34,8 @@ export class RideTrackingService {
   });
 
   tracking = computed(() => this.trackingResource.value() ?? null);
+  // loading signal (spinner)
+  loading = computed(() => this.trackingResource.isLoading());
 
   startTracking(id: number): void {
     this.rideId.set(id);
@@ -51,11 +53,12 @@ export class RideTrackingService {
           Authorization: `Bearer ${token}`,
         }
       }
-    );
+    ).pipe(tap(_ => this.reloadTracking()));
   }
 
-  // loading signal (spinner)
-  loading = computed(() => this.trackingResource.isLoading());
+  reloadTracking(): void {
+    this.trackingResource.reload();
+  };
 
   private getUserIdFromToken(): string {
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');

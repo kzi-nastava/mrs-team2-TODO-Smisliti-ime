@@ -31,7 +31,6 @@ public class RatingController {
 
     // 2.8 Vehicle and driver rating
     @PreAuthorize("hasRole('PASSENGER')")
-//    @PreAuthorize("hasAuthority('PASSENGER')")
     @GetMapping(value="/ride/{rideId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetRatingDTO>> getRatingsByRide(@PathVariable Long rideId) {
 
@@ -41,8 +40,7 @@ public class RatingController {
     }
 
     // 2.8 Vehicle and driver rating
-//    @PreAuthorize("hasRole('PASSENGER')")
-    @PreAuthorize("hasAuthority('PASSENGER')")
+    @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetRatingDTO> getRating(@PathVariable("id") Long id) {
 

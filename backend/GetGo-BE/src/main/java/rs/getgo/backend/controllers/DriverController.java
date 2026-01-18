@@ -42,27 +42,6 @@ public class DriverController {
     public ResponseEntity<Collection<GetRideDTO>> getDriverRides(
             @PathVariable("id") Long id,
             @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
-//        Collection<GetRideDTO> driverRides = new ArrayList<>() ;
-//
-//        GetRideDTO ride1 = new GetRideDTO(1L, id, new ArrayList<>(), "Belgrade", "Novi Sad",
-//                LocalDateTime.of(2025, 12, 28, 14, 0),
-//                LocalDateTime.of(2025, 12, 28, 16, 0),
-//                120, false, true, "FINISHED", 25.50);
-//
-//        GetRideDTO ride2 = new GetRideDTO(2L, id, new ArrayList<>(), "Belgrade", "Subotica",
-//                LocalDateTime.of(2025, 12, 29, 10, 0),
-//                LocalDateTime.of(2025, 12, 29, 13, 0),
-//                180, false, false, "ACTIVE", 35.00);
-//
-//        if (startDate != null) {
-//            if (!ride1.getStartingTime().toLocalDate().isBefore(startDate)) driverRides.add(ride1);
-//            if (!ride2.getStartingTime().toLocalDate().isBefore(startDate)) driverRides.add(ride2);
-//        } else {
-//            driverRides.add(ride1);
-//            driverRides.add(ride2);
-//        }
-//
-//        return new ResponseEntity<Collection<GetRideDTO>>(driverRides, HttpStatus.OK);
 
         List<GetRideDTO> rides = driverService.getDriverRides(id, startDate);
         return ResponseEntity.ok(rides);

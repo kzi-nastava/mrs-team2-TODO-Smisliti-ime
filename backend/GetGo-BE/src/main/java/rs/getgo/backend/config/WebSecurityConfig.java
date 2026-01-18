@@ -90,6 +90,7 @@ public class WebSecurityConfig {
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/activate")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/uploads/*")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/ratings/**")).permitAll() // Added for test
+                    .requestMatchers(new AntPathRequestMatcher("/api/drivers/**")).permitAll() // Added for test
                     .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated();
         });

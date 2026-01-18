@@ -5,11 +5,11 @@
         <img [src]="profileImageUrl" alt="Profile Picture" class="avatar-image" (click)="onImageClick()" />
         <input type="file" id="fileInput" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
     </div>
-    
+
     <div class="tabs-container">
         <button class="tab-button" [class.active]="activeTab === 'driver'" (click)="setActiveTab('driver')">Driver</button>
         <button class="tab-button" [class.active]="activeTab === 'vehicle'" (click)="setActiveTab('vehicle')">Vehicle</button>
-        <div class="hours-display">Recent Hours Active: 6.4h</div>
+        <div class="hours-display">Recent Hours Active: {{recentHoursWorked}}h</div>
     </div>
 
     @if (activeTab === 'driver') {
@@ -19,10 +19,10 @@
         <input type="text" placeholder="Last Name" class="form-input" [(ngModel)]="driverData.lastName" name="lastName" />
         <input type="tel" placeholder="Phone" class="form-input" [(ngModel)]="driverData.phone" name="phone" />
         <input type="text" placeholder="Address" class="form-input" [(ngModel)]="driverData.address" name="address" />
-        
-        <a href="#" class="change-password-link">Change Password</a>
-        
-        <button type="button" class="save-button" (click)="onSave()">Save</button>
+
+        <a [routerLink]="['/driver/change-password']" class="change-password-link">Change Password</a>
+
+        <button type="button" class="save-button" (click)="onSave()">Request Personal Changes</button>
       </form>
     }
 
@@ -32,7 +32,7 @@
         <input type="text" placeholder="Vehicle Type" class="form-input" [(ngModel)]="vehicleData.type" name="type" />
         <input type="text" placeholder="Registration Number" class="form-input" [(ngModel)]="vehicleData.registrationNumber" name="registrationNumber" />
         <input type="number" placeholder="Number of Seats" class="form-input" [(ngModel)]="vehicleData.seats" name="seats" />
-        
+
         <div class="checkbox-container">
           <label class="checkbox-label">
             <input type="checkbox" class="checkbox-input" [(ngModel)]="vehicleData.allowsBabies" name="allowsBabies" />
@@ -43,8 +43,8 @@
             <span>Allows Pets</span>
           </label>
         </div>
-        
-        <button type="button" class="save-button" (click)="onSave()">Save</button>
+
+        <button type="button" class="save-button" (click)="onSave()">Request Vehicle Changes</button>
       </form>
     }
 </div>

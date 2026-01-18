@@ -55,6 +55,33 @@ public class FileStorageService {
         }
     }
 
+    public String renameFile(String originalUrl, String newUrl) {
+        try {
+            if (originalUrl == null || originalUrl.equals(defaultProfilePicture)) {
+                return originalUrl;
+            }
+
+            // Extract filenames from URLs
+            String originalFilename = originalUrl.replace(baseUrl, "");
+            String newFilename = newUrl.replace(baseUrl, "");
+
+            Path originalPath = this.fileStorageLocation.resolve(originalFilename).normalize();
+            Path newPath = this.fileStorageLocation.resolve(newFilename).normalize();
+
+            if (!Files.exists(originalPath)) {
+                throw new RuntimeException("Original file not found: " + originalFilename);
+            }
+
+            // Move/rename the file
+            Files.move(originalPath, newPath, StandardCopyOption.REPLACE_EXISTING);
+
+            return newUrl;
+
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to rename file from " + originalUrl + " to " + newUrl, ex);
+        }
+    }
+
     public void deleteFile(String fileUrl) {
         try {
             if (fileUrl != null && !fileUrl.equals(defaultProfilePicture)) {
@@ -66,5 +93,20 @@ public class FileStorageService {
         } catch (IOException ex) {
             throw new RuntimeException("Failed to delete file", ex);
         }
+    }
+
+    public String generateProfilePictureUrl(String userType, Long userId, String originalFileUrl) {
+        String extension = extractExtension(originalFileUrl);
+        String newFilename = userType + "_" + userId + "_" + UUID.randomUUID() + extension;
+        return baseUrl + newFilename;
+    }
+
+    private String extractExtension(String fileUrl) {
+        String extension = "";
+        int dotIndex = fileUrl.lastIndexOf(".");
+        if (dotIndex > 0) {
+            extension = fileUrl.substring(dotIndex);
+        }
+        return extension;
     }
 }

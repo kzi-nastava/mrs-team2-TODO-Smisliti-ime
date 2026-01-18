@@ -363,7 +363,7 @@ public class AdminServiceImpl implements AdminService {
 
         Driver driver = request.getDriver();
 
-        // Apply changes to driver using firstName/lastName/phoneNumber
+        // Apply changes
         driver.setName(request.getRequestedName());
         driver.setSurname(request.getRequestedSurname());
         driver.setPhoneNumber(request.getRequestedPhone());
@@ -379,7 +379,7 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 driver.getId(),
-                "APPROVED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );
@@ -418,7 +418,7 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 driver.getId(),
-                "APPROVED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );
@@ -434,14 +434,8 @@ public class AdminServiceImpl implements AdminService {
 
         Driver driver = request.getDriver();
 
-        // Delete old profile picture if not default
-        if (driver.getProfilePictureUrl() != null) {
-            fileStorageService.deleteFile(driver.getProfilePictureUrl());
-        }
-
-        // Apply new profile picture
-        driver.setProfilePictureUrl(request.getRequestedProfilePictureUrl());
-        driverRepo.save(driver);
+        // Delete old profile picture and apply new one
+        replaceDriverProfilePicture(driver, request.getRequestedProfilePictureUrl());
 
         // Update request status
         request.setStatus(RequestStatus.APPROVED);
@@ -452,10 +446,22 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 driver.getId(),
-                "APPROVED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );
+    }
+
+    private void replaceDriverProfilePicture(Driver driver, String pendingProfilePictureUrl) {
+        if (driver.getProfilePictureUrl() != null) {
+            fileStorageService.deleteFile(driver.getProfilePictureUrl());
+        }
+
+        String newUrl = fileStorageService.generateProfilePictureUrl("driver", driver.getId(), pendingProfilePictureUrl);
+        String approvedFileUrl = fileStorageService.renameFile(pendingProfilePictureUrl, newUrl);
+
+        driver.setProfilePictureUrl(approvedFileUrl);
+        driverRepo.save(driver);
     }
 
     @Override
@@ -475,7 +481,7 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 request.getDriver().getId(),
-                "REJECTED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );
@@ -498,7 +504,7 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 request.getDriver().getId(),
-                "REJECTED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );
@@ -524,7 +530,7 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 request.getDriver().getId(),
-                "REJECTED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );

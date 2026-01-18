@@ -10,14 +10,19 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.example.getgo.R;
+import com.example.getgo.dtos.passenger.GetRidePassengerDTO;
+import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.model.Ride;
 import android.text.Html;
 
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.time.format.DateTimeFormatter;
 
 
 public class RideDetailFragment extends Fragment {
 
-    private Ride ride;
+    private GetRideDTO ride;
     private static final String ARG_RIDE = "arg_ride";
 
     public RideDetailFragment() {
@@ -25,7 +30,7 @@ public class RideDetailFragment extends Fragment {
     }
 
 
-    public static RideDetailFragment newInstance(Ride ride) {
+    public static RideDetailFragment newInstance(GetRideDTO ride) {
         RideDetailFragment fragment = new RideDetailFragment();
         Bundle args = new Bundle();
         args.putSerializable(ARG_RIDE, ride);
@@ -38,7 +43,7 @@ public class RideDetailFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null) {
-            ride = (Ride) getArguments().getSerializable(ARG_RIDE);
+            ride = (GetRideDTO) getArguments().getSerializable(ARG_RIDE);
         }
     }
 
@@ -61,19 +66,29 @@ public class RideDetailFragment extends Fragment {
 
         if (ride != null) {
 
-            setStyledText(date, "Date:", ride.getStartDate());
-            setStyledText(start, "Start location:", ride.getStartLocation());
-            setStyledText(end, "End location:", ride.getEndLocation());
-            setStyledText(startTime, "Start time:", ride.getStartTime());
-            setStyledText(endTime, "End time:", ride.getEndTime());
+            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+            DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm");
+
+            if (ride.getStartingTime() != null) {
+                setStyledText(date, "Date:", ride.getStartingTime().format(dateFormat));
+                setStyledText(startTime, "Start time:", ride.getStartingTime().format(timeFormat));
+            }
+
+            if (ride.getFinishedTime() != null) {
+                setStyledText(endTime, "End time:", ride.getFinishedTime().format(timeFormat));
+            }
+
+            setStyledText(start, "Start location:", ride.getStartPoint());
+            setStyledText(end, "End location:", ride.getEndPoint());
+
             setStyledText(price, "Price:", "$" + ride.getPrice());
             setStyledText(tvPanicActivated, "Panic Activated:",
-                    ride.isPanicActivated() ? "Yes" : "No");
+                    ride.getPanicActivated() != null && ride.getPanicActivated() ? "Yes" : "No");
 
             if (ride.getPassengers() != null && !ride.getPassengers().isEmpty()) {
                 StringBuilder sb = new StringBuilder();
-                for (String p : ride.getPassengers()) {
-                    sb.append("&nbsp;&nbsp;&nbsp;&nbsp;• ").append(p).append("<br>");
+                for (GetRidePassengerDTO p : ride.getPassengers()) {
+                    sb.append("&nbsp;&nbsp;&nbsp;&nbsp;• ").append(p.getUsername()).append("<br>");
                 }
                 setStyledText(tvPassengers, "Passengers: <br>", sb.toString());
             } else {

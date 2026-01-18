@@ -13,20 +13,30 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.example.getgo.R;
+import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.interfaces.OnRideClickListener;
 import com.example.getgo.model.Ride;
 
-public class RideHistoryAdapter extends ArrayAdapter<Ride> {
+public class RideHistoryAdapter extends ArrayAdapter<GetRideDTO> {
 
-    private ArrayList<Ride> aRides;
+    private ArrayList<GetRideDTO> rides = new ArrayList<>();
 
     private OnRideClickListener listener;
 
-    public RideHistoryAdapter(Context context, ArrayList<Ride> rides) {
-        super(context, R.layout.ride_card, rides);
-        this.aRides = rides;
+    public RideHistoryAdapter(Context context) {
+        super(context, R.layout.ride_card);
+    }
+
+    public void setRides(List<GetRideDTO> newRides) {
+        rides.clear();
+        if (newRides != null) {
+            rides.addAll(newRides);
+            System.out.println("Adapter prima " + newRides.size() + " vožnji.");
+        }
+        notifyDataSetChanged();
     }
 
     public void setOnRideClickListener(OnRideClickListener listener) {
@@ -35,13 +45,13 @@ public class RideHistoryAdapter extends ArrayAdapter<Ride> {
 
     @Override
     public int getCount() {
-        return aRides.size();
+        return rides.size();
     }
 
     @Nullable
     @Override
-    public Ride getItem(int position) {
-        return aRides.get(position);
+    public GetRideDTO getItem(int position) {
+        return rides.get(position);
     }
 
     @Override
@@ -54,7 +64,7 @@ public class RideHistoryAdapter extends ArrayAdapter<Ride> {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        Ride ride = getItem(position);
+        GetRideDTO ride = getItem(position);
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.ride_card, parent, false);
         }
@@ -69,12 +79,19 @@ public class RideHistoryAdapter extends ArrayAdapter<Ride> {
 
 
         if (ride != null){
-            rideDate.setText(ride.getStartDate());
-            rideStartLocation.setText(ride.getStartLocation());
-            rideEndLocation.setText(ride.getEndLocation());
-            rideStartTime.setText("Start time: " + ride.getStartTime());
-            rideEndTime.setText("End time: " + ride.getEndTime());
-            ridePrice.setText("$"+ride.getPrice());
+//            rideDate.setText(ride.getStartDate());
+//            rideStartLocation.setText(ride.getStartLocation());
+//            rideEndLocation.setText(ride.getEndLocation());
+//            rideStartTime.setText("Start time: " + ride.getStartTime());
+//            rideEndTime.setText("End time: " + ride.getEndTime());
+//            ridePrice.setText("$"+ride.getPrice());
+
+            rideDate.setText(ride.getStartingTime() != null ? ride.getStartingTime().toLocalDate().toString() : "");
+            rideStartLocation.setText(ride.getStartPoint());
+            rideEndLocation.setText(ride.getEndPoint());
+            rideStartTime.setText(ride.getStartingTime() != null ? "Start: " + ride.getStartingTime().toLocalTime().toString() : "");
+            rideEndTime.setText(ride.getFinishedTime() != null ? "End: " + ride.getFinishedTime().toLocalTime().toString() : "");
+            ridePrice.setText(ride.getPrice() != null ? "$" + ride.getPrice() : "$0");
 
             convertView.setOnClickListener(v -> {
                 if (listener != null) {

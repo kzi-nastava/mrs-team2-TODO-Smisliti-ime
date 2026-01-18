@@ -33,6 +33,11 @@
     <span>Register Driver</span>
   </button>
 
+  <button mat-menu-item [routerLink]="['/admin/review-driver-requests']">
+    <mat-icon>edit</mat-icon>
+    <span>Review Driver Requests</span>
+  </button>
+
   <button mat-menu-item (click)="logout()">
     <mat-icon>person</mat-icon>
     <span>Log out</span>

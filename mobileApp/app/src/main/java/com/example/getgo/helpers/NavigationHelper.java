@@ -1,5 +1,7 @@
 package com.example.getgo.helpers;
 
+import android.util.Log;
+
 import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
@@ -10,6 +12,8 @@ import com.example.getgo.fragments.PassengerProfileInfoFragment;
 import com.example.getgo.fragments.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.RideHistoryFragment;
 import com.example.getgo.model.UserRole;
+import com.example.getgo.fragments.PassengerRideTrackingFragment;
+
 
 public class NavigationHelper {
     private final UserRole userRole;
@@ -86,8 +90,10 @@ public class NavigationHelper {
             return PassengerProfileInfoFragment.newInstance();
         } else if (itemId == R.id.nav_bottom_rate_ride) {
             return new PassengerRateDriverVehicleFragment();
+        } else if (itemId == R.id.nav_bottom_ride_tracking) {
+            Log.d("NavigationHelper", "Navigating to PassengerRideTrackingFragment");
+            return new PassengerRideTrackingFragment();
         }
-
         return null;
     }
 

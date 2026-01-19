@@ -12,7 +12,7 @@
     android:layout_height="wrap_content"
     android:background="@color/blue">
 
-    <!-- MAPA -->
+    <!-- MAP -->
     <FrameLayout
         android:id="@+id/mapContainer"
         android:layout_width="0dp"
@@ -32,8 +32,6 @@
             android:textStyle="bold"/>
     </FrameLayout>
 
-
-    <!-- WRAPPER BOX -->
     <androidx.cardview.widget.CardView
         android:id="@+id/infoWrapper"
         android:layout_width="0dp"
@@ -109,10 +107,6 @@
                         android:layout_weight="1"/>
 
                 </LinearLayout>
-<!--                <TextView-->
-<!--                    android:id="@+id/tvDestination"-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"/>-->
 
                 <LinearLayout
                     android:orientation="horizontal"
@@ -208,7 +202,6 @@
 
     </androidx.cardview.widget.CardView>
 
-    <!-- PANIC BUTTON -->
     <Button
         android:id="@+id/btnPanic"
         android:layout_width="wrap_content"

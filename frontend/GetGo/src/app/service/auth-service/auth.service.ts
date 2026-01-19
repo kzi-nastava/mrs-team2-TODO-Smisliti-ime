@@ -26,7 +26,7 @@ export class AuthService {
   } else {
     this.roleSignal.set(UserRole.Guest);
     this.fullNameSignal.set('');
-    this.profilePictureSignal.set('/assets/images/sussy_cat.png');
+    this.profilePictureSignal.set('/assets/images/sussy_cat.jpg');
   }
 }
 
@@ -108,7 +108,7 @@ export class AuthService {
       error: (err) => {
         console.error('fetchUserProfile failed', err);
         this.fullNameSignal.set('');
-        this.profilePictureSignal.set('/assets/images/sussy_cat.png');
+        this.profilePictureSignal.set('/assets/images/sussy_cat.jpg');
       }
     });
 }

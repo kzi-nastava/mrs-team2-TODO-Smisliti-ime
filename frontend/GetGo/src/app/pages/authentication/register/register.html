@@ -32,6 +32,7 @@
     <div *ngIf="form.get('email')?.invalid && (form.get('email')?.touched || form.get('email')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
       <div *ngIf="form.get('email')?.hasError('required')">Email is required.</div>
       <div *ngIf="form.get('email')?.hasError('email')">Enter a valid email.</div>
+      <div *ngIf="form.get('email')?.hasError('pattern')">Email format is invalid (e.g. user&#64;example.com).</div>
     </div>
 
     <mat-form-field appearance="outline" floatLabel="always">
@@ -47,6 +48,8 @@
 
     <div *ngIf="form.get('firstName')?.invalid && (form.get('firstName')?.touched || form.get('firstName')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
       <div *ngIf="form.get('firstName')?.hasError('required')">First name is required.</div>
+      <div *ngIf="form.get('firstName')?.hasError('minlength')">First name must be at least 2 characters.</div>
+      <div *ngIf="form.get('firstName')?.hasError('maxlength')">First name must be at most 50 characters.</div>
     </div>
 
     <mat-form-field appearance="outline" floatLabel="always">
@@ -62,6 +65,8 @@
 
     <div *ngIf="form.get('lastName')?.invalid && (form.get('lastName')?.touched || form.get('lastName')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
       <div *ngIf="form.get('lastName')?.hasError('required')">Last name is required.</div>
+      <div *ngIf="form.get('lastName')?.hasError('minlength')">Last name must be at least 2 characters.</div>
+      <div *ngIf="form.get('lastName')?.hasError('maxlength')">Last name must be at most 50 characters.</div>
     </div>
 
     <mat-form-field appearance="outline" floatLabel="always">
@@ -92,6 +97,7 @@
 
     <div *ngIf="form.get('phoneNumber')?.invalid && (form.get('phoneNumber')?.touched || form.get('phoneNumber')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
       <div *ngIf="form.get('phoneNumber')?.hasError('required')">Phone number is required.</div>
+      <div *ngIf="form.get('phoneNumber')?.hasError('pattern')">Phone number must be a valid Serbian number (e.g. +38161234567 or 0612345678).</div>
     </div>
 
     <!-- Password -->
@@ -117,7 +123,7 @@
 
     <div *ngIf="form.get('password')?.invalid && (form.get('password')?.touched || form.get('password')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
       <div *ngIf="form.get('password')?.hasError('required')">Password is required.</div>
-      <div *ngIf="form.get('password')?.hasError('minlength')">Password must be at least 6 characters.</div>
+      <div *ngIf="form.get('password')?.hasError('minlength')">Password must be at least 8 characters.</div>
     </div>
 
     <!-- Confirm password -->

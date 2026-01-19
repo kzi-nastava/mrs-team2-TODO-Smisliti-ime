@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 import rs.getgo.backend.dtos.login.CreateLoginDTO;
@@ -65,27 +66,16 @@ public class AuthController {
     // 2.2.2 – Register
     @PostMapping(value = "/register", consumes = {"multipart/form-data"})
     public ResponseEntity<CreatedUserDTO> registerWithFile(
-            @RequestParam("email") String email,
-            @RequestParam("password") String password,
-            @RequestParam("firstName") String firstName,
-            @RequestParam("lastName") String lastName,
-            @RequestParam("phone") String phone,
-            @RequestParam("address") String address,
+            @Valid @ModelAttribute CreateUserDTO dto,
             @RequestParam(value = "file", required = false) MultipartFile file
-    ) {
+    )
+    {
         String profilePictureUrl = null;
 
         if (file != null && !file.isEmpty()) {
             profilePictureUrl = fileStorageService.storeFile(file, "temp");
         }
 
-        CreateUserDTO dto = new CreateUserDTO();
-        dto.setEmail(email);
-        dto.setPassword(password);
-        dto.setName(firstName);
-        dto.setSurname(lastName);
-        dto.setPhone(phone);
-        dto.setAddress(address);
         dto.setProfilePictureUrl(profilePictureUrl);
 
         CreatedUserDTO created = authService.register(dto);
@@ -93,13 +83,13 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<Void> forgotPassword(@RequestBody ForgotPasswordDTO request) {
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordDTO request) {
         authService.forgotPassword(request.getEmail());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDTO dto) {
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordDTO dto) {
         Long userId = authService.verifyResetToken(dto.getToken());
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user"));

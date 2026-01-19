@@ -7,6 +7,7 @@ import {MatIcon} from '@angular/material/icon';
 import {MatButton} from '@angular/material/button';
 import { HttpClient } from '@angular/common/http';
 import {environment} from '../../../../env/environment';
+import { SnackBarService } from '../../../service/snackBar/snackBar.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -27,39 +28,36 @@ export class ForgotPasswordComponent implements OnInit {
   form!: FormGroup;
   isSubmitting = false;
 
-  constructor(private fb: FormBuilder, private router: Router, private http: HttpClient) {} // injected HttpClient
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private http: HttpClient,
+    private snackBarService: SnackBarService
+  ) {}
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      email: ['', [Validators.required, Validators.email]]
+      email: ['', [
+        // Validators.required,
+        // Validators.email,
+        // Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+      ]]
     });
   }
 
   submit(): void {
-    const emailControl = this.form.get('email');
-    if (!emailControl) {
-      console.error('ForgotPassword: email control missing');
-      return;
-    }
-
-    // Validation logging
     if (this.form.invalid) {
-      if (emailControl.hasError('required')) {
-        console.log('ForgotPassword validation: email is required');
-      } else if (emailControl.hasError('email')) {
-        console.log('ForgotPassword validation: email format is invalid');
-      } else {
-        console.log('ForgotPassword validation: email invalid', emailControl.errors);
-      }
-      emailControl.markAsTouched();
       this.form.markAllAsTouched();
+
+      const fieldMap = { email: 'Email' };
+      this.snackBarService.showFormErrors(this.form, fieldMap);
       console.log('ForgotPassword: aborting submit due to validation errors');
       return;
     }
 
     this.isSubmitting = true;
 
-    const payload = { email: emailControl.value as string };
+    const payload = { email: this.form.value.email };
     console.log('ForgotPassword: sending payload to /api/auth/forgot-password', payload);
 
     type ForgotPasswordResponse = { message?: string };
@@ -68,13 +66,25 @@ export class ForgotPasswordComponent implements OnInit {
       next: (res) => {
         this.isSubmitting = false;
         console.log('ForgotPassword: server response', res);
-        // navigate to login or show confirmation
+
+        this.snackBarService.show('Password reset link sent to your email!', true);
         this.router.navigate(['/login']);
       },
       error: (err) => {
         this.isSubmitting = false;
         console.error('ForgotPassword: request failed', err);
-        // keep form visible for retry, optionally show UI error
+
+        let errorMessages: string[] = [];
+
+        if (err.status === 400 && err.error?.errors) {
+          errorMessages = err.error.errors.map((e: any) => e.message || e);
+        } else if (err.error?.message) {
+          errorMessages = [err.error.message];
+        } else {
+          errorMessages = ['Failed to send reset email. Please try again.'];
+        }
+
+        this.snackBarService.show(errorMessages);
       }
     });
   }

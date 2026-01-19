@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { HttpClient } from '@angular/common/http';
 import {environment} from '../../../../env/environment';
+import { SnackBarService } from '../../../service/snackBar/snackBar.service';
 
 @Component({
   selector: 'app-reset-password',
@@ -33,14 +34,20 @@ export class ResetPasswordComponent implements OnInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private snackBarService: SnackBarService
   ) {
     this.form = this.fb.group(
       {
-        password: ['', [Validators.required, Validators.minLength(6)]],
-        confirmPassword: ['', [Validators.required]]
+        password: ['', [
+          // Validators.required,
+          // Validators.minLength(8)
+        ]],
+        confirmPassword: ['', [
+          // Validators.required
+        ]]
       },
-      { validators: this.passwordsMatchValidator }
+      // { validators: this.passwordsMatchValidator }
     );
   }
 
@@ -114,12 +121,19 @@ export class ResetPasswordComponent implements OnInit {
     if (!this.token || !this.email) {
       console.log('ResetPassword: cannot submit - missing token/email');
       this.serverError = 'Invalid or missing reset token/email.';
+      this.snackBarService.show(this.serverError);
       return;
     }
 
     if (this.form.invalid) {
-      this.logValidationErrors();
       this.form.markAllAsTouched();
+
+      const fieldMap = {
+        password: 'Password',
+        confirmPassword: 'Confirm password'
+      };
+
+      this.snackBarService.showFormErrors(this.form, fieldMap);
       console.log('ResetPassword: aborting submit due to validation errors');
       return;
     }
@@ -140,14 +154,26 @@ export class ResetPasswordComponent implements OnInit {
       next: (res) => {
         this.isSubmitting = false;
         console.log('ResetPassword: server response', res);
-        // navigate to login after successful reset
+
+        this.snackBarService.show('Password reset successful! Please login.', true);
         this.router.navigate(['/login']);
       },
       error: (err) => {
         this.isSubmitting = false;
         console.error('ResetPassword: request failed', err);
-        // Prefer any server-provided message, otherwise generic
-        this.serverError = (err && err.error && err.error.message) ? err.error.message : 'Password reset failed. Please try again.';
+
+        let errorMessages: string[] = [];
+
+        if (err.status === 400 && err.error?.errors) {
+          errorMessages = err.error.errors.map((e: any) => e.message || e);
+        } else if (err.error?.message) {
+          errorMessages = [err.error.message];
+        } else {
+          errorMessages = ['Password reset failed. Please try again.'];
+        }
+
+        this.serverError = errorMessages.join(', ');
+        this.snackBarService.show(errorMessages);
       }
     });
   }

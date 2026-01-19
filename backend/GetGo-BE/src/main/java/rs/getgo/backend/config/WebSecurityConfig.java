@@ -85,6 +85,7 @@ public class WebSecurityConfig {
                     .requestMatchers(new AntPathRequestMatcher("/api/rides/estimate")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/users/me")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/vehicles/active")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/drivers/activate/**")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/forgot-password")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/reset-password")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/activate")).permitAll()
@@ -92,26 +93,11 @@ public class WebSecurityConfig {
                     .requestMatchers(new AntPathRequestMatcher("/api/ratings/**")).permitAll() // Added for test
                     .requestMatchers(new AntPathRequestMatcher("/api/drivers/**")).permitAll() // Added for test
                     .requestMatchers("/error").permitAll()
-                    .anyRequest().permitAll();  // CHANGED THIS
+                    .anyRequest().authenticated();
         });
         http.addFilterBefore(new TokenAuthenticationFilter(tokenUtils, userDetailsService()), UsernamePasswordAuthenticationFilter.class);
         http.authenticationProvider(authenticationProvider());
         return http.build();
-        // TODO: RETURN BACK
-//        http.cors(Customizer.withDefaults());
-//        http.csrf(AbstractHttpConfigurer::disable);
-//        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-//        http.exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(restAuthenticationEntryPoint));
-//        http.authorizeHttpRequests(request -> {
-//            request.requestMatchers(new AntPathRequestMatcher("/api/auth/login")).permitAll()
-//                    .requestMatchers(new AntPathRequestMatcher("/api/auth/register")).permitAll()
-//                    .requestMatchers(new AntPathRequestMatcher("/api/rides/estimate")).permitAll()
-//                    .requestMatchers("/error").permitAll()
-//                    .anyRequest().authenticated();
-//        });
-//        http.addFilterBefore(new TokenAuthenticationFilter(tokenUtils, userDetailsService()), UsernamePasswordAuthenticationFilter.class);
-//        http.authenticationProvider(authenticationProvider());
-//        return http.build();
     }
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {

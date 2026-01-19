@@ -50,7 +50,6 @@ public class DriverController {
     }
 
     // 2.2.3 - Driver registration
-    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/activate/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetActivationTokenDTO> validateActivationToken(
             @PathVariable String token) {
@@ -60,7 +59,6 @@ public class DriverController {
     }
 
     // 2.2.3 - Driver registration
-    @PreAuthorize("hasRole('DRIVER')")
     @PostMapping(value = "/activate",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)

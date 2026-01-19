@@ -18,25 +18,46 @@
   font-size: 3em;
   font-weight: 600;
   font-family: 'Inter', sans-serif;
+  margin-bottom: 1rem;
 }
 
-.profile-picture {
-  display: flex;
-  justify-content: center;
-  margin: 20px 0;
+.status-message {
+  text-align: center;
+  font-size: 1.3rem;
+  color: #1E4A7F;
+  margin: 2rem 0;
 }
 
-.avatar-image {
-  width: 20%;
-  aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  object-fit: cover;
-  cursor: pointer;
-  transition: opacity 0.3s ease;
+.email-display {
+  text-align: center;
+  font-size: 1.2rem;
+  margin: 1rem 0;
+  color: #1E4A7F;
 }
 
-.avatar-image:hover {
-  opacity: 0.7;
+.error-container {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.error-message {
+  font-size: 1.3rem;
+  color: #c62828;
+  margin-bottom: 1.5rem;
+}
+
+.login-link {
+  display: inline-block;
+  padding: 10px 30px;
+  background-color: #133E87;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+}
+
+.login-link:hover {
+  background-color: #0d3170;
 }
 
 .profile-form {
@@ -62,18 +83,6 @@
   font-size: 1.6rem;
 }
 
-.change-password-link {
-  align-self: flex-start;
-  margin-left: 3%;
-  color: #1E4A7F;
-  text-decoration: none;
-  font-size: 1.3rem;
-}
-
-.change-password-link:hover {
-    text-decoration: underline;
-}
-
 .save-button {
   align-self: flex-end;
   margin-right: 3%;
@@ -88,5 +97,5 @@
 }
 
 .save-button:hover {
-    background-color: #0d3170;
+  background-color: #0d3170;
 }

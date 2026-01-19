@@ -2,6 +2,7 @@ package rs.getgo.backend.services;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
@@ -45,6 +46,8 @@ public class DriverServiceImpl {
     private ModelMapper modelMapper;
     @Autowired
     private FileStorageService fileStorageService;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     public List<GetRideDTO> getDriverRides(Long driverId, LocalDate startDate) {
         List<CompletedRide> rides = completedRideRepository.findByDriverId(driverId);
@@ -136,7 +139,7 @@ public class DriverServiceImpl {
 
         // Set password and activate driver
         Driver driver = activationToken.getDriver();
-        driver.setPassword(passwordDTO.getPassword());
+        driver.setPassword(passwordEncoder.encode(passwordDTO.getPassword()));
         driver.setActivated(true);
         driverRepo.save(driver);
 
@@ -164,8 +167,7 @@ public class DriverServiceImpl {
             dto.setVehicleAllowsPets(driver.getVehicle().getIsPetFriendly());
         }
 
-        // Get full URL so <img src=""> can load it
-        dto.setProfilePictureUrl(fileStorageService.getFileUrl(driver.getProfilePictureUrl()));
+        dto.setProfilePictureUrl(driver.getProfilePictureUrl());
 
         // TODO: Calculate recent hours worked in last 24h
         dto.setRecentHoursWorked(0);
@@ -181,11 +183,11 @@ public class DriverServiceImpl {
         Driver driver = driverRepo.findById(driverId)
                 .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
 
-        if (!driver.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
+        if (!passwordEncoder.matches(updatePasswordDTO.getOldPassword(), driver.getPassword())) {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
         }
 
-        driver.setPassword(updatePasswordDTO.getPassword());
+        driver.setPassword(passwordEncoder.encode(updatePasswordDTO.getPassword()));
         driverRepo.save(driver);
 
         return new UpdatedPasswordDTO(true, "Password updated successfully");
@@ -194,6 +196,16 @@ public class DriverServiceImpl {
     public CreatedDriverChangeRequestDTO requestPersonalInfoChange(Long driverId, UpdateDriverPersonalDTO updateDTO) {
         Driver driver = driverRepo.findById(driverId)
                 .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
+
+        // Check for existing pending request
+        if (personalChangeRequestRepo.existsByDriverAndStatus(driver, RequestStatus.PENDING)) {
+            throw new RuntimeException("You already have a pending personal information change request");
+        }
+
+        // Check if no changes were made
+        if (!hasPersonalInfoChanged(driver, updateDTO)) {
+            throw new RuntimeException("No changes detected in personal information");
+        }
 
         PersonalChangeRequest changeRequest = new PersonalChangeRequest();
         changeRequest.setDriver(driver);
@@ -214,9 +226,31 @@ public class DriverServiceImpl {
         );
     }
 
+    private boolean hasPersonalInfoChanged(Driver driver, UpdateDriverPersonalDTO updateDTO) {
+        return !driver.getName().equals(updateDTO.getName()) ||
+                !driver.getSurname().equals(updateDTO.getSurname()) ||
+                !driver.getPhone().equals(updateDTO.getPhone()) ||
+                !driver.getAddress().equals(updateDTO.getAddress());
+    }
+
     public CreatedDriverChangeRequestDTO requestVehicleInfoChange(Long driverId, UpdateDriverVehicleDTO updateDTO) {
         Driver driver = driverRepo.findById(driverId)
                 .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
+
+        // Check for existing pending request
+        if (vehicleChangeRequestRepo.existsByDriverAndStatus(driver, RequestStatus.PENDING)) {
+            throw new RuntimeException("You already have a pending vehicle information change request");
+        }
+
+        Vehicle vehicle = driver.getVehicle();
+        if (vehicle == null) {
+            throw new RuntimeException("Driver does not have a vehicle assigned");
+        }
+
+        // Check if no changes were made
+        if (!hasVehicleInfoChanged(vehicle, updateDTO)) {
+            throw new RuntimeException("No changes detected in vehicle information");
+        }
 
         VehicleChangeRequest changeRequest = new VehicleChangeRequest();
         changeRequest.setDriver(driver);
@@ -239,9 +273,23 @@ public class DriverServiceImpl {
         );
     }
 
+    private boolean hasVehicleInfoChanged(Vehicle vehicle, UpdateDriverVehicleDTO updateDTO) {
+        return !vehicle.getModel().equals(updateDTO.getVehicleModel()) ||
+                !vehicle.getType().toString().equals(updateDTO.getVehicleType()) ||
+                !vehicle.getLicensePlate().equals(updateDTO.getVehicleLicensePlate()) ||
+                vehicle.getNumberOfSeats() != updateDTO.getVehicleSeats() ||
+                !vehicle.getIsBabyFriendly().equals(updateDTO.getVehicleHasBabySeats()) ||
+                !vehicle.getIsPetFriendly().equals(updateDTO.getVehicleAllowsPets());
+    }
+
     public CreatedDriverChangeRequestDTO requestProfilePictureChange(Long driverId, MultipartFile file) {
         Driver driver = driverRepo.findById(driverId)
                 .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
+
+        // Check for existing pending request
+        if (avatarChangeRequestRepo.existsByDriverAndStatus(driver, RequestStatus.PENDING)) {
+            throw new RuntimeException("You already have a pending profile picture change request");
+        }
 
         // Store file temporarily until approval/rejection
         String filename = fileStorageService.storeFile(file, "driver_pending_" + driverId);

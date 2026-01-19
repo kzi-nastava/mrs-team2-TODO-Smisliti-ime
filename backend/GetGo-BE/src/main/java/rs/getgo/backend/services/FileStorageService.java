@@ -30,7 +30,7 @@ public class FileStorageService {
         }
 
         baseUrl = "/uploads/";
-        defaultProfilePicture = "default-avatar.png";
+        defaultProfilePicture = "/uploads/default-avatar.png";
     }
 
     public String storeFile(MultipartFile file, String prefix) {
@@ -49,15 +49,44 @@ public class FileStorageService {
             Path targetLocation = this.fileStorageLocation.resolve(newFilename);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            return newFilename;
+            return baseUrl + newFilename;
         } catch (IOException ex) {
             throw new RuntimeException("Failed to store file", ex);
         }
     }
 
-    public void deleteFile(String filename) {
+    public String renameFile(String originalUrl, String newUrl) {
         try {
-            if (filename != null && !filename.equals(defaultProfilePicture)) {
+            if (originalUrl == null || originalUrl.equals(defaultProfilePicture)) {
+                return originalUrl;
+            }
+
+            // Extract filenames from URLs
+            String originalFilename = originalUrl.replace(baseUrl, "");
+            String newFilename = newUrl.replace(baseUrl, "");
+
+            Path originalPath = this.fileStorageLocation.resolve(originalFilename).normalize();
+            Path newPath = this.fileStorageLocation.resolve(newFilename).normalize();
+
+            if (!Files.exists(originalPath)) {
+                throw new RuntimeException("Original file not found: " + originalFilename);
+            }
+
+            // Move/rename the file
+            Files.move(originalPath, newPath, StandardCopyOption.REPLACE_EXISTING);
+
+            return newUrl;
+
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to rename file from " + originalUrl + " to " + newUrl, ex);
+        }
+    }
+
+    public void deleteFile(String fileUrl) {
+        try {
+            if (fileUrl != null && !fileUrl.equals(defaultProfilePicture)) {
+                // Extract filename from URL
+                String filename = fileUrl.replace(baseUrl, "");
                 Path filePath = this.fileStorageLocation.resolve(filename).normalize();
                 Files.deleteIfExists(filePath);
             }
@@ -66,8 +95,18 @@ public class FileStorageService {
         }
     }
 
-    public String getFileUrl(String filename) {
-        return baseUrl + filename;
+    public String generateProfilePictureUrl(String userType, Long userId, String originalFileUrl) {
+        String extension = extractExtension(originalFileUrl);
+        String newFilename = userType + "_" + userId + "_" + UUID.randomUUID() + extension;
+        return baseUrl + newFilename;
     }
 
+    private String extractExtension(String fileUrl) {
+        String extension = "";
+        int dotIndex = fileUrl.lastIndexOf(".");
+        if (dotIndex > 0) {
+            extension = fileUrl.substring(dotIndex);
+        }
+        return extension;
+    }
 }

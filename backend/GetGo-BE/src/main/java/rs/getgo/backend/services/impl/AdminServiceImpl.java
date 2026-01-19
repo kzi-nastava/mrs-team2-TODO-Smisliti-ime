@@ -2,10 +2,9 @@ package rs.getgo.backend.services.impl;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import rs.getgo.backend.dtos.admin.GetAdminDTO;
-import rs.getgo.backend.dtos.admin.UpdateAdminDTO;
-import rs.getgo.backend.dtos.admin.UpdatedAdminDTO;
+import rs.getgo.backend.dtos.admin.*;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.CreateDriverDTO;
@@ -13,6 +12,7 @@ import rs.getgo.backend.dtos.driver.CreatedDriverDTO;
 import rs.getgo.backend.dtos.request.*;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
+import rs.getgo.backend.model.enums.UserRole;
 import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.AdminService;
@@ -45,6 +45,25 @@ public class AdminServiceImpl implements AdminService {
     private EmailService emailService;
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
+    @Override
+    public CreatedAdminDTO createAdmin(CreateAdminDTO createAdminDTO) {
+        Administrator admin = new Administrator();
+        admin.setEmail(createAdminDTO.getEmail());
+        admin.setPassword(passwordEncoder.encode(createAdminDTO.getPassword()));
+        admin.setName(createAdminDTO.getName());
+        admin.setSurname(createAdminDTO.getSurname());
+        admin.setAddress(createAdminDTO.getAddress());
+        admin.setPhone(createAdminDTO.getPhoneNumber());
+        admin.setRole(UserRole.ADMIN);
+        admin.setBlocked(false);
+
+        Administrator savedAdmin = adminRepo.save(admin);
+
+        return modelMapper.map(savedAdmin, CreatedAdminDTO.class);
+    }
 
     @Override
     public CreatedDriverDTO registerDriver(CreateDriverDTO createDriverDTO) {
@@ -55,7 +74,7 @@ public class AdminServiceImpl implements AdminService {
         DriverActivationToken token = createDriverActivationToken(savedDriver);
         driverActivationTokenRepo.save(token);
 
-        emailService.sendActivationEmail(savedDriver.getEmail(), token.getToken());
+        emailService.sendDriverActivationEmail(savedDriver.getEmail(), token.getToken());
 
         return modelMapper.map(savedDriver, CreatedDriverDTO.class);
     }
@@ -91,6 +110,7 @@ public class AdminServiceImpl implements AdminService {
         driver.setSurname(createDriverDTO.getSurname());
         driver.setPhone(createDriverDTO.getPhone());
         driver.setAddress(createDriverDTO.getAddress());
+        driver.setRole(UserRole.DRIVER);
         driver.setProfilePictureUrl(fileStorageService.getDefaultProfilePicture());
         driver.setActive(false);
         driver.setActivated(false);
@@ -139,11 +159,11 @@ public class AdminServiceImpl implements AdminService {
         Administrator admin = adminRepo.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
 
-        if (!admin.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
+        if (!passwordEncoder.matches(updatePasswordDTO.getOldPassword(), admin.getPassword())) {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
         }
 
-        admin.setPassword(updatePasswordDTO.getPassword());
+        admin.setPassword(passwordEncoder.encode(updatePasswordDTO.getPassword()));
         adminRepo.save(admin);
 
         return new UpdatedPasswordDTO(true, "Password updated successfully");
@@ -234,10 +254,10 @@ public class AdminServiceImpl implements AdminService {
             dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
             // Current profile picture
-            dto.setCurrentProfilePictureUrl(fileStorageService.getFileUrl(driver.getProfilePictureUrl()));
+            dto.setCurrentProfilePictureUrl(driver.getProfilePictureUrl());
 
             // Requested profile picture
-            dto.setRequestedProfilePictureUrl(fileStorageService.getFileUrl(request.getRequestedProfilePictureUrl()));
+            dto.setRequestedProfilePictureUrl(request.getRequestedProfilePictureUrl());
 
             dto.setStatus(request.getStatus().toString());
             dto.setCreatedAt(request.getCreatedAt());
@@ -324,8 +344,8 @@ public class AdminServiceImpl implements AdminService {
         dto.setDriverEmail(driver.getEmail());
         dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
-        dto.setCurrentProfilePictureUrl(fileStorageService.getFileUrl(driver.getProfilePictureUrl()));
-        dto.setRequestedProfilePictureUrl(fileStorageService.getFileUrl(request.getRequestedProfilePictureUrl()));
+        dto.setCurrentProfilePictureUrl(driver.getProfilePictureUrl());
+        dto.setRequestedProfilePictureUrl(request.getRequestedProfilePictureUrl());
 
         dto.setStatus(request.getStatus().toString());
         dto.setCreatedAt(request.getCreatedAt());
@@ -343,7 +363,7 @@ public class AdminServiceImpl implements AdminService {
 
         Driver driver = request.getDriver();
 
-        // Apply changes to driver using firstName/lastName/phoneNumber
+        // Apply changes
         driver.setName(request.getRequestedName());
         driver.setSurname(request.getRequestedSurname());
         driver.setPhone(request.getRequestedPhone());
@@ -359,7 +379,7 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 driver.getId(),
-                "APPROVED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );
@@ -398,7 +418,7 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 driver.getId(),
-                "APPROVED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );
@@ -414,14 +434,8 @@ public class AdminServiceImpl implements AdminService {
 
         Driver driver = request.getDriver();
 
-        // Delete old profile picture if not default
-        if (driver.getProfilePictureUrl() != null) {
-            fileStorageService.deleteFile(driver.getProfilePictureUrl());
-        }
-
-        // Apply new profile picture
-        driver.setProfilePictureUrl(request.getRequestedProfilePictureUrl());
-        driverRepo.save(driver);
+        // Delete old profile picture and apply new one
+        replaceDriverProfilePicture(driver, request.getRequestedProfilePictureUrl());
 
         // Update request status
         request.setStatus(RequestStatus.APPROVED);
@@ -432,10 +446,22 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 driver.getId(),
-                "APPROVED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );
+    }
+
+    private void replaceDriverProfilePicture(Driver driver, String pendingProfilePictureUrl) {
+        if (driver.getProfilePictureUrl() != null) {
+            fileStorageService.deleteFile(driver.getProfilePictureUrl());
+        }
+
+        String newUrl = fileStorageService.generateProfilePictureUrl("driver", driver.getId(), pendingProfilePictureUrl);
+        String approvedFileUrl = fileStorageService.renameFile(pendingProfilePictureUrl, newUrl);
+
+        driver.setProfilePictureUrl(approvedFileUrl);
+        driverRepo.save(driver);
     }
 
     @Override
@@ -455,7 +481,7 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 request.getDriver().getId(),
-                "REJECTED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );
@@ -478,7 +504,7 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 request.getDriver().getId(),
-                "REJECTED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );
@@ -504,7 +530,7 @@ public class AdminServiceImpl implements AdminService {
         return new AcceptDriverChangeRequestDTO(
                 request.getId(),
                 request.getDriver().getId(),
-                "REJECTED",
+                request.getStatus().toString(),
                 adminId,
                 LocalDateTime.now()
         );
@@ -522,11 +548,6 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public void getReports() {
-        // TODO
-    }
-
-    @Override
-    public void createAdmin() {
         // TODO
     }
 }

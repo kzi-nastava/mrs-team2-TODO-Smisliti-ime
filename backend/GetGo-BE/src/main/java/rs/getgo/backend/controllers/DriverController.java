@@ -4,6 +4,7 @@ package rs.getgo.backend.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
+import rs.getgo.backend.dtos.authentication.UpdateDriverPasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.*;
@@ -28,9 +29,10 @@ import java.util.List;
 @RequestMapping("/api/drivers")
 public class DriverController {
 
-
     @Autowired
     private DriverServiceImpl driverService;
+
+    Long driverId = 5L; // TODO: get from cookie/whatever we decide to use
 
     public DriverController(DriverServiceImpl driverService) {
         this.driverService = driverService;
@@ -48,29 +50,22 @@ public class DriverController {
     }
 
     // 2.2.3 - Driver registration
-    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/activate/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetActivationTokenDTO> validateActivationToken(
             @PathVariable String token) {
 
-        GetActivationTokenDTO response = new GetActivationTokenDTO();
-        response.setValid(true);
-        response.setEmail("driver@example.com");
-
+        GetActivationTokenDTO response = driverService.validateActivationToken(token);
         return ResponseEntity.ok(response);
     }
 
     // 2.2.3 - Driver registration
-    @PreAuthorize("hasRole('DRIVER')")
     @PostMapping(value = "/activate",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> setDriverPassword(
-            @RequestBody UpdatePasswordDTO request) {
+            @RequestBody UpdateDriverPasswordDTO updateDriverPasswordDTO) {
 
-        UpdatedPasswordDTO response = new UpdatedPasswordDTO();
-        response.setSuccess(true);
-
+        UpdatedPasswordDTO response = driverService.setDriverPassword(updateDriverPasswordDTO);
         return ResponseEntity.ok(response);
     }
 
@@ -78,43 +73,43 @@ public class DriverController {
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverDTO> getProfile() {
-        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+
         GetDriverDTO response = driverService.getDriverById(driverId);
         return ResponseEntity.ok(response);
     }
 
     // 2.3 - User profile (Request personal info change)
     @PreAuthorize("hasRole('DRIVER')")
-    @PutMapping(value = "/profile/personal",
+    @PostMapping(value = "/profile/change-requests/personal",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedDriverChangeRequestDTO> updatePersonalInfo(
+    public ResponseEntity<CreatedDriverChangeRequestDTO> requestPersonalInfoChange(
             @RequestBody UpdateDriverPersonalDTO updateDriverPersonalDTO) {
-        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+
         CreatedDriverChangeRequestDTO response = driverService.requestPersonalInfoChange(driverId, updateDriverPersonalDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 2.3 - User profile (Request vehicle info change)
     @PreAuthorize("hasRole('DRIVER')")
-    @PutMapping(value = "/profile/vehicle",
+    @PostMapping(value = "/profile/change-requests/vehicle",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedDriverChangeRequestDTO> updateVehicleInfo(
+    public ResponseEntity<CreatedDriverChangeRequestDTO> requestVehicleInfoChange(
             @RequestBody UpdateDriverVehicleDTO updateDriverVehicleDTO) {
-        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+
         CreatedDriverChangeRequestDTO response = driverService.requestVehicleInfoChange(driverId, updateDriverVehicleDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 2.3 - User profile (Request profile picture change)
     @PreAuthorize("hasRole('DRIVER')")
-    @PostMapping(value = "/profile/picture",
+    @PostMapping(value = "/profile/change-requests/picture",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedDriverChangeRequestDTO> uploadProfilePicture(
+    public ResponseEntity<CreatedDriverChangeRequestDTO> requestProfilePictureChange(
             @RequestParam("file") MultipartFile file) {
-        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+
         CreatedDriverChangeRequestDTO response = driverService.requestProfilePictureChange(driverId, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -126,7 +121,7 @@ public class DriverController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
             @RequestBody UpdatePasswordDTO updatePasswordDTO) {
-        Long driverId = 1L; // TODO: get from cookie/whatever we decide to use
+
         UpdatedPasswordDTO response = driverService.updatePassword(driverId, updatePasswordDTO);
         if (!response.getSuccess()) {
             return ResponseEntity.badRequest().body(response);

@@ -7,6 +7,7 @@ import rs.getgo.backend.model.entities.Driver;
 import rs.getgo.backend.model.entities.Passenger;
 import rs.getgo.backend.model.entities.User;
 import rs.getgo.backend.repositories.UserRepository;
+import rs.getgo.backend.services.FileStorageService;
 import rs.getgo.backend.services.UserProfileService;
 
 import java.util.HashMap;
@@ -16,12 +17,14 @@ import java.util.Map;
 public class UserProfileServiceImpl implements UserProfileService {
 
     private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
 
     @Value("${app.upload.base-url}")
     private String uploadBaseUrl;
 
-    public UserProfileServiceImpl(UserRepository userRepository) {
+    public UserProfileServiceImpl(UserRepository userRepository, FileStorageService fileStorageService) {
         this.userRepository = userRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     @Override
@@ -36,19 +39,20 @@ public class UserProfileServiceImpl implements UserProfileService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Full name
         String fullName = user.getName() + " " + user.getSurname();
         response.put("fullName", fullName);
 
-        // Profile picture - default to frontend asset if no custom picture
-        String profilePictureUrl = "http://localhost:4200/assets/images/sussy_cat.jpg"; // default
+        String imagePath;
+
         if (user instanceof Passenger p && p.getProfilePictureUrl() != null) {
-            profilePictureUrl = uploadBaseUrl + p.getProfilePictureUrl();
+            imagePath = p.getProfilePictureUrl();
         } else if (user instanceof Driver d && d.getProfilePictureUrl() != null) {
-            profilePictureUrl = uploadBaseUrl + d.getProfilePictureUrl();
+            imagePath = d.getProfilePictureUrl();
+        } else {
+            imagePath = "/uploads/" + fileStorageService.getDefaultProfilePicture();
         }
 
-        response.put("profilePictureUrl", profilePictureUrl);
+        response.put("profilePictureUrl", uploadBaseUrl + imagePath);
 
         return response;
     }

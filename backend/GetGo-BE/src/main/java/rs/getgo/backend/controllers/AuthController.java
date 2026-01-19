@@ -1,6 +1,5 @@
 package rs.getgo.backend.controllers;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 import rs.getgo.backend.dtos.login.CreateLoginDTO;
@@ -19,31 +18,29 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.web.bind.annotation.RequestParam;
+import rs.getgo.backend.services.FileStorageService;
 
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "http://localhost:4200")
 public class AuthController {
 
-    @Value("${upload.dir}")
-    private String uploadDir;
-
     private final AuthServiceImpl authService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final FileStorageService fileStorageService;
 
-    public AuthController(AuthServiceImpl authService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthController(AuthServiceImpl authService,
+                         UserRepository userRepository,
+                         PasswordEncoder passwordEncoder,
+                         FileStorageService fileStorageService) {
         this.passwordEncoder = passwordEncoder;
         this.authService = authService;
         this.userRepository = userRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     // 2.2.1 – Login
@@ -79,15 +76,7 @@ public class AuthController {
         String profilePictureUrl = null;
 
         if (file != null && !file.isEmpty()) {
-            try {
-                String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-                Path uploadPath = Paths.get(uploadDir).resolve(filename);
-                Files.createDirectories(uploadPath.getParent());
-                Files.write(uploadPath, file.getBytes());
-                profilePictureUrl = "/uploads/" + filename;
-            } catch (IOException e) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save profile image");
-            }
+            profilePictureUrl = fileStorageService.storeFile(file, "temp");
         }
 
         CreateUserDTO dto = new CreateUserDTO();

@@ -19,11 +19,9 @@ public class ApiClient {
     public static Retrofit getClient() {
         if (retrofit == null) {
 
-            // 1️⃣ Logging za HTTP request i response
             HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
             interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-            // 2️⃣ OkHttpClient sa timeout-ovima
             OkHttpClient client = new OkHttpClient.Builder()
                     .addInterceptor(interceptor)
                     .connectTimeout(15, TimeUnit.SECONDS)
@@ -34,9 +32,9 @@ public class ApiClient {
                     .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer())
                     .create();
 
-            // 3️⃣ Retrofit builder
+
             retrofit = new Retrofit.Builder()
-                    .baseUrl("http://10.0.2.2:8080/") // localhost za emulator
+                    .baseUrl("http://10.0.2.2:8080/") // localhost for emulator
                     .client(client)
                     .addConverterFactory(GsonConverterFactory.create(gson))
                     .build();

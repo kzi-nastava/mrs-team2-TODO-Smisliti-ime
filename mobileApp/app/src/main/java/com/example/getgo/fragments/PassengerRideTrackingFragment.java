@@ -16,6 +16,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.getgo.R;
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
+import com.example.getgo.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
+import com.example.getgo.dtos.ride.GetRideTrackingDTO;
+import com.example.getgo.interfaces.RideApi;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -23,11 +28,18 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.gson.Gson;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class PassengerRideTrackingFragment extends Fragment implements OnMapReadyCallback {
     private GoogleMap mMap;
     private Marker driverMarker;
 
+    private RideApi rideApi;
+    private Long rideId = 1L; // temporary hardcoded ride ID;
 
     public PassengerRideTrackingFragment() {
         // Required empty public constructor
@@ -43,6 +55,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+        Log.d("LIFECYCLE", "onCreateView called");
 
         View view = inflater.inflate(
                 R.layout.fragment_passenger_ride_tracking,
@@ -89,15 +103,43 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 
         btnSubmit.setOnClickListener(v -> {
             String reportText = editReport.getText().toString();
-            if(!reportText.isEmpty()) {
-                Log.d("PassengerRideTracking", "Report submitted: " + reportText);
-                reportForm.setVisibility(View.GONE); // sakrij formu
-                editReport.setText("");               // očisti polje
-            } else {
+            if (reportText.isEmpty()) {
                 Toast.makeText(getContext(), "Please enter a note", Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            CreateInconsistencyReportDTO dto = new CreateInconsistencyReportDTO(reportText);
+
+            rideApi.createInconsistencyReport(rideId, dto)
+                    .enqueue(new Callback<CreatedInconsistencyReportDTO>() {
+                        @Override
+                        public void onResponse(Call<CreatedInconsistencyReportDTO> call,
+                                               Response<CreatedInconsistencyReportDTO> response) {
+
+                            if (response.isSuccessful()) {
+                                Toast.makeText(getContext(),
+                                        "Report sent successfully",
+                                        Toast.LENGTH_SHORT).show();
+
+                                reportForm.setVisibility(View.GONE);
+                                editReport.setText("");
+                            } else {
+                                Log.e("REPORT", "Error: " + response.code());
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<CreatedInconsistencyReportDTO> call, Throwable t) {
+                            Log.e("REPORT", "POST failed", t);
+                        }
+                    });
         });
 
+        Log.d("TRACKING", "Does rideId exist = " + rideId);
+        if (rideId != null) {
+            Log.d("TRACKING", "Calling API for rideId = " + rideId);
+            loadRideTracking(view);
+        }
 
         return view;
     }
@@ -123,5 +165,48 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 
         mMap.animateCamera(CameraUpdateFactory.newLatLng(newPosition));
     }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        rideApi = ApiClient.getClient().create(RideApi.class);
+
+        if (getArguments() != null) {
+            rideId = getArguments().getLong("rideId");
+        }
+    }
+
+    private void loadRideTracking(View view) {
+        Log.d("TRACKING", "Calling API for rideId = " + rideId);
+        rideApi.trackRide(rideId).enqueue(new Callback<GetRideTrackingDTO>() {
+            @Override
+            public void onResponse(Call<GetRideTrackingDTO> call, Response<GetRideTrackingDTO> response) {
+                Log.d("TRACKING", "Response code = " + response.code());
+                if (response.isSuccessful() && response.body() != null) {
+                    GetRideTrackingDTO dto = response.body();
+
+                    Log.d("TRACKING", "DTO = " + new Gson().toJson(dto));
+
+                    TextView tvStart = view.findViewById(R.id.tvStartAddress);
+                    TextView tvDestination = view.findViewById(R.id.tvDestination);
+                    TextView tvEta = view.findViewById(R.id.tvTimeRemaining);
+
+                    tvStart.setText(dto.getStartAddress());
+                    tvDestination.setText(dto.getDestinationAddress());
+                    tvEta.setText(dto.getEstimatedTime() + " min");
+
+                    updateDriverPosition(dto.getVehicleLatitude(), dto.getVehicleLongitude());
+                } else {
+                    Log.e("TRACKING", "Error code: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<GetRideTrackingDTO> call, Throwable t) {
+                Log.e("TRACKING", "API failed", t);
+            }
+        });
+    }
+
 
 }

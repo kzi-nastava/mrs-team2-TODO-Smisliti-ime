@@ -57,7 +57,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="8dp"
-                android:background="@color/white">
+                android:background="@drawable/white_card">
 
                 <TextView
                     android:text="On my way"
@@ -66,31 +66,91 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"/>
 
-                <TextView
-                    android:text="Zlatne grede 4"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center_vertical">
 
-                <TextView
-                    android:text="Trg Dositeja Obradovića 6"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/map_pin"
+                        android:contentDescription="Start Location"/>
+
+                    <TextView
+                        android:id="@+id/tvStartAddress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"/>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/flag"
+                        android:contentDescription="Destination"/>
+
+                    <TextView
+                        android:id="@+id/tvDestination"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"/>
+
+                </LinearLayout>
+<!--                <TextView-->
+<!--                    android:id="@+id/tvDestination"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"/>-->
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:id="@+id/tvProgressPercent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="42%"
+                        android:textStyle="bold"
+                        android:layout_weight="1"
+                        android:gravity="start"/>
+
+                    <TextView
+                        android:id="@+id/tvTimeRemaining"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="39 min"
+                        android:textStyle="bold"
+                        android:layout_weight="1"
+                        android:gravity="end"/>
+                </LinearLayout>
 
                 <ProgressBar
                     style="?android:attr/progressBarStyleHorizontal"
+                    android:id="@+id/progressBar"
                     android:progress="42"
                     android:layout_marginTop="8dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"/>
 
-                <TextView
-                    android:text="39 min"
-                    android:layout_marginTop="4dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+
             </LinearLayout>
 
-            <!-- REPORT BUTTON -->
             <Button
                 android:id="@+id/btnReport"
                 android:layout_width="wrap_content"
@@ -106,7 +166,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:visibility="gone"
-                android:layout_marginTop="8dp">
+                android:layout_marginTop="8dp"
+                android:background="@drawable/white_card">
 
                 <TextView
                     android:text="Describe the issue:"

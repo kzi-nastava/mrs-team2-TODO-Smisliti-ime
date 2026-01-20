@@ -8,6 +8,7 @@ import com.example.getgo.R;
 import com.example.getgo.fragments.AdminProfileInfoFragment;
 import com.example.getgo.fragments.DriverHomeFragment;
 import com.example.getgo.fragments.DriverProfileInfoFragment;
+import com.example.getgo.fragments.GuestHomeFragment;
 import com.example.getgo.fragments.PassengerProfileInfoFragment;
 import com.example.getgo.fragments.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.RideHistoryFragment;
@@ -25,6 +26,8 @@ public class NavigationHelper {
     // Get the appropriate bottom navigation menu resource for the current user role
     public int getBottomNavMenu() {
         switch (userRole) {
+            case GUEST:
+                return 0;
             case PASSENGER:
                 return R.menu.passenger_bottom_nav_menu;
             case ADMIN:
@@ -62,6 +65,8 @@ public class NavigationHelper {
 
     public Fragment getStartFragment() {
         switch (userRole) {
+            case GUEST:
+                return new GuestHomeFragment();
             case PASSENGER:
                 return new DriverHomeFragment(); // TODO: Create PassengerHomeFragment
             case ADMIN:

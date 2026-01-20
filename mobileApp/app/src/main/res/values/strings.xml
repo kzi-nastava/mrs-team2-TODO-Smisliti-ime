@@ -94,6 +94,9 @@
     <string name="panic">PANIC</string>
 
 
-    <!-- Mape -->
+    <!-- Maps -->
     <string name="mapbox_access_token">pk.eyJ1IjoibWVyaXMxMCIsImEiOiJjbWpxandnNmIwd2piM2dzYzVlc3N6NXExIn0.-OX2bzr7c8eGfjaUX-gwZw</string>
+
+<!--    this is for google maps api-->
+<!--    AIzaSyCBpfJRsfmQwttGjqAApSL8EjTaB4guK5c-->
 </resources>

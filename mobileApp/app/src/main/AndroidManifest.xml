@@ -20,9 +20,13 @@
         android:theme="@style/Theme.GetGo"
         android:usesCleartextTraffic="true">
 
+<!--        <meta-data-->
+<!--            android:name="com.mapbox.maps.accessToken"-->
+<!--            android:value="@string/mapbox_access_token"/>-->
+
         <meta-data
-            android:name="com.mapbox.maps.accessToken"
-            android:value="@string/mapbox_access_token"/>
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCBpfJRsfmQwttGjqAApSL8EjTaB4guK5c"/>
 
 
         <activity

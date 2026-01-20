@@ -1,101 +1,45 @@
 package com.example.getgo.fragments;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import com.example.getgo.R;
-import com.mapbox.geojson.Feature;
-import com.mapbox.geojson.FeatureCollection;
-import com.mapbox.geojson.Point;
-import com.mapbox.maps.CameraOptions;
-import com.mapbox.maps.MapView;
-import com.mapbox.maps.Style;
 
+import com.example.getgo.R;
 import com.example.getgo.api.ApiClient;
 import com.example.getgo.dtos.vehicle.GetVehicleDTO;
 import com.example.getgo.interfaces.VehicleApi;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
-import com.mapbox.maps.plugin.annotation.AnnotationPlugin;
-import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager;
-
-import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource;
-import com.mapbox.maps.extension.style.layers.generated.SymbolLayer;
-
-import static com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor.BOTTOM;
-
-import com.mapbox.maps.extension.style.expressions.generated.Expression;
-import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor;
-import com.mapbox.maps.extension.style.layers.properties.generated.IconRotationAlignment;
-
-import com.mapbox.maps.extension.style.StyleExtensionImpl;
-import com.mapbox.maps.extension.style.layers.generated.SymbolLayer;
-import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource;
-import com.mapbox.maps.extension.style.expressions.generated.Expression;
-
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import java.util.ArrayList;
-import java.util.List;
+public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
 
-
-public class GuestHomeFragment extends Fragment {
-
-    private MapView mapView;
+    private GoogleMap mMap;
     private VehicleApi vehicleApi;
-    private PointAnnotationManager pointAnnotationManager;
+    private Button btnZoomIn, btnZoomOut;
 
-
-    public GuestHomeFragment() {}
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.fragment_guest_home, container, false);
-
-        mapView = root.findViewById(R.id.map_view);
-
-        Button btnZoomIn = root.findViewById(R.id.btn_zoom_in);
-        Button btnZoomOut = root.findViewById(R.id.btn_zoom_out);
-
-        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS, style -> {
-            mapView.getMapboxMap().setCamera(
-                    new CameraOptions.Builder()
-                            .center(Point.fromLngLat(20.4569, 44.8176))
-                            .zoom(12.0)
-                            .build()
-            );
-
-
-            loadVehicles();
-        });
-
-        btnZoomIn.setOnClickListener(v -> {
-            double currentZoom = mapView.getMapboxMap().getCameraState().getZoom();
-            mapView.getMapboxMap().setCamera(
-                    new CameraOptions.Builder()
-                            .center(mapView.getMapboxMap().getCameraState().getCenter())
-                            .zoom(currentZoom + 1)
-                            .build()
-            );
-        });
-
-        btnZoomOut.setOnClickListener(v -> {
-            double currentZoom = mapView.getMapboxMap().getCameraState().getZoom();
-            mapView.getMapboxMap().setCamera(
-                    new CameraOptions.Builder()
-                            .center(mapView.getMapboxMap().getCameraState().getCenter())
-                            .zoom(currentZoom - 1)
-                            .build()
-            );
-        });
-
-        return root;
+    public GuestHomeFragment() {
+        // Required empty constructor
     }
 
     @Override
@@ -105,74 +49,50 @@ public class GuestHomeFragment extends Fragment {
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        mapView.onStart();
-    }
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View root = inflater.inflate(R.layout.fragment_guest_home, container, false);
 
-    @Override
-    public void onStop() {
-        mapView.onStop();
-        super.onStop();
-    }
+        btnZoomIn = root.findViewById(R.id.btn_zoom_in);
+        btnZoomOut = root.findViewById(R.id.btn_zoom_out);
 
-    @Override
-    public void onDestroyView() {
-        mapView.onDestroy();
-        super.onDestroyView();
-    }
-
-    @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        mapView.onLowMemory();
-    }
-
-    private void showVehiclesOnMap(List<GetVehicleDTO> vehicles) {
-        if (mapView == null) return;
-
-        // Dobijanje AnnotationPlugin
-        AnnotationPlugin annotationPlugin = mapView.getPlugin(AnnotationPlugin.class);
-        if (annotationPlugin == null) return;
-
-        // Kreiranje PointAnnotationManager-a
-        pointAnnotationManager = new PointAnnotationManager(annotationPlugin, "vehicles-manager");
-
-        pointAnnotationManager.deleteAll(); // ukloni stare markere
-
-        for (GetVehicleDTO v : vehicles) {
-            if (v.getLatitude() == null || v.getLongitude() == null) continue;
-
-            Point point = Point.fromLngLat(v.getLongitude(), v.getLatitude());
-            com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions options =
-                    new com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions()
-                            .withPoint(point)
-                            .withIconImage(v.getAvailable() ? "ic_car_green" : "ic_car_red"); // drawable
-
-            pointAnnotationManager.create(options);
+        SupportMapFragment mapFragment =
+                (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map_fragment);
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(this);
         }
+
+        btnZoomIn.setOnClickListener(v -> {
+            if (mMap != null) {
+                mMap.animateCamera(CameraUpdateFactory.zoomIn());
+            }
+        });
+
+        btnZoomOut.setOnClickListener(v -> {
+            if (mMap != null) {
+                mMap.animateCamera(CameraUpdateFactory.zoomOut());
+            }
+        });
+
+        return root;
     }
 
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        mMap = googleMap;
 
-//    private void showVehiclesOnMap(List<GetVehicleDTO> vehicles) {
-//        if (mapView == null) return;
-//
-//        PointAnnotationManager pointAnnotationManager = com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager.create(mapView);
-//
-//        pointAnnotationManager.deleteAll(); // ukloni stare markere
-//
-//        for (GetVehicleDTO v : vehicles) {
-//            if (v.getLatitude() == null || v.getLongitude() == null) continue;
-//
-//            Point point = Point.fromLngLat(v.getLongitude(), v.getLatitude());
-//            com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions options =
-//                    new com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions()
-//                            .withPoint(point)
-//                            .withIconImage(v.getAvailable() ? "ic_car_green" : "ic_car_red"); // drawable
-//
-//            pointAnnotationManager.create(options);
-//        }
-//    }
+        // Postavi početnu kameru (npr. Novi Sad)
+        LatLng noviSad = new LatLng(44.8176, 20.4569);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
+
+        // Primer marker-a
+        mMap.addMarker(new MarkerOptions()
+                .position(noviSad)
+                .title("Početna tačka"));
+
+        // Učitaj vozila sa servera i prikazi markere
+        loadVehicles();
+    }
 
     private void loadVehicles() {
         vehicleApi.getVehicles().enqueue(new Callback<List<GetVehicleDTO>>() {
@@ -189,6 +109,33 @@ public class GuestHomeFragment extends Fragment {
                 t.printStackTrace();
             }
         });
+    }
+
+    private void showVehiclesOnMap(List<GetVehicleDTO> vehicles) {
+        if (mMap == null) return;
+
+        for (GetVehicleDTO v : vehicles) {
+            if (v.getLatitude() == null || v.getLongitude() == null) continue;
+
+            LatLng position = new LatLng(v.getLatitude(), v.getLongitude());
+
+            int iconWidth = 120;
+            int iconHeight = 120;
+            mMap.addMarker(new MarkerOptions()
+                    .position(position)
+                    .icon(bitmapDescriptorFromVector(getContext(),
+                            v.getAvailable() ? R.drawable.ic_car_green : R.drawable.ic_car_red,
+                            iconWidth, iconHeight)));
+        }
+    }
+
+    private BitmapDescriptor bitmapDescriptorFromVector(@NonNull Context context, int vectorResId, int width, int height) {
+        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorResId);
+        vectorDrawable.setBounds(0, 0, width, height); // Ovde menjaš veličinu
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.draw(canvas);
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 
 

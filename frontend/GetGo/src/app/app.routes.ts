@@ -6,12 +6,13 @@ import {RegisterComponent} from './pages/authentication/register/register';
 import {NotFoundComponent} from './pages/not-found/not-found';
 import {UnregisteredHomeComponent} from './layout/unregistered-home/unregistered-home.component';
 import {RideDetailsComponent} from './driver/ride-details/ride-details.component';
-import {RegisteredHomeComponent} from './layout/registered-home/registered-home.component';
+import { PassengerHome } from './passenger/passenger-home/passenger-home';
 import { PassengerProfileInfo } from './passenger/passenger-profile-info/passenger-profile-info';
 import { PassengerChangePassword } from './passenger/passenger-change-password/passenger-change-password';
 import { DriverActivate } from './driver/driver-activate/driver-activate';
 import { DriverProfile } from './driver/driver-profile/driver-profile';
 import { DriverChangePassword } from './driver/driver-change-password/driver-change-password';
+import { DriverStartRide } from './driver/driver-start-ride/driver-start-ride'
 import { AdminProfile } from './admin/admin-profile/admin-profile';
 import { AdminChangePassword } from './admin/admin-change-password/admin-change-password';
 import { AdminReviewDriverRequests } from './admin/admin-review-driver-requests/admin-review-driver-requests'
@@ -33,7 +34,8 @@ export const routes: Routes = [
   { path: 'activate', component: ActivateComponent },
   { path: 'user/reset-password', component: ResetPasswordComponent },
   { path: 'unregistered-home', component: UnregisteredHomeComponent },
-  { path: 'registered-home', component: RegisteredHomeComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger, UserRole.Driver, UserRole.Admin] } },
+  // passenger home now, maybe change later, also change roles when admin home page and admin home page are added:
+  { path: 'registered-home', component: PassengerHome, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger, UserRole.Driver, UserRole.Admin] } },
   { path: 'login', component: LoginComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'register', component: RegisterComponent },
@@ -47,6 +49,7 @@ export const routes: Routes = [
   { path: 'driver/activate/:token', component: DriverActivate },
   { path: 'driver/driver-profile', component: DriverProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'driver/change-password', component: DriverChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
+  { path: 'driver/start-ride', component: DriverStartRide, canActivate: [AuthGuard], data: { roles: [UserRole.Driver ] } },
   { path: 'admin/admin-profile', component: AdminProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/review-driver-requests', component: AdminReviewDriverRequests, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/change-password', component: AdminChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },

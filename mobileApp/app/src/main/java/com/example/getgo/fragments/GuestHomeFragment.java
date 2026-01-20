@@ -81,7 +81,6 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Postavi početnu kameru (npr. Novi Sad)
         LatLng noviSad = new LatLng(44.8176, 20.4569);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
@@ -90,7 +89,6 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
                 .position(noviSad)
                 .title("Početna tačka"));
 
-        // Učitaj vozila sa servera i prikazi markere
         loadVehicles();
     }
 
@@ -119,13 +117,18 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
 
             LatLng position = new LatLng(v.getLatitude(), v.getLongitude());
 
+            String title = v.getModel();
+            String snippet = v.getAvailable() ? "Status: Free" : "Status: Occupied";
+
             int iconWidth = 120;
             int iconHeight = 120;
             mMap.addMarker(new MarkerOptions()
                     .position(position)
                     .icon(bitmapDescriptorFromVector(getContext(),
                             v.getAvailable() ? R.drawable.ic_car_green : R.drawable.ic_car_red,
-                            iconWidth, iconHeight)));
+                            120, 120))
+                    .title(title)
+                    .snippet(snippet));
         }
     }
 

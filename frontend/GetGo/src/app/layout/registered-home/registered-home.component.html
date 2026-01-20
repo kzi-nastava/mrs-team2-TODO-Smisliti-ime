@@ -5,6 +5,7 @@
     <div class="left">
       <h1>Welcome, registered user</h1>
 
+      <!-- Destinations -->
       <div class="destinations" formArrayName="destinations">
         <div *ngFor="let dest of destinations.controls; let i = index" [formGroupName]="i" class="dest-row">
           <input
@@ -32,6 +33,30 @@
         Click on the map to pick location for {{ activeInputIndex === 0 ? 'Starting point' : (activeInputIndex === destinations.length - 1 ? 'Destination' : 'Waypoint ' + activeInputIndex) }}.
       </div>
 
+      <!-- Vehicle Type -->
+      <div class="form-group">
+        <label>Vehicle Type</label>
+        <select formControlName="vehicleType">
+          <option value="">Any</option>
+          <option value="SUV">SUV</option>
+          <option value="SEDAN">Sedan</option>
+          <option value="LUXURY">Luxury</option>
+        </select>
+      </div>
+
+      <!-- Checkboxes for Baby and Pets -->
+      <div class="checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="hasBaby" class="checkbox-input">
+          <span>I have a baby</span>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="hasPets" class="checkbox-input">
+          <span>I have pets</span>
+        </label>
+      </div>
+
+      <!-- Order Timing -->
       <div class="form-group">
         <label>Order Timing</label>
         <select formControlName="orderTiming">
@@ -40,6 +65,20 @@
         </select>
       </div>
 
+      <!-- Scheduled Time (shown only if "Order later" is selected) -->
+      <div class="form-group" *ngIf="isOrderLater">
+        <label>Scheduled Time (within next 5 hours)</label>
+        <input
+          type="time"
+          formControlName="scheduledTime"
+          placeholder="Select time"
+        />
+        <div class="time-hint" *ngIf="travelForm.get('scheduledTime')?.value">
+          {{ getScheduledDateTimeDisplay() }}
+        </div>
+      </div>
+
+      <!-- Travel Option -->
       <div class="form-group">
         <label>Travel Option</label>
         <select formControlName="travelOption">
@@ -48,6 +87,28 @@
         </select>
       </div>
 
+      <!-- Friend Emails (shown only if "With friends" is selected) -->
+      <div *ngIf="isWithFriends" class="friend-emails" formArrayName="friendEmails">
+        <div *ngFor="let email of friendEmails.controls; let i = index" [formGroupName]="i" class="dest-row">
+          <input
+            type="email"
+            formControlName="email"
+            placeholder="Friend's email address"
+          />
+
+          <button type="button" class="mini" (click)="removeFriendEmail(i)">-</button>
+
+          <div class="error" *ngIf="email.get('email')?.invalid && email.get('email')?.touched">
+            Valid email is required
+          </div>
+        </div>
+
+        <button type="button" class="add-friend-btn" (click)="addFriendEmail()">
+          + Add Friend Email
+        </button>
+      </div>
+
+      <!-- Form Actions -->
       <div class="form-actions">
         <button type="submit" [disabled]="isLoading">Calculate Time</button>
         <button type="button" (click)="cancel()" [disabled]="isLoading">Cancel</button>

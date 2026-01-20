@@ -3,8 +3,8 @@ import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule } fr
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { MapComponent } from '../map/map.component';
-import {NavBarComponent} from '../nav-bar/nav-bar.component';
-import {environment} from '../../../env/environment';
+import { NavBarComponent } from '../nav-bar/nav-bar.component';
+import { environment } from '../../../env/environment';
 
 @Component({
   selector: 'app-registered-home',
@@ -38,7 +38,12 @@ export class RegisteredHomeComponent implements AfterViewInit, OnDestroy {
         this.createDestination()
       ]),
       orderTiming: ['now', Validators.required],
-      travelOption: ['alone', Validators.required]
+      scheduledTime: [''],
+      travelOption: ['alone', Validators.required],
+      friendEmails: this.fb.array([]),
+      hasBaby: [false],
+      hasPets: [false],
+      vehicleType: ['']
     });
   }
 
@@ -46,9 +51,27 @@ export class RegisteredHomeComponent implements AfterViewInit, OnDestroy {
     return this.travelForm.get('destinations') as FormArray;
   }
 
+  get friendEmails(): FormArray {
+    return this.travelForm.get('friendEmails') as FormArray;
+  }
+
+  get isOrderLater(): boolean {
+    return this.travelForm.get('orderTiming')?.value === 'later';
+  }
+
+  get isWithFriends(): boolean {
+    return this.travelForm.get('travelOption')?.value === 'friends';
+  }
+
   createDestination(): FormGroup {
     return this.fb.group({
       name: ['', Validators.required]
+    });
+  }
+
+  createFriendEmail(): FormGroup {
+    return this.fb.group({
+      email: ['', [Validators.required, Validators.email]]
     });
   }
 
@@ -74,6 +97,48 @@ export class RegisteredHomeComponent implements AfterViewInit, OnDestroy {
     } else {
       console.log('Cannot remove destination: minimum 2 destinations required');
     }
+  }
+
+  getScheduledDateTimeDisplay(): string {
+    const timeValue = this.travelForm.get('scheduledTime')?.value;
+    if (!timeValue) return '';
+
+    const [hours, minutes] = timeValue.split(':').map(Number);
+    const now = new Date();
+    const scheduled = new Date();
+    scheduled.setHours(hours, minutes, 0, 0);
+
+    // If selected time is before current time, it means next day
+    if (scheduled < now) {
+      scheduled.setDate(scheduled.getDate() + 1);
+    }
+
+    const diffMs = scheduled.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (diffHours > 5) {
+      return '⚠️ Time must be within 5 hours from now';
+    }
+
+    const dateStr = scheduled.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    return `Scheduled for: ${dateStr}`;
+  }
+
+  addFriendEmail() {
+    this.friendEmails.push(this.createFriendEmail());
+    console.log('Added friend email field, total:', this.friendEmails.length);
+  }
+
+  removeFriendEmail(index: number) {
+    this.friendEmails.removeAt(index);
+    console.log('Removed friend email at index', index, 'total:', this.friendEmails.length);
   }
 
   setActive(index: number | null) {
@@ -139,6 +204,10 @@ export class RegisteredHomeComponent implements AfterViewInit, OnDestroy {
       dest.markAsTouched();
     });
 
+    this.friendEmails.controls.forEach(email => {
+      email.markAsTouched();
+    });
+
     if (this.travelForm.invalid) {
       console.log('Form validation failed');
       return;
@@ -151,7 +220,14 @@ export class RegisteredHomeComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    const payload = { coordinates: coords };
+    const payload = {
+      coordinates: coords,
+      scheduledTime: this.isOrderLater ? this.travelForm.get('scheduledTime')?.value : null,
+      friendEmails: this.isWithFriends ? this.friendEmails.controls.map(c => c.get('email')?.value) : [],
+      hasBaby: this.travelForm.get('hasBaby')?.value,
+      hasPets: this.travelForm.get('hasPets')?.value,
+      vehicleType: this.travelForm.get('vehicleType')?.value
+    };
     console.log('Sending estimate request with payload', payload);
 
     this.isLoading = true;
@@ -177,11 +253,14 @@ export class RegisteredHomeComponent implements AfterViewInit, OnDestroy {
   cancel() {
     this.travelForm.reset({
       orderTiming: 'now',
-      travelOption: 'alone'
+      travelOption: 'alone',
+      hasBaby: false,
+      hasPets: false
     });
     this.destinations.clear();
     this.destinations.push(this.createDestination());
     this.destinations.push(this.createDestination());
+    this.friendEmails.clear();
     this.destinationCoords = [null, null];
     this.estimateMinutes = null;
     this.serverError = null;

@@ -61,6 +61,11 @@ button.mini:hover {
   transform: translateY(-2px);
 }
 
+button.mini:disabled {
+  background: #A0B3C8;
+  cursor: not-allowed;
+}
+
 .form-group {
   margin: 12px 0;
   display: flex;
@@ -71,6 +76,7 @@ button.mini:hover {
   font-size: 13px;
   color: #133E87;
   margin-bottom: 8px;
+  font-weight: 600;
 }
 
 .form-group input,
@@ -83,8 +89,61 @@ button.mini:hover {
   color: #133E87;
 }
 
+.form-group input[type="datetime-local"] {
+  font-family: inherit;
+}
+
+/* Checkboxes */
+.checkbox-group {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #133E87;
+  cursor: pointer;
+}
+
+.checkbox-input {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #133E87;
+}
+
+/* Friend Emails */
+.friend-emails {
+  margin: 12px 0;
+}
+
+.add-friend-btn {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #133E87;
+  border: 1px solid rgba(19,62,135,0.08);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 8px;
+}
+
+.add-friend-btn:hover {
+  background-color: #f0f4f8;
+}
+
+/* Form Actions */
 .form-actions {
   margin: 14px 0;
+  display: flex;
+  gap: 10px;
 }
 
 .form-actions button {
@@ -95,6 +154,7 @@ button.mini:hover {
   border: none;
   cursor: pointer;
   font-weight: 600;
+  transition: transform 120ms ease;
 }
 
 .form-actions button:hover {
@@ -102,6 +162,44 @@ button.mini:hover {
   box-shadow: 0 6px 18px rgba(19,62,135,0.18);
 }
 
+.form-actions button:disabled {
+  background: #A0B3C8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Hint */
+.hint {
+  background-color: #E8EEF5;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 8px 0;
+  font-size: 13px;
+  color: #133E87;
+}
+
+/* Error */
+.error {
+  color: #c62828;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Estimate */
+.estimate {
+  background-color: #E8EEF5;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  color: #133E87;
+}
+
+.estimate strong {
+  color: #133E87;
+  font-weight: 700;
+}
+
+/* Map */
 .right {
   flex: 1;
   display: flex;
@@ -141,5 +239,13 @@ button.mini:hover {
 
   .right img {
     max-width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
   }
 }

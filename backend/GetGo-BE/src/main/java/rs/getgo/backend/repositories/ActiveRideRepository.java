@@ -1,11 +1,17 @@
 package rs.getgo.backend.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import rs.getgo.backend.model.entities.ActiveRide;
-import rs.getgo.backend.model.entities.Panic;
+import rs.getgo.backend.model.entities.Driver;
+import rs.getgo.backend.model.enums.RideStatus;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface ActiveRideRepository extends JpaRepository<ActiveRide, Long> {
+    Optional<ActiveRide> findByDriverAndStatus(Driver driver, RideStatus status);
+
+    // TODO: REMOVE
+    @Query("SELECT ar FROM ActiveRide ar ORDER BY ar.id ASC LIMIT 1")
+    Optional<ActiveRide> findFirstActiveRide();
 }

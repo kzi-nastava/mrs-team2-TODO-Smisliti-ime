@@ -32,7 +32,8 @@ public class DriverController {
     @Autowired
     private DriverServiceImpl driverService;
 
-    Long driverId = 5L; // TODO: get from cookie/whatever we decide to use
+    Long driverId = 6L; // TODO: get from cookie/whatever we decide to use
+    String driverEmail = "d@gmail.com"; // TODO: get from cookie/whatever we decide to use
 
     public DriverController(DriverServiceImpl driverService) {
         this.driverService = driverService;
@@ -143,4 +144,28 @@ public class DriverController {
 
         return ResponseEntity.ok(response);
     }
+
+    // Update driver's current location
+    @PutMapping("/location")
+    public ResponseEntity<Void> updateLocation(
+            @RequestBody UpdateDriverLocationDTO request
+    ) {
+        driverService.updateLocation(driverEmail, request.getLatitude(), request.getLongitude());
+        return ResponseEntity.ok().build();
+    }
+
+    // Optional: Get driver's current location
+    @GetMapping("/location")
+    public ResponseEntity<UpdateDriverLocationDTO> getLocation() {
+        UpdateDriverLocationDTO location = driverService.getLocation(driverEmail);
+        return ResponseEntity.ok(location);
+    }
+
+    // Optional: Set driver active/inactive
+    @PutMapping("/status")
+    public ResponseEntity<Void> updateStatus(@RequestParam boolean isActive) {
+        driverService.updateActiveStatus(driverEmail, isActive);
+        return ResponseEntity.ok().build();
+    }
+
 }

@@ -1,5 +1,7 @@
 package rs.getgo.backend.controllers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.favorite.CreatedFavoriteDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
@@ -113,13 +115,49 @@ public class RideController {
         return ResponseEntity.ok().build();
     }
 
+    // 2.4.1 - Calling a ride
+    @PreAuthorize("hasRole('PASSENGER')")
+    @PostMapping("/order")
+    public ResponseEntity<CreatedRideResponseDTO> orderRide(
+            @RequestBody CreateRideRequestDTO request
+    ) {
+        String userEmail = "u@gmail.com"; // TODO: ...
+        CreatedRideResponseDTO response = rideService.orderRide(request, userEmail);
+        return ResponseEntity.ok(response);
+    }
+
     // 2.6.1 - Start ride
     @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/{rideId}/start", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedRideDTO> startRide(@PathVariable Long rideId) {
-        UpdatedRideDTO response = new UpdatedRideDTO();
-        response.setId(rideId);
-        return ResponseEntity.ok(response);
+        // TODO: should be exception handler somewhere
+        try {
+            UpdatedRideDTO response = rideService.startRide(rideId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    // TODO: REMOVE LOGGER
+    private static final Logger logger = LoggerFactory.getLogger(RideController.class);
+    @PreAuthorize("hasRole('DRIVER')")
+    @GetMapping("/driver/active")
+    public ResponseEntity<GetDriverActiveRideDTO> getDriverActiveRide() {
+        String driverEmail = "d@gmail.com"; // TODO: Get from auth
+        logger.info("Getting active ride for driver: {}", driverEmail);
+
+        GetDriverActiveRideDTO ride = rideService.getDriverActiveRide(driverEmail);
+
+        if (ride == null) {
+            logger.warn("No active ride found for driver: {}", driverEmail);
+            return ResponseEntity.ok(null);
+        }
+
+        logger.info("Found active ride for driver {}: {}", driverEmail, ride);
+        return ResponseEntity.ok(ride);
     }
 
     // 2.4.3 - Calling favorite ride
@@ -147,26 +185,4 @@ public class RideController {
         return ResponseEntity.noContent().build();
     }
 
-    // 2.4.1 - Calling a ride
-    @PreAuthorize("hasRole('PASSENGER')")
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedRideDTO> createRide(@RequestBody CreateRideDTO request) {
-
-        CreatedRideDTO response = new CreatedRideDTO();
-
-        if (request.getScheduledTime() == null) {
-            // Immediate ride
-            response.setRideId(1L);
-            response.setStatus("ACCEPTED");
-            response.setDriverId(5L);
-        } else {
-            // Scheduled ride
-            response.setRideId(2L);
-            response.setStatus("SCHEDULED");
-            response.setScheduledTime(request.getScheduledTime());
-        }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
 }

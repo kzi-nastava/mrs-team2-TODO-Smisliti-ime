@@ -141,22 +141,14 @@ public class RideController {
         }
     }
 
-    // TODO: REMOVE LOGGER
-    private static final Logger logger = LoggerFactory.getLogger(RideController.class);
     @PreAuthorize("hasRole('DRIVER')")
-    @GetMapping("/driver/active")
+    @GetMapping(value = "/driver/active", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverActiveRideDTO> getDriverActiveRide() {
         String driverEmail = "d@gmail.com"; // TODO: Get from auth
-        logger.info("Getting active ride for driver: {}", driverEmail);
-
         GetDriverActiveRideDTO ride = rideService.getDriverActiveRide(driverEmail);
-
         if (ride == null) {
-            logger.warn("No active ride found for driver: {}", driverEmail);
             return ResponseEntity.ok(null);
         }
-
-        logger.info("Found active ride for driver {}: {}", driverEmail, ride);
         return ResponseEntity.ok(ride);
     }
 

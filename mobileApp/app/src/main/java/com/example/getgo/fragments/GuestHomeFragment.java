@@ -23,15 +23,12 @@ public class GuestHomeFragment extends Fragment {
                              Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_guest_home, container, false);
 
-        // MapView iz XML-a
         mapView = root.findViewById(R.id.map_view);
 
-        // Dugmad za zumiranje
         Button btnZoomIn = root.findViewById(R.id.btn_zoom_in);
         Button btnZoomOut = root.findViewById(R.id.btn_zoom_out);
 
         mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS, style -> {
-            // Postavi početnu kameru
             mapView.getMapboxMap().setCamera(
                     new CameraOptions.Builder()
                             .center(Point.fromLngLat(20.4569, 44.8176))

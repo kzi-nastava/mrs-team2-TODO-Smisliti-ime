@@ -75,14 +75,23 @@ public class MainActivity extends AppCompatActivity {
             Toolbar toolbar = toolbarContainer.findViewById(R.id.toolbar);
             setSupportActionBar(toolbar);
 
-            ActionBar actionBar = getSupportActionBar();
-            if (actionBar != null) {
-                actionBar.setDisplayHomeAsUpEnabled(true);
-                actionBar.setHomeAsUpIndicator(R.drawable.ic_hamburger);
-            }
+            drawer = findViewById(R.id.drawer_layout);
+
+            ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                    this,
+                    drawer,
+                    toolbar,
+                    R.string.drawer_open,
+                    R.string.drawer_close
+            );
+            drawer.addDrawerListener(toggle);
+            toggle.syncState();
+
+            toggle.getDrawerArrowDrawable().setColor(getColor(android.R.color.white));
 
             setupBottomNavigation();
             setupDrawerNavigation();
+
         }
 
 

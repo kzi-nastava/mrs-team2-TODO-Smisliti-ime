@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="@color/blue">
 
-    <!-- MapView -->
     <com.mapbox.maps.MapView
         android:id="@+id/map_view"
         android:layout_width="0dp"
@@ -16,7 +15,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintDimensionRatio="1:1"/>
 
-    <!-- Dugmad za zumiranje - vertikalni LinearLayout preko MapView-a -->
     <LinearLayout
         android:id="@+id/zoom_buttons_layout"
         android:orientation="vertical"
@@ -51,7 +49,6 @@
             android:elevation="12dp"/>
     </LinearLayout>
 
-    <!-- Ostatak fragmenta -->
     <FrameLayout
         android:id="@+id/fragment_content"
         android:layout_width="0dp"

@@ -116,14 +116,6 @@ export class LoginComponent {
         }
 
         // Save token based on stayLoggedIn checkbox
-        if (stayLoggedIn) {
-          localStorage.setItem('authToken', res.token);
-          console.log('Login: token saved to localStorage (persistent)');
-        } else {
-          sessionStorage.setItem('authToken', res.token);
-          console.log('Login: token saved to sessionStorage (session only)');
-        }
-
         this.auth.setToken(res.token, stayLoggedIn);
 
         console.log('Login: token saved & role extracted from JWT');

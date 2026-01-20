@@ -20,6 +20,11 @@
         android:theme="@style/Theme.GetGo"
         android:usesCleartextTraffic="true">
 
+        <meta-data
+            android:name="com.mapbox.maps.accessToken"
+            android:value="@string/mapbox_access_token"/>
+
+
         <activity
             android:name=".RegisterActivity"
             android:exported="true">
@@ -32,15 +37,15 @@
         <activity
             android:name=".LoginActivity"
             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
 
         <activity
             android:name=".MainActivity"
-            android:exported="false">
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
 
         <activity android:name=".ResetPasswordActivity"/>

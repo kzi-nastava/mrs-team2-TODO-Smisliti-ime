@@ -20,14 +20,13 @@
             android:layout_height="wrap_content"
             android:fitsSystemWindows="true">
 
-            <androidx.appcompat.widget.Toolbar
-                android:id="@+id/toolbar"
+            <FrameLayout
+                android:id="@+id/toolbar_container"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="@color/dark_blue"
-                app:layout_scrollFlags="scroll|enterAlways"/>
+                android:layout_height="?attr/actionBarSize" />
 
         </com.google.android.material.appbar.AppBarLayout>
+
 
         <FrameLayout
             android:id="@+id/fragmentContainer"

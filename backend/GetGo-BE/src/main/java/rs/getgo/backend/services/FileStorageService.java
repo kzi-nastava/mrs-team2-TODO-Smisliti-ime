@@ -1,6 +1,7 @@
 package rs.getgo.backend.services;
 
 import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,21 +17,16 @@ public class FileStorageService {
 
     private final Path fileStorageLocation;
     @Getter
-    private final String defaultProfilePicture;
-    private final String baseUrl;
+    private final String defaultProfilePicture = "sussy_cat.jpg";
 
-    public FileStorageService() {
-        String uploadDir = "uploads";
+    public FileStorageService(@Value("${upload.dir}") String uploadDir) {
         this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
 
         try {
             Files.createDirectories(this.fileStorageLocation);
-        } catch (Exception ex) {
-            throw new RuntimeException("Could not create upload directory!", ex);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not create upload directory", e);
         }
-
-        baseUrl = "/uploads/";
-        defaultProfilePicture = "/uploads/default-avatar.png";
     }
 
     public String storeFile(MultipartFile file, String prefix) {
@@ -40,8 +36,8 @@ public class FileStorageService {
             }
 
             String originalFilename = file.getOriginalFilename();
-            String extension = null;
-            if (originalFilename != null) {
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
                 extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
             String newFilename = prefix + "_" + UUID.randomUUID() + extension;
@@ -49,7 +45,7 @@ public class FileStorageService {
             Path targetLocation = this.fileStorageLocation.resolve(newFilename);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            return baseUrl + newFilename;
+            return "/uploads/" + newFilename;
         } catch (IOException ex) {
             throw new RuntimeException("Failed to store file", ex);
         }
@@ -62,8 +58,8 @@ public class FileStorageService {
             }
 
             // Extract filenames from URLs
-            String originalFilename = originalUrl.replace(baseUrl, "");
-            String newFilename = newUrl.replace(baseUrl, "");
+            String originalFilename = originalUrl.replace("/uploads/", "");
+            String newFilename = newUrl.replace("/uploads/", "");
 
             Path originalPath = this.fileStorageLocation.resolve(originalFilename).normalize();
             Path newPath = this.fileStorageLocation.resolve(newFilename).normalize();
@@ -86,7 +82,7 @@ public class FileStorageService {
         try {
             if (fileUrl != null && !fileUrl.equals(defaultProfilePicture)) {
                 // Extract filename from URL
-                String filename = fileUrl.replace(baseUrl, "");
+                String filename = fileUrl.replace("/uploads/", "");
                 Path filePath = this.fileStorageLocation.resolve(filename).normalize();
                 Files.deleteIfExists(filePath);
             }
@@ -98,7 +94,7 @@ public class FileStorageService {
     public String generateProfilePictureUrl(String userType, Long userId, String originalFileUrl) {
         String extension = extractExtension(originalFileUrl);
         String newFilename = userType + "_" + userId + "_" + UUID.randomUUID() + extension;
-        return baseUrl + newFilename;
+        return "/uploads/" + newFilename;
     }
 
     private String extractExtension(String fileUrl) {

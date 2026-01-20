@@ -125,14 +125,14 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED,
-                        "Invalid credentials"
+                        "Email not found"
                 ));
 
         // verify hashed password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
-                    "Invalid credentials"
+                    "Invalid password"
             );
         }
 
@@ -187,22 +187,29 @@ public class AuthServiceImpl implements AuthService {
     // FORGOT PASSWORD
     @Override
     public void forgotPassword(String email) {
-        // find user; if not found, return without indicating that to caller (protects against enumeration)
-        userRepository.findByEmail(email).ifPresent(user -> {
-            String token = UUID.randomUUID().toString();
-            long expiry = Instant.now().getEpochSecond() + RESET_TOKEN_TTL_SECONDS;
-            resetTokens.put(token, new TokenInfo(user.getId(), expiry));
 
-            // build reset link (frontend route)
-            String encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8);
-            String resetUrl = "http://localhost:4200/user/reset-password?token=" + token + "&email=" + encodedEmail;
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Email not found"
+                ));
 
-            try {
-                emailService.sendResetEmail(email, resetUrl);
-            } catch (Exception e) {
-                System.err.println("Failed to send reset email: " + e.getMessage());
-            }
-        });
+        String token = UUID.randomUUID().toString();
+        long expiry = Instant.now().getEpochSecond() + RESET_TOKEN_TTL_SECONDS;
+        resetTokens.put(token, new TokenInfo(user.getId(), expiry));
+
+        String encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8);
+        String resetUrl = "http://localhost:4200/user/reset-password?token=" + token + "&email=" + encodedEmail;
+
+        try {
+            emailService.sendResetEmail(email, resetUrl);
+        } catch (Exception e) {
+            System.err.println("Failed to send reset email: " + e.getMessage());
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to send reset email"
+            );
+        }
     }
 
     // verify token (optional helper for reset endpoint you may implement later)

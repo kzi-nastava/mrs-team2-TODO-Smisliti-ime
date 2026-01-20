@@ -12,6 +12,7 @@
   <div *ngIf="createLoginForm.get('email')?.invalid && (createLoginForm.get('email')?.touched || createLoginForm.get('email')?.dirty)" style="color: red; font-weight: 500; margin-bottom: 8px;">
     <div *ngIf="createLoginForm.get('email')?.hasError('required')">Email is required.</div>
     <div *ngIf="createLoginForm.get('email')?.hasError('email')">Enter a valid email address.</div>
+    <div *ngIf="createLoginForm.get('email')?.hasError('pattern')">Email format is invalid (e.g. user&#64;example.com).</div>
   </div>
 
   <mat-form-field appearance="outline" floatLabel="always">

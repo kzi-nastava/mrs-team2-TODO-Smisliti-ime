@@ -107,7 +107,7 @@ public class RideController {
             @PathVariable Long rideId,
             @PathVariable String email
     ) {
-        rideService.triggerPanic(rideId, email);
+        rideService.triggerPanic(1L, email);
         return ResponseEntity.ok().build();
     }
 

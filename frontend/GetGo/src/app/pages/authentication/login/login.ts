@@ -12,6 +12,7 @@ import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import {environment} from '../../../../env/environment';
 import { SnackBarService } from '../../../service/snackBar/snackBar.service';
+import { UserRole } from '../../../model/user.model';
 
 @Component({
   selector: 'app-login',
@@ -100,12 +101,26 @@ export class LoginComponent {
           console.log('Login: token saved to sessionStorage (session only)');
         }
 
-        this.auth.setToken(res.token, stayLoggedIn);
+      this.auth.setToken(res.token, stayLoggedIn);
 
-        console.log('Login: token saved & role extracted from JWT');
+      console.log('Login: token saved & role extracted from JWT');
 
-        this.snackBarService.show('Login successful!', true, 3000);
-        this.router.navigate(['/home']);
+      this.snackBarService.show('Login successful!', true, 3000);
+
+      const userRole = this.auth.role();
+      switch (userRole) {
+        case UserRole.Admin:
+          this.router.navigate(['/admin/admin-home']);
+          break;
+        case UserRole.Driver:
+          this.router.navigate(['/driver/driver-home']);
+          break;
+        case UserRole.Passenger:
+          this.router.navigate(['/registered-home']);
+          break;
+        default:
+          this.router.navigate(['/home']);
+      }
       },
       error: (err) => {
         console.error('Login: request failed', err);

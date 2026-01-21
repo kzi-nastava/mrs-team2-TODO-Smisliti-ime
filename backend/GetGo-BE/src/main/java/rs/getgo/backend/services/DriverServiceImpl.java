@@ -30,28 +30,43 @@ import java.util.Optional;
 @Service
 public class DriverServiceImpl implements DriverService {
 
-    @Autowired
-    private DriverRepository driverRepository;
-    @Autowired
-    private CompletedRideRepository completedRideRepository;
-    @Autowired
-    private PassengerRepository passengerRepository;
-    @Autowired
-    private PersonalChangeRequestRepository personalChangeRequestRepo;
-    @Autowired
-    private VehicleChangeRequestRepository vehicleChangeRequestRepo;
-    @Autowired
-    private AvatarChangeRequestRepository avatarChangeRequestRepo;
-    @Autowired
-    private DriverActivationTokenRepository driverActivationTokenRepo;
-    @Autowired
-    private ActiveRideRepository activeRideRepository;
-    @Autowired
-    private ModelMapper modelMapper;
-    @Autowired
-    private FileStorageService fileStorageService;
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private final DriverRepository driverRepository;
+    private final CompletedRideRepository completedRideRepository;
+    private final PassengerRepository passengerRepository;
+    private final PersonalChangeRequestRepository personalChangeRequestRepo;
+    private final VehicleChangeRequestRepository vehicleChangeRequestRepo;
+    private final AvatarChangeRequestRepository avatarChangeRequestRepo;
+    private final DriverActivationTokenRepository driverActivationTokenRepo;
+    private final ActiveRideRepository activeRideRepository;
+    private final ModelMapper modelMapper;
+    private final FileStorageService fileStorageService;
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    public DriverServiceImpl(
+            DriverRepository driverRepository,
+            CompletedRideRepository completedRideRepository,
+            PassengerRepository passengerRepository,
+            PersonalChangeRequestRepository personalChangeRequestRepo,
+            VehicleChangeRequestRepository vehicleChangeRequestRepo,
+            AvatarChangeRequestRepository avatarChangeRequestRepo,
+            DriverActivationTokenRepository driverActivationTokenRepo,
+            ActiveRideRepository activeRideRepository,
+            ModelMapper modelMapper,
+            FileStorageService fileStorageService,
+            BCryptPasswordEncoder passwordEncoder
+    ) {
+        this.driverRepository = driverRepository;
+        this.completedRideRepository = completedRideRepository;
+        this.passengerRepository = passengerRepository;
+        this.personalChangeRequestRepo = personalChangeRequestRepo;
+        this.vehicleChangeRequestRepo = vehicleChangeRequestRepo;
+        this.avatarChangeRequestRepo = avatarChangeRequestRepo;
+        this.driverActivationTokenRepo = driverActivationTokenRepo;
+        this.activeRideRepository = activeRideRepository;
+        this.modelMapper = modelMapper;
+        this.fileStorageService = fileStorageService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     public List<GetRideDTO> getDriverRides(String email, LocalDate startDate) {

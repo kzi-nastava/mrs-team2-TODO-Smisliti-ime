@@ -1,6 +1,5 @@
 package rs.getgo.backend.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
 import rs.getgo.backend.dtos.authentication.UpdateDriverPasswordDTO;
@@ -28,8 +27,7 @@ import java.util.List;
 @RequestMapping("/api/drivers")
 public class DriverController {
 
-    @Autowired
-    private DriverServiceImpl driverService;
+    private final DriverServiceImpl driverService;
 
     public DriverController(DriverServiceImpl driverService) {
         this.driverService = driverService;

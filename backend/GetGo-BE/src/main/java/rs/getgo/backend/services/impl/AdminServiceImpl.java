@@ -27,26 +27,40 @@ import java.util.stream.Collectors;
 @Service
 public class AdminServiceImpl implements AdminService {
 
-    @Autowired
-    private AdministratorRepository adminRepo;
-    @Autowired
-    private DriverRepository driverRepo;
-    @Autowired
-    private PersonalChangeRequestRepository personalChangeRequestRepo;
-    @Autowired
-    private VehicleChangeRequestRepository vehicleChangeRequestRepo;
-    @Autowired
-    private AvatarChangeRequestRepository avatarChangeRequestRepo;
-    @Autowired
-    private DriverActivationTokenRepository driverActivationTokenRepo;
-    @Autowired
-    private FileStorageService fileStorageService;
-    @Autowired
-    private EmailService emailService;
-    @Autowired
-    private ModelMapper modelMapper;
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private final AdministratorRepository adminRepo;
+    private final DriverRepository driverRepo;
+    private final PersonalChangeRequestRepository personalChangeRequestRepo;
+    private final VehicleChangeRequestRepository vehicleChangeRequestRepo;
+    private final AvatarChangeRequestRepository avatarChangeRequestRepo;
+    private final DriverActivationTokenRepository driverActivationTokenRepo;
+    private final FileStorageService fileStorageService;
+    private final EmailService emailService;
+    private final ModelMapper modelMapper;
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    public AdminServiceImpl(
+            AdministratorRepository adminRepo,
+            DriverRepository driverRepo,
+            PersonalChangeRequestRepository personalChangeRequestRepo,
+            VehicleChangeRequestRepository vehicleChangeRequestRepo,
+            AvatarChangeRequestRepository avatarChangeRequestRepo,
+            DriverActivationTokenRepository driverActivationTokenRepo,
+            FileStorageService fileStorageService,
+            EmailService emailService,
+            ModelMapper modelMapper,
+            BCryptPasswordEncoder passwordEncoder
+    ) {
+        this.adminRepo = adminRepo;
+        this.driverRepo = driverRepo;
+        this.personalChangeRequestRepo = personalChangeRequestRepo;
+        this.vehicleChangeRequestRepo = vehicleChangeRequestRepo;
+        this.avatarChangeRequestRepo = avatarChangeRequestRepo;
+        this.driverActivationTokenRepo = driverActivationTokenRepo;
+        this.fileStorageService = fileStorageService;
+        this.emailService = emailService;
+        this.modelMapper = modelMapper;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     public CreatedAdminDTO createAdmin(CreateAdminDTO createAdminDTO) {

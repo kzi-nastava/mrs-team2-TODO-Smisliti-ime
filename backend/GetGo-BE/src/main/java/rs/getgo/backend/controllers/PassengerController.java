@@ -1,7 +1,6 @@
 package rs.getgo.backend.controllers;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.beans.factory.annotation.Autowired;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.passenger.GetPassengerDTO;
@@ -13,15 +12,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import rs.getgo.backend.services.PassengerService;
-import rs.getgo.backend.services.PassengerServiceImpl;
 import rs.getgo.backend.utils.AuthUtils;
 
 @RestController
 @RequestMapping("/api/passenger")
 public class PassengerController {
 
-    @Autowired
-    private PassengerService passengerService;
+    private final PassengerService passengerService;
+
+    public PassengerController(PassengerService passengerService) { this.passengerService = passengerService; }
 
     // 2.3 - User profile
     @PreAuthorize("hasRole('PASSENGER')")

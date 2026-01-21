@@ -1,6 +1,5 @@
 package rs.getgo.backend.services;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import rs.getgo.backend.dtos.rating.CreateRatingDTO;
@@ -19,11 +18,16 @@ import java.util.List;
 @Service
 public class RatingServiceImpl implements RatingService {
 
-    @Autowired
-    private RatingRepository ratingRepository;
+    private final RatingRepository ratingRepository;
+    private final DriverRepository driverRepository;
 
-    @Autowired
-    private DriverRepository driverRepository;
+    public RatingServiceImpl(
+            RatingRepository ratingRepository,
+            DriverRepository driverRepository
+    ) {
+        this.ratingRepository = ratingRepository;
+        this.driverRepository = driverRepository;
+    }
 
     @Override
     public List<GetRatingDTO> getRatingsByRide(Long rideId) {

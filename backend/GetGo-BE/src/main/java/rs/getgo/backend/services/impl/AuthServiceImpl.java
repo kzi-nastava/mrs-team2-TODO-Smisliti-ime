@@ -1,6 +1,5 @@
 package rs.getgo.backend.services.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import rs.getgo.backend.model.entities.Passenger;
 import rs.getgo.backend.model.enums.UserRole;
@@ -31,23 +30,12 @@ import rs.getgo.backend.utils.TokenUtils;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
     private final UserRepository userRepository;
-
-    @Autowired
     private final TokenUtils tokenUtils;
-
-    @Autowired
     private final BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
-    private DriverRepository driverRepo;
-
-    @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private PassengerRepository passengerRepository;
+    private final DriverRepository driverRepo;
+    private final EmailService emailService;
+    private final PassengerRepository passengerRepository;
 
     // simple in-memory token store for development (token -> TokenInfo)
     private final Map<String, TokenInfo> resetTokens = new ConcurrentHashMap<>();
@@ -58,10 +46,20 @@ public class AuthServiceImpl implements AuthService {
     private static final long ACTIVATION_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 
     // inject TokenUtils and password encoder (BCrypt strength default 10)
-    public AuthServiceImpl(UserRepository userRepository, TokenUtils tokenUtils, BCryptPasswordEncoder passwordEncoder) {
+    public AuthServiceImpl(
+            UserRepository userRepository,
+            TokenUtils tokenUtils,
+            BCryptPasswordEncoder passwordEncoder,
+            DriverRepository driverRepo,
+            EmailService emailService,
+            PassengerRepository passengerRepository
+    ) {
         this.userRepository = userRepository;
         this.tokenUtils = tokenUtils;
         this.passwordEncoder = passwordEncoder;
+        this.driverRepo = driverRepo;
+        this.emailService = emailService;
+        this.passengerRepository = passengerRepository;
     }
 
     // REGISTER

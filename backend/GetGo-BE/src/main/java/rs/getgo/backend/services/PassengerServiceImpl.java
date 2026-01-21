@@ -17,17 +17,22 @@ import rs.getgo.backend.repositories.PassengerRepository;
 @Service
 public class PassengerServiceImpl implements PassengerService {
 
-    @Autowired
-    private PassengerRepository passengerRepo;
+    private final PassengerRepository passengerRepo;
+    private final ModelMapper modelMapper;
+    private final FileStorageService fileStorageService;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    @Autowired
-    private ModelMapper modelMapper;
-
-    @Autowired
-    private FileStorageService fileStorageService;
-
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    public PassengerServiceImpl(
+            PassengerRepository passengerRepo,
+            ModelMapper modelMapper,
+            FileStorageService fileStorageService,
+            BCryptPasswordEncoder passwordEncoder
+    ) {
+        this.passengerRepo = passengerRepo;
+        this.modelMapper = modelMapper;
+        this.fileStorageService = fileStorageService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public GetPassengerDTO getPassenger(String email) {
         Passenger passenger = passengerRepo.findByEmail(email)

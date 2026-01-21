@@ -69,6 +69,12 @@ public class AdminServiceImpl implements AdminService {
     public CreatedDriverDTO registerDriver(CreateDriverDTO createDriverDTO) {
         Vehicle vehicle = fillVehicle(createDriverDTO);
         Driver driver = fillDriver(createDriverDTO, vehicle);
+
+        // Set base location and update so it's never null
+        driver.setCurrentLatitude(45.240806);  // 45°14'26.9"N
+        driver.setCurrentLongitude(19.828611); // 19°49'43.0"E
+        driver.setLastLocationUpdate(LocalDateTime.now());
+
         Driver savedDriver = driverRepo.save(driver); // Should save both vehicle and driver due to CascadeType.ALL
 
         DriverActivationToken token = createDriverActivationToken(savedDriver);

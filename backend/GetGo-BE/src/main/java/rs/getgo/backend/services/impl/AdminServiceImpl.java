@@ -131,7 +131,7 @@ public class AdminServiceImpl implements AdminService {
         driver.setPhone(createDriverDTO.getPhone());
         driver.setAddress(createDriverDTO.getAddress());
         driver.setRole(UserRole.DRIVER);
-        driver.setProfilePictureUrl(fileStorageService.getDefaultProfilePicture());
+        driver.setProfilePictureUrl(null);
         driver.setActive(false);
         driver.setActivated(false);
         driver.setBlocked(false);

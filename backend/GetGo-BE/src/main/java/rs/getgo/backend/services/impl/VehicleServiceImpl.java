@@ -1,10 +1,8 @@
 package rs.getgo.backend.services.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import rs.getgo.backend.dtos.vehicle.GetVehicleDTO;
 import org.springframework.stereotype.Service;
 import rs.getgo.backend.model.entities.Vehicle;
-import rs.getgo.backend.repositories.RatingRepository;
 import rs.getgo.backend.repositories.VehicleRepository;
 import rs.getgo.backend.services.VehicleService;
 
@@ -15,8 +13,7 @@ import java.util.List;
 @Service
 public class VehicleServiceImpl implements VehicleService {
 
-    @Autowired
-    private VehicleRepository vehicleRepository;
+    private final VehicleRepository vehicleRepository;
 
     private final Collection<GetVehicleDTO> vehicles = new ArrayList<>();
 

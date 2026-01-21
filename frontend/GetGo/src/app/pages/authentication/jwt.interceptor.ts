@@ -1,15 +1,14 @@
-import {HttpHandler, HttpInterceptor, HttpRequest} from '@angular/common/http';
-import {AuthService} from '../../service/auth-service/auth.service';
-import {Injectable} from '@angular/core';
+import { HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 
 @Injectable()
 export class JwtInterceptor implements HttpInterceptor {
-  constructor(private auth: AuthService) {}
+  private TOKEN_KEY = 'authToken';
 
   intercept(req: HttpRequest<any>, next: HttpHandler) {
-    const token = this.auth.getToken();
+    const token = localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.TOKEN_KEY);
 
-    console.log('JWT token iz AuthService:', token);
+    console.log('JWT Interceptor: token =', token ? 'present' : 'missing');
 
     if (token) {
       req = req.clone({

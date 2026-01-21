@@ -1,0 +1,303 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #8FABD4;
+  padding-top: 40px;
+}
+
+.home {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 24px;
+}
+
+.left {
+  flex: 1;
+  max-width: 640px;
+  background-color: #CBDCEB;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  color: #133E87;
+}
+
+.left h1 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #133E87;
+}
+
+.dest-row {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  align-items: center;
+}
+
+.dest-row input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(19,62,135,0.08);
+  background: #ffffff;
+  color: #133E87;
+}
+
+button.mini {
+  padding: 6px 10px;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 8px;
+  background: #133E87;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+button.mini:hover {
+  transform: translateY(-2px);
+}
+
+button.mini:disabled {
+  background: #A0B3C8;
+  cursor: not-allowed;
+}
+
+.form-group {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: #133E87;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group select {
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(19,62,135,0.08);
+  background: #ffffff;
+  color: #133E87;
+}
+
+.form-group input[type="datetime-local"] {
+  font-family: inherit;
+}
+
+/* Checkboxes */
+.checkbox-group {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #133E87;
+  cursor: pointer;
+}
+
+.checkbox-input {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #133E87;
+}
+
+/* Friend Emails */
+.friend-emails {
+  margin: 12px 0;
+}
+
+.add-friend-btn {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #133E87;
+  border: 1px solid rgba(19,62,135,0.08);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 8px;
+}
+
+.add-friend-btn:hover {
+  background-color: #f0f4f8;
+}
+
+/* Form Actions */
+.form-actions {
+  margin: 14px 0;
+  display: flex;
+  gap: 10px;
+}
+
+.form-actions button {
+  background: #133E87;
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 120ms ease;
+}
+
+.form-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(19,62,135,0.18);
+}
+
+.form-actions button:disabled {
+  background: #A0B3C8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Hint */
+.hint {
+  background-color: #E8EEF5;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 8px 0;
+  font-size: 13px;
+  color: #133E87;
+}
+
+/* Error */
+.error {
+  color: #c62828;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Estimate */
+.estimate {
+  background-color: #E8EEF5;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  color: #133E87;
+}
+
+.estimate strong {
+  color: #133E87;
+  font-weight: 700;
+}
+
+.success {
+  background-color: #4caf50;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  font-weight: 600;
+}
+
+/* Map */
+.right {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 320px;
+}
+
+.right img {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 880px) {
+  .home {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .right {
+    order: 2;
+    width: 100%;
+  }
+
+  .left {
+    order: 1;
+    width: 100%;
+    max-width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .right img {
+    max-width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}
+
+.ride-info {
+  background-color: #E8EEF5;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(19,62,135,0.1);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row label {
+  font-weight: 600;
+  color: #133E87;
+  font-size: 14px;
+}
+
+.info-row span {
+  color: #133E87;
+  font-size: 14px;
+}
+
+.start-btn {
+  width: 100%;
+  background: #4caf50 !important;
+  font-size: 16px;
+}
+
+.start-btn:hover {
+  background: #45a049 !important;
+}
+
+.start-btn:disabled {
+  background: #A0B3C8 !important;
+}

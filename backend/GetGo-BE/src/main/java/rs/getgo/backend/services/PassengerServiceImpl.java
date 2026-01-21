@@ -15,30 +15,35 @@ import rs.getgo.backend.model.entities.Passenger;
 import rs.getgo.backend.repositories.PassengerRepository;
 
 @Service
-public class PassengerServiceImpl {
+public class PassengerServiceImpl implements PassengerService {
 
-    @Autowired
-    private PassengerRepository passengerRepo;
+    private final PassengerRepository passengerRepo;
+    private final ModelMapper modelMapper;
+    private final FileStorageService fileStorageService;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    @Autowired
-    private ModelMapper modelMapper;
+    public PassengerServiceImpl(
+            PassengerRepository passengerRepo,
+            ModelMapper modelMapper,
+            FileStorageService fileStorageService,
+            BCryptPasswordEncoder passwordEncoder
+    ) {
+        this.passengerRepo = passengerRepo;
+        this.modelMapper = modelMapper;
+        this.fileStorageService = fileStorageService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
-    @Autowired
-    private FileStorageService fileStorageService;
-
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-
-    public GetPassengerDTO getPassengerById(Long passengerId) {
-        Passenger passenger = passengerRepo.findById(passengerId)
-                .orElseThrow(() -> new RuntimeException("Passenger not found with id: " + passengerId));
+    public GetPassengerDTO getPassenger(String email) {
+        Passenger passenger = passengerRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
         return modelMapper.map(passenger, GetPassengerDTO.class);
     }
 
-    public UpdatedPassengerDTO updateProfile(Long passengerId, UpdatePassengerDTO updatePassengerDTO) {
-        Passenger passenger = passengerRepo.findById(passengerId)
-                .orElseThrow(() -> new RuntimeException("Passenger not found with id: " + passengerId));
+    public UpdatedPassengerDTO updateProfile(String email, UpdatePassengerDTO updatePassengerDTO) {
+        Passenger passenger = passengerRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
         if (updatePassengerDTO.getName() != null && !updatePassengerDTO.getName().trim().isEmpty()) {
             passenger.setName(updatePassengerDTO.getName().trim());
@@ -57,13 +62,13 @@ public class PassengerServiceImpl {
         return modelMapper.map(savedPassenger, UpdatedPassengerDTO.class);
     }
 
-    public UpdatedPasswordDTO updatePassword(Long passengerId, UpdatePasswordDTO updatePasswordDTO) {
+    public UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO) {
         if (!updatePasswordDTO.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
             return new UpdatedPasswordDTO(false, "Passwords do not match");
         }
 
-        Passenger passenger = passengerRepo.findById(passengerId)
-                .orElseThrow(() -> new RuntimeException("Passenger not found with id: " + passengerId));
+        Passenger passenger = passengerRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
         if (!passwordEncoder.matches(updatePasswordDTO.getOldPassword(), passenger.getPassword())) {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
@@ -75,18 +80,19 @@ public class PassengerServiceImpl {
         return new UpdatedPasswordDTO(true, "Password updated successfully");
     }
 
-
-    public UpdatedProfilePictureDTO uploadProfilePicture(Long passengerId, MultipartFile file) {
-        Passenger passenger = passengerRepo.findById(passengerId)
-                .orElseThrow(() -> new RuntimeException("Passenger not found with id: " + passengerId));
+    public UpdatedProfilePictureDTO uploadProfilePicture(String email, MultipartFile file) {
+        Passenger passenger = passengerRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
         // Delete old picture if exists
         if (passenger.getProfilePictureUrl() != null) {
             fileStorageService.deleteFile(passenger.getProfilePictureUrl());
         }
-        String fileUrl = fileStorageService.storeFile(file, "passenger_" + passengerId);
+
+        String fileUrl = fileStorageService.storeFile(file, "passenger_" + passenger.getId());
         passenger.setProfilePictureUrl(fileUrl);
         passengerRepo.save(passenger);
+
         return new UpdatedProfilePictureDTO(
                 fileUrl,
                 "Profile picture updated successfully");

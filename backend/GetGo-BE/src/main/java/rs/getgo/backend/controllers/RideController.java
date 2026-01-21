@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.services.RideTrackingService;
+import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -111,13 +112,31 @@ public class RideController {
         return ResponseEntity.ok().build();
     }
 
+    // 2.4.1 - Calling a ride
+    @PreAuthorize("hasRole('PASSENGER')")
+    @PostMapping("/order")
+    public ResponseEntity<CreatedRideResponseDTO> orderRide(
+            @RequestBody CreateRideRequestDTO request
+    ) {
+        String email = AuthUtils.getCurrentUserEmail();
+        CreatedRideResponseDTO response = rideService.orderRide(request, email);
+        return ResponseEntity.ok(response);
+    }
+
     // 2.6.1 - Start ride
     @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/{rideId}/start", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedRideDTO> startRide(@PathVariable Long rideId) {
-        UpdatedRideDTO response = new UpdatedRideDTO();
-        response.setId(rideId);
+        UpdatedRideDTO response = rideService.startRide(rideId);
         return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('DRIVER')")
+    @GetMapping(value = "/driver/active", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetDriverActiveRideDTO> getDriverActiveRide() {
+        String email = AuthUtils.getCurrentUserEmail();
+        GetDriverActiveRideDTO ride = rideService.getDriverActiveRide(email);
+        return ResponseEntity.ok(ride);
     }
 
     // 2.4.3 - Calling favorite ride
@@ -145,26 +164,4 @@ public class RideController {
         return ResponseEntity.noContent().build();
     }
 
-    // 2.4.1 - Calling a ride
-    @PreAuthorize("hasRole('PASSENGER')")
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedRideDTO> createRide(@RequestBody CreateRideDTO request) {
-
-        CreatedRideDTO response = new CreatedRideDTO();
-
-        if (request.getScheduledTime() == null) {
-            // Immediate ride
-            response.setRideId(1L);
-            response.setStatus("ACCEPTED");
-            response.setDriverId(5L);
-        } else {
-            // Scheduled ride
-            response.setRideId(2L);
-            response.setStatus("SCHEDULED");
-            response.setScheduledTime(request.getScheduledTime());
-        }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
 }

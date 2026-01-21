@@ -1,18 +1,16 @@
 package rs.getgo.backend.dtos.ride;
 
-import java.time.LocalDateTime;
-
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public class UpdatedRideDTO {
-    private Long id;
+public class CreatedRideResponseDTO {
     private String status;
-    private LocalDateTime startTime;
+    private String message;
+    private Long rideId; // Present if status is success
 }

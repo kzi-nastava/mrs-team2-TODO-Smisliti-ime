@@ -1,6 +1,5 @@
 package rs.getgo.backend.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.admin.*;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
@@ -14,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.services.AdminService;
+import rs.getgo.backend.utils.AuthUtils;
 
 import java.util.List;
 
@@ -22,10 +22,11 @@ import java.util.List;
 @RequestMapping("/api/admin")
 public class AdminController {
 
-    @Autowired
-    private AdminService adminService;
+    private final AdminService adminService;
 
-    Long adminId = 1L; // TODO: get from cookie/whatever we decide to use
+    public AdminController(AdminService adminService) {
+        this.adminService = adminService;
+    }
 
     // 2.9.3 – Block user
     @PreAuthorize("hasRole('ADMIN')")
@@ -79,8 +80,8 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetAdminDTO> getProfile() {
-
-        GetAdminDTO response = adminService.getAdminById(adminId);
+        String email = AuthUtils.getCurrentUserEmail();
+        GetAdminDTO response = adminService.getAdmin(email);
         return ResponseEntity.ok(response);
     }
 
@@ -91,8 +92,8 @@ public class AdminController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedAdminDTO> updateProfile(
             @RequestBody UpdateAdminDTO updateAdminDTO) {
-
-        UpdatedAdminDTO response = adminService.updateProfile(adminId, updateAdminDTO);
+        String email = AuthUtils.getCurrentUserEmail();
+        UpdatedAdminDTO response = adminService.updateProfile(email, updateAdminDTO);
         return ResponseEntity.ok(response);
     }
 
@@ -103,8 +104,8 @@ public class AdminController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
             @RequestBody UpdatePasswordDTO updatePasswordDTO) {
-
-        UpdatedPasswordDTO response = adminService.updatePassword(adminId, updatePasswordDTO);
+        String email = AuthUtils.getCurrentUserEmail();
+        UpdatedPasswordDTO response = adminService.updatePassword(email, updatePasswordDTO);
         if (!response.getSuccess()) {
             return ResponseEntity.badRequest().body(response);
         }
@@ -174,8 +175,8 @@ public class AdminController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approvePersonalChangeRequest(
             @PathVariable Long requestId) {
-
-        AcceptDriverChangeRequestDTO response = adminService.approvePersonalChangeRequest(requestId, adminId);
+        String email = AuthUtils.getCurrentUserEmail();
+        AcceptDriverChangeRequestDTO response = adminService.approvePersonalChangeRequest(requestId, email);
         return ResponseEntity.ok(response);
     }
 
@@ -185,8 +186,8 @@ public class AdminController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approveVehicleChangeRequest(
             @PathVariable Long requestId) {
-
-        AcceptDriverChangeRequestDTO response = adminService.approveVehicleChangeRequest(requestId, adminId);
+        String email = AuthUtils.getCurrentUserEmail();
+        AcceptDriverChangeRequestDTO response = adminService.approveVehicleChangeRequest(requestId, email);
         return ResponseEntity.ok(response);
     }
 
@@ -196,8 +197,8 @@ public class AdminController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AcceptDriverChangeRequestDTO> approvePictureChangeRequest(
             @PathVariable Long requestId) {
-
-        AcceptDriverChangeRequestDTO response = adminService.approveAvatarChangeRequest(requestId, adminId);
+        String email = AuthUtils.getCurrentUserEmail();
+        AcceptDriverChangeRequestDTO response = adminService.approveAvatarChangeRequest(requestId, email);
         return ResponseEntity.ok(response);
     }
 
@@ -209,9 +210,9 @@ public class AdminController {
     public ResponseEntity<AcceptDriverChangeRequestDTO> rejectPersonalChangeRequest(
             @PathVariable Long requestId,
             @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
-
+        String email = AuthUtils.getCurrentUserEmail();
         AcceptDriverChangeRequestDTO response = adminService.rejectPersonalChangeRequest(
-                requestId, adminId, rejectDriverChangeRequestDTO);
+                requestId, email, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);
     }
 
@@ -223,9 +224,9 @@ public class AdminController {
     public ResponseEntity<AcceptDriverChangeRequestDTO> rejectVehicleChangeRequest(
             @PathVariable Long requestId,
             @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
-
+        String email = AuthUtils.getCurrentUserEmail();
         AcceptDriverChangeRequestDTO response = adminService.rejectVehicleChangeRequest(
-                requestId, adminId, rejectDriverChangeRequestDTO);
+                requestId, email, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);
     }
 
@@ -237,9 +238,9 @@ public class AdminController {
     public ResponseEntity<AcceptDriverChangeRequestDTO> rejectPictureChangeRequest(
             @PathVariable Long requestId,
             @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
-
+        String email = AuthUtils.getCurrentUserEmail();
         AcceptDriverChangeRequestDTO response = adminService.rejectAvatarChangeRequest(
-                requestId, adminId, rejectDriverChangeRequestDTO);
+                requestId, email, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);
     }
 }

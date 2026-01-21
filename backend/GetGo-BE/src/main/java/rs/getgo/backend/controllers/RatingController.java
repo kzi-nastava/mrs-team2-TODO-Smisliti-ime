@@ -1,7 +1,6 @@
 package rs.getgo.backend.controllers;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.beans.factory.annotation.Autowired;
 import rs.getgo.backend.dtos.rating.CreateRatingDTO;
 import rs.getgo.backend.dtos.rating.CreatedRatingDTO;
 import rs.getgo.backend.dtos.rating.GetRatingDTO;
@@ -15,7 +14,6 @@ import rs.getgo.backend.services.RatingService;
 import org.springframework.security.core.Authentication;
 
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -23,11 +21,16 @@ import java.util.List;
 @RequestMapping("/api/ratings")
 public class RatingController {
 
-    @Autowired
-    private RatingService ratingService;
+    private final RatingService ratingService;
+    private final CompletedRideRepository rideRepository;
 
-    @Autowired
-    private CompletedRideRepository rideRepository;
+    public RatingController(
+            RatingService ratingService,
+            CompletedRideRepository rideRepository
+    ) {
+        this.ratingService = ratingService;
+        this.rideRepository = rideRepository;
+    }
 
     // 2.8 Vehicle and driver rating
     @PreAuthorize("hasRole('PASSENGER')")

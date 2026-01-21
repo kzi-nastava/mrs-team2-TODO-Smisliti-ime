@@ -37,6 +37,7 @@ export class LoginComponent {
     stayLoggedIn: new FormControl(false),
   });
 
+  // keep saving credentials locally for debugging/storage
   pendingCredentials: { email: string | undefined | null; password: string | undefined | null } | null = null;
 
   constructor(
@@ -68,7 +69,9 @@ export class LoginComponent {
     const stayLoggedIn = this.createLoginForm.value.stayLoggedIn ?? false;
 
     console.log('Login: collected credentials', this.pendingCredentials);
+    console.log('Login: stayLoggedIn =', stayLoggedIn);
 
+    // Build payload and send immediately (no role-selection UI). Default role is 'passenger'.
     const payload = {
       email: this.pendingCredentials.email,
       password: this.pendingCredentials.password,
@@ -98,6 +101,7 @@ export class LoginComponent {
         }
 
         this.auth.setToken(res.token, stayLoggedIn);
+
         console.log('Login: token saved & role extracted from JWT');
 
         this.snackBarService.show('Login successful!', true, 3000);

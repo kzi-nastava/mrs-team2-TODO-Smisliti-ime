@@ -1,6 +1,5 @@
 package rs.getgo.backend.controllers;
 
-import rs.getgo.backend.dtos.rating.GetRatingDTO;
 import rs.getgo.backend.dtos.vehicle.GetVehicleDTO;
 import rs.getgo.backend.dtos.vehicle.GetVehicleTypeDTO;
 import org.springframework.http.HttpStatus;

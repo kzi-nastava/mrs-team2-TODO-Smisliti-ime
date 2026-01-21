@@ -54,8 +54,11 @@ public class DriverServiceImpl implements DriverService {
     private BCryptPasswordEncoder passwordEncoder;
 
     @Override
-    public List<GetRideDTO> getDriverRides(Long driverId, LocalDate startDate) {
-        List<CompletedRide> rides = completedRideRepository.findByDriverId(driverId);
+    public List<GetRideDTO> getDriverRides(String email, LocalDate startDate) {
+        Driver driver = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
+
+        List<CompletedRide> rides = completedRideRepository.findByDriverId(driver.getId());
 
         List<GetRideDTO> dtoList = new ArrayList<>();
 
@@ -159,9 +162,9 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public GetDriverDTO getDriverById(Long driverId) {
-        Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
+    public GetDriverDTO getDriver(String email) {
+        Driver driver = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 
         GetDriverDTO dto = modelMapper.map(driver, GetDriverDTO.class);
 
@@ -184,13 +187,13 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public UpdatedPasswordDTO updatePassword(Long driverId, UpdatePasswordDTO updatePasswordDTO) {
+    public UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO) {
         if (!updatePasswordDTO.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
             return new UpdatedPasswordDTO(false, "Passwords do not match");
         }
 
-        Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
+        Driver driver = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 
         if (!passwordEncoder.matches(updatePasswordDTO.getOldPassword(), driver.getPassword())) {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
@@ -203,9 +206,9 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public CreatedDriverChangeRequestDTO requestPersonalInfoChange(Long driverId, UpdateDriverPersonalDTO updateDTO) {
-        Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
+    public CreatedDriverChangeRequestDTO requestPersonalInfoChange(String email, UpdateDriverPersonalDTO updateDTO) {
+        Driver driver = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 
         // Check for existing pending request
         if (personalChangeRequestRepo.existsByDriverAndStatus(driver, RequestStatus.PENDING)) {
@@ -230,7 +233,7 @@ public class DriverServiceImpl implements DriverService {
 
         return new CreatedDriverChangeRequestDTO(
                 savedRequest.getId(),
-                driverId,
+                driver.getId(),
                 "PENDING",
                 "Personal info change request created successfully"
         );
@@ -244,9 +247,9 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public CreatedDriverChangeRequestDTO requestVehicleInfoChange(Long driverId, UpdateDriverVehicleDTO updateDTO) {
-        Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
+    public CreatedDriverChangeRequestDTO requestVehicleInfoChange(String email, UpdateDriverVehicleDTO updateDTO) {
+        Driver driver = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found with id: " + email));
 
         // Check for existing pending request
         if (vehicleChangeRequestRepo.existsByDriverAndStatus(driver, RequestStatus.PENDING)) {
@@ -278,7 +281,7 @@ public class DriverServiceImpl implements DriverService {
 
         return new CreatedDriverChangeRequestDTO(
                 savedRequest.getId(),
-                driverId,
+                driver.getId(),
                 "PENDING",
                 "Vehicle info change request created successfully"
         );
@@ -294,9 +297,9 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public CreatedDriverChangeRequestDTO requestProfilePictureChange(Long driverId, MultipartFile file) {
-        Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
+    public CreatedDriverChangeRequestDTO requestProfilePictureChange(String email, MultipartFile file) {
+        Driver driver = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found with id: " + email));
 
         // Check for existing pending request
         if (avatarChangeRequestRepo.existsByDriverAndStatus(driver, RequestStatus.PENDING)) {
@@ -304,7 +307,7 @@ public class DriverServiceImpl implements DriverService {
         }
 
         // Store file temporarily until approval/rejection
-        String filename = fileStorageService.storeFile(file, "driver_pending_" + driverId);
+        String filename = fileStorageService.storeFile(file, "driver_pending_" + driver.getId());
 
         // Create change request
         AvatarChangeRequest changeRequest = new AvatarChangeRequest();
@@ -317,7 +320,7 @@ public class DriverServiceImpl implements DriverService {
 
         return new CreatedDriverChangeRequestDTO(
                 savedRequest.getId(),
-                driverId,
+                driver.getId(),
                 "PENDING",
                 "Profile picture change request created successfully"
         );

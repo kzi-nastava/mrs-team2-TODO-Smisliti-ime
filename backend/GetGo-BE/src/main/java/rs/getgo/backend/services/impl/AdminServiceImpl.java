@@ -121,17 +121,17 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public GetAdminDTO getAdminById(Long adminId) {
-        Administrator admin = adminRepo.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+    public GetAdminDTO getAdmin(String email) {
+        Administrator admin = adminRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
         return modelMapper.map(admin, GetAdminDTO.class);
     }
 
     @Override
-    public UpdatedAdminDTO updateProfile(Long adminId, UpdateAdminDTO updateAdminDTO) {
-        Administrator admin = adminRepo.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+    public UpdatedAdminDTO updateProfile(String email, UpdateAdminDTO updateAdminDTO) {
+        Administrator admin = adminRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
         if (updateAdminDTO.getName() != null && !updateAdminDTO.getName().trim().isEmpty()) {
             admin.setName(updateAdminDTO.getName().trim());
@@ -151,13 +151,13 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public UpdatedPasswordDTO updatePassword(Long adminId, UpdatePasswordDTO updatePasswordDTO) {
+    public UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO) {
         if (!updatePasswordDTO.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
             return new UpdatedPasswordDTO(false, "Passwords do not match");
         }
 
-        Administrator admin = adminRepo.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+        Administrator admin = adminRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
         if (!passwordEncoder.matches(updatePasswordDTO.getOldPassword(), admin.getPassword())) {
             return new UpdatedPasswordDTO(false, "Old password is incorrect");
@@ -354,12 +354,12 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public AcceptDriverChangeRequestDTO approvePersonalChangeRequest(Long requestId, Long adminId) {
+    public AcceptDriverChangeRequestDTO approvePersonalChangeRequest(Long requestId, String email) {
         PersonalChangeRequest request = personalChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Personal change request not found with id: " + requestId));
 
-        Administrator admin = adminRepo.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+        Administrator admin = adminRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
         Driver driver = request.getDriver();
 
@@ -380,18 +380,18 @@ public class AdminServiceImpl implements AdminService {
                 request.getId(),
                 driver.getId(),
                 request.getStatus().toString(),
-                adminId,
+                admin.getId(),
                 LocalDateTime.now()
         );
     }
 
     @Override
-    public AcceptDriverChangeRequestDTO approveVehicleChangeRequest(Long requestId, Long adminId) {
+    public AcceptDriverChangeRequestDTO approveVehicleChangeRequest(Long requestId, String email) {
         VehicleChangeRequest request = vehicleChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Vehicle change request not found with id: " + requestId));
 
-        Administrator admin = adminRepo.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+        Administrator admin = adminRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
         Driver driver = request.getDriver();
         Vehicle vehicle = driver.getVehicle();
@@ -419,18 +419,18 @@ public class AdminServiceImpl implements AdminService {
                 request.getId(),
                 driver.getId(),
                 request.getStatus().toString(),
-                adminId,
+                admin.getId(),
                 LocalDateTime.now()
         );
     }
 
     @Override
-    public AcceptDriverChangeRequestDTO approveAvatarChangeRequest(Long requestId, Long adminId) {
+    public AcceptDriverChangeRequestDTO approveAvatarChangeRequest(Long requestId, String email) {
         AvatarChangeRequest request = avatarChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Avatar change request not found with id: " + requestId));
 
-        Administrator admin = adminRepo.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+        Administrator admin = adminRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
         Driver driver = request.getDriver();
 
@@ -447,7 +447,7 @@ public class AdminServiceImpl implements AdminService {
                 request.getId(),
                 driver.getId(),
                 request.getStatus().toString(),
-                adminId,
+                admin.getId(),
                 LocalDateTime.now()
         );
     }
@@ -465,12 +465,12 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public AcceptDriverChangeRequestDTO rejectPersonalChangeRequest(Long requestId, Long adminId, RejectDriverChangeRequestDTO rejectDTO) {
+    public AcceptDriverChangeRequestDTO rejectPersonalChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO) {
         PersonalChangeRequest request = personalChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Personal change request not found with id: " + requestId));
 
-        Administrator admin = adminRepo.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+        Administrator admin = adminRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
         request.setStatus(RequestStatus.REJECTED);
         request.setRejectionReason(rejectDTO.getReason());
@@ -482,18 +482,18 @@ public class AdminServiceImpl implements AdminService {
                 request.getId(),
                 request.getDriver().getId(),
                 request.getStatus().toString(),
-                adminId,
+                admin.getId(),
                 LocalDateTime.now()
         );
     }
 
     @Override
-    public AcceptDriverChangeRequestDTO rejectVehicleChangeRequest(Long requestId, Long adminId, RejectDriverChangeRequestDTO rejectDTO) {
+    public AcceptDriverChangeRequestDTO rejectVehicleChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO) {
         VehicleChangeRequest request = vehicleChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Vehicle change request not found with id: " + requestId));
 
-        Administrator admin = adminRepo.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+        Administrator admin = adminRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
         request.setStatus(RequestStatus.REJECTED);
         request.setRejectionReason(rejectDTO.getReason());
@@ -505,18 +505,18 @@ public class AdminServiceImpl implements AdminService {
                 request.getId(),
                 request.getDriver().getId(),
                 request.getStatus().toString(),
-                adminId,
+                admin.getId(),
                 LocalDateTime.now()
         );
     }
 
     @Override
-    public AcceptDriverChangeRequestDTO rejectAvatarChangeRequest(Long requestId, Long adminId, RejectDriverChangeRequestDTO rejectDTO) {
+    public AcceptDriverChangeRequestDTO rejectAvatarChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO) {
         AvatarChangeRequest request = avatarChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Avatar change request not found with id: " + requestId));
 
-        Administrator admin = adminRepo.findById(adminId)
-                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+        Administrator admin = adminRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
         // Delete the pending profile picture file
         fileStorageService.deleteFile(request.getRequestedProfilePictureUrl());
@@ -531,7 +531,7 @@ public class AdminServiceImpl implements AdminService {
                 request.getId(),
                 request.getDriver().getId(),
                 request.getStatus().toString(),
-                adminId,
+                admin.getId(),
                 LocalDateTime.now()
         );
     }

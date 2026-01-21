@@ -9,16 +9,15 @@ import rs.getgo.backend.dtos.request.*;
 
 import java.util.List;
 
-// Auth/Admin service reduced to interface with signatures only.
 public interface AdminService {
 
     CreatedDriverDTO registerDriver(CreateDriverDTO createDriverDTO);
 
-    GetAdminDTO getAdminById(Long adminId);
+    GetAdminDTO getAdmin(String email);
 
-    UpdatedAdminDTO updateProfile(Long adminId, UpdateAdminDTO updateAdminDTO);
+    UpdatedAdminDTO updateProfile(String email, UpdateAdminDTO updateAdminDTO);
 
-    UpdatedPasswordDTO updatePassword(Long adminId, UpdatePasswordDTO updatePasswordDTO);
+    UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO);
 
     List<GetPersonalDriverChangeRequestDTO> getPendingPersonalChangeRequests();
 
@@ -32,17 +31,17 @@ public interface AdminService {
 
     GetDriverAvatarChangeRequestDTO getAvatarChangeRequest(Long requestId);
 
-    AcceptDriverChangeRequestDTO approvePersonalChangeRequest(Long requestId, Long adminId);
+    AcceptDriverChangeRequestDTO approvePersonalChangeRequest(Long requestId, String email);
 
-    AcceptDriverChangeRequestDTO approveVehicleChangeRequest(Long requestId, Long adminId);
+    AcceptDriverChangeRequestDTO approveVehicleChangeRequest(Long requestId, String email);
 
-    AcceptDriverChangeRequestDTO approveAvatarChangeRequest(Long requestId, Long adminId);
+    AcceptDriverChangeRequestDTO approveAvatarChangeRequest(Long requestId, String email);
 
-    AcceptDriverChangeRequestDTO rejectPersonalChangeRequest(Long requestId, Long adminId, RejectDriverChangeRequestDTO rejectDTO);
+    AcceptDriverChangeRequestDTO rejectPersonalChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO);
 
-    AcceptDriverChangeRequestDTO rejectVehicleChangeRequest(Long requestId, Long adminId, RejectDriverChangeRequestDTO rejectDTO);
+    AcceptDriverChangeRequestDTO rejectVehicleChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO);
 
-    AcceptDriverChangeRequestDTO rejectAvatarChangeRequest(Long requestId, Long adminId, RejectDriverChangeRequestDTO rejectDTO);
+    AcceptDriverChangeRequestDTO rejectAvatarChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO);
 
     void blockUser();
 

@@ -1,7 +1,5 @@
 package rs.getgo.backend.controllers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.favorite.CreatedFavoriteDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
@@ -17,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.services.RideTrackingService;
+import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -121,8 +120,8 @@ public class RideController {
     public ResponseEntity<CreatedRideResponseDTO> orderRide(
             @RequestBody CreateRideRequestDTO request
     ) {
-        String userEmail = "u@gmail.com"; // TODO: ...
-        CreatedRideResponseDTO response = rideService.orderRide(request, userEmail);
+        String email = AuthUtils.getCurrentUserEmail();
+        CreatedRideResponseDTO response = rideService.orderRide(request, email);
         return ResponseEntity.ok(response);
     }
 
@@ -130,25 +129,15 @@ public class RideController {
     @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/{rideId}/start", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedRideDTO> startRide(@PathVariable Long rideId) {
-        // TODO: should be exception handler somewhere
-        try {
-            UpdatedRideDTO response = rideService.startRide(rideId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalStateException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
+        UpdatedRideDTO response = rideService.startRide(rideId);
+        return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/driver/active", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverActiveRideDTO> getDriverActiveRide() {
-        String driverEmail = "d@gmail.com"; // TODO: Get from auth
-        GetDriverActiveRideDTO ride = rideService.getDriverActiveRide(driverEmail);
-        if (ride == null) {
-            return ResponseEntity.ok(null);
-        }
+        String email = AuthUtils.getCurrentUserEmail();
+        GetDriverActiveRideDTO ride = rideService.getDriverActiveRide(email);
         return ResponseEntity.ok(ride);
     }
 

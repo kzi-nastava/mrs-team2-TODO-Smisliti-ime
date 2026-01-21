@@ -12,24 +12,23 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import rs.getgo.backend.services.PassengerService;
 import rs.getgo.backend.services.PassengerServiceImpl;
+import rs.getgo.backend.utils.AuthUtils;
 
 @RestController
 @RequestMapping("/api/passenger")
 public class PassengerController {
 
     @Autowired
-    private PassengerServiceImpl passengerService;
-
-    Long passengerId = 5L; // TODO: get from cookie/whatever we decide to use
+    private PassengerService passengerService;
 
     // 2.3 - User profile
     @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetPassengerDTO> getProfile() {
-
-        GetPassengerDTO response = passengerService.getPassengerById(passengerId);
-
+        String email = AuthUtils.getCurrentUserEmail();
+        GetPassengerDTO response = passengerService.getPassenger(email);
         return ResponseEntity.ok(response);
     }
 
@@ -40,9 +39,8 @@ public class PassengerController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPassengerDTO> updateProfile(
             @RequestBody UpdatePassengerDTO updatePassengerDTO) {
-
-        UpdatedPassengerDTO response = passengerService.updateProfile(passengerId, updatePassengerDTO);
-
+        String email = AuthUtils.getCurrentUserEmail();
+        UpdatedPassengerDTO response = passengerService.updateProfile(email, updatePassengerDTO);
         return ResponseEntity.ok(response);
     }
 
@@ -53,12 +51,11 @@ public class PassengerController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
             @RequestBody UpdatePasswordDTO updatePasswordDTO) {
-
-        UpdatedPasswordDTO response = passengerService.updatePassword(passengerId, updatePasswordDTO);
+        String email = AuthUtils.getCurrentUserEmail();
+        UpdatedPasswordDTO response = passengerService.updatePassword(email, updatePasswordDTO);
         if (!response.getSuccess()) {
             return ResponseEntity.badRequest().body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
@@ -69,9 +66,8 @@ public class PassengerController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedProfilePictureDTO> uploadProfilePicture(
             @RequestParam("file") MultipartFile file) {
-
-        UpdatedProfilePictureDTO response = passengerService.uploadProfilePicture(passengerId, file);
-
+        String email = AuthUtils.getCurrentUserEmail();
+        UpdatedProfilePictureDTO response = passengerService.uploadProfilePicture(email, file);
         return ResponseEntity.ok(response);
     }
 }

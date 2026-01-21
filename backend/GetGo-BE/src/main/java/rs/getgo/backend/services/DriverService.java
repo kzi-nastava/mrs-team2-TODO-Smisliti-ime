@@ -18,14 +18,14 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface DriverService {
-    List<GetRideDTO> getDriverRides(Long driverId, LocalDate startDate);
+    List<GetRideDTO> getDriverRides(String email, LocalDate startDate);
     GetActivationTokenDTO validateActivationToken(String token);
     UpdatedPasswordDTO setDriverPassword(UpdateDriverPasswordDTO passwordDTO);
-    GetDriverDTO getDriverById(Long driverId);
-    UpdatedPasswordDTO updatePassword(Long driverId, UpdatePasswordDTO updatePasswordDTO);
-    CreatedDriverChangeRequestDTO requestPersonalInfoChange(Long driverId, UpdateDriverPersonalDTO updateDTO);
-    CreatedDriverChangeRequestDTO requestVehicleInfoChange(Long driverId, UpdateDriverVehicleDTO updateDTO);
-    CreatedDriverChangeRequestDTO requestProfilePictureChange(Long driverId, MultipartFile file);
+    GetDriverDTO getDriver(String email);
+    UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO);
+    CreatedDriverChangeRequestDTO requestPersonalInfoChange(String email, UpdateDriverPersonalDTO updateDTO);
+    CreatedDriverChangeRequestDTO requestVehicleInfoChange(String email, UpdateDriverVehicleDTO updateDTO);
+    CreatedDriverChangeRequestDTO requestProfilePictureChange(String email, MultipartFile file);
     void updateLocation(String driverEmail, Double latitude, Double longitude);
     UpdateDriverLocationDTO getLocation(String driverEmail);
     void updateActiveStatus(String driverEmail, boolean isActive);

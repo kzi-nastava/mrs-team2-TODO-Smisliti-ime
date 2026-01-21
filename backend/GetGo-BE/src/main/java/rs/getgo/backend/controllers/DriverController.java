@@ -1,6 +1,5 @@
 package rs.getgo.backend.controllers;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
@@ -17,12 +16,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import rs.getgo.backend.services.DriverServiceImpl;
+import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
@@ -32,34 +31,29 @@ public class DriverController {
     @Autowired
     private DriverServiceImpl driverService;
 
-    Long driverId = 6L; // TODO: get from cookie/whatever we decide to use
-    String driverEmail = "d@gmail.com"; // TODO: get from cookie/whatever we decide to use
-
     public DriverController(DriverServiceImpl driverService) {
         this.driverService = driverService;
     }
 
-    // 2.9.2
+    // 2.9.2 - Get driver rides
     @PreAuthorize("hasRole('DRIVER')")
-    @GetMapping(value = "/{id}/rides", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/rides", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetRideDTO>> getDriverRides(
-            @PathVariable("id") Long id,
             @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
 
-        List<GetRideDTO> rides = driverService.getDriverRides(id, startDate);
+        String email = AuthUtils.getCurrentUserEmail();
+        List<GetRideDTO> rides = driverService.getDriverRides(email, startDate);
         return ResponseEntity.ok(rides);
     }
 
-    // 2.2.3 - Driver registration
+    // 2.2.3 - Driver registration (validate activation token)
     @GetMapping(value = "/activate/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GetActivationTokenDTO> validateActivationToken(
-            @PathVariable String token) {
-
+    public ResponseEntity<GetActivationTokenDTO> validateActivationToken(@PathVariable String token) {
         GetActivationTokenDTO response = driverService.validateActivationToken(token);
         return ResponseEntity.ok(response);
     }
 
-    // 2.2.3 - Driver registration
+    // 2.2.3 - Driver registration (set password)
     @PostMapping(value = "/activate",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -70,12 +64,12 @@ public class DriverController {
         return ResponseEntity.ok(response);
     }
 
-    // 2.3 - User profile
+    // 2.3 - User profile (GET)
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverDTO> getProfile() {
-
-        GetDriverDTO response = driverService.getDriverById(driverId);
+        String email = AuthUtils.getCurrentUserEmail();
+        GetDriverDTO response = driverService.getDriver(email);
         return ResponseEntity.ok(response);
     }
 
@@ -87,7 +81,8 @@ public class DriverController {
     public ResponseEntity<CreatedDriverChangeRequestDTO> requestPersonalInfoChange(
             @RequestBody UpdateDriverPersonalDTO updateDriverPersonalDTO) {
 
-        CreatedDriverChangeRequestDTO response = driverService.requestPersonalInfoChange(driverId, updateDriverPersonalDTO);
+        String email = AuthUtils.getCurrentUserEmail();
+        CreatedDriverChangeRequestDTO response = driverService.requestPersonalInfoChange(email, updateDriverPersonalDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -99,7 +94,8 @@ public class DriverController {
     public ResponseEntity<CreatedDriverChangeRequestDTO> requestVehicleInfoChange(
             @RequestBody UpdateDriverVehicleDTO updateDriverVehicleDTO) {
 
-        CreatedDriverChangeRequestDTO response = driverService.requestVehicleInfoChange(driverId, updateDriverVehicleDTO);
+        String email = AuthUtils.getCurrentUserEmail();
+        CreatedDriverChangeRequestDTO response = driverService.requestVehicleInfoChange(email, updateDriverVehicleDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -111,7 +107,8 @@ public class DriverController {
     public ResponseEntity<CreatedDriverChangeRequestDTO> requestProfilePictureChange(
             @RequestParam("file") MultipartFile file) {
 
-        CreatedDriverChangeRequestDTO response = driverService.requestProfilePictureChange(driverId, file);
+        String email = AuthUtils.getCurrentUserEmail();
+        CreatedDriverChangeRequestDTO response = driverService.requestProfilePictureChange(email, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -123,49 +120,52 @@ public class DriverController {
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
             @RequestBody UpdatePasswordDTO updatePasswordDTO) {
 
-        UpdatedPasswordDTO response = driverService.updatePassword(driverId, updatePasswordDTO);
+        String email = AuthUtils.getCurrentUserEmail();
+        UpdatedPasswordDTO response = driverService.updatePassword(email, updatePasswordDTO);
+
         if (!response.getSuccess()) {
             return ResponseEntity.badRequest().body(response);
         }
         return ResponseEntity.ok(response);
     }
 
-    // 2.4.1 - Calling a ride
+    // 2.4.1 - Get active driver locations
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/active-locations", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetActiveDriverLocationDTO>> getActiveDriverLocations() {
-
         List<GetActiveDriverLocationDTO> response = new ArrayList<>();
         GetActiveDriverLocationDTO driver = new GetActiveDriverLocationDTO();
         driver.setDriverId(2L);
         driver.setLatitude(45.2550);
         driver.setVehicleType("STANDARD");
         response.add(driver);
-
         return ResponseEntity.ok(response);
     }
 
     // Update driver's current location
+    @PreAuthorize("hasRole('DRIVER')")
     @PutMapping("/location")
-    public ResponseEntity<Void> updateLocation(
-            @RequestBody UpdateDriverLocationDTO request
-    ) {
-        driverService.updateLocation(driverEmail, request.getLatitude(), request.getLongitude());
+    public ResponseEntity<Void> updateLocation(@RequestBody UpdateDriverLocationDTO request) {
+        String email = AuthUtils.getCurrentUserEmail();
+        driverService.updateLocation(email, request.getLatitude(), request.getLongitude());
         return ResponseEntity.ok().build();
     }
 
-    // Optional: Get driver's current location
+    // Get driver's current location
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping("/location")
     public ResponseEntity<UpdateDriverLocationDTO> getLocation() {
-        UpdateDriverLocationDTO location = driverService.getLocation(driverEmail);
+        String email = AuthUtils.getCurrentUserEmail();
+        UpdateDriverLocationDTO location = driverService.getLocation(email);
         return ResponseEntity.ok(location);
     }
 
-    // Optional: Set driver active/inactive
+    // Set driver active/inactive
+    @PreAuthorize("hasRole('DRIVER')")
     @PutMapping("/status")
     public ResponseEntity<Void> updateStatus(@RequestParam boolean isActive) {
-        driverService.updateActiveStatus(driverEmail, isActive);
+        String email = AuthUtils.getCurrentUserEmail();
+        driverService.updateActiveStatus(email, isActive);
         return ResponseEntity.ok().build();
     }
-
 }

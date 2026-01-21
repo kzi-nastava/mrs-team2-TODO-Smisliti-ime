@@ -9,6 +9,7 @@ import {CommonModule} from '@angular/common';
 import {AuthService} from '../../../service/auth-service/auth.service';
 import {environment} from '../../../../env/environment';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { SnackBarService } from '../../../service/snackBar/snackBar.service';
 
 @Component({
   selector: 'app-register',
@@ -40,20 +41,42 @@ export class RegisterComponent {
     private cdr: ChangeDetectorRef,
     private auth: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBarService: SnackBarService
   ) {
     this.form = this.fb.group(
       {
-        email: ['', [Validators.required, Validators.email]],
-        firstName: ['', [Validators.required]],
-        lastName: ['', [Validators.required]],
-        address: ['', [Validators.required]],
-        phoneNumber: ['', [Validators.required]],
-        password: ['', [Validators.required, Validators.minLength(6)]],
-        confirmPassword: ['', [Validators.required]],
+        email: ['', [
+          // Validators.required,
+          // Validators.email,
+          // Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+        ]],
+        firstName: ['', [
+          // Validators.required,
+          // Validators.minLength(2),
+          // Validators.maxLength(50)
+        ]],
+        lastName: ['', [
+          // Validators.required,
+          // Validators.minLength(2),
+          // Validators.maxLength(50)
+        ]],
+        address: ['', [
+          // Validators.required
+        ]],
+        phoneNumber: ['', [
+          // Validators.required,
+          // Validators.pattern(/^(\+3816|06)[0-9]{7,8}$/)
+        ]],
+        password: ['', [
+          // Validators.required,
+          // Validators.minLength(8)
+        ]],
+        confirmPassword: ['', [
+          // Validators.required
+        ]],
         imageUrl: ['']
       },
-      {validators: this.passwordsMatchValidator}
+      // {validators: this.passwordsMatchValidator}
     );
   }
 
@@ -64,43 +87,6 @@ export class RegisterComponent {
       return null;
     }
     return password === confirm ? null : {passwordsDontMatch: true};
-  }
-
-  // New helper: log per-field validation errors
-  private logValidationErrors(): void {
-    const controls: { [key: string]: AbstractControl | null } = {
-      email: this.form.get('email'),
-      firstName: this.form.get('firstName'),
-      lastName: this.form.get('lastName'),
-      address: this.form.get('address'),
-      phoneNumber: this.form.get('phoneNumber'),
-      password: this.form.get('password'),
-      confirmPassword: this.form.get('confirmPassword')
-    };
-
-    for (const [name, control] of Object.entries(controls)) {
-      if (!control) {
-        console.warn(`Register validation: missing control ${name}`);
-        continue;
-      }
-      if (control.invalid) {
-        if (control.hasError('required')) {
-          console.log(`Register validation: ${name} is required`);
-        } else if (name === 'email' && control.hasError('email')) {
-          console.log('Register validation: email format is invalid');
-        } else if (name === 'password' && control.hasError('minlength')) {
-          console.log('Register validation: password must be at least 6 characters');
-        } else {
-          console.log(`Register validation: ${name} invalid`, control.errors);
-        }
-      }
-      // mark touched so errors show in UI
-      control.markAsTouched();
-    }
-
-    if (this.form.errors && this.form.errors["passwordsDontMatch"]) {
-      console.log('Register validation: passwords do not match');
-    }
   }
 
   get password() {
@@ -147,14 +133,31 @@ export class RegisterComponent {
 
   submit(): void {
     if (this.form.invalid) {
-      this.logValidationErrors();
+      this.form.markAllAsTouched();
+
+      const fieldMap = {
+        email: 'Email',
+        firstName: 'First name',
+        lastName: 'Last name',
+        address: 'Address',
+        phoneNumber: 'Phone number',
+        password: 'Password',
+        confirmPassword: 'Confirm password'
+      };
+
+      this.snackBarService.showFormErrors(this.form, fieldMap);
+      console.log('Register: aborting due to validation errors');
       return;
     }
 
     const formData = new FormData();
-    formData.append('email', this.form.value.email);
-    formData.append('firstName', this.form.value.firstName);
-    formData.append('lastName', this.form.value.lastName);
+    formData.append('email',
+
+    this.form.value.email);const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+    formData.append('name', capitalize(this.form.value.firstName));
+    formData.append('surname', capitalize(this.form.value.lastName));
+
     formData.append('password', this.form.value.password);
     formData.append('phone', this.form.value.phoneNumber);
     formData.append('address', this.form.value.address);
@@ -164,15 +167,33 @@ export class RegisterComponent {
     }
 
     this.isSubmitting = true;
+    console.log('Register: sending data to server');
 
     this.http.post(`${environment.apiHost}/api/auth/register`, formData).subscribe({
       next: (res) => {
         this.isSubmitting = false;
+        this.cdr.detectChanges();
+        console.log('Register: success', res);
+
+        this.snackBarService.show('Registration successful! Please login.', true, 3000);
         this.router.navigate(['/login']);
       },
       error: (err) => {
         this.isSubmitting = false;
-        console.error(err);
+        this.cdr.detectChanges();
+        console.error('Register: failed', err);
+
+        let errorMessages: string[] = [];
+
+        if (err.status === 400 && err.error?.errors) {
+          errorMessages = err.error.errors.map((e: any) => e.message || e);
+        } else if (err.error?.message) {
+          errorMessages = [err.error.message];
+        } else {
+          errorMessages = ['Registration failed. Please try again.'];
+        }
+
+        this.snackBarService.show(errorMessages);
       }
     });
   }

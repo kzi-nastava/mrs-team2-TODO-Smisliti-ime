@@ -11,7 +11,7 @@ import { AuthService } from '../../../service/auth-service/auth.service';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import {environment} from '../../../../env/environment';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { SnackBarService } from '../../../service/snackBar/snackBar.service';
 
 @Component({
   selector: 'app-login',
@@ -25,9 +25,16 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class LoginComponent {
   createLoginForm = new FormGroup({
-    email: new FormControl('', Validators.required),
-    password: new FormControl('', Validators.required),
-    stayLoggedIn: new FormControl(false), // Add checkbox control
+    email: new FormControl('', [
+      // Validators.required,
+      // Validators.email,
+      // Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+    ]),
+    password: new FormControl('', [
+      // Validators.required,
+      // Validators.minLength(8)
+    ]),
+    stayLoggedIn: new FormControl(false),
   });
 
   // keep saving credentials locally for debugging/storage
@@ -37,44 +44,19 @@ export class LoginComponent {
     private auth: AuthService,
     private router: Router,
     private http: HttpClient,
-    private snackBar: MatSnackBar
+    private snackBarService: SnackBarService
   ) {}
 
   login() {
-    const emailControl = this.createLoginForm.get('email');
-    const passwordControl = this.createLoginForm.get('password');
+    if (this.createLoginForm.invalid) {
+      this.createLoginForm.markAllAsTouched();
 
-    if (!emailControl || !passwordControl) {
-      console.error('Login: form controls missing');
-      return;
-    }
+      const fieldMap = {
+        email: 'Email',
+        password: 'Password'
+      };
 
-    let hasError = false;
-
-    if (emailControl.invalid) {
-      if (emailControl.hasError('required')) {
-        console.log('Login validation: email is required');
-      } else if (emailControl.hasError('email')) {
-        console.log('Login validation: email format is invalid');
-      } else {
-        console.log('Login validation: email is invalid', emailControl.errors);
-      }
-      hasError = true;
-    }
-
-    if (passwordControl.invalid) {
-      if (passwordControl.hasError('required')) {
-        console.log('Login validation: password is required');
-      } else {
-        console.log('Login validation: password is invalid', passwordControl.errors);
-      }
-      hasError = true;
-    }
-
-    if (hasError) {
-      // mark touched so UI shows errors
-      emailControl.markAsTouched();
-      passwordControl.markAsTouched();
+      this.snackBarService.showFormErrors(this.createLoginForm, fieldMap);
       console.log('Login: aborting due to validation errors');
       return;
     }
@@ -106,40 +88,44 @@ export class LoginComponent {
 
         if (!res?.token) {
           console.error('Login: token missing in response');
-          this.snackBar.open('Login failed: No token received', 'Close', {
-            duration: 4000,
-            horizontalPosition: 'end',
-            verticalPosition: 'bottom',
-            panelClass: ['error-snackbar']
-          });
+          this.snackBarService.show('Login failed: No token received');
           return;
         }
 
-        // Save token based on stayLoggedIn checkbox
+        if (stayLoggedIn) {
+          localStorage.setItem('authToken', res.token);
+          console.log('Login: token saved to localStorage (persistent)');
+        } else {
+          sessionStorage.setItem('authToken', res.token);
+          console.log('Login: token saved to sessionStorage (session only)');
+        }
+
         this.auth.setToken(res.token, stayLoggedIn);
 
         console.log('Login: token saved & role extracted from JWT');
-        console.log("Current role:", res.role);
+
+        this.snackBarService.show('Login successful!', true, 3000);
         this.router.navigate(['/home']);
       },
       error: (err) => {
         console.error('Login: request failed', err);
 
-        let errorMessage = 'Login failed. Please try again.';
-        if (err.status === 401) {
-          errorMessage = 'Invalid email or password.';
+        let errorMessages: string[] = [];
+
+        if (err.status === 400 && err.error?.errors) {
+          // Backend validation errors
+          errorMessages = err.error.errors.map((e: any) => e.message || e);
+        } else if (err.status === 401) {
+          errorMessages = ['Invalid email or password'];
         } else if (err.status === 0) {
-          errorMessage = 'Cannot connect to server.';
+          errorMessages = ['Cannot connect to server'];
         } else if (err.error?.message) {
-          errorMessage = err.error.message;
+          errorMessages = [err.error.message];
+        } else {
+          errorMessages = ['Login failed. Please try again.'];
         }
 
-        this.snackBar.open(errorMessage, 'Close', {
-          duration: 5000,
-          horizontalPosition: 'end',
-          verticalPosition: 'bottom',
-          panelClass: ['error-snackbar']
-        });
+        this.snackBarService.show(errorMessages);
       }
     });
   }

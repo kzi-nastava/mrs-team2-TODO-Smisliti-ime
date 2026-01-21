@@ -1,15 +1,19 @@
 package rs.getgo.backend.dtos.resetPassword;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Setter
 @Getter
+@Setter
 public class ResetPasswordDTO {
+
+    /*@NotBlank(message = "Token is required")*/
     private String token;
-    private String Password;
+
+    /*@NotBlank(message = "Password is required")
+    @Size(min = 8, message = "Password must be at least 8 characters long")*/
+    private String password;
 }

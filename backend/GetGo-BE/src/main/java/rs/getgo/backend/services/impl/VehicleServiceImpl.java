@@ -1,31 +1,36 @@
 package rs.getgo.backend.services.impl;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import rs.getgo.backend.dtos.vehicle.GetVehicleDTO;
 import org.springframework.stereotype.Service;
+import rs.getgo.backend.model.entities.Vehicle;
+import rs.getgo.backend.repositories.RatingRepository;
+import rs.getgo.backend.repositories.VehicleRepository;
 import rs.getgo.backend.services.VehicleService;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 @Service
 public class VehicleServiceImpl implements VehicleService {
+
+    @Autowired
+    private VehicleRepository vehicleRepository;
+
     private final Collection<GetVehicleDTO> vehicles = new ArrayList<>();
 
-    public VehicleServiceImpl() {
-
-        vehicles.add(new GetVehicleDTO(1L, "Toyota Corolla", "Sedan", 44.8176, 20.4569, true));
-        vehicles.add(new GetVehicleDTO(2L, "BMW X5", "SUV", 44.8200, 20.4600, false));
+    public VehicleServiceImpl(VehicleRepository vehicleRepository) {
+        this.vehicleRepository = vehicleRepository;
     }
 
     @Override
     public Collection<GetVehicleDTO> getActiveVehicles() {
-        Collection<GetVehicleDTO> activeVehicles = new ArrayList<>();
-        for (GetVehicleDTO v : vehicles) {
-            if (Boolean.TRUE.equals(v.getIsAvailable())) {
-                activeVehicles.add(v);
-            }
-        }
-        return activeVehicles;
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+
+        return vehicles.stream()
+                .map(this::mapToDTO)
+                .toList();
     }
 
     @Override
@@ -39,7 +44,7 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     public GetVehicleDTO createVehicle(GetVehicleDTO vehicle) throws Exception {
         if (vehicle.getId() != null) {
-            throw new Exception("ID mora biti null prilikom kreiranja novog vozila.");
+            throw new Exception("ID must be null when we creating new vehicle.");
         }
         long newId = vehicles.size() + 1L;
         vehicle.setId(newId);
@@ -65,4 +70,24 @@ public class VehicleServiceImpl implements VehicleService {
     public void deleteVehicle(Long id) {
         vehicles.removeIf(v -> v.getId().equals(id));
     }
+
+    private GetVehicleDTO mapToDTO(Vehicle v) {
+        Double lat = null;
+        Double lon = null;
+
+        if (v.getCurrentLocation() != null) {
+            lat = v.getCurrentLocation().getLatitude();
+            lon = v.getCurrentLocation().getLongitude();
+        }
+
+        return new GetVehicleDTO(
+                v.getId(),
+                v.getModel(),
+                v.getType() != null ? v.getType().name() : null,
+                lat,
+                lon,
+                v.getIsAvailable()
+        );
+    }
+
 }

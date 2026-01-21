@@ -156,6 +156,17 @@ export class MapComponent implements AfterViewInit{
   }
 
   setRoute(): void {
+    const routeControl = L.Routing.control({
+      waypoints: [L.latLng(57.74, 11.94), L.latLng(57.6792, 11.949)],
+      router: L.routing.mapbox('pk.eyJ1IjoibWVyaXMxMCIsImEiOiJjbWpxandnNmIwd2piM2dzYzVlc3N6NXExIn0.-OX2bzr7c8eGfjaUX-gwZw', {profile: 'mapbox/driving'})
+//         router: L.routing.mapbox('DODATI SVOJ API KEY', {profile: 'mapbox/driving'})
+    }).addTo(this.map);
+
+    routeControl.on('routesfound', function(e : any) {
+      var routes = e.routes;
+      var summary = routes[0].summary;
+      alert('Total distance is ' + summary.totalDistance / 1000 + ' km and total time is ' + Math.round(summary.totalTime % 3600 / 60) + ' minutes');
+    });
   }
 
   private addVehicleMarker(vehicle: GetVehicleDTO): L.Marker {

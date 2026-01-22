@@ -33,6 +33,7 @@ public class ActiveRide {
     private LocalDateTime actualStartTime;
 
     private double estimatedPrice;
+    private double estimatedDurationMin;
 
     @Enumerated(EnumType.STRING)
     private RideStatus status;
@@ -57,4 +58,14 @@ public class ActiveRide {
             inverseJoinColumns = @JoinColumn(name = "passenger_id")
     )
     private List<Passenger> linkedPassengers;
+
+    // Which route waypoint is next (0=start point, 1=first waypoint...)
+    private Integer targetWaypointIndex = 0;
+
+    // Detailed path with coords between waypoints
+    @Column(columnDefinition = "TEXT")
+    private String movementPathJson;
+
+    // Current coord in movementPathJson
+    private Integer currentPathIndex = 0;
 }

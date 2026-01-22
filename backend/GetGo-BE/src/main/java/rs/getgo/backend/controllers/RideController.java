@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import rs.getgo.backend.services.RideTrackingService;
+import rs.getgo.backend.services.impl.rides.RideTrackingService;
 import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDateTime;

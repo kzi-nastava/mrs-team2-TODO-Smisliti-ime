@@ -375,58 +375,30 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public Driver findAvailableDriver(ActiveRide ride) {
-        // Get starting point coordinates
         WayPoint startPoint = ride.getRoute().getWaypoints().getFirst();
-        double startLat = startPoint.getLatitude();
-        double startLng = startPoint.getLongitude();
+        double lat = startPoint.getLatitude();
+        double lng = startPoint.getLongitude();
 
-        // Get all active drivers
-        List<Driver> allActiveDrivers = driverRepository.findByIsActive(true);
-        if (allActiveDrivers.isEmpty()) {
-            return null;
-        }
-
-        // Filter by vehicle type
-        List<Driver> eligibleDrivers = allActiveDrivers.stream()
-                .filter(driver -> isVehicleTypeMatch(driver, ride))
+        List<Driver> candidates = driverRepository.findByIsActive(true)
+                .stream()
+                .filter(d -> isVehicleTypeMatch(d, ride))
+                .filter(d -> !hasExceededWorkingHours(d))
                 .toList();
-        if (eligibleDrivers.isEmpty()) {
-            return null;
-        }
+        if (candidates.isEmpty()) return null;
 
-        // Filter out those who worked 8+ hours
-        List<Driver> nonOverworkedDrivers = eligibleDrivers.stream()
-                .filter(driver -> !hasExceededWorkingHours(driver))
-                .toList();
-        if (nonOverworkedDrivers.isEmpty()) {
-            return null;
-        }
-
-        // Separate drivers into: FREE and BUSY
-        List<Driver> freeDrivers = nonOverworkedDrivers.stream()
+        // Try to assign the closest free driver
+        List<Driver> freeDrivers = candidates.stream()
                 .filter(this::isFree)
                 .toList();
+        if (!freeDrivers.isEmpty()) return findClosestDriver(freeDrivers, lat, lng);
 
-        List<Driver> busyDrivers = nonOverworkedDrivers.stream()
-                .filter(driver -> !isFree(driver))
+        // Try to assign the closest driver that's finishing his ride soon and is not reserved
+        List<Driver> finishingDrivers = candidates.stream()
+                .filter(this::canAcceptNextRideWhileFinishing)
                 .toList();
+        if (finishingDrivers.isEmpty()) return null;
 
-        // Free drivers first
-        if (!freeDrivers.isEmpty()) {
-            // Find closest free driver to starting point
-            return findClosestDriver(freeDrivers, startLat, startLng);
-        }
-
-        // If no free drivers, check busy drivers finishing soon
-        List<Driver> finishingSoonDrivers = busyDrivers.stream()
-                .filter(this::isFinishingSoon) // 10 minutes or less remaining
-                .toList();
-        if (finishingSoonDrivers.isEmpty()) {
-            return null; // All drivers busy and won't finish soon
-        }
-
-        // Find closest driver among those finishing soon
-        return findClosestDriver(finishingSoonDrivers, startLat, startLng);
+        return findClosestDriver(finishingDrivers, lat, lng);
     }
 
     private boolean isVehicleTypeMatch(Driver driver, ActiveRide ride) {
@@ -468,17 +440,33 @@ public class DriverServiceImpl implements DriverService {
     }
 
     private boolean isFree(Driver driver) {
-        boolean hasActiveRide = activeRideRepository
-                .findByDriverAndStatus(driver, RideStatus.ACTIVE)
-                .isPresent();
-        if (hasActiveRide) {
-            return false;
-        }
-        boolean hasScheduledRide = activeRideRepository
-                .findByDriverAndStatus(driver, RideStatus.SCHEDULED)
-                .isPresent();
+        return !activeRideRepository
+                .existsByDriverAndStatusIn(
+                        driver,
+                        List.of(
+                                RideStatus.ACTIVE,
+                                RideStatus.DRIVER_INCOMING,
+                                RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE
+                        )
+                );
+    }
 
-        return !hasScheduledRide;
+    private boolean canAcceptNextRideWhileFinishing(Driver driver) {
+
+        boolean hasActive = activeRideRepository
+                .existsByDriverAndStatus(driver, RideStatus.ACTIVE);
+
+        boolean hasFutureAssigned = activeRideRepository
+                .existsByDriverAndStatusIn(
+                        driver,
+                        List.of(
+                                RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE,
+                                RideStatus.DRIVER_INCOMING,
+                                RideStatus.SCHEDULED
+                        )
+                );
+
+        return hasActive && !hasFutureAssigned && isFinishingSoon(driver);
     }
 
     private boolean isFinishingSoon(Driver driver) {
@@ -486,7 +474,7 @@ public class DriverServiceImpl implements DriverService {
                 .findByDriverAndStatus(driver, RideStatus.ACTIVE)
                 .orElse(null);
         if (currentRide == null || currentRide.getActualStartTime() == null) {
-            return false; // Not on an active ride or hasn't started yet
+            return false; // Not in an active ride or hasn't started yet
         }
 
         // Calculate elapsed time
@@ -502,30 +490,44 @@ public class DriverServiceImpl implements DriverService {
         return remainingMinutes <= 10;
     }
 
-    // TODO: CALL MAPS API FOR THIS?
+    // Returns closest driver closest to target position
+    // 1) Driver free: calculate distance using current driver location
+    // 2) Driver finishing previous ride: calculate distance using position of the end of his current ride
     private Driver findClosestDriver(List<Driver> drivers, double targetLat, double targetLng) {
-        Driver closestDriver = null;
-        double minDistanceSquared = Double.MAX_VALUE;
+        Driver closest = null;
+        double minDistance = Double.MAX_VALUE;
 
-        // Correct for map distortion
-        double latRad = Math.toRadians(targetLat);
-        double cosLat = Math.cos(latRad);
+        for (Driver d : drivers) {
+            double srcLat;
+            double srcLng;
 
-        for (Driver driver : drivers) {
-            if (driver.getCurrentLatitude() == null || driver.getCurrentLongitude() == null) {
-                continue;
+            Optional<ActiveRide> active =
+                    activeRideRepository.findByDriverAndStatus(d, RideStatus.ACTIVE);
+
+            if (active.isPresent()) {
+                WayPoint end = active.get()
+                        .getRoute()
+                        .getWaypoints()
+                        .getLast();
+                srcLat = end.getLatitude();
+                srcLng = end.getLongitude();
+            } else {
+                if (d.getCurrentLatitude() == null || d.getCurrentLongitude() == null)
+                    continue;
+                srcLat = d.getCurrentLatitude();
+                srcLng = d.getCurrentLongitude();
             }
 
-            double dLat = driver.getCurrentLatitude() - targetLat;
-            double dLng = (driver.getCurrentLongitude() - targetLng) * cosLat;
-            double distanceSquared = dLat * dLat + dLng * dLng;
+            double dLat = srcLat - targetLat;
+            double dLng = (srcLng - targetLng) * Math.cos(Math.toRadians(targetLat));
+            double dist = dLat * dLat + dLng * dLng;
 
-            if (distanceSquared < minDistanceSquared) {
-                minDistanceSquared = distanceSquared;
-                closestDriver = driver;
+            if (dist < minDistance) {
+                minDistance = dist;
+                closest = d;
             }
         }
 
-        return closestDriver;
+        return closest;
     }
 }

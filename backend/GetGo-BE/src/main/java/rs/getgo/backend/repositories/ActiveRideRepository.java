@@ -6,8 +6,13 @@ import rs.getgo.backend.model.entities.ActiveRide;
 import rs.getgo.backend.model.entities.Driver;
 import rs.getgo.backend.model.enums.RideStatus;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ActiveRideRepository extends JpaRepository<ActiveRide, Long> {
     Optional<ActiveRide> findByDriverAndStatus(Driver driver, RideStatus status);
+    List<ActiveRide> findByDriverAndStatusIn(Driver driver, List<RideStatus> statuses);
+    List<ActiveRide> findByStatusIn(List<RideStatus> statuses);
+    boolean existsByDriverAndStatusIn(Driver driver, List<RideStatus> statuses);
+    boolean existsByDriverAndStatus(Driver driver, RideStatus status);
 }

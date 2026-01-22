@@ -28,6 +28,7 @@ public class RideServiceImpl implements RideService {
     private final RouteRepository routeRepository;
     private final DriverRepository driverRepository;
     private final DriverService driverService;
+    private final CompletedRideRepository completedRideRepository;
 
     // passenger must cancel at least 10 minutes before scheduled start
     private static final long PASSENGER_CANCEL_MINUTES_BEFORE = 10L;
@@ -39,7 +40,8 @@ public class RideServiceImpl implements RideService {
                            PassengerRepository passengerRepository,
                            RouteRepository routeRepository,
                            DriverRepository driverRepository,
-                           DriverService driverService) {
+                           DriverService driverService,
+                           CompletedRideRepository completedRideRepository) {
         this.cancellationRepository = cancellationRepository;
         this.panicRepository = panicRepository;
         this.activeRideRepository = activeRideRepository;
@@ -48,6 +50,7 @@ public class RideServiceImpl implements RideService {
         this.routeRepository = routeRepository;
         this.driverRepository = driverRepository;
         this.driverService = driverService;
+        this.completedRideRepository = completedRideRepository;
     }
 
     @Override
@@ -334,4 +337,55 @@ public class RideServiceImpl implements RideService {
 
         // TODO: notificationService.notifyAdminsAboutPanic(panic);
     }
+
+    @Override
+    public UpdatedRideDTO finishRide(Long rideId, UpdateRideDTO rideRequest) {
+        ActiveRide ride = activeRideRepository.findById(rideId)
+                .orElseThrow(() -> new IllegalStateException("Ride not found"));
+
+        if (ride.getStatus() != RideStatus.ACTIVE) {
+            throw new IllegalStateException("Ride is not ACTIVE and cannot be finished");
+        }
+
+        // Create CompletedRide
+        CompletedRide completedRide = new CompletedRide();
+        completedRide.setRoute(ride.getRoute());
+        completedRide.setScheduledTime(ride.getScheduledTime());
+        completedRide.setStartTime(ride.getActualStartTime());
+        completedRide.setEndTime(LocalDateTime.now());
+        completedRide.setEstimatedPrice(ride.getEstimatedPrice());
+        completedRide.setVehicleType(ride.getVehicleType());
+        completedRide.setDriverId(ride.getDriver() != null ? ride.getDriver().getId() : null);
+        completedRide.setDriverName(ride.getDriver() != null ? ride.getDriver().getName() : null);
+        completedRide.setDriverEmail(ride.getDriver() != null ? ride.getDriver().getEmail() : null);
+        completedRide.setPayingPassengerId(ride.getPayingPassenger().getId());
+        completedRide.setPayingPassengerName(ride.getPayingPassenger().getName() + " " + ride.getPayingPassenger().getSurname());
+        completedRide.setPayingPassengerEmail(ride.getPayingPassenger().getEmail());
+        completedRide.setLinkedPassengerIds(
+                ride.getLinkedPassengers() != null
+                        ? ride.getLinkedPassengers().stream().map(Passenger::getId).toList()
+                        : List.of()
+        );
+        completedRide.setCompletedNormally(true);
+        completedRide.setCancelled(false);
+        completedRide.setStoppedEarly(false);
+        completedRide.setPanicPressed(false);
+
+        // Save completed ride
+        completedRide = completedRideRepository.save(completedRide);
+
+        // Remove active ride
+        activeRideRepository.delete(ride);
+
+        // Return DTO
+        UpdatedRideDTO response = new UpdatedRideDTO();
+        response.setId(completedRide.getId());
+        response.setStatus("FINISHED");
+        response.setEndTime(completedRide.getEndTime());
+
+        return response;
+    }
+
+
+
 }

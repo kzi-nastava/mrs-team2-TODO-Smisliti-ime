@@ -17,4 +17,5 @@ public class GetDriverActiveRideDTO {
     private Double estimatedTimeMin;
     private String passengerName;
     private Integer passengerCount;
+    private String status;
 }

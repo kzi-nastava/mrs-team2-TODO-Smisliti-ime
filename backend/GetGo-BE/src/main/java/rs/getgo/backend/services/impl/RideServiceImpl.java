@@ -403,7 +403,8 @@ public class RideServiceImpl implements RideService {
         emailService.sendRideFinishedEmail(
                 ride.getPayingPassenger().getEmail(),
                 ride.getPayingPassenger().getName(),
-                completedRide.getId()
+                completedRide.getId(),
+                ride.getPayingPassenger().getId()
         );
 
         // Send email to linked passengers
@@ -412,7 +413,8 @@ public class RideServiceImpl implements RideService {
                 emailService.sendRideFinishedEmail(
                         p.getEmail(),
                         p.getName(),
-                        completedRide.getId()
+                        completedRide.getId(),
+                        p.getId()
                 );
             }
         }

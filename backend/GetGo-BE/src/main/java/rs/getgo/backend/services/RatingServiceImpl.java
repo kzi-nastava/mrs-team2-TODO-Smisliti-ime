@@ -63,12 +63,13 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
-    public CreatedRatingDTO create(CreateRatingDTO dto, CompletedRide ride) {
+    public CreatedRatingDTO create(CreateRatingDTO dto, CompletedRide ride, Long passengerId) {
         Rating rating = new Rating();
         rating.setCompletedRide(ride);
 
         Passenger passenger = new Passenger();
-        passenger.setId(1L); // temporary hardcoded passenger ID
+//        passenger.setId(1L); // temporary hardcoded passenger ID
+        passenger.setId(passengerId);
         rating.setPassenger(passenger);
 
         rating.setDriverRating(dto.getDriverRating());
@@ -85,6 +86,7 @@ public class RatingServiceImpl implements RatingService {
 
         return new CreatedRatingDTO(
                 saved.getId(),
+                passengerId,
                 ride.getId(),
                 ride.getDriverId(),
                 vehicleId,
@@ -93,4 +95,12 @@ public class RatingServiceImpl implements RatingService {
                 saved.getComment()
         );
     }
+
+    @Override
+    public boolean hasUserRatedRide(Long passengerId, Long rideId) {
+        return ratingRepository.existsByPassenger_IdAndCompletedRide_Id(passengerId, rideId);
+    }
+
+
+
 }

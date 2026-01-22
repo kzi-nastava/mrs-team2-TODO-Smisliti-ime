@@ -10,8 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.model.entities.CompletedRide;
 import rs.getgo.backend.repositories.CompletedRideRepository;
+import rs.getgo.backend.repositories.PassengerRepository;
 import rs.getgo.backend.services.RatingService;
 import org.springframework.security.core.Authentication;
+import rs.getgo.backend.utils.RatingTokenData;
+import rs.getgo.backend.utils.TokenUtils;
 
 
 import java.util.Collection;
@@ -23,13 +26,19 @@ public class RatingController {
 
     private final RatingService ratingService;
     private final CompletedRideRepository rideRepository;
+    private final TokenUtils tokenUtils;
+    private final PassengerRepository passengerRepository;
 
     public RatingController(
             RatingService ratingService,
-            CompletedRideRepository rideRepository
+            CompletedRideRepository rideRepository,
+            TokenUtils tokenUtils,
+            PassengerRepository passengerRepository
     ) {
         this.ratingService = ratingService;
         this.rideRepository = rideRepository;
+        this.tokenUtils = tokenUtils;
+        this.passengerRepository = passengerRepository;
     }
 
     // 2.8 Vehicle and driver rating
@@ -55,12 +64,18 @@ public class RatingController {
     // 2.8 Vehicle and driver rating
     @PreAuthorize("hasRole('PASSENGER')")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedRatingDTO> createRating(@RequestBody CreateRatingDTO dto, @RequestParam Long rideId) throws Exception {
+    public ResponseEntity<CreatedRatingDTO> createRating(@RequestBody CreateRatingDTO dto, @RequestParam Long rideId, Authentication auth) throws Exception {
 
         CompletedRide ride = rideRepository.findById(rideId)
                 .orElseThrow(() -> new Exception("Ride not found with id: " + rideId));
 
-        CreatedRatingDTO savedRating = ratingService.create(dto, ride);
+        String email = auth.getName();
+        Long passengerId = passengerRepository.findByEmail(email)
+                .orElseThrow(() -> new Exception("Passenger not found"))
+                .getId();
+
+
+        CreatedRatingDTO savedRating = ratingService.create(dto, ride, passengerId);
 
         return new ResponseEntity<CreatedRatingDTO>(savedRating, HttpStatus.CREATED);
     }
@@ -69,4 +84,29 @@ public class RatingController {
     public Object debugAuth(Authentication auth) {
         return auth;
     }
+
+    @PostMapping(value = "/rate", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> rateRideWithToken(@RequestParam String token, @RequestBody CreateRatingDTO dto) {
+        try {
+            RatingTokenData data = tokenUtils.parseRatingToken(token);
+
+            CompletedRide ride = rideRepository.findById(data.getRideId())
+                    .orElseThrow(() -> new RuntimeException("Ride not found"));
+
+            boolean alreadyRated = ratingService.hasUserRatedRide(data.getPassengerId(), data.getRideId());
+            if (alreadyRated) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You have already rated this ride");
+            }
+
+            CreatedRatingDTO savedRating = ratingService.create(dto, ride, data.getPassengerId());
+
+            return ResponseEntity.ok("Rating submitted successfully!");
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid or expired token");
+        }
+    }
+
 }

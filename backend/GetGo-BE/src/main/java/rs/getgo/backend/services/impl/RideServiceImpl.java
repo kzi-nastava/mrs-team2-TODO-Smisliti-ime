@@ -10,12 +10,14 @@ import rs.getgo.backend.model.enums.RideStatus;
 import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.DriverService;
+import rs.getgo.backend.services.EmailService;
 import rs.getgo.backend.services.RideService;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class RideServiceImpl implements RideService {
@@ -29,6 +31,8 @@ public class RideServiceImpl implements RideService {
     private final DriverRepository driverRepository;
     private final DriverService driverService;
     private final CompletedRideRepository completedRideRepository;
+    private final EmailService emailService;
+
 
     // passenger must cancel at least 10 minutes before scheduled start
     private static final long PASSENGER_CANCEL_MINUTES_BEFORE = 10L;
@@ -41,7 +45,8 @@ public class RideServiceImpl implements RideService {
                            RouteRepository routeRepository,
                            DriverRepository driverRepository,
                            DriverService driverService,
-                           CompletedRideRepository completedRideRepository) {
+                           CompletedRideRepository completedRideRepository,
+                           EmailService emailService) {
         this.cancellationRepository = cancellationRepository;
         this.panicRepository = panicRepository;
         this.activeRideRepository = activeRideRepository;
@@ -51,6 +56,7 @@ public class RideServiceImpl implements RideService {
         this.driverRepository = driverRepository;
         this.driverService = driverService;
         this.completedRideRepository = completedRideRepository;
+        this.emailService = emailService;
     }
 
     @Override
@@ -373,6 +379,44 @@ public class RideServiceImpl implements RideService {
 
         // Save completed ride
         completedRide = completedRideRepository.save(completedRide);
+
+        // Release or prepare the driver
+        Driver driver = ride.getDriver();
+        if (driver != null) {
+            // Check if the driver has any scheduled rides
+            Optional<ActiveRide> nextRideOpt = activeRideRepository
+                    .findFirstByDriverAndStatusOrderByScheduledTimeAsc(driver, RideStatus.SCHEDULED);
+
+            if (nextRideOpt.isPresent()) {
+                // Driver has a scheduled ride → mark as busy (not available)
+                driver.setActive(false);
+                // TODO: here we could send the next ride data to the frontend
+            } else {
+                // No scheduled rides → driver is available for new rides
+                driver.setActive(true);
+            }
+            driverRepository.save(driver);
+        }
+
+
+        // Send email to paying passenger
+        emailService.sendRideFinishedEmail(
+                ride.getPayingPassenger().getEmail(),
+                ride.getPayingPassenger().getName(),
+                completedRide.getId()
+        );
+
+        // Send email to linked passengers
+        if (ride.getLinkedPassengers() != null) {
+            for (Passenger p : ride.getLinkedPassengers()) {
+                emailService.sendRideFinishedEmail(
+                        p.getEmail(),
+                        p.getName(),
+                        completedRide.getId()
+                );
+            }
+        }
+
 
         // Remove active ride
         activeRideRepository.delete(ride);

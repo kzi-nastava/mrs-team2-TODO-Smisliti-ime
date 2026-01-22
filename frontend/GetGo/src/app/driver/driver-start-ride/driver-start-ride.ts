@@ -13,12 +13,13 @@ import { RideService, GetDriverActiveRideDTO, UpdatedRideDTO } from '../../servi
 })
 export class DriverStartRide implements OnInit {
   activeRide: GetDriverActiveRideDTO | null = null;
-  isLoading = true;  // ✅ Start with true, not false
+  isLoading = true;  //  Start with true, not false
   isStarting = false;
+  isRideInProgress = false;
   errorMessage: string | null = null;
   successMessage: string | null = null;
 
-  // ✅ FIX: Constructor syntax was wrong
+  // FIX: Constructor syntax was wrong
   constructor(
     private rideService: RideService,
     private cdr: ChangeDetectorRef
@@ -29,25 +30,26 @@ export class DriverStartRide implements OnInit {
   }
 
   loadActiveRide() {
-    console.log('🔄 Loading active ride...');
-    this.isLoading = true;  // ✅ Set to true when loading starts
+    console.log(' Loading active ride...');
+    this.isLoading = true;  // Set to true when loading starts
     this.errorMessage = null;
 
     this.rideService.getDriverActiveRide().subscribe({
       next: (ride) => {
-        console.log('✅ Received ride data:', ride);
+        console.log(' Received ride data:', ride);
         this.activeRide = ride;
+        this.isRideInProgress = ride?.status === 'ACTIVE';
         this.isLoading = false;
         this.cdr.detectChanges();  // Force change detection
       },
       error: (err) => {
-        console.error('❌ Failed to load active ride:', err);
+        console.error(' Failed to load active ride:', err);
         this.errorMessage = 'Failed to load ride information';
         this.isLoading = false;
         this.cdr.detectChanges();
       },
       complete: () => {
-        console.log('🏁 Request completed');
+        console.log('Request completed');
         // Safety: ensure loading is false
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -58,31 +60,81 @@ export class DriverStartRide implements OnInit {
   startRide() {
     if (!this.activeRide) return;
 
-    console.log('🚀 Starting ride:', this.activeRide.rideId);
+    console.log(' Starting ride:', this.activeRide.rideId);
     this.isStarting = true;
     this.errorMessage = null;
     this.successMessage = null;
 
     this.rideService.startRide(this.activeRide.rideId).subscribe({
       next: (response: UpdatedRideDTO) => {
-        console.log('✅ Ride started successfully:', response);
+        console.log(' Ride started successfully:', response);
+        if (this.activeRide) {
+          this.activeRide.status = 'ACTIVE';
+        }
+        this.isRideInProgress = true;
         this.successMessage = 'Ride started successfully!';
         this.isStarting = false;
         this.cdr.detectChanges();
 
         // Clear active ride after starting
-        setTimeout(() => {
-          this.activeRide = null;
-          this.successMessage = null;
-          this.cdr.detectChanges();
-        }, 2000);
+//         setTimeout(() => {
+//           this.activeRide = null;
+//           this.successMessage = null;
+//           this.cdr.detectChanges();
+//         }, 2000);
       },
       error: (err) => {
-        console.error('❌ Failed to start ride:', err);
+        console.error(' Failed to start ride:', err);
         this.errorMessage = err.error?.message || 'Failed to start ride';
         this.isStarting = false;
         this.cdr.detectChanges();
       }
     });
   }
+
+  endRide() {
+    if (!this.activeRide) return;
+
+    console.log('Ending ride: ', this.activeRide.rideId);
+    this.isStarting = true;
+    this.errorMessage = null;
+    this.successMessage = null;
+
+    this.rideService.endRide(this.activeRide.rideId).subscribe({
+      next: (response: UpdatedRideDTO) => {
+        console.log("Ride ended successfully:", response);
+        this.successMessage = 'Ride ended successfully!';
+        this.isStarting = false;
+        this.isRideInProgress = false;
+        this.activeRide = null;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to end ride:', err);
+        this.errorMessage = err.error?.message || 'Failed to end ride';
+        this.isStarting = false;
+        this.cdr.detectChanges();
+      }
+    })
+  }
+
+  handleRideButton() {
+    if(!this.isRideInProgress){
+      this.startRide();
+    } else {
+      this.endRide();
+    }
+  }
+
+  get rideButtonLabel(): string {
+    if(this.isStarting) return 'Starting...';
+    return this.isRideInProgress ? 'End Ride' : 'Start Ride';
+  }
+
+  get rideButtonClass(): string {
+    return this.isRideInProgress ? 'end-btn' : 'start-btn';
+  }
+
+
+
 }

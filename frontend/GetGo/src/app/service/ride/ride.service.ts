@@ -34,12 +34,14 @@ export interface GetDriverActiveRideDTO {
   estimatedTimeMin: number;
   passengerName: string;
   passengerCount: number;
+  status: string;
 }
 
 export interface UpdatedRideDTO {
   id: number;
   status: string;
   startTime: string;
+  endTime: string;
 }
 
 @Injectable({
@@ -65,4 +67,8 @@ export class RideService {
   startRide(rideId: number): Observable<UpdatedRideDTO> {
     return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/start`, {});
   }
+
+  endRide(rideId: number): Observable<UpdatedRideDTO> {
+      return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/finish`, {});
+    }
 }

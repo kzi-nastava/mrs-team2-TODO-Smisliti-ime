@@ -301,3 +301,17 @@ button.mini:disabled {
 .start-btn:disabled {
   background: #A0B3C8 !important;
 }
+
+.end-btn {
+  width: 100%;
+  background: #e53935 !important;
+  font-size: 16px;
+}
+
+.end-btn:hover {
+  background: #c62828 !important;
+}
+
+.end-btn:disabled {
+  background: #A0B3C8 !important;
+}

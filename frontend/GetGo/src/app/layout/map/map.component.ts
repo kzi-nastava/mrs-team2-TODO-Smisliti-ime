@@ -156,6 +156,7 @@ export class MapComponent implements AfterViewInit{
   }
 
   setRoute(): void {
+
   }
 
   private addVehicleMarker(vehicle: GetVehicleDTO): L.Marker {

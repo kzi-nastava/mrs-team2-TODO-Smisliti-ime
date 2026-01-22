@@ -69,6 +69,6 @@ export class RideService {
   }
 
   endRide(rideId: number): Observable<UpdatedRideDTO> {
-      return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/finish`, {});
-    }
+    return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/finish`, {});
+  }
 }

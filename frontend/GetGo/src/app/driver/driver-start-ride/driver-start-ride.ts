@@ -15,6 +15,7 @@ export class DriverStartRide implements OnInit {
   activeRide: GetDriverActiveRideDTO | null = null;
   isLoading = true;  //  Start with true, not false
   isStarting = false;
+  isEnding = false;
   isRideInProgress = false;
   errorMessage: string | null = null;
   successMessage: string | null = null;
@@ -96,7 +97,7 @@ export class DriverStartRide implements OnInit {
     if (!this.activeRide) return;
 
     console.log('Ending ride: ', this.activeRide.rideId);
-    this.isStarting = true;
+    this.isEnding = true;
     this.errorMessage = null;
     this.successMessage = null;
 
@@ -104,7 +105,7 @@ export class DriverStartRide implements OnInit {
       next: (response: UpdatedRideDTO) => {
         console.log("Ride ended successfully:", response);
         this.successMessage = 'Ride ended successfully!';
-        this.isStarting = false;
+        this.isEnding = false;
         this.isRideInProgress = false;
         this.activeRide = null;
         this.cdr.detectChanges();
@@ -112,7 +113,7 @@ export class DriverStartRide implements OnInit {
       error: (err) => {
         console.error('Failed to end ride:', err);
         this.errorMessage = err.error?.message || 'Failed to end ride';
-        this.isStarting = false;
+        this.isEnding = false;
         this.cdr.detectChanges();
       }
     })
@@ -127,9 +128,11 @@ export class DriverStartRide implements OnInit {
   }
 
   get rideButtonLabel(): string {
-    if(this.isStarting) return 'Starting...';
+    if (this.isStarting) return 'Starting ride...';
+    if (this.isEnding) return 'Ending ride...';
     return this.isRideInProgress ? 'End Ride' : 'Start Ride';
   }
+
 
   get rideButtonClass(): string {
     return this.isRideInProgress ? 'end-btn' : 'start-btn';

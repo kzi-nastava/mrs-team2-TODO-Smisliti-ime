@@ -4,6 +4,7 @@ import { GetRatingDTO } from '../../model/rating.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgForm } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 
 @Component({
@@ -14,7 +15,8 @@ import { NgForm } from '@angular/forms';
 })
 export class RatingVehicleDriverComponent{
 
-  rideId = 1; // temporary hardcoded value
+  rideId!: number;
+//   rideId = 1; // temporary hardcoded value
 
   driverRating = signal<number | null>(null);
   vehicleRating = signal<number | null>(null);
@@ -28,8 +30,13 @@ export class RatingVehicleDriverComponent{
 
 
 
-  constructor() {
-    this.ratingService.setRide(this.rideId);
+  constructor(private route: ActivatedRoute) {
+    this.route.params.subscribe(params => {
+      this.rideId = +params['rideId'];
+      this.ratingService.setRide(this.rideId);
+    })
+
+//     this.ratingService.setRide(this.rideId);
 
     effect(() => {
       console.log("Ratings changed: ", this.ratings());

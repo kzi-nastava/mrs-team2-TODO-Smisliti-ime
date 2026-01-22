@@ -19,6 +19,7 @@ export class MapComponent implements AfterViewInit{
   private originMarker: L.Marker | null = null;
   private destinationMarker: L.Marker | null = null;
   private waypointMarkers: L.Marker[] = []; // for registered home waypoints
+  private routeControl: any = null; // Store the current route control
 
   constructor(
     private http: HttpClient,
@@ -28,7 +29,7 @@ export class MapComponent implements AfterViewInit{
 
   private initMap(): void {
     this.map = L.map('map', {
-      center: [45.2396, 19.8227],
+      center: [45.2517, 19.8373],  // Novi Sad city center
       zoom: 13,
     });
 
@@ -68,8 +69,15 @@ export class MapComponent implements AfterViewInit{
       console.log('Map received set-active-input-index event, activeInputIndex now:', this.activeInputIndex);
     });
 
+    // Listen for route update event (when waypoints change)
+    this.elementRef.nativeElement.addEventListener('update-route', (ev: Event) => {
+      const ce = ev as CustomEvent<{ waypoints: Array<{ lat: number; lng: number }> }>;
+      console.log('Map received update-route event with waypoints:', ce.detail.waypoints);
+      this.updateRoute(ce.detail.waypoints);
+    });
+
     this.registerOnClick();
-    this.setRoute();
+    // Removed setRoute() call - routes will be drawn dynamically
     this.loadVehicles();
   }
 
@@ -155,17 +163,39 @@ export class MapComponent implements AfterViewInit{
     });
   }
 
-  setRoute(): void {
-    const routeControl = L.Routing.control({
-      waypoints: [L.latLng(57.74, 11.94), L.latLng(57.6792, 11.949)],
-      router: L.routing.mapbox('pk.eyJ1IjoibWVyaXMxMCIsImEiOiJjbWpxandnNmIwd2piM2dzYzVlc3N6NXExIn0.-OX2bzr7c8eGfjaUX-gwZw', {profile: 'mapbox/driving'})
-//         router: L.routing.mapbox('DODATI SVOJ API KEY', {profile: 'mapbox/driving'})
+  private updateRoute(waypoints: Array<{ lat: number; lng: number }>): void {
+    // Remove existing route if present
+    if (this.routeControl) {
+      this.map.removeControl(this.routeControl);
+      this.routeControl = null;
+    }
+
+    // Need at least 2 waypoints to draw a route
+    if (waypoints.length < 2) {
+      console.log('Not enough waypoints to draw route');
+      return;
+    }
+
+    // Convert waypoints to Leaflet LatLng objects
+    const latLngs = waypoints.map(wp => L.latLng(wp.lat, wp.lng));
+
+    console.log('Drawing route with waypoints:', latLngs);
+
+    // Create routing control
+    this.routeControl = L.Routing.control({
+      waypoints: latLngs,
+      router: L.routing.mapbox('pk.eyJ1IjoibWVyaXMxMCIsImEiOiJjbWpxandnNmIwd2piM2dzYzVlc3N6NXExIn0.-OX2bzr7c8eGfjaUX-gwZw', {profile: 'mapbox/driving'}),
+      routeWhileDragging: false,
+      addWaypoints: false,
+      fitSelectedRoutes: true,
+      showAlternatives: false
     }).addTo(this.map);
 
-    routeControl.on('routesfound', function(e : any) {
-      var routes = e.routes;
-      var summary = routes[0].summary;
-      alert('Total distance is ' + summary.totalDistance / 1000 + ' km and total time is ' + Math.round(summary.totalTime % 3600 / 60) + ' minutes');
+    // Optional: Handle route found event
+    this.routeControl.on('routesfound', (e: any) => {
+      const routes = e.routes;
+      const summary = routes[0].summary;
+      console.log(`Route: ${summary.totalDistance / 1000} km, ${Math.round(summary.totalTime / 60)} minutes`);
     });
   }
 

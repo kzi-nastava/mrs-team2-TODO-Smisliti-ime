@@ -65,7 +65,7 @@ export class DriverStartRide implements OnInit {
 
     this.rideService.startRide(this.activeRide.rideId).subscribe({
       next: (response: UpdatedRideDTO) => {
-        console.log('✅ Ride started successfully:', response);
+        console.log('Ride started successfully:', response);
         this.successMessage = 'Ride started successfully!';
         this.isStarting = false;
         this.cdr.detectChanges();
@@ -78,7 +78,7 @@ export class DriverStartRide implements OnInit {
         }, 2000);
       },
       error: (err) => {
-        console.error('❌ Failed to start ride:', err);
+        console.error('Failed to start ride:', err);
         this.errorMessage = err.error?.message || 'Failed to start ride';
         this.isStarting = false;
         this.cdr.detectChanges();

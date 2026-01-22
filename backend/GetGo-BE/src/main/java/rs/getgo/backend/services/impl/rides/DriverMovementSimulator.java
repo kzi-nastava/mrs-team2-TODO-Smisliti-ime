@@ -3,6 +3,8 @@ package rs.getgo.backend.services.impl.rides;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import rs.getgo.backend.controllers.WebSocketController;
+import rs.getgo.backend.dtos.driver.GetDriverLocationDTO;
 import rs.getgo.backend.model.entities.ActiveRide;
 import rs.getgo.backend.model.entities.Driver;
 import rs.getgo.backend.model.enums.RideStatus;
@@ -23,15 +25,18 @@ public class DriverMovementSimulator {
     private final ActiveRideRepository activeRideRepository;
     private final DriverRepository driverRepository;
     private final RideService rideService;
+    private final WebSocketController webSocketController;
 
     public DriverMovementSimulator(
             ActiveRideRepository activeRideRepository,
             DriverRepository driverRepository,
-            @Lazy RideService rideService
+            @Lazy RideService rideService,
+            WebSocketController webSocketController
     ) {
         this.activeRideRepository = activeRideRepository;
         this.driverRepository = driverRepository;
         this.rideService = rideService;
+        this.webSocketController = webSocketController;
     }
 
     /**
@@ -79,6 +84,19 @@ public class DriverMovementSimulator {
         // Update ride
         ride.setCurrentPathIndex(currentIndex + 1);
         activeRideRepository.save(ride);
+
+        // Update front
+        GetDriverLocationDTO locationUpdate = new GetDriverLocationDTO(
+                driver.getId(),
+                ride.getId(),
+                nextPosition.latitude(),
+                nextPosition.longitude(),
+                ride.getStatus().toString()
+        );
+        // Send to driver
+        webSocketController.broadcastDriverLocation(driver.getId(), locationUpdate);
+        // Send to passengers
+        webSocketController.broadcastDriverLocationToRide(ride.getId(), locationUpdate);
     }
 
     private List<MapboxRoutingService.Coordinate> parseJsonToCoordinates(String json) {

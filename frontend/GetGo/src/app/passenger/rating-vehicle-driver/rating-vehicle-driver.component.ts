@@ -15,12 +15,14 @@ import { ActivatedRoute } from '@angular/router';
 })
 export class RatingVehicleDriverComponent{
 
-  rideId!: number;
+  rideId: number | null = null;
+
 //   rideId = 1; // temporary hardcoded value
 
   driverRating = signal<number | null>(null);
   vehicleRating = signal<number | null>(null);
   commentText = signal<string>('');
+  token: string | null = null;
 
   private ratingService = inject(RatingService);
 
@@ -29,12 +31,15 @@ export class RatingVehicleDriverComponent{
   avgDriverRating = this.ratingService.avgDriverRating
 
 
-
   constructor(private route: ActivatedRoute) {
-    this.route.params.subscribe(params => {
-      this.rideId = +params['rideId'];
-      this.ratingService.setRide(this.rideId);
-    })
+    this.route.queryParams.subscribe(params => {
+      this.token = params['token'] || null;
+      this.rideId = params['rideId'] ? +params['rideId'] : null;
+
+      if (this.rideId) {
+        this.ratingService.setRide(this.rideId);
+      }
+    });
 
 //     this.ratingService.setRide(this.rideId);
 
@@ -52,19 +57,32 @@ export class RatingVehicleDriverComponent{
     const newRating = {
       driverRating: this.driverRating()!,
       vehicleRating: this.vehicleRating()!,
-      comment: this.commentText(),
-      rideId: this.rideId, // current ride
+      comment: this.commentText()
     };
 
-    this.ratingService.createRating(newRating).subscribe({
-      next: (saved) => {
-        console.log('Rating saved:', saved);
+    if(this.token){
+      this.ratingService.createRatingWithToken(newRating, this.token).subscribe({
+        next: (saved) => {
+          console.log('Rating saved:', saved);
+          this.driverRating.set(null);
+          this.vehicleRating.set(null);
+          this.commentText.set('');
+          },
+        error: (err) => console.error(err),
+      });
+    } else if (this.rideId){
+      this.ratingService.createRating({...newRating, rideId: this.rideId}).subscribe({
+        next: (saved) => {
+          console.log('Rating saved:', saved);
+          this.driverRating.set(null);
+          this.vehicleRating.set(null);
+          this.commentText.set('');
+        },
+        error: (err) => console.error(err),
+      });
+    } else {
+      console.error("Cannot submit rating: no rideId or token found");
+    }
 
-        this.driverRating.set(null);
-        this.vehicleRating.set(null);
-        this.commentText.set('');
-      },
-      error: (err) => console.error(err),
-    });
   }
 }

@@ -14,7 +14,6 @@ import rs.getgo.backend.repositories.PassengerRepository;
 import rs.getgo.backend.services.RatingService;
 import org.springframework.security.core.Authentication;
 import rs.getgo.backend.utils.RatingTokenData;
-import rs.getgo.backend.utils.TokenUtils;
 
 
 import java.util.Collection;
@@ -26,18 +25,15 @@ public class RatingController {
 
     private final RatingService ratingService;
     private final CompletedRideRepository rideRepository;
-    private final TokenUtils tokenUtils;
     private final PassengerRepository passengerRepository;
 
     public RatingController(
             RatingService ratingService,
             CompletedRideRepository rideRepository,
-            TokenUtils tokenUtils,
             PassengerRepository passengerRepository
     ) {
         this.ratingService = ratingService;
         this.rideRepository = rideRepository;
-        this.tokenUtils = tokenUtils;
         this.passengerRepository = passengerRepository;
     }
 
@@ -85,28 +81,5 @@ public class RatingController {
         return auth;
     }
 
-    @PostMapping(value = "/rate", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> rateRideWithToken(@RequestParam String token, @RequestBody CreateRatingDTO dto) {
-        try {
-            RatingTokenData data = tokenUtils.parseRatingToken(token);
-
-            CompletedRide ride = rideRepository.findById(data.getRideId())
-                    .orElseThrow(() -> new RuntimeException("Ride not found"));
-
-            boolean alreadyRated = ratingService.hasUserRatedRide(data.getPassengerId(), data.getRideId());
-            if (alreadyRated) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("You have already rated this ride");
-            }
-
-            CreatedRatingDTO savedRating = ratingService.create(dto, ride, data.getPassengerId());
-
-            return ResponseEntity.ok("Rating submitted successfully!");
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Invalid or expired token");
-        }
-    }
 
 }

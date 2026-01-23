@@ -81,30 +81,4 @@ public class TokenUtils {
         }
     }
 
-    public String generateRatingToken(Long rideId, Long passengerId) {
-        return Jwts.builder()
-                .claim("rideId", rideId)
-                .claim("passengerId", passengerId)
-                .claim("type", "RATING")
-                .setExpiration(new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000 * 3)) // 72h
-                .signWith(SignatureAlgorithm.HS256, Decoders.BASE64.decode(SECRET))
-                .compact();
-    }
-
-
-    public RatingTokenData parseRatingToken(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(Decoders.BASE64.decode(SECRET))
-                .parseClaimsJws(token)
-                .getBody();
-
-        return new RatingTokenData(
-                claims.get("rideId", Long.class),
-                claims.get("passengerId", Long.class)
-        );
-    }
-
-
-
-
 }

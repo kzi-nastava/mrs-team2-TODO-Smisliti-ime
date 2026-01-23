@@ -4,17 +4,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import rs.getgo.backend.utils.TokenUtils;
 
 @Service
 public class EmailService {
 
     private final JavaMailSender mailSender;
-    private final TokenUtils tokenUtils;
 
-    public EmailService(JavaMailSender mailSender, TokenUtils tokenUtils) {
+    public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
-        this.tokenUtils = tokenUtils;
     }
 
 
@@ -74,10 +71,8 @@ public class EmailService {
             Long passengerId
     ) {
 
-        String token = tokenUtils.generateRatingToken(rideId, passengerId);
+        String ratingLink = "http://localhost:4200/rides/" + rideId + "/rate";
 
-        // Link with token
-        String ratingLink = "http://localhost:4200/rate?token=" + token;
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);

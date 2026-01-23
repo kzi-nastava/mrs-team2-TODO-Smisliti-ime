@@ -13,6 +13,7 @@ import { HttpClient } from '@angular/common/http';
 import {environment} from '../../../../env/environment';
 import { SnackBarService } from '../../../service/snackBar/snackBar.service';
 import { UserRole } from '../../../model/user.model';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -25,6 +26,10 @@ import { UserRole } from '../../../model/user.model';
   styleUrl: './login.css',
 })
 export class LoginComponent {
+
+  redirectToRate: boolean = false;
+  rideId: number | null = null;
+
   createLoginForm = new FormGroup({
     email: new FormControl('', [
       // Validators.required,
@@ -45,8 +50,14 @@ export class LoginComponent {
     private auth: AuthService,
     private router: Router,
     private http: HttpClient,
-    private snackBarService: SnackBarService
-  ) {}
+    private snackBarService: SnackBarService,
+    private route: ActivatedRoute
+  ) {
+    this.route.queryParams.subscribe(params => {
+        console.log('Login query params:', params);
+        // vise ne treba redirectToRate i rideId
+      });
+    }
 
   login() {
     if (this.createLoginForm.invalid) {
@@ -106,6 +117,13 @@ export class LoginComponent {
       console.log('Login: token saved & role extracted from JWT');
 
       this.snackBarService.show('Login successful!', true, 3000);
+
+      const redirectUrl = this.route.snapshot.queryParamMap.get('redirectUrl');
+      if (redirectUrl) {
+        console.log('Redirecting to URL from query param:', redirectUrl);
+        this.router.navigateByUrl(redirectUrl);
+        return;
+      }
 
       const userRole = this.auth.role();
       switch (userRole) {

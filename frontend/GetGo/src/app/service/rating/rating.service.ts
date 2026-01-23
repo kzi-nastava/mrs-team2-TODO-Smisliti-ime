@@ -15,18 +15,17 @@ export class RatingService {
   private readonly http = inject(HttpClient);
 
   private rideId = signal<number | null>(null);
+  private token: string | null = null;
 
   ratingsResource = rxResource({
     params: () => ({ rideId: this.rideId() }),
     stream: ({params}) => {
-      if (params.rideId == null) return of([]);
-      const token = sessionStorage.getItem(this.TOKEN_KEY);
       return this.http.get<GetRatingDTO[]>(
-        `${environment.apiHost}/api/ratings/ride/${params.rideId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${environment.apiHost}/api/ratings/ride/${params.rideId}`
       );
     }
-  })
+  });
+
 
 //   ratingsResource = rxResource({
 //       params: () => ({ rideId: this.rideId() }),
@@ -68,14 +67,6 @@ export class RatingService {
       { headers: { Authorization: `Bearer ${token}` } }
     ).pipe(tap(_ => this.reloadRatings()));
   }
-
-  createRatingWithToken(rating: {driverRating:number, vehicleRating:number, comment:string}, token: string) {
-    return this.http.post(
-      `${environment.apiHost}/api/ratings/rate?token=${token}`,
-      rating
-    ).pipe(tap(_ => this.reloadRatings()));
-  }
-
 
   reloadRatings(): void {
     this.ratingsResource.reload();

@@ -4,7 +4,8 @@ import { GetRatingDTO } from '../../model/rating.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgForm } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService } from '../../service/auth-service/auth.service';
 
 
 @Component({
@@ -22,8 +23,10 @@ export class RatingVehicleDriverComponent{
   driverRating = signal<number | null>(null);
   vehicleRating = signal<number | null>(null);
   commentText = signal<string>('');
-  token: string | null = null;
 
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private authService = inject(AuthService);
   private ratingService = inject(RatingService);
 
   ratings = this.ratingService.ratings;
@@ -31,22 +34,20 @@ export class RatingVehicleDriverComponent{
   avgDriverRating = this.ratingService.avgDriverRating
 
 
-  constructor(private route: ActivatedRoute) {
-    this.route.queryParams.subscribe(params => {
-      this.token = params['token'] || null;
+  constructor() {
+    this.route.params.subscribe(params => {
       this.rideId = params['rideId'] ? +params['rideId'] : null;
+      console.log('RideId iz rute:', this.rideId);
 
-      if (this.rideId) {
-        this.ratingService.setRide(this.rideId);
-      }
     });
 
-//     this.ratingService.setRide(this.rideId);
 
     effect(() => {
-      console.log("Ratings changed: ", this.ratings());
-    })
+      console.log("Ratings changed: ", this.ratingService.ratings());
+    });
   }
+
+
 
   submitRating() {
     if (this.driverRating() === null || this.vehicleRating() === null || !this.commentText().trim()) {
@@ -60,17 +61,7 @@ export class RatingVehicleDriverComponent{
       comment: this.commentText()
     };
 
-    if(this.token){
-      this.ratingService.createRatingWithToken(newRating, this.token).subscribe({
-        next: (saved) => {
-          console.log('Rating saved:', saved);
-          this.driverRating.set(null);
-          this.vehicleRating.set(null);
-          this.commentText.set('');
-          },
-        error: (err) => console.error(err),
-      });
-    } else if (this.rideId){
+    if (this.rideId){
       this.ratingService.createRating({...newRating, rideId: this.rideId}).subscribe({
         next: (saved) => {
           console.log('Rating saved:', saved);
@@ -81,7 +72,7 @@ export class RatingVehicleDriverComponent{
         error: (err) => console.error(err),
       });
     } else {
-      console.error("Cannot submit rating: no rideId or token found");
+      console.error("Cannot submit rating: no rideId found");
     }
 
   }

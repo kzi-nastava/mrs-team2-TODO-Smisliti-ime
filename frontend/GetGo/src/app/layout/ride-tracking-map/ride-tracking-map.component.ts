@@ -68,6 +68,12 @@ export class RideTrackingMapComponent implements AfterViewInit{
       console.log('RideTrackingMap received update-driver-position:', ce.detail);
       this.updateDriverMarker(ce.detail.lat, ce.detail.lng);
     });
+
+    // Listen for map reset
+    this.elementRef.nativeElement.addEventListener('reset-map', (ev: Event) => {
+        console.log('🔄 RideTrackingMap received reset-map');
+        this.resetMap();
+      });
   }
 
   private drawRoute(waypoints: Array<{ lat: number; lng: number }>): void {
@@ -130,6 +136,30 @@ export class RideTrackingMapComponent implements AfterViewInit{
       // Update existing marker position
       this.driverMarker.setLatLng([lat, lng]);
     }
+  }
+
+  private resetMap(): void {
+    console.log('🔄 Resetting map...');
+
+    // Remove driver marker
+    if (this.driverMarker) {
+      this.map.removeLayer(this.driverMarker);
+      this.driverMarker = null;
+    }
+
+    // Remove route
+    if (this.routeControl) {
+      this.map.removeControl(this.routeControl);
+      this.routeControl = null;
+    }
+
+    // Reset view to default (Novi Sad)
+    this.map.setView([45.2517, 19.8373], 13);
+
+    // Reload vehicles
+    this.loadVehicles();
+
+    console.log('✅ Map reset complete');
   }
 
   searchStreet(street: string): Observable<any> {

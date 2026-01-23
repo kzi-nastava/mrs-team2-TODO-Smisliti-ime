@@ -285,20 +285,12 @@ export class PassengerHome implements AfterViewInit, OnDestroy {
     this.successMessage = null;
     this.activeInputIndex = null;
 
-    // Notify map to clear active input
+    // Reset map
     if (this.mapEl?.nativeElement) {
-      const event = new CustomEvent<{ input: number | null }>('set-active-input-index', {
-        detail: {input: null},
+      const resetEvent = new CustomEvent('reset-map', {
         bubbles: true
       });
-      this.mapEl.nativeElement.dispatchEvent(event);
-
-      // Clear route on map
-      const routeEvent = new CustomEvent<{ waypoints: Array<{ lat: number; lng: number }> }>('update-route', {
-        detail: { waypoints: [] },
-        bubbles: true
-      });
-      this.mapEl.nativeElement.dispatchEvent(routeEvent);
+      this.mapEl.nativeElement.dispatchEvent(resetEvent);
     }
   }
 }

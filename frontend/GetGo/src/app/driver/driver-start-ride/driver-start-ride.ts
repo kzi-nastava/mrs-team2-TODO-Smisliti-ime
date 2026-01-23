@@ -289,6 +289,21 @@ export class DriverStartRide implements OnInit {
     console.log('Acknowledging ride completion');
     this.rideCompletion = null;
     this.activeRide = null;
+    this.resetMap();
     this.loadActiveRide(); // Check for next ride
+  }
+
+  private resetMap(): void {
+    if (!this.mapComponent?.nativeElement) {
+      console.warn('Map component not available for reset');
+      return;
+    }
+
+    console.log('Resetting map...');
+
+    const event = new CustomEvent('reset-map', {
+      bubbles: true
+    });
+    this.mapComponent.nativeElement.dispatchEvent(event);
   }
 }

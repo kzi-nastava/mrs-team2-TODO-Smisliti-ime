@@ -19,7 +19,6 @@ import { AdminProfile } from './admin/admin-profile/admin-profile';
 import { AdminChangePassword } from './admin/admin-change-password/admin-change-password';
 import { AdminReviewDriverRequests } from './admin/admin-review-driver-requests/admin-review-driver-requests'
 import { DriverRegistration } from './admin/driver-registration/driver-registration';
-import { OrderRide } from './passenger/order-ride/order-ride';
 import { FavoriteRides } from './passenger/favorite-rides/favorite-rides';
 import { RatingVehicleDriverComponent } from './passenger/rating-vehicle-driver/rating-vehicle-driver.component';
 // import { InRideComponent } from './passenger/in-ride/in-ride.component';
@@ -58,7 +57,6 @@ export const routes: Routes = [
   { path: 'admin/review-driver-requests', component: AdminReviewDriverRequests, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/change-password', component: AdminChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/driver-registration', component: DriverRegistration, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
-  { path: 'order-ride', component: OrderRide, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'favorite-rides', component: FavoriteRides, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: '**', component: NotFoundComponent }
 ];

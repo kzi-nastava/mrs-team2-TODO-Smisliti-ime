@@ -76,6 +76,12 @@ export class MapComponent implements AfterViewInit{
       this.updateRoute(ce.detail.waypoints);
     });
 
+    // Listen for map reset
+    this.elementRef.nativeElement.addEventListener('reset-map', (ev: Event) => {
+      console.log('Map received reset-map event');
+      this.resetMap();
+    });
+
     this.registerOnClick();
     // Removed setRoute() call - routes will be drawn dynamically
     this.loadVehicles();
@@ -197,6 +203,40 @@ export class MapComponent implements AfterViewInit{
       const summary = routes[0].summary;
       console.log(`Route: ${summary.totalDistance / 1000} km, ${Math.round(summary.totalTime / 60)} minutes`);
     });
+  }
+
+  private resetMap(): void {
+    console.log('Resetting map...');
+
+    this.activeInput = null;
+    this.activeInputIndex = null;
+
+    // Remove origin/destination markers
+    if (this.originMarker) {
+      this.map.removeLayer(this.originMarker);
+      this.originMarker = null;
+    }
+    if (this.destinationMarker) {
+      this.map.removeLayer(this.destinationMarker);
+      this.destinationMarker = null;
+    }
+
+    // Remove waypoint markers
+    this.waypointMarkers.forEach(marker => {
+      if (marker) {
+        this.map.removeLayer(marker);
+      }
+    });
+    this.waypointMarkers = [];
+
+    // Remove route
+    if (this.routeControl) {
+      this.map.removeControl(this.routeControl);
+      this.routeControl = null;
+    }
+
+    // Reload vehicles
+    this.loadVehicles();
   }
 
   private addVehicleMarker(vehicle: GetVehicleDTO): L.Marker {

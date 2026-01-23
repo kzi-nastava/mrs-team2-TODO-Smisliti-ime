@@ -41,7 +41,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'register', component: RegisterComponent },
-  { path: 'ride', component: RideComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
+  { path: 'driver/ride-history', component: RideComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'driver/rides/:id', component: RideDetailsComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'passenger/passenger-profile', component: PassengerProfileInfo, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'passenger/change-password', component: PassengerChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },

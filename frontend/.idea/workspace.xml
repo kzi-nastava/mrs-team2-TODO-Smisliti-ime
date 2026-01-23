@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="540ef817-ca1c-4a92-8bca-237ba9313f7b" name="Changes" comment="" />
+    <list default="true" id="540ef817-ca1c-4a92-8bca-237ba9313f7b" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../backend/GetGo-BE/src/main/java/rs/getgo/backend/config/WebSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/GetGo-BE/src/main/java/rs/getgo/backend/config/WebSecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/GetGo-BE/src/main/java/rs/getgo/backend/config/WebSocketConfiguration.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/GetGo-BE/src/main/java/rs/getgo/backend/config/WebSocketConfiguration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/GetGo-BE/src/main/java/rs/getgo/backend/controllers/WebSocketController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/GetGo-BE/src/main/java/rs/getgo/backend/controllers/WebSocketController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/GetGo-BE/src/main/java/rs/getgo/backend/services/impl/rides/DriverMovementSimulator.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/GetGo-BE/src/main/java/rs/getgo/backend/services/impl/rides/DriverMovementSimulator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/GetGo-BE/src/main/java/rs/getgo/backend/services/impl/rides/RideServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/GetGo-BE/src/main/java/rs/getgo/backend/services/impl/rides/RideServiceImpl.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -10,10 +16,10 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 7
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 7
+}</component>
   <component name="ProjectId" id="36u8WbluXVMwl5EF57RrDeZyYHi" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -26,7 +32,7 @@
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "git-widget-placeholder": "develop",
+    "git-widget-placeholder": "feature-sv26/ride",
     "kotlin-language-version-configured": "true",
     "vue.rearranger.settings.migration": "true"
   }
@@ -34,8 +40,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-cffe25b9f5b3-intellij.indexing.shared.core-IU-253.28294.334" />
-        <option value="bundled-js-predefined-d6986cc7102b-c7e53b3be11b-JavaScript-IU-253.28294.334" />
+        <option value="bundled-jdk-30f59d01ecdd-26cb7f24e5b0-intellij.indexing.shared.core-IU-253.29346.138" />
       </set>
     </attachedChunks>
   </component>

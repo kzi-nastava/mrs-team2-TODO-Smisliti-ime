@@ -3,6 +3,7 @@ package rs.getgo.backend.services.impl.rides;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import rs.getgo.backend.controllers.WebSocketController;
 import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Transactional
 public class RideServiceImpl implements RideService {
 
     private final RideCancellationRepository cancellationRepository;
@@ -216,7 +218,7 @@ public class RideServiceImpl implements RideService {
         // Notify driver about assigned ride
         if (savedRide.getStatus() == RideStatus.DRIVER_INCOMING) {
             GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(savedRide);
-            webSocketController.notifyDriverRideAssigned(savedRide.getDriver().getId(), rideDTO);
+            webSocketController.notifyDriverRideAssigned(savedRide.getDriver().getEmail(), rideDTO);
         }
 
         return new CreatedRideResponseDTO(
@@ -342,13 +344,13 @@ public class RideServiceImpl implements RideService {
         WayPoint pickupPoint = ride.getRoute().getWaypoints().getFirst();
         pickupPoint.setReachedAt(LocalDateTime.now());
 
-        // Change status to DRIVER_ARRIVED (waiting for Start Ride button)
+        routeRepository.save(ride.getRoute());
+
         ride.setStatus(RideStatus.DRIVER_ARRIVED);
         ride.setMovementPathJson(null);
         ride.setCurrentPathIndex(0);
 
         activeRideRepository.save(ride);
-        System.out.println("Ride " + ride.getId() + ": Driver arrived at pickup, waiting for start");
     }
 
     private void handleDriverArrivedAtRideWaypoint(ActiveRide ride) {
@@ -359,14 +361,14 @@ public class RideServiceImpl implements RideService {
         WayPoint currentWaypoint = waypoints.get(targetIndex);
         currentWaypoint.setReachedAt(LocalDateTime.now());
 
+        routeRepository.save(ride.getRoute());
+
         // Check if there are more waypoints
         if (targetIndex < waypoints.size() - 1) {
             // Move to next waypoint
             ride.setTargetWaypointIndex(targetIndex + 1);
             generateNextSegmentPath(ride);
             activeRideRepository.save(ride);
-
-            System.out.println("Ride " + ride.getId() + ": Moving to next waypoint " + (targetIndex + 1));
         } else {
             // Reached final destination
             handleRideFinished(ride);
@@ -384,10 +386,10 @@ public class RideServiceImpl implements RideService {
         // Activate any waiting ride for this driver
         activateWaitingRideForDriver(ride.getDriver());
 
-        // TODO: Transform to CompletedRide (teammate's job)
+        // TODO: Transform to CompletedRide
     }
 
-    // TODO: should be called after finishing ride if driver has a ride waiting
+    // Activates scheduled ride if driver has any
     private void activateWaitingRideForDriver(Driver driver) {
         ActiveRide waitingRide = activeRideRepository
                 .findByDriverAndStatus(driver, RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE)
@@ -402,10 +404,11 @@ public class RideServiceImpl implements RideService {
 
             // Notify driver about next ride
             GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(waitingRide);
-            webSocketController.notifyDriverRideAssigned(driver.getId(), rideDTO);
+            webSocketController.notifyDriverRideAssigned(driver.getEmail(), rideDTO);
         }
     }
 
+    // Starts a ride if driver's arrived at pickup point for it
     @Override
     public UpdatedRideDTO startRide(Long rideId) {
         ActiveRide ride = activeRideRepository.findById(rideId)
@@ -413,7 +416,7 @@ public class RideServiceImpl implements RideService {
 
         // Verify ride is in correct status
         if (ride.getStatus() != RideStatus.DRIVER_ARRIVED) {
-            throw new IllegalStateException("Ride is not in DRIVER_ARRIVED status (driver must be at pickup first)");
+            throw new IllegalStateException("Driver must be at pickup to start ride");
         }
 
         // Start the ride

@@ -17,9 +17,9 @@ public class WebSocketController {
     /**
      * Notify specific driver about ride assignment
      */
-    public void notifyDriverRideAssigned(Long driverId, GetDriverActiveRideDTO rideDTO) {
+    public void notifyDriverRideAssigned(String driverEmail, GetDriverActiveRideDTO rideDTO) {
         messagingTemplate.convertAndSend(
-                "/socket-publisher/driver/" + driverId + "/ride-assigned",
+                "/socket-publisher/driver/" + driverEmail + "/ride-assigned",
                 rideDTO
         );
     }
@@ -27,9 +27,9 @@ public class WebSocketController {
     /**
      * Broadcast driver location update
      */
-    public void broadcastDriverLocation(Long driverId, GetDriverLocationDTO locationDTO) {
+    public void broadcastDriverLocation(String driverEmail, GetDriverLocationDTO locationDTO) {
         messagingTemplate.convertAndSend(
-                "/socket-publisher/driver/" + driverId + "/location",
+                "/socket-publisher/driver/" + driverEmail + "/location",
                 locationDTO
         );
     }

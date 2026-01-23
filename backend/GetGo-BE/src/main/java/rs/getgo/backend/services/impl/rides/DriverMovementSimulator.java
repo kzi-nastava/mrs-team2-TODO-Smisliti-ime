@@ -1,5 +1,6 @@
 package rs.getgo.backend.services.impl.rides;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,9 @@ public class DriverMovementSimulator {
     private final DriverRepository driverRepository;
     private final RideService rideService;
     private final WebSocketController webSocketController;
+
+    @Value("${simulation.speed.multiplier}")
+    private int speedMultiplier;
 
     public DriverMovementSimulator(
             ActiveRideRepository activeRideRepository,
@@ -65,8 +69,16 @@ public class DriverMovementSimulator {
 
         int currentIndex = ride.getCurrentPathIndex();
 
-        // Check for end of waypoint reached
-        if (currentIndex >= path.size() - 1) {
+        // Skip indexes by multiplier
+        int nextIndex = Math.min(currentIndex + speedMultiplier, path.size() - 1);
+
+        // Check for end of waypoint reached/waypoint passed due to multiplier
+        if (nextIndex >= path.size() - 1) {
+            // Adjust position on waypoint
+            MapboxRoutingService.Coordinate finalPosition = path.getLast();
+            updateDriverLocation(ride, finalPosition, path.size() - 1);
+
+            // Handle waypoint reached
             rideService.handleWaypointReached(ride);
             return;
         }
@@ -74,28 +86,29 @@ public class DriverMovementSimulator {
         // Move to next coordinate
         MapboxRoutingService.Coordinate nextPosition = path.get(currentIndex + 1);
 
-        // Update driver location
+        updateDriverLocation(ride, nextPosition, nextIndex);
+    }
+
+    private void updateDriverLocation(ActiveRide ride, MapboxRoutingService.Coordinate position, int pathIndex) {
         Driver driver = ride.getDriver();
-        driver.setCurrentLatitude(nextPosition.latitude());
-        driver.setCurrentLongitude(nextPosition.longitude());
+        driver.setCurrentLatitude(position.latitude());
+        driver.setCurrentLongitude(position.longitude());
         driver.setLastLocationUpdate(LocalDateTime.now());
         driverRepository.save(driver);
 
         // Update ride
-        ride.setCurrentPathIndex(currentIndex + 1);
+        ride.setCurrentPathIndex(pathIndex);
         activeRideRepository.save(ride);
 
-        // Update front
+        // Broadcast to frontend
         GetDriverLocationDTO locationUpdate = new GetDriverLocationDTO(
                 driver.getId(),
                 ride.getId(),
-                nextPosition.latitude(),
-                nextPosition.longitude(),
+                position.latitude(),
+                position.longitude(),
                 ride.getStatus().toString()
         );
-        // Send to driver
-        webSocketController.broadcastDriverLocation(driver.getId(), locationUpdate);
-        // Send to passengers
+        webSocketController.broadcastDriverLocation(driver.getEmail(), locationUpdate);
         webSocketController.broadcastDriverLocationToRide(ride.getId(), locationUpdate);
     }
 

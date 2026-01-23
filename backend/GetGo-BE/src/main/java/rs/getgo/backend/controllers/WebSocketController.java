@@ -5,6 +5,10 @@ import org.springframework.stereotype.Controller;
 import rs.getgo.backend.dtos.driver.GetDriverLocationDTO;
 import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
 @Controller
 public class WebSocketController {
 
@@ -43,4 +47,34 @@ public class WebSocketController {
                 locationDTO
         );
     }
+
+    public void notifyDriverStatusUpdate(String driverEmail, Long rideId, String status) {
+        Map<String, Object> update = new HashMap<>();
+        update.put("rideId", rideId);
+        update.put("status", status);
+        update.put("timestamp", LocalDateTime.now());
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/driver/" + driverEmail + "/status-update",
+                update
+        );
+    }
+
+    public void notifyDriverRideFinished(String driverEmail, Long rideId, Double price,
+                                         LocalDateTime startTime, LocalDateTime endTime) {
+        Map<String, Object> completion = new HashMap<>();
+        completion.put("rideId", rideId);
+        completion.put("status", "FINISHED");
+        completion.put("price", price);
+        completion.put("startTime", startTime);
+        completion.put("endTime", endTime);
+        completion.put("durationMinutes",
+                java.time.Duration.between(startTime, endTime).toMinutes());
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/driver/" + driverEmail + "/ride-finished",
+                completion
+        );
+    }
+
 }

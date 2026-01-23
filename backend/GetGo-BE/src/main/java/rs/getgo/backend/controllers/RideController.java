@@ -123,6 +123,13 @@ public class RideController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasRole('DRIVER')")
+    @PutMapping(value = "/{rideId}/accept", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UpdatedRideDTO> acceptRide(@PathVariable Long rideId) {
+        UpdatedRideDTO response = rideService.acceptRide(rideId);
+        return ResponseEntity.ok(response);
+    }
+
     // 2.6.1 - Start ride
     @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/{rideId}/start", produces = MediaType.APPLICATION_JSON_VALUE)

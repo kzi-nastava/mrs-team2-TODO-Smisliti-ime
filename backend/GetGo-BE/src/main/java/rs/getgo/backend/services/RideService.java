@@ -13,6 +13,7 @@ public interface RideService {
 
     public CreatedRideResponseDTO orderRide(CreateRideRequestDTO createRideRequestDTO, String email);
     UpdatedRideDTO startRide(Long rideId);
+    UpdatedRideDTO acceptRide(Long rideId);
     void handleWaypointReached(ActiveRide ride);
 
     GetDriverActiveRideDTO getDriverActiveRide(String driverEmail);

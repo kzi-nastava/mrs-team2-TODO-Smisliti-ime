@@ -23,6 +23,11 @@
         </div>
 
         <div class="info-row">
+          <label>Status:</label>
+          <span>{{ activeRide.status }}</span>
+        </div>
+
+        <div class="info-row">
           <label>Starting Point:</label>
           <span>{{ activeRide.startingPoint }}</span>
         </div>
@@ -53,6 +58,19 @@
         </div>
       </div>
 
+      <!-- Messages -->
+      <div *ngIf="activeRide.status === 'DRIVER_INCOMING'" class="hint">
+        Driving to pickup location...
+      </div>
+
+      <div *ngIf="activeRide.status === 'DRIVER_ARRIVED'" class="hint">
+        Arrived at pickup, waiting for passengers...
+      </div>
+
+      <div *ngIf="activeRide.status === 'ACTIVE'" class="hint">
+        Ride in progress!
+      </div>
+
       <!-- Start Button -->
       <div class="form-actions">
         <button
@@ -71,6 +89,6 @@
   </div>
 
   <div class="right">
-    <app-map></app-map>
+    <app-ride-tracking-map></app-ride-tracking-map>
   </div>
 </div>

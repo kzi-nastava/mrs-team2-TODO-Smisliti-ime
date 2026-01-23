@@ -111,7 +111,35 @@ export class AuthService {
         this.profilePictureSignal.set('/assets/images/sussy_cat.jpg');
       }
     });
-}
+  }
+
+  // Get user ID from JWT
+  getUserId(): number | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const decoded: any = this.jwtHelper.decodeToken(token);
+      return decoded?.userId || decoded?.id || decoded?.sub || null;
+    } catch (err) {
+      console.error('getUserId: failed to decode token', err);
+      return null;
+    }
+  }
+
+  // Get user email from JWT
+  getUserEmail(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const decoded: any = this.jwtHelper.decodeToken(token);
+      return decoded?.email || decoded?.sub || null;
+    } catch (err) {
+      console.error('getUserEmail: failed to decode token', err);
+      return null;
+    }
+  }
 
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.TOKEN_KEY);

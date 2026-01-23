@@ -34,12 +34,24 @@ export interface GetDriverActiveRideDTO {
   estimatedTimeMin: number;
   passengerName: string;
   passengerCount: number;
+  status: string;
+  latitudes?: number[];
+  longitudes?: number[];
+  addresses?: string[];
 }
 
 export interface UpdatedRideDTO {
   id: number;
   status: string;
   startTime: string;
+}
+
+export interface DriverLocationDTO {
+  driverId: number;
+  rideId: number;
+  latitude: number;
+  longitude: number;
+  status: string;
 }
 
 @Injectable({

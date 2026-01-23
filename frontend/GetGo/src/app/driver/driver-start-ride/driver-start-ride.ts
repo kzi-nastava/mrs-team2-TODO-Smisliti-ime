@@ -2,7 +2,14 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef 
 import { CommonModule } from '@angular/common';
 import { NavBarComponent } from '../../layout/nav-bar/nav-bar.component';
 import { RideTrackingMapComponent } from '../../layout/ride-tracking-map/ride-tracking-map.component';
-import { RideService, GetDriverActiveRideDTO, UpdatedRideDTO, DriverLocationDTO } from '../../service/ride/ride.service';
+import {
+  RideService,
+  GetDriverActiveRideDTO,
+  UpdatedRideDTO,
+  DriverLocationDTO,
+  StatusUpdateDTO,
+  RideCompletionDTO
+} from '../../service/ride/ride.service';
 import { WebSocketService } from '../../service/websocket/websocket.service';
 import { AuthService } from '../../service/auth-service/auth.service';
 import { Subscription } from 'rxjs';
@@ -17,14 +24,19 @@ import { Subscription } from 'rxjs';
 export class DriverStartRide implements OnInit {
   activeRide: GetDriverActiveRideDTO | null = null;
   driverLocation: { lat: number; lng: number } | null = null;
+  rideCompletion: RideCompletionDTO | null = null;
+
   isLoading = true;
   isStarting = false;
+  isAccepting = false;
+
   errorMessage: string | null = null;
   successMessage: string | null = null;
 
   private rideSubscription?: Subscription;
   private locationSubscription?: Subscription;
-  private driverId: number | null = null;
+  private statusSubscription?: Subscription;
+  private completionSubscription?: Subscription;
 
   @ViewChild(RideTrackingMapComponent, { read: ElementRef, static: false })
    private mapComponent?: ElementRef<HTMLElement>;
@@ -37,26 +49,23 @@ export class DriverStartRide implements OnInit {
   ) {}
 
   async ngOnInit() {
-    // Get driver ID from auth
-    this.driverId = this.authService.getUserId();
-
-    if (!this.driverId) {
-      this.errorMessage = 'Failed to get driver ID';
+    const driverEmail = this.authService.getUserEmail();
+    if (!driverEmail) {
+      this.errorMessage = 'Failed to get driver email';
       this.isLoading = false;
       return;
     }
 
-    console.log('Driver ID:', this.driverId);
+    console.log('Driver Email:', driverEmail);
 
     try {
       await this.webSocketService.connect();
       console.log('WebSocket connected');
 
-      // Subscribe to ride assignments
-      this.subscribeToRideAssignments();
-
-      // Subscribe to location updates
-      this.subscribeToLocationUpdates();
+      this.subscribeToRideAssignments(driverEmail);
+      this.subscribeToLocationUpdates(driverEmail);
+      this.subscribeToStatusUpdates(driverEmail);
+      this.subscribeToRideCompletion(driverEmail);
 
       // Load existing active ride (if any)
       this.loadActiveRide();
@@ -69,21 +78,17 @@ export class DriverStartRide implements OnInit {
   }
 
   ngOnDestroy() {
-    if (this.rideSubscription) {
-      this.rideSubscription.unsubscribe();
-    }
-    if (this.locationSubscription) {
-      this.locationSubscription.unsubscribe();
-    }
+    if (this.rideSubscription) this.rideSubscription.unsubscribe();
+    if (this.locationSubscription) this.locationSubscription.unsubscribe();
+    if (this.statusSubscription) this.statusSubscription.unsubscribe();
+    if (this.completionSubscription) this.completionSubscription.unsubscribe();
 
     this.webSocketService.disconnect();
   }
 
-  private subscribeToRideAssignments() {
-    if (!this.driverId) return;
-
+  private subscribeToRideAssignments(driverEmail: string) {
     this.rideSubscription = this.webSocketService
-      .subscribeToDriverRideAssigned(this.driverId)
+      .subscribeToDriverRideAssigned(driverEmail)
       .subscribe({
         next: (ride: GetDriverActiveRideDTO) => {
           console.log('New ride assigned via WebSocket:', ride);
@@ -91,7 +96,6 @@ export class DriverStartRide implements OnInit {
           this.isLoading = false;
           this.successMessage = 'New ride assigned!';
 
-          // Initialize map with route
           this.initializeMapRoute(ride);
 
           // Clear success message after 3 seconds
@@ -108,11 +112,9 @@ export class DriverStartRide implements OnInit {
       });
   }
 
-  private subscribeToLocationUpdates() {
-    if (!this.driverId) return;
-
+  private subscribeToLocationUpdates(driverEmail: string) {
     this.locationSubscription = this.webSocketService
-      .subscribeToDriverLocation(this.driverId)
+      .subscribeToDriverLocation(driverEmail)
       .subscribe({
         next: (location: DriverLocationDTO) => {
           console.log('Driver location update:', location);
@@ -121,14 +123,44 @@ export class DriverStartRide implements OnInit {
             lng: location.longitude
           };
 
-          // Update map marker
           this.updateDriverMarkerOnMap(location.latitude, location.longitude);
-
           this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('Error receiving location update:', err);
         }
+      });
+  }
+
+  private subscribeToStatusUpdates(driverEmail: string) {
+    this.statusSubscription = this.webSocketService
+      .subscribeToDriverStatusUpdates(driverEmail)
+      .subscribe({
+        next: (update: StatusUpdateDTO) => {
+          console.log('Status update received:', update);
+          if (this.activeRide && this.activeRide.rideId === update.rideId) {
+            this.activeRide.status = update.status;
+            this.cdr.detectChanges();
+          }
+        },
+        error: (err) => console.error('Error receiving status update:', err)
+      });
+  }
+
+  private subscribeToRideCompletion(driverEmail: string) {
+    this.completionSubscription = this.webSocketService
+      .subscribeToRideFinished(driverEmail)
+      .subscribe({
+        next: (completion: RideCompletionDTO) => {
+          console.log('Ride finished:', completion);
+          this.rideCompletion = completion;
+          if (this.activeRide) {
+            this.activeRide.status = 'FINISHED';
+          }
+          this.successMessage = null;
+          this.cdr.detectChanges();
+        },
+        error: (err) => console.error('Error receiving completion:', err)
       });
   }
 
@@ -163,11 +195,11 @@ export class DriverStartRide implements OnInit {
 
   private initializeMapRoute(ride: GetDriverActiveRideDTO) {
     if (!this.mapComponent?.nativeElement || !ride.latitudes || !ride.longitudes) {
-      console.log('⚠️ Cannot initialize map: missing map component or coordinates');
+      console.log('Cannot initialize map: missing map component or coordinates');
       return;
     }
 
-    console.log('🗺️ Initializing map route');
+    console.log('Initializing map route');
 
     const waypoints = ride.latitudes.map((lat, index) => ({
       lat: lat,
@@ -191,6 +223,36 @@ export class DriverStartRide implements OnInit {
       bubbles: true
     });
     this.mapComponent.nativeElement.dispatchEvent(event);
+  }
+
+  acceptRide() {
+    if (!this.activeRide) return;
+
+    console.log('Accepting ride:', this.activeRide.rideId);
+    this.isAccepting = true;
+    this.errorMessage = null;
+
+    this.rideService.acceptRide(this.activeRide.rideId).subscribe({
+      next: (response: UpdatedRideDTO) => {
+        console.log('Ride accepted:', response);
+        this.activeRide!.status = 'DRIVER_INCOMING';
+        this.isAccepting = false;
+        this.successMessage = 'Ride accepted! Moving to pickup...';
+
+        setTimeout(() => {
+          this.successMessage = null;
+          this.cdr.detectChanges();
+        }, 3000);
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to accept ride:', err);
+        this.errorMessage = err.error?.message || 'Failed to accept ride';
+        this.isAccepting = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   startRide() {
@@ -221,5 +283,12 @@ export class DriverStartRide implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  acknowledgeCompletion() {
+    console.log('Acknowledging ride completion');
+    this.rideCompletion = null;
+    this.activeRide = null;
+    this.loadActiveRide(); // Check for next ride
   }
 }

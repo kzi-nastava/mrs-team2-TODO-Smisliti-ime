@@ -180,9 +180,13 @@ button.mini:disabled {
 
 /* Error */
 .error {
+  background-color: #ffebee;
   color: #c62828;
-  font-size: 12px;
-  margin-top: 4px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 /* Estimate */
@@ -199,9 +203,10 @@ button.mini:disabled {
   font-weight: 700;
 }
 
+/* Success */
 .success {
-  background-color: #4caf50;
-  color: white;
+  background-color: #c8e6c9;
+  color: #2e7d32;
   padding: 12px;
   border-radius: 8px;
   margin-top: 12px;
@@ -226,6 +231,127 @@ button.mini:disabled {
   box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
 
+/* Ride Info */
+.ride-info {
+  background-color: #E8EEF5;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(19,62,135,0.1);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row label {
+  font-weight: 600;
+  color: #133E87;
+  font-size: 14px;
+}
+
+.info-row span {
+  color: #133E87;
+  font-size: 14px;
+}
+
+/* Status Colors */
+.status-ready {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.status-incoming {
+  color: #2196f3;
+  font-weight: 600;
+}
+
+.status-arrived {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.status-active {
+  color: #9c27b0;
+  font-weight: 600;
+}
+
+.status-default {
+  color: #757575;
+  font-weight: 600;
+}
+
+/* Start/Accept Button */
+.start-btn {
+  width: 100%;
+  background: #133E87 !important;
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 120ms ease;
+}
+
+.start-btn:hover:not(:disabled) {
+  background: #0f3270 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(19,62,135,0.3);
+}
+
+.start-btn:disabled {
+  background: #A0B3C8 !important;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Completion Card */
+.completion-card {
+  background: linear-gradient(135deg, #133E87 0%, #0f3270 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 1rem;
+  box-shadow: 0 8px 20px rgba(19, 62, 135, 0.3);
+}
+
+.completion-card h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.completion-info {
+  margin: 1.5rem 0;
+  font-size: 1.1rem;
+}
+
+.completion-info p {
+  margin: 0.5rem 0;
+}
+
+.completion-card button {
+  background: white !important;
+  color: #133E87 !important;
+  margin-top: 1rem;
+  font-weight: 600;
+}
+
+.completion-card button:hover:not(:disabled) {
+  background: #f0f4f8 !important;
+  color: #0f3270 !important;
+}
+
+/* Responsive */
 @media (max-width: 880px) {
   .home {
     flex-direction: column;
@@ -257,47 +383,4 @@ button.mini:disabled {
   .form-actions button {
     width: 100%;
   }
-}
-
-.ride-info {
-  background-color: #E8EEF5;
-  padding: 16px;
-  border-radius: 8px;
-  margin: 16px 0;
-}
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(19,62,135,0.1);
-}
-
-.info-row:last-child {
-  border-bottom: none;
-}
-
-.info-row label {
-  font-weight: 600;
-  color: #133E87;
-  font-size: 14px;
-}
-
-.info-row span {
-  color: #133E87;
-  font-size: 14px;
-}
-
-.start-btn {
-  width: 100%;
-  background: #4caf50 !important;
-  font-size: 16px;
-}
-
-.start-btn:hover {
-  background: #45a049 !important;
-}
-
-.start-btn:disabled {
-  background: #A0B3C8 !important;
 }

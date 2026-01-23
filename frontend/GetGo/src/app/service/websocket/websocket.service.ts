@@ -56,14 +56,24 @@ export class WebSocketService {
     }
   }
 
-  subscribeToDriverRideAssigned(driverId: number): Observable<any> {
-    const topic = `/socket-publisher/driver/${driverId}/ride-assigned`;
+  subscribeToDriverRideAssigned(driverEmail: string): Observable<any> {
+    const topic = `/socket-publisher/driver/${driverEmail}/ride-assigned`;
     return this.createSubscription(topic);
   }
 
-  subscribeToDriverLocation(driverId: number): Observable<any> {
-    const topic = `/socket-publisher/driver/${driverId}/location`;
+  subscribeToDriverLocation(driverEmail: string): Observable<any> {
+    const topic = `/socket-publisher/driver/${driverEmail}/location`;
     return this.createSubscription(topic);
+  }
+
+  subscribeToDriverStatusUpdates(driverEmail: string): Observable<any> {
+    const topic = `/socket-publisher/driver/${driverEmail}/status-update`;
+    return this.createSubscription(topic);
+  }
+
+  subscribeToRideFinished(driverEmail: string): Observable<any> {
+      const topic = `/socket-publisher/driver/${driverEmail}/ride-finished`;
+      return this.createSubscription(topic);
   }
 
   subscribeToRideDriverLocation(rideId: number): Observable<any> {
@@ -72,7 +82,7 @@ export class WebSocketService {
   }
 
   // Generic subscription creator
-  private createSubscription(topic: string): Observable<any> {
+  public createSubscription(topic: string): Observable<any> {
     return new Observable(observer => {
       if (!this.stompClient || !this.connected$.value) {
         observer.error('WebSocket not connected');

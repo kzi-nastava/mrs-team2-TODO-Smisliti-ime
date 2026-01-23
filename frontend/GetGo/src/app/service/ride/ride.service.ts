@@ -54,6 +54,21 @@ export interface DriverLocationDTO {
   status: string;
 }
 
+export interface StatusUpdateDTO {
+  rideId: number;
+  status: string;
+  timestamp: string;
+}
+
+export interface RideCompletionDTO {
+  rideId: number;
+  status: string;
+  price: number;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -72,6 +87,10 @@ export class RideService {
 
   getDriverActiveRide(): Observable<GetDriverActiveRideDTO | null> {
     return this.http.get<GetDriverActiveRideDTO>(`${this.apiUrl}/driver/active`);
+  }
+
+  acceptRide(rideId: number): Observable<UpdatedRideDTO> {
+    return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/accept`, {});
   }
 
   startRide(rideId: number): Observable<UpdatedRideDTO> {

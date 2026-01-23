@@ -9,13 +9,28 @@
       Loading ride information...
     </div>
 
+    <!-- Ride Completion Message -->
+    <div *ngIf="rideCompletion" class="completion-card">
+      <h2>Ride Completed!</h2>
+      <div class="completion-info">
+        <p><strong>Price:</strong> {{ rideCompletion.price | number:'1.2-2' }} RSD</p>
+        <p><strong>Duration:</strong> {{ rideCompletion.durationMinutes }} minutes</p>
+      </div>
+      <button
+        type="button"
+        (click)="acknowledgeCompletion()"
+        class="start-btn">
+        OK
+      </button>
+    </div>
+
     <!-- No Active Ride -->
-    <div *ngIf="!isLoading && !activeRide" class="hint">
+    <div *ngIf="!isLoading && !activeRide && !rideCompletion" class="hint">
       No ride assigned. Wait for a passenger to request a ride.
     </div>
 
     <!-- Active Ride Details -->
-    <div *ngIf="!isLoading && activeRide">
+    <div *ngIf="!isLoading && activeRide && !rideCompletion">
       <div class="ride-info">
         <div class="info-row">
           <label>Ride ID:</label>
@@ -24,7 +39,18 @@
 
         <div class="info-row">
           <label>Status:</label>
-          <span>{{ activeRide.status }}</span>
+          <span [ngClass]="{
+            'status-ready': activeRide.status === 'DRIVER_READY',
+            'status-incoming': activeRide.status === 'DRIVER_INCOMING',
+            'status-arrived': activeRide.status === 'DRIVER_ARRIVED',
+            'status-active': activeRide.status === 'ACTIVE',
+            'status-default': activeRide.status !== 'DRIVER_READY' &&
+                              activeRide.status !== 'DRIVER_INCOMING' &&
+                              activeRide.status !== 'DRIVER_ARRIVED' &&
+                              activeRide.status !== 'ACTIVE'
+          }">
+            {{ activeRide.status }}
+          </span>
         </div>
 
         <div class="info-row">
@@ -49,31 +75,47 @@
 
         <div class="info-row">
           <label>Estimated Time:</label>
-          <span>{{ activeRide.estimatedTimeMin }} min</span>
+          <span>{{ activeRide.estimatedTimeMin | number:'1.0-0' }} min</span>
         </div>
 
         <div class="info-row">
           <label>Estimated Price:</label>
-          <span>{{ activeRide.estimatedPrice }} RSD</span>
+          <span>{{ activeRide.estimatedPrice | number:'1.2-2' }} RSD</span>
         </div>
       </div>
 
-      <!-- Messages -->
+      <!-- Status Messages -->
+      <div *ngIf="activeRide.status === 'DRIVER_READY'" class="hint">
+        New ride assigned! Review details and accept when ready.
+      </div>
+
       <div *ngIf="activeRide.status === 'DRIVER_INCOMING'" class="hint">
         Driving to pickup location...
       </div>
 
       <div *ngIf="activeRide.status === 'DRIVER_ARRIVED'" class="hint">
-        Arrived at pickup, waiting for passengers...
+        Arrived at pickup! Waiting for passengers to enter...
       </div>
 
       <div *ngIf="activeRide.status === 'ACTIVE'" class="hint">
         Ride in progress!
       </div>
 
-      <!-- Start Button -->
+      <!-- Action Buttons -->
       <div class="form-actions">
+        <!-- Accept Ride Button (DRIVER_READY) -->
         <button
+          *ngIf="activeRide.status === 'DRIVER_READY'"
+          type="button"
+          (click)="acceptRide()"
+          [disabled]="isAccepting"
+          class="start-btn">
+          {{ isAccepting ? 'Accepting...' : 'Accept Ride' }}
+        </button>
+
+        <!-- Start Ride Button (DRIVER_ARRIVED) -->
+        <button
+          *ngIf="activeRide.status === 'DRIVER_ARRIVED'"
           type="button"
           (click)="startRide()"
           [disabled]="isStarting"

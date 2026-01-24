@@ -15,13 +15,15 @@ export class RatingService {
   private readonly http = inject(HttpClient);
 
   private rideId = signal<number | null>(null);
+  private driverId = signal<number | null>(null);
   private token: string | null = null;
 
   ratingsResource = rxResource({
-    params: () => ({ rideId: this.rideId() }),
+    params: () => ({ driverId: this.driverId() }),
     stream: ({params}) => {
+      if (params.driverId === null) return of([]);
       return this.http.get<GetRatingDTO[]>(
-        `${environment.apiHost}/api/ratings/ride/${params.rideId}`
+        `${environment.apiHost}/api/ratings/driver/${params.driverId}`
       );
     }
   });
@@ -54,8 +56,9 @@ export class RatingService {
       : 0;
   });
 
-  setRide(id: number): void {
-    this.rideId.set(id);
+  setDriver(id: number): void {
+    this.driverId.set(id);
+    this.reloadRatings();
   }
 
   createRating(rating: { driverRating: number, vehicleRating: number, comment: string, rideId: number }): Observable<GetRatingDTO> {

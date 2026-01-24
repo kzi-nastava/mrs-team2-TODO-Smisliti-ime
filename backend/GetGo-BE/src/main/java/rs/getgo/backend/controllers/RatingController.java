@@ -81,5 +81,10 @@ public class RatingController {
         return auth;
     }
 
+    @GetMapping("/driver/{driverId}")
+    public List<GetRatingDTO> getRatingsByDriver(@PathVariable Long driverId) {
+        return ratingService.getRatingsByDriver(driverId);
+    }
+
 
 }

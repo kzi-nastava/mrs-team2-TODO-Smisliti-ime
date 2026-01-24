@@ -101,6 +101,16 @@ public class RatingServiceImpl implements RatingService {
         return ratingRepository.existsByPassenger_IdAndCompletedRide_Id(passengerId, rideId);
     }
 
+    @Override
+    public List<GetRatingDTO> getRatingsByDriver(Long driverId) {
+        List<Rating> ratings = ratingRepository
+                .findByCompletedRide_DriverId(driverId);
+
+        return ratings.stream()
+                .map(this::mapToGetDTO)
+                .toList();
+    }
+
 
 
 }

@@ -11,5 +11,5 @@ public interface RatingService {
     List<GetRatingDTO> getRatingsByRide(Long rideId);
     CreatedRatingDTO create(CreateRatingDTO dto, CompletedRide ride, Long passengerId);
     boolean hasUserRatedRide(Long passengerId, Long rideId);
-
+    public List<GetRatingDTO> getRatingsByDriver(Long driverId);
 }

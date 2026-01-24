@@ -197,3 +197,42 @@
   justify-content: center;
   overflow: hidden;
 }
+
+.cancel-ride-btn {
+  width: 90%;
+  padding: 10px 0;
+  margin-top: 8px;
+  background-color: #ff6b6b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.cancel-ride-btn:hover {
+  background-color: #ff4b4b;
+}
+
+.cancel-form {
+  margin-top: 10px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #133E87;
+  padding: 10px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cancel-form textarea {
+  width: 95%;
+  min-height: 60px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  padding: 6px;
+  resize: vertical;
+  font-family: inherit;
+}

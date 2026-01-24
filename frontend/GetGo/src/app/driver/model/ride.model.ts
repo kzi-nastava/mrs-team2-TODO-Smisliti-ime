@@ -37,4 +37,3 @@ export interface GetRideDTO {
   price: number;
   panicActivated?: boolean;
 }
-

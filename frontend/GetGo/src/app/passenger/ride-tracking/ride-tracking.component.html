@@ -1,4 +1,4 @@
-<div class="page-bg" [ngStyle]="{ 'min-height': showReportForm ? '110vh' : '100vh' }">
+<div class="page-bg" [ngStyle]="{ 'min-height': showReportForm || showCancelForm ? '110vh' : '100vh' }">
 <div class="main-container">
 
   <div class="ride-status">
@@ -51,6 +51,24 @@
       <button type="button" (click)="submitReport()">Submit</button>
       <button class="cancel-btn" (click)="showReportForm = false">Cancel</button>
     </div>
+
+    <button
+      *ngIf="canShowCancelRide()"
+      class="cancel-ride-btn"
+      (click)="showCancelForm = true">
+      Cancel ride
+    </button>
+
+    <div *ngIf="showCancelForm" class="cancel-form">
+      <label for="cancelReason">Reason for cancellation:</label>
+      <textarea
+        id="cancelReason"
+        [(ngModel)]="cancelReason"
+        placeholder="Enter cancellation reason..."></textarea>
+      <button type="button" (click)="submitCancel()">Confirm cancel</button>
+      <button class="cancel-btn" (click)="showCancelForm = false">Close</button>
+    </div>
+
     <button class="panic-btn" (click)="submitPanic()">
       PANIC
     </button>

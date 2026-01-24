@@ -9,10 +9,7 @@ import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
 import rs.getgo.backend.dtos.authentication.UpdateDriverPasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
-import rs.getgo.backend.dtos.driver.GetDriverDTO;
-import rs.getgo.backend.dtos.driver.UpdateDriverLocationDTO;
-import rs.getgo.backend.dtos.driver.UpdateDriverPersonalDTO;
-import rs.getgo.backend.dtos.driver.UpdateDriverVehicleDTO;
+import rs.getgo.backend.dtos.driver.*;
 import rs.getgo.backend.dtos.passenger.GetRidePassengerDTO;
 import rs.getgo.backend.dtos.request.CreatedDriverChangeRequestDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
@@ -26,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class DriverServiceImpl implements DriverService {
@@ -66,6 +64,29 @@ public class DriverServiceImpl implements DriverService {
         this.modelMapper = modelMapper;
         this.fileStorageService = fileStorageService;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    public List<GetActiveDriverLocationDTO> getActiveDriverLocations() {
+        List<Driver> activeDrivers = driverRepository.findByIsActive(true);
+
+        return activeDrivers.stream()
+                .map(driver -> {
+                    GetActiveDriverLocationDTO dto = new GetActiveDriverLocationDTO();
+                    dto.setDriverId(driver.getId());
+                    dto.setLatitude(driver.getCurrentLatitude());
+                    dto.setLongitude(driver.getCurrentLongitude());
+                    dto.setVehicleType(driver.getVehicle().getType().toString());
+
+                    boolean isBusy = activeRideRepository.existsByDriverAndStatusIn(
+                            driver,
+                            List.of(RideStatus.DRIVER_READY, RideStatus.DRIVER_INCOMING,
+                                    RideStatus.DRIVER_ARRIVED, RideStatus.ACTIVE)
+                    );
+                    dto.setIsAvailable(!isBusy);
+
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override

@@ -3,8 +3,7 @@ import * as L from 'leaflet';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
 import 'leaflet-routing-machine';
-import { VehicleService } from '../../service/vehicle-service/vehicle.service';
-import { GetVehicleDTO } from '../../service/vehicle-service/get-vehicle-dto.interface';
+import { DriverService, GetActiveDriverLocationDTO } from '../../service/driver/driver.service';
 
 @Component({
   selector: 'app-ride-tracking-map',
@@ -19,7 +18,7 @@ export class RideTrackingMapComponent implements AfterViewInit{
 
   constructor(
       private http: HttpClient,
-      private vehicleService: VehicleService,
+      private driverService: DriverService,
       private elementRef: ElementRef<HTMLElement>
     ) {}
 
@@ -34,7 +33,7 @@ export class RideTrackingMapComponent implements AfterViewInit{
 
     this.initMap();
     this.setupEventListeners();
-    this.loadVehicles();
+    this.loadDrivers();
   }
 
   private initMap(): void {
@@ -58,7 +57,7 @@ export class RideTrackingMapComponent implements AfterViewInit{
     // Listen for update route (draw route on map)
     this.elementRef.nativeElement.addEventListener('update-route', (ev: Event) => {
       const ce = ev as CustomEvent<{ waypoints: Array<{ lat: number; lng: number }> }>;
-      console.log('🗺RideTrackingMap received update-route:', ce.detail.waypoints);
+      console.log('RideTrackingMap received update-route:', ce.detail.waypoints);
       this.drawRoute(ce.detail.waypoints);
     });
 
@@ -71,7 +70,7 @@ export class RideTrackingMapComponent implements AfterViewInit{
 
     // Listen for map reset
     this.elementRef.nativeElement.addEventListener('reset-map', (ev: Event) => {
-        console.log('🔄 RideTrackingMap received reset-map');
+        console.log('RideTrackingMap received reset-map');
         this.resetMap();
       });
   }
@@ -139,7 +138,7 @@ export class RideTrackingMapComponent implements AfterViewInit{
   }
 
   private resetMap(): void {
-    console.log('🔄 Resetting map...');
+    console.log('Resetting map...');
 
     // Remove driver marker
     if (this.driverMarker) {
@@ -153,13 +152,8 @@ export class RideTrackingMapComponent implements AfterViewInit{
       this.routeControl = null;
     }
 
-    // Reset view to default (Novi Sad)
-    this.map.setView([45.2517, 19.8373], 13);
-
-    // Reload vehicles
-    this.loadVehicles();
-
-    console.log('✅ Map reset complete');
+    // Reload drivers
+    this.loadDrivers();
   }
 
   searchStreet(street: string): Observable<any> {
@@ -217,11 +211,29 @@ export class RideTrackingMapComponent implements AfterViewInit{
     });
   }
 
-  private addVehicleMarker(vehicle: GetVehicleDTO): L.Marker {
-    const lat = Number(vehicle.latitude);
-    const lng = Number(vehicle.longitude);
+  private loadDrivers(): void {
+    console.log('Trying to load drivers...');
+    this.driverService.getActiveDriverLocations().subscribe({
+      next: (drivers: GetActiveDriverLocationDTO[]) => {
+        console.log('Loaded drivers:', drivers);
+        if (!drivers || drivers.length === 0) return;
 
-    const iconUrl = vehicle.isAvailable
+        // Create a feature group to hold all drivers markers
+        const markers = drivers.map(drivers => this.addDriverMarker(drivers));
+        const group = L.featureGroup(markers).addTo(this.map);
+
+        // Automatically adjust map view to fit all markers with padding
+        this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
+  private addDriverMarker(driver: GetActiveDriverLocationDTO): L.Marker {
+    const lat = Number(driver.latitude);
+    const lng = Number(driver.longitude);
+
+    const iconUrl = driver.isAvailable
       ? 'assets/images/green_car.svg'
       : 'assets/images/red_car.svg';
 
@@ -234,27 +246,8 @@ export class RideTrackingMapComponent implements AfterViewInit{
 
     // Create the marker with the icon and bind a popup
     const marker = L.marker([lat, lng], { icon })
-      .bindPopup(`${vehicle.model} - ${vehicle.isAvailable ? 'Free' : 'Busy'}`);
+      .bindPopup(`${driver.vehicleType} - ${driver.isAvailable ? 'Free' : 'Busy'}`);
 
     return marker;
   }
-
-  private loadVehicles(): void {
-    console.log('Trying to load vehicles...');
-    this.vehicleService.getActiveVehicles().subscribe({
-      next: (vehicles: GetVehicleDTO[]) => {
-        console.log('Loaded vehicles:', vehicles);
-        if (!vehicles || vehicles.length === 0) return;
-
-        // Create a feature group to hold all vehicle markers
-        const markers = vehicles.map(vehicle => this.addVehicleMarker(vehicle));
-        const group = L.featureGroup(markers).addTo(this.map);
-
-        // Automatically adjust map view to fit all markers with padding
-        this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
-      },
-      error: (err) => console.error(err)
-    });
-  }
-
 }

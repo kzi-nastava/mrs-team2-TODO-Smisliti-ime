@@ -128,15 +128,9 @@ public class DriverController {
     }
 
     // 2.4.1 - Get active driver locations
-    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/active-locations", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<GetActiveDriverLocationDTO>> getActiveDriverLocations() {
-        List<GetActiveDriverLocationDTO> response = new ArrayList<>();
-        GetActiveDriverLocationDTO driver = new GetActiveDriverLocationDTO();
-        driver.setDriverId(2L);
-        driver.setLatitude(45.2550);
-        driver.setVehicleType("STANDARD");
-        response.add(driver);
+        List<GetActiveDriverLocationDTO> response = driverService.getActiveDriverLocations();
         return ResponseEntity.ok(response);
     }
 

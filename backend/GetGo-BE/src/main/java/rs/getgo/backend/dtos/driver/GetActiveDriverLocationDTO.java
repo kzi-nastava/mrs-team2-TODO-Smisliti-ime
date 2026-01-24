@@ -14,4 +14,5 @@ public class GetActiveDriverLocationDTO {
     private Double latitude;
     private Double longitude;
     private String vehicleType;
+    private Boolean isAvailable;
 }

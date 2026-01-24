@@ -33,7 +33,6 @@ export class RideTrackingMapComponent implements AfterViewInit{
 
     this.initMap();
     this.setupEventListeners();
-    this.loadDrivers();
   }
 
   private initMap(): void {
@@ -151,9 +150,6 @@ export class RideTrackingMapComponent implements AfterViewInit{
       this.map.removeControl(this.routeControl);
       this.routeControl = null;
     }
-
-    // Reload drivers
-    this.loadDrivers();
   }
 
   searchStreet(street: string): Observable<any> {
@@ -209,45 +205,5 @@ export class RideTrackingMapComponent implements AfterViewInit{
       var summary = routes[0].summary;
       alert('Total distance is ' + summary.totalDistance / 1000 + ' km and total time is ' + Math.round(summary.totalTime % 3600 / 60) + ' minutes');
     });
-  }
-
-  private loadDrivers(): void {
-    console.log('Trying to load drivers...');
-    this.driverService.getActiveDriverLocations().subscribe({
-      next: (drivers: GetActiveDriverLocationDTO[]) => {
-        console.log('Loaded drivers:', drivers);
-        if (!drivers || drivers.length === 0) return;
-
-        // Create a feature group to hold all drivers markers
-        const markers = drivers.map(drivers => this.addDriverMarker(drivers));
-        const group = L.featureGroup(markers).addTo(this.map);
-
-        // Automatically adjust map view to fit all markers with padding
-        this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
-      },
-      error: (err) => console.error(err)
-    });
-  }
-
-  private addDriverMarker(driver: GetActiveDriverLocationDTO): L.Marker {
-    const lat = Number(driver.latitude);
-    const lng = Number(driver.longitude);
-
-    const iconUrl = driver.isAvailable
-      ? 'assets/images/green_car.svg'
-      : 'assets/images/red_car.svg';
-
-    const icon = L.icon({
-      iconUrl: iconUrl,
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-      popupAnchor: [0, -16]
-    });
-
-    // Create the marker with the icon and bind a popup
-    const marker = L.marker([lat, lng], { icon })
-      .bindPopup(`${driver.vehicleType} - ${driver.isAvailable ? 'Free' : 'Busy'}`);
-
-    return marker;
   }
 }

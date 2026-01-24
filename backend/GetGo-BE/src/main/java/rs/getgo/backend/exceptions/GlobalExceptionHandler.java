@@ -50,4 +50,13 @@ public class GlobalExceptionHandler {
         error.put("message", "An unexpected error occurred");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
+
+    @ExceptionHandler(RatingException.class)
+    public ResponseEntity<Map<String, String>> handleRatingException(RatingException ex) {
+        logger.warn("RatingException: {} - {}", ex.getCode(), ex.getMessage());
+        Map<String, String> error = new HashMap<>();
+        error.put("code", ex.getCode());
+        error.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
 }

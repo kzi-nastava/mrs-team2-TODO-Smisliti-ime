@@ -90,11 +90,11 @@ public class WebSecurityConfig {
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/reset-password")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/activate")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/uploads/*")).permitAll()
-                    .requestMatchers(new AntPathRequestMatcher("/api/ratings/**")).permitAll()
-                    .requestMatchers(new AntPathRequestMatcher("/api/drivers/**")).permitAll()
-                    .requestMatchers(new AntPathRequestMatcher("/api/rides/**")).permitAll()
-                    .requestMatchers(new AntPathRequestMatcher("/api/vehicles/**")).permitAll()
-                    .requestMatchers(new AntPathRequestMatcher("/socket/**")).permitAll() // ✅ ADD THIS
+                    .requestMatchers(new AntPathRequestMatcher("/api/ratings/**")).permitAll() // TODO: Remove later?
+                    .requestMatchers(new AntPathRequestMatcher("/api/drivers/**")).permitAll() // TODO: Remove later?
+                    .requestMatchers(new AntPathRequestMatcher("/api/rides/**")).permitAll() // TODO: Remove later?
+                    .requestMatchers(new AntPathRequestMatcher("/api/vehicles/**")).permitAll() // TODO: Remove later?
+                    .requestMatchers(new AntPathRequestMatcher("/socket/**")).permitAll()
                     .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated();
         });
@@ -108,16 +108,16 @@ public class WebSecurityConfig {
         return (web) -> web.ignoring()
                 .requestMatchers(HttpMethod.GET, "/", "/webjars/*", "/*.html", "favicon.ico",
                         "/*/*.html", "/*/*.css", "/*/*.js", "/uploads/**")
-                .requestMatchers(new AntPathRequestMatcher("/socket/**")); // ✅ ADD THIS
+                .requestMatchers(new AntPathRequestMatcher("/socket/**"));
     }
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:4200")); // ✅ CHANGE THIS
-        configuration.setAllowedMethods(Arrays.asList("POST", "PUT", "GET", "OPTIONS", "DELETE", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true); // ✅ ADD THIS
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:4200"));
+        configuration.setAllowedMethods(List.of("*"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

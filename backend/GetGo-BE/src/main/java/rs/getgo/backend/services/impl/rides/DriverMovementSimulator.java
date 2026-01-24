@@ -61,6 +61,56 @@ public class DriverMovementSimulator {
         }
     }
 
+    /**
+     * Broadcast active driver location to:
+     * - Driver themselves
+     * - To passengers of driver's ride if driver has active ride
+     */
+    @Scheduled(fixedRate = 1000)
+    public void broadcastAllActiveDriverLocations() {
+        List<Driver> activeDrivers = driverRepository.findByIsActive(true);
+
+        for (Driver driver : activeDrivers) {
+            try {
+                // Skip drivers without location set
+                if (driver.getCurrentLatitude() == null || driver.getCurrentLongitude() == null) {
+                    continue;
+                }
+
+                // Find if driver has an active ride
+                ActiveRide activeRide = activeRideRepository
+                        .findByDriverAndStatusIn(
+                                driver,
+                                List.of(
+                                        RideStatus.DRIVER_READY,
+                                        RideStatus.DRIVER_INCOMING,
+                                        RideStatus.DRIVER_ARRIVED,
+                                        RideStatus.ACTIVE
+                                )
+                        )
+                        .stream()
+                        .findFirst()
+                        .orElse(null);
+
+                GetDriverLocationDTO locationUpdate = new GetDriverLocationDTO(
+                        driver.getId(),
+                        activeRide != null ? activeRide.getId() : null,
+                        driver.getCurrentLatitude(),
+                        driver.getCurrentLongitude(),
+                        activeRide != null ? activeRide.getStatus().toString() : ""
+                );
+
+                webSocketController.broadcastDriverLocation(driver.getEmail(), locationUpdate);
+                if (activeRide != null) {
+                    webSocketController.broadcastDriverLocationToRide(activeRide.getId(), locationUpdate);
+                }
+
+            } catch (Exception e) {
+                System.err.println("Failed to broadcast location for driver " + driver.getId() + ": " + e.getMessage());
+            }
+        }
+    }
+
     private void updateSingleDriverPosition(ActiveRide ride) {
         if (ride.getMovementPathJson() == null || ride.getMovementPathJson().isEmpty()) return;
 

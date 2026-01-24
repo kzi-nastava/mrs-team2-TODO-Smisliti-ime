@@ -203,6 +203,8 @@ export class MapComponent implements AfterViewInit{
       const summary = routes[0].summary;
       console.log(`Route: ${summary.totalDistance / 1000} km, ${Math.round(summary.totalTime / 60)} minutes`);
     });
+  setRoute(): void {
+
   }
 
   private resetMap(): void {

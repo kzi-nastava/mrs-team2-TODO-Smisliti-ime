@@ -18,8 +18,12 @@ export class AuthGuard implements CanActivate {
     const expectedRoles: UserRole[] = route.data['roles'] || [];
 
     if (!this.auth.isLoggedIn()) {
-      return this.router.parseUrl('/login');
+      return this.router.createUrlTree(
+        ['/login'],
+        { queryParams: { redirectUrl: state.url } }
+      );
     }
+
 
     const currentRole = this.auth.role();
     if (expectedRoles.length && !expectedRoles.includes(currentRole)) {
@@ -39,7 +43,9 @@ export const authGuard: CanActivateFn = (route, state) => {
       const role = auth.role();
       if (role !== undefined) {
         if (!auth.isLoggedIn()) {
-          resolve(router.createUrlTree(['/login']));
+//           resolve(router.createUrlTree(['/login']));
+          const redirect = state.url;
+          resolve(router.createUrlTree(['/login'], { queryParams: { redirectUrl: redirect } }));
         } else {
           resolve(true);
         }

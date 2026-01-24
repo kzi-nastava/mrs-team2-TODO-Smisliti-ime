@@ -6,6 +6,11 @@ export class JwtInterceptor implements HttpInterceptor {
   private TOKEN_KEY = 'authToken';
 
   intercept(req: HttpRequest<any>, next: HttpHandler) {
+
+    if (req.url.includes('/api/ratings/rate')) {
+        return next.handle(req);
+      }
+
     const token = localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.TOKEN_KEY);
 
     console.log('JWT Interceptor: token =', token ? 'present' : 'missing');

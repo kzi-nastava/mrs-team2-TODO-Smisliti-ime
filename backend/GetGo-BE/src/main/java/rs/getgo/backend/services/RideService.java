@@ -21,4 +21,5 @@ public interface RideService {
 
     void triggerPanic(Long rideId, String triggeredByUserId);
 
+    public UpdatedRideDTO finishRide(Long rideId, UpdateRideDTO rideRequest);
 }

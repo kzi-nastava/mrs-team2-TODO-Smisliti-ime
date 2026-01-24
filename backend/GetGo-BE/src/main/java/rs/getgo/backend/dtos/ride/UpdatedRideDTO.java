@@ -15,4 +15,5 @@ public class UpdatedRideDTO {
     private Long id;
     private String status;
     private LocalDateTime startTime;
+    private LocalDateTime endTime;
 }

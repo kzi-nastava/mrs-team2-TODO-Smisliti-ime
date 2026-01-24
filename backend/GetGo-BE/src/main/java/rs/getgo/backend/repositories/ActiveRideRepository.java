@@ -17,4 +17,5 @@ public interface ActiveRideRepository extends JpaRepository<ActiveRide, Long> {
     List<ActiveRide> findByStatusIn(List<RideStatus> statuses);
     boolean existsByDriverAndStatusIn(Driver driver, List<RideStatus> statuses);
     boolean existsByDriverAndStatus(Driver driver, RideStatus status);
+    Optional<ActiveRide> findFirstByDriverAndStatusOrderByScheduledTimeAsc(Driver driver, RideStatus status);
 }

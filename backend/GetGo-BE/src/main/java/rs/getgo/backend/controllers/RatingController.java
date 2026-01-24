@@ -10,8 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.model.entities.CompletedRide;
 import rs.getgo.backend.repositories.CompletedRideRepository;
+import rs.getgo.backend.repositories.PassengerRepository;
 import rs.getgo.backend.services.RatingService;
 import org.springframework.security.core.Authentication;
+import rs.getgo.backend.utils.RatingTokenData;
 
 
 import java.util.Collection;
@@ -23,13 +25,16 @@ public class RatingController {
 
     private final RatingService ratingService;
     private final CompletedRideRepository rideRepository;
+    private final PassengerRepository passengerRepository;
 
     public RatingController(
             RatingService ratingService,
-            CompletedRideRepository rideRepository
+            CompletedRideRepository rideRepository,
+            PassengerRepository passengerRepository
     ) {
         this.ratingService = ratingService;
         this.rideRepository = rideRepository;
+        this.passengerRepository = passengerRepository;
     }
 
     // 2.8 Vehicle and driver rating
@@ -55,12 +60,18 @@ public class RatingController {
     // 2.8 Vehicle and driver rating
     @PreAuthorize("hasRole('PASSENGER')")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedRatingDTO> createRating(@RequestBody CreateRatingDTO dto, @RequestParam Long rideId) throws Exception {
+    public ResponseEntity<CreatedRatingDTO> createRating(@RequestBody CreateRatingDTO dto, @RequestParam Long rideId, Authentication auth) throws Exception {
 
         CompletedRide ride = rideRepository.findById(rideId)
                 .orElseThrow(() -> new Exception("Ride not found with id: " + rideId));
 
-        CreatedRatingDTO savedRating = ratingService.create(dto, ride);
+        String email = auth.getName();
+        Long passengerId = passengerRepository.findByEmail(email)
+                .orElseThrow(() -> new Exception("Passenger not found"))
+                .getId();
+
+
+        CreatedRatingDTO savedRating = ratingService.create(dto, ride, passengerId);
 
         return new ResponseEntity<CreatedRatingDTO>(savedRating, HttpStatus.CREATED);
     }
@@ -69,4 +80,11 @@ public class RatingController {
     public Object debugAuth(Authentication auth) {
         return auth;
     }
+
+    @GetMapping("/driver/{driverId}")
+    public List<GetRatingDTO> getRatingsByDriver(@PathVariable Long driverId) {
+        return ratingService.getRatingsByDriver(driverId);
+    }
+
+
 }

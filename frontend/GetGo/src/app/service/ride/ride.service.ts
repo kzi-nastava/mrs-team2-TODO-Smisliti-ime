@@ -44,6 +44,7 @@ export interface UpdatedRideDTO {
   id: number;
   status: string;
   startTime: string;
+  endTime: string;
 }
 
 export interface DriverLocationDTO {
@@ -95,5 +96,9 @@ export class RideService {
 
   startRide(rideId: number): Observable<UpdatedRideDTO> {
     return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/start`, {});
+  }
+
+  endRide(rideId: number): Observable<UpdatedRideDTO> {
+    return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/finish`, {});
   }
 }

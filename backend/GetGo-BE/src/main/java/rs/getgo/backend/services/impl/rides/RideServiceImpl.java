@@ -57,7 +57,7 @@ public class RideServiceImpl implements RideService {
                            DriverRepository driverRepository,
                            DriverService driverService,
                            MapboxRoutingService mapboxRoutingService,
-                           WebSocketController webSocketController) {
+                           WebSocketController webSocketController,
                            CompletedRideRepository completedRideRepository,
                            EmailService emailService) {
         this.cancellationRepository = cancellationRepository;
@@ -681,7 +681,6 @@ public class RideServiceImpl implements RideService {
 
         return response;
     }
-
 
 
 }

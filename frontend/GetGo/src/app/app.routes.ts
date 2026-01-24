@@ -13,13 +13,11 @@ import { DriverHome } from './driver/driver-home/driver-home'
 import { DriverActivate } from './driver/driver-activate/driver-activate';
 import { DriverProfile } from './driver/driver-profile/driver-profile';
 import { DriverChangePassword } from './driver/driver-change-password/driver-change-password';
-import { DriverStartRide } from './driver/driver-start-ride/driver-start-ride'
 import { AdminHome } from './admin/admin-home/admin-home'
 import { AdminProfile } from './admin/admin-profile/admin-profile';
 import { AdminChangePassword } from './admin/admin-change-password/admin-change-password';
 import { AdminReviewDriverRequests } from './admin/admin-review-driver-requests/admin-review-driver-requests'
 import { DriverRegistration } from './admin/driver-registration/driver-registration';
-import { OrderRide } from './passenger/order-ride/order-ride';
 import { FavoriteRides } from './passenger/favorite-rides/favorite-rides';
 import { RatingVehicleDriverComponent } from './passenger/rating-vehicle-driver/rating-vehicle-driver.component';
 // import { InRideComponent } from './passenger/in-ride/in-ride.component';
@@ -52,13 +50,11 @@ export const routes: Routes = [
   { path: 'driver/driver-home', component: DriverHome, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'driver/driver-profile', component: DriverProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'driver/change-password', component: DriverChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
-  { path: 'driver/start-ride', component: DriverStartRide, canActivate: [AuthGuard], data: { roles: [UserRole.Driver ] } },
   { path: 'admin/admin-home', component: AdminHome, canActivate: [AuthGuard], data: {roles: [UserRole.Admin] } },
   { path: 'admin/admin-profile', component: AdminProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/review-driver-requests', component: AdminReviewDriverRequests, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/change-password', component: AdminChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/driver-registration', component: DriverRegistration, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
-  { path: 'order-ride', component: OrderRide, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'favorite-rides', component: FavoriteRides, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: '**', component: NotFoundComponent }
 ];

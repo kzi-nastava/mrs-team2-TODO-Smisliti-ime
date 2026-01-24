@@ -112,11 +112,11 @@ export class LoginComponent {
           console.log('Login: token saved to sessionStorage (session only)');
         }
 
-      this.auth.setToken(res.token, stayLoggedIn);
+        this.auth.setToken(res.token, stayLoggedIn);
 
-      console.log('Login: token saved & role extracted from JWT');
+        console.log('Login: token saved & role extracted from JWT');
 
-      this.snackBarService.show('Login successful!', true, 3000);
+        this.snackBarService.show('Login successful!', true, 3000);
 
       const redirectUrl = this.route.snapshot.queryParamMap.get('redirectUrl');
       if (redirectUrl) {

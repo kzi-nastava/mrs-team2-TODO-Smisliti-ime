@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -18,4 +20,7 @@ public class GetDriverActiveRideDTO {
     private String passengerName;
     private Integer passengerCount;
     private String status;
+    private List<Double> latitudes;
+    private List<Double> longitudes;
+    private List<String> addresses;
 }

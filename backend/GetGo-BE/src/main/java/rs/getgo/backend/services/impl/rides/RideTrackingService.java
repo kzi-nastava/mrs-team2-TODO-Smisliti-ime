@@ -1,4 +1,4 @@
-package rs.getgo.backend.services;
+package rs.getgo.backend.services.impl.rides;
 
 import org.springframework.stereotype.Service;
 import rs.getgo.backend.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
@@ -7,7 +7,6 @@ import rs.getgo.backend.dtos.ride.GetRideTrackingDTO;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.ActiveRideRepository;
-import rs.getgo.backend.repositories.CompletedRideRepository;
 import rs.getgo.backend.repositories.InconsistencyReportRepository;
 import rs.getgo.backend.repositories.PassengerRepository;
 

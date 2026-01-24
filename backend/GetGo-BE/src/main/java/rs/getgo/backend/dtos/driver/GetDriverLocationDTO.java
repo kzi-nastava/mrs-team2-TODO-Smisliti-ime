@@ -5,14 +5,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public class GetActiveDriverLocationDTO {
+public class GetDriverLocationDTO {
     private Long driverId;
+    private Long rideId;
     private Double latitude;
     private Double longitude;
-    private String vehicleType;
-    private Boolean isAvailable;
+    private String status;
 }
+

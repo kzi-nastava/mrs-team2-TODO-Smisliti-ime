@@ -90,10 +90,11 @@ public class WebSecurityConfig {
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/reset-password")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/activate")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/uploads/*")).permitAll()
-                    .requestMatchers(new AntPathRequestMatcher("/api/ratings/**")).permitAll() // Added for test
-                    .requestMatchers(new AntPathRequestMatcher("/api/drivers/**")).permitAll() // Added for test
-                    .requestMatchers(new AntPathRequestMatcher("/api/rides/**")).permitAll() // Added for test
-                    .requestMatchers(new AntPathRequestMatcher("/api/vehicles/**")).permitAll() // Added for test
+                    .requestMatchers(new AntPathRequestMatcher("/api/ratings/**")).permitAll() // TODO: Remove later?
+                    .requestMatchers(new AntPathRequestMatcher("/api/drivers/**")).permitAll() // TODO: Remove later?
+                    .requestMatchers(new AntPathRequestMatcher("/api/rides/**")).permitAll() // TODO: Remove later?
+                    .requestMatchers(new AntPathRequestMatcher("/api/vehicles/**")).permitAll() // TODO: Remove later?
+                    .requestMatchers(new AntPathRequestMatcher("/socket/**")).permitAll()
                     .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated();
         });
@@ -101,19 +102,22 @@ public class WebSecurityConfig {
         http.authenticationProvider(authenticationProvider());
         return http.build();
     }
+
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring()
                 .requestMatchers(HttpMethod.GET, "/", "/webjars/*", "/*.html", "favicon.ico",
-                        "/*/*.html", "/*/*.css", "/*/*.js", "/uploads/**");
+                        "/*/*.html", "/*/*.css", "/*/*.js", "/uploads/**")
+                .requestMatchers(new AntPathRequestMatcher("/socket/**"));
     }
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
-        configuration.setAllowedMethods(Arrays.asList("POST", "PUT", "GET", "OPTIONS", "DELETE", "PATCH")); // or simply "*"
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:4200"));
+        configuration.setAllowedMethods(List.of("*"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import rs.getgo.backend.services.RideTrackingService;
+import rs.getgo.backend.services.impl.rides.RideTrackingService;
 import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDateTime;
@@ -120,6 +120,13 @@ public class RideController {
     ) {
         String email = AuthUtils.getCurrentUserEmail();
         CreatedRideResponseDTO response = rideService.orderRide(request, email);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('DRIVER')")
+    @PutMapping(value = "/{rideId}/accept", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UpdatedRideDTO> acceptRide(@PathVariable Long rideId) {
+        UpdatedRideDTO response = rideService.acceptRide(rideId);
         return ResponseEntity.ok(response);
     }
 

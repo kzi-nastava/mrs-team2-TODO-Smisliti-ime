@@ -3,8 +3,7 @@ import * as L from 'leaflet';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
 import 'leaflet-routing-machine';
-import {VehicleService} from '../../service/vehicle-service/vehicle.service';
-import {GetVehicleDTO} from '../../service/vehicle-service/get-vehicle-dto.interface';
+import { DriverService, GetActiveDriverLocationDTO } from '../../service/driver/driver.service';
 
 @Component({
   selector: 'app-map',
@@ -12,23 +11,38 @@ import {GetVehicleDTO} from '../../service/vehicle-service/get-vehicle-dto.inter
   styleUrl: './map.component.css',
 })
 export class MapComponent implements AfterViewInit{
-
   private map: any;
   private activeInput: string | null = null; // for unregistered (origin/destination)
   private activeInputIndex: number | null = null; // for registered (index-based)
   private originMarker: L.Marker | null = null;
   private destinationMarker: L.Marker | null = null;
   private waypointMarkers: L.Marker[] = []; // for registered home waypoints
+  private routeControl: any = null; // Store the current route control
 
   constructor(
     private http: HttpClient,
-    private vehicleService: VehicleService,
+    private driverService: DriverService,
     private elementRef: ElementRef<HTMLElement>
   ) {}
 
+  ngAfterViewInit(): void {
+    // Set default marker icon
+    L.Marker.prototype.options.icon = L.icon({
+      iconUrl: 'https://unpkg.com/leaflet@1.6.0/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.6.0/dist/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41]
+    });
+
+    this.initMap();
+    this.registerOnClick();
+    this.setupEventListeners();
+    this.loadDrivers();
+  }
+
   private initMap(): void {
     this.map = L.map('map', {
-      center: [45.2396, 19.8227],
+      center: [45.2517, 19.8373],  // Novi Sad
       zoom: 13,
     });
 
@@ -44,16 +58,7 @@ export class MapComponent implements AfterViewInit{
     tiles.addTo(this.map);
   }
 
-  ngAfterViewInit(): void {
-
-    L.Marker.prototype.options.icon = L.icon({
-      iconUrl: 'https://unpkg.com/leaflet@1.6.0/dist/images/marker-icon.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.6.0/dist/images/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41]
-    });
-    this.initMap();
-
+  private setupEventListeners(): void {
     // Listen for set-active-input event (unregistered home)
     this.elementRef.nativeElement.addEventListener('set-active-input', (ev: Event) => {
       const ce = ev as CustomEvent<{ input: string | null }>;
@@ -68,9 +73,18 @@ export class MapComponent implements AfterViewInit{
       console.log('Map received set-active-input-index event, activeInputIndex now:', this.activeInputIndex);
     });
 
-    this.registerOnClick();
-    this.setRoute();
-    this.loadVehicles();
+    // Listen for route update event (when waypoints change)
+    this.elementRef.nativeElement.addEventListener('update-route', (ev: Event) => {
+      const ce = ev as CustomEvent<{ waypoints: Array<{ lat: number; lng: number }> }>;
+      console.log('Map received update-route event with waypoints:', ce.detail.waypoints);
+      this.updateRoute(ce.detail.waypoints);
+    });
+
+    // Listen for map reset
+    this.elementRef.nativeElement.addEventListener('reset-map', (ev: Event) => {
+      console.log('Map received reset-map event');
+      this.resetMap();
+    });
   }
 
   searchStreet(street: string): Observable<any> {
@@ -155,15 +169,103 @@ export class MapComponent implements AfterViewInit{
     });
   }
 
+  private updateRoute(waypoints: Array<{ lat: number; lng: number }>): void {
+    // Remove existing route if present
+    if (this.routeControl) {
+      this.map.removeControl(this.routeControl);
+      this.routeControl = null;
+    }
+
+    // Need at least 2 waypoints to draw a route
+    if (waypoints.length < 2) {
+      console.log('Not enough waypoints to draw route');
+      return;
+    }
+
+    // Convert waypoints to Leaflet LatLng objects
+    const latLngs = waypoints.map(wp => L.latLng(wp.lat, wp.lng));
+
+    console.log('Drawing route with waypoints:', latLngs);
+
+    // Create routing control
+    this.routeControl = L.Routing.control({
+      waypoints: latLngs,
+      router: L.routing.mapbox('pk.eyJ1IjoibWVyaXMxMCIsImEiOiJjbWpxandnNmIwd2piM2dzYzVlc3N6NXExIn0.-OX2bzr7c8eGfjaUX-gwZw', {profile: 'mapbox/driving'}),
+      routeWhileDragging: false,
+      addWaypoints: false,
+      fitSelectedRoutes: true,
+      showAlternatives: false
+    }).addTo(this.map);
+
+    // Optional: Handle route found event
+    this.routeControl.on('routesfound', (e: any) => {
+      const routes = e.routes;
+      const summary = routes[0].summary;
+      console.log(`Route: ${summary.totalDistance / 1000} km, ${Math.round(summary.totalTime / 60)} minutes`);
+    });
+  }
+
   setRoute(): void {
 
   }
 
-  private addVehicleMarker(vehicle: GetVehicleDTO): L.Marker {
-    const lat = Number(vehicle.latitude);
-    const lng = Number(vehicle.longitude);
+  private resetMap(): void {
+    console.log('Resetting map...');
 
-    const iconUrl = vehicle.isAvailable
+    this.activeInput = null;
+    this.activeInputIndex = null;
+
+    // Remove origin/destination markers
+    if (this.originMarker) {
+      this.map.removeLayer(this.originMarker);
+      this.originMarker = null;
+    }
+    if (this.destinationMarker) {
+      this.map.removeLayer(this.destinationMarker);
+      this.destinationMarker = null;
+    }
+
+    // Remove waypoint markers
+    this.waypointMarkers.forEach(marker => {
+      if (marker) {
+        this.map.removeLayer(marker);
+      }
+    });
+    this.waypointMarkers = [];
+
+    // Remove route
+    if (this.routeControl) {
+      this.map.removeControl(this.routeControl);
+      this.routeControl = null;
+    }
+
+    // Reload drivers
+    this.loadDrivers();
+  }
+
+  private loadDrivers(): void {
+    console.log('Loading active drivers...');
+    this.driverService.getActiveDriverLocations().subscribe({
+      next: (drivers: GetActiveDriverLocationDTO[]) => {
+        console.log('Loaded drivers:', drivers);
+        if (!drivers || drivers.length === 0) return;
+
+        // Create a feature group to hold all drivers markers
+        const markers = drivers.map(drivers => this.addDriverMarker(drivers));
+        const group = L.featureGroup(markers).addTo(this.map);
+
+        // Automatically adjust map view to fit all markers with padding
+        this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
+  private addDriverMarker(driver: GetActiveDriverLocationDTO): L.Marker {
+    const lat = Number(driver.latitude);
+    const lng = Number(driver.longitude);
+
+    const iconUrl = driver.isAvailable
       ? 'assets/images/green_car.svg'
       : 'assets/images/red_car.svg';
 
@@ -176,26 +278,8 @@ export class MapComponent implements AfterViewInit{
 
     // Create the marker with the icon and bind a popup
     const marker = L.marker([lat, lng], { icon })
-      .bindPopup(`${vehicle.model} - ${vehicle.isAvailable ? 'Free' : 'Busy'}`);
+      .bindPopup(`${driver.vehicleType} - ${driver.isAvailable ? 'Free' : 'Busy'}`);
 
     return marker;
-  }
-
-  private loadVehicles(): void {
-    console.log('Trying to load vehicles...');
-    this.vehicleService.getActiveVehicles().subscribe({
-      next: (vehicles: GetVehicleDTO[]) => {
-        console.log('Loaded vehicles:', vehicles);
-        if (!vehicles || vehicles.length === 0) return;
-
-        // Create a feature group to hold all vehicle markers
-        const markers = vehicles.map(vehicle => this.addVehicleMarker(vehicle));
-        const group = L.featureGroup(markers).addTo(this.map);
-
-        // Automatically adjust map view to fit all markers with padding
-        this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
-      },
-      error: (err) => console.error(err)
-    });
   }
 }

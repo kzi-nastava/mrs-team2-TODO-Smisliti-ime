@@ -35,6 +35,9 @@ export interface GetDriverActiveRideDTO {
   passengerName: string;
   passengerCount: number;
   status: string;
+  latitudes?: number[];
+  longitudes?: number[];
+  addresses?: string[];
 }
 
 export interface UpdatedRideDTO {
@@ -42,6 +45,29 @@ export interface UpdatedRideDTO {
   status: string;
   startTime: string;
   endTime: string;
+}
+
+export interface DriverLocationDTO {
+  driverId: number;
+  rideId: number;
+  latitude: number;
+  longitude: number;
+  status: string;
+}
+
+export interface StatusUpdateDTO {
+  rideId: number;
+  status: string;
+  timestamp: string;
+}
+
+export interface RideCompletionDTO {
+  rideId: number;
+  status: string;
+  price: number;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
 }
 
 @Injectable({
@@ -62,6 +88,10 @@ export class RideService {
 
   getDriverActiveRide(): Observable<GetDriverActiveRideDTO | null> {
     return this.http.get<GetDriverActiveRideDTO>(`${this.apiUrl}/driver/active`);
+  }
+
+  acceptRide(rideId: number): Observable<UpdatedRideDTO> {
+    return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/accept`, {});
   }
 
   startRide(rideId: number): Observable<UpdatedRideDTO> {

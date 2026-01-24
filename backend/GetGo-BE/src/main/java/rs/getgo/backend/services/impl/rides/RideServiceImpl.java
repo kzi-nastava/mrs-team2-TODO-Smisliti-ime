@@ -1,7 +1,10 @@
-package rs.getgo.backend.services.impl;
+package rs.getgo.backend.services.impl.rides;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import rs.getgo.backend.controllers.WebSocketController;
 import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
 import rs.getgo.backend.model.entities.*;
@@ -20,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class RideServiceImpl implements RideService {
 
     private final RideCancellationRepository cancellationRepository;
@@ -29,10 +33,17 @@ public class RideServiceImpl implements RideService {
     private final PassengerRepository passengerRepository;
     private final RouteRepository routeRepository;
     private final DriverRepository driverRepository;
-    private final DriverService driverService;
     private final CompletedRideRepository completedRideRepository;
     private final EmailService emailService;
+    private final DriverService driverService;
+    private final MapboxRoutingService routingService;
+    private final WebSocketController webSocketController;
 
+    @Value("${driver.default.latitude}")
+    private Double defaultDriverLatitude;
+
+    @Value("${driver.default.longitude}")
+    private Double defaultDriverLongitude;
 
     // passenger must cancel at least 10 minutes before scheduled start
     private static final long PASSENGER_CANCEL_MINUTES_BEFORE = 10L;
@@ -45,6 +56,8 @@ public class RideServiceImpl implements RideService {
                            RouteRepository routeRepository,
                            DriverRepository driverRepository,
                            DriverService driverService,
+                           MapboxRoutingService mapboxRoutingService,
+                           WebSocketController webSocketController,
                            CompletedRideRepository completedRideRepository,
                            EmailService emailService) {
         this.cancellationRepository = cancellationRepository;
@@ -57,6 +70,8 @@ public class RideServiceImpl implements RideService {
         this.driverService = driverService;
         this.completedRideRepository = completedRideRepository;
         this.emailService = emailService;
+        this.routingService = mapboxRoutingService;
+        this.webSocketController = webSocketController;
     }
 
     @Override
@@ -100,7 +115,7 @@ public class RideServiceImpl implements RideService {
     @Override
     public CreatedRideResponseDTO orderRide(CreateRideRequestDTO createRideRequestDTO, String userEmail) {
         // TODO: DO WITH VALIDATORS
-        // 1. Validate request
+        // Validate request
         if (createRideRequestDTO.getLatitudes().size() < 2 ||
                 createRideRequestDTO.getLatitudes().size() != createRideRequestDTO.getLongitudes().size() ||
                 createRideRequestDTO.getLatitudes().size() != createRideRequestDTO.getAddresses().size()) {
@@ -111,7 +126,7 @@ public class RideServiceImpl implements RideService {
             );
         }
 
-        // 2. Find paying passenger
+        // Find paying passenger
         Passenger payingPassenger = passengerRepository.findByEmail(userEmail)
                 .orElse(null);
         if (payingPassenger == null) {
@@ -122,7 +137,7 @@ public class RideServiceImpl implements RideService {
             );
         }
 
-        // 3. Parse scheduled time
+        // Parse scheduled time
         LocalDateTime scheduledTime = null;
         if (createRideRequestDTO.getScheduledTime() != null && !createRideRequestDTO.getScheduledTime().isEmpty()) {
             scheduledTime = parseScheduledTime(createRideRequestDTO.getScheduledTime());
@@ -138,7 +153,7 @@ public class RideServiceImpl implements RideService {
             }
         }
 
-        // 4. Find linked passengers
+        // Find linked passengers
         List<Passenger> linkedPassengers = new ArrayList<>();
         if (createRideRequestDTO.getFriendEmails() != null) {
             for (String email : createRideRequestDTO.getFriendEmails()) {
@@ -154,17 +169,17 @@ public class RideServiceImpl implements RideService {
             }
         }
 
-        // 5. Create Route with waypoints
+        // Create Route with waypoints
         Route route = createRoute(createRideRequestDTO);
         routeRepository.save(route);
 
-        // 6. Calculate price
+        // Calculate price
         double estimatedPrice = calculatePrice(route, createRideRequestDTO.getVehicleType());
 
-        // 7. Parse vehicle type
+        // Parse vehicle type
         VehicleType vehicleType = parseVehicleType(createRideRequestDTO.getVehicleType());
 
-        // 8. Create ActiveRide
+        // Create ActiveRide
         ActiveRide ride = new ActiveRide();
         ride.setRoute(route);
         ride.setScheduledTime(scheduledTime);
@@ -176,15 +191,8 @@ public class RideServiceImpl implements RideService {
         ride.setLinkedPassengers(linkedPassengers);
         ride.setCurrentLocation(route.getWaypoints().getFirst()); // Start at first waypoint
 
-        // 9. Set status based on immediate vs scheduled
-        if (scheduledTime != null) {
-            ride.setStatus(RideStatus.SCHEDULED);
-        } else {
-            ride.setStatus(RideStatus.DRIVER_INCOMING);
-        }
-
-        // 10. Try to assign driver (only for immediate rides)
         if (scheduledTime == null) {
+            // Assign driver if ride is not scheduled and set according status
             Driver driver = driverService.findAvailableDriver(ride);
 
             if (driver == null) {
@@ -196,12 +204,27 @@ public class RideServiceImpl implements RideService {
             }
 
             ride.setDriver(driver);
+
+            // Decide initial status based on driver's current state
+            if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
+                ride.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
+            } else {
+                ride.setStatus(RideStatus.DRIVER_READY);
+            }
+        } else {
+            // Set status to scheduled and don't pick driver yet
+            ride.setStatus(RideStatus.SCHEDULED);
         }
 
-        // 11. Save ride
+        // Save ride
         ActiveRide savedRide = activeRideRepository.save(ride);
 
-        // 12. Return success
+        // Notify driver about assigned ride
+        if (savedRide.getStatus() == RideStatus.DRIVER_READY) {
+            GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(savedRide);
+            webSocketController.notifyDriverRideAssigned(savedRide.getDriver().getEmail(), rideDTO);
+        }
+
         return new CreatedRideResponseDTO(
                 "SUCCESS",
                 scheduledTime != null
@@ -209,6 +232,30 @@ public class RideServiceImpl implements RideService {
                         : "Ride ordered successfully!",
                 savedRide.getId()
         );
+    }
+
+    private GetDriverActiveRideDTO buildDriverActiveRideDTO(ActiveRide ride) {
+        GetDriverActiveRideDTO dto = new GetDriverActiveRideDTO();
+        dto.setRideId(ride.getId());
+        dto.setStartingPoint(ride.getRoute().getStartingPoint());
+        dto.setEndingPoint(ride.getRoute().getEndingPoint());
+        dto.setEstimatedPrice(ride.getEstimatedPrice());
+        dto.setEstimatedTimeMin(ride.getRoute().getEstTimeMin());
+        dto.setPassengerName(ride.getPayingPassenger().getName() + " " + ride.getPayingPassenger().getSurname());
+        dto.setPassengerCount(1 + (ride.getLinkedPassengers() != null ? ride.getLinkedPassengers().size() : 0));
+        dto.setStatus(ride.getStatus().toString());
+
+        dto.setLatitudes(ride.getRoute().getWaypoints().stream()
+                .map(WayPoint::getLatitude)
+                .toList());
+        dto.setLongitudes(ride.getRoute().getWaypoints().stream()
+                .map(WayPoint::getLongitude)
+                .toList());
+        dto.setAddresses(ride.getRoute().getWaypoints().stream()
+                .map(WayPoint::getAddress)
+                .toList());
+
+        return dto;
     }
 
     private LocalDateTime parseScheduledTime(String timeString) {
@@ -245,7 +292,7 @@ public class RideServiceImpl implements RideService {
         }
         route.setWaypoints(waypoints);
 
-        // TODO: Call Google Maps API to get distance, time, and polyline OR get from front based on implementation
+        // TODO: Call Maps API to get distance, time, and polyline OR get from front based on implementation
         route.setEstDistanceKm(10.0);
         route.setEstTimeMin(20.0);
         route.setEncodedPolyline("");
@@ -280,18 +327,153 @@ public class RideServiceImpl implements RideService {
     }
 
     @Override
+    public UpdatedRideDTO acceptRide(Long rideId) {
+        ActiveRide ride = activeRideRepository.findById(rideId)
+                .orElseThrow(() -> new IllegalStateException("Ride not found"));
+
+        if (ride.getStatus() != RideStatus.DRIVER_READY) {
+            throw new IllegalStateException("Ride is not in DRIVER_READY status");
+        }
+
+        // Change status and initialize movement
+        ride.setStatus(RideStatus.DRIVER_INCOMING);
+        initializeDriverToPickupMovement(ride);
+        activeRideRepository.save(ride);
+
+        // Notify driver of status change
+        webSocketController.notifyDriverStatusUpdate(
+                ride.getDriver().getEmail(),
+                ride.getId(),
+                RideStatus.DRIVER_INCOMING.toString()
+        );
+
+        UpdatedRideDTO response = new UpdatedRideDTO();
+        response.setId(ride.getId());
+        response.setStatus("DRIVER_INCOMING");
+        response.setStartTime(null);
+
+        return response;
+    }
+
+    @Override
+    public void handleWaypointReached(ActiveRide ride) {
+        Integer targetIndex = ride.getTargetWaypointIndex();
+        List<WayPoint> waypoints = ride.getRoute().getWaypoints();
+
+        System.out.printf(
+                "Ride %d: Driver reached waypoint %d/%d (Status: %s)%n",
+                ride.getId(), targetIndex, waypoints.size() - 1, ride.getStatus()
+        );
+
+        if (ride.getStatus() == RideStatus.DRIVER_INCOMING) {
+            handleDriverArrivedAtPickup(ride);
+        } else if (ride.getStatus() == RideStatus.ACTIVE) {
+            handleDriverArrivedAtRideWaypoint(ride);
+        }
+    }
+
+    private void handleDriverArrivedAtPickup(ActiveRide ride) {
+        // Mark pickup point as reached
+        WayPoint pickupPoint = ride.getRoute().getWaypoints().getFirst();
+        pickupPoint.setReachedAt(LocalDateTime.now());
+
+        routeRepository.save(ride.getRoute());
+
+        ride.setStatus(RideStatus.DRIVER_ARRIVED);
+        ride.setMovementPathJson(null);
+        ride.setCurrentPathIndex(0);
+
+        activeRideRepository.save(ride);
+
+        // Notify driver via websocket
+        webSocketController.notifyDriverStatusUpdate(
+                ride.getDriver().getEmail(),
+                ride.getId(),
+                RideStatus.DRIVER_ARRIVED.toString()
+        );
+    }
+
+    private void handleDriverArrivedAtRideWaypoint(ActiveRide ride) {
+        Integer targetIndex = ride.getTargetWaypointIndex();
+        List<WayPoint> waypoints = ride.getRoute().getWaypoints();
+
+        // Mark current waypoint as reached
+        WayPoint currentWaypoint = waypoints.get(targetIndex);
+        currentWaypoint.setReachedAt(LocalDateTime.now());
+
+        routeRepository.save(ride.getRoute());
+
+        // Check if there are more waypoints
+        if (targetIndex < waypoints.size() - 1) {
+            // Move to next waypoint
+            ride.setTargetWaypointIndex(targetIndex + 1);
+            generateNextSegmentPath(ride);
+            activeRideRepository.save(ride);
+        } else {
+            // Reached final destination
+            handleRideFinished(ride);
+        }
+    }
+
+    private void handleRideFinished(ActiveRide ride) {
+        ride.setStatus(RideStatus.FINISHED);
+        ride.setMovementPathJson(null);
+        ride.setCurrentPathIndex(0);
+        activeRideRepository.save(ride);
+
+        // Notify driver the ride is finished
+        webSocketController.notifyDriverRideFinished(
+                ride.getDriver().getEmail(),
+                ride.getId(),
+                ride.getEstimatedPrice(),
+                ride.getActualStartTime(),
+                LocalDateTime.now()
+        );
+
+        // Activate any waiting ride for this driver
+        activateWaitingRideForDriver(ride.getDriver());
+
+        // TODO: Transform to CompletedRide and set 'actualEndTime', delete this active ride
+    }
+
+    // Activates scheduled ride if driver has any
+    private void activateWaitingRideForDriver(Driver driver) {
+        ActiveRide waitingRide = activeRideRepository
+                .findByDriverAndStatus(driver, RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE)
+                .orElse(null);
+
+        if (waitingRide != null) {
+            System.out.println("Ride " + waitingRide.getId() + ": Driver finished previous ride, now moving to pickup");
+
+            waitingRide.setStatus(RideStatus.DRIVER_READY);
+            activeRideRepository.save(waitingRide);
+
+            // Notify driver about next ride
+            GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(waitingRide);
+            webSocketController.notifyDriverRideAssigned(driver.getEmail(), rideDTO);
+        }
+    }
+
+
+
+    // Starts a ride if driver's arrived at pickup point for it
+    @Override
     public UpdatedRideDTO startRide(Long rideId) {
         ActiveRide ride = activeRideRepository.findById(rideId)
                 .orElseThrow(() -> new IllegalStateException("Ride not found"));
 
         // Verify ride is in correct status
-        if (ride.getStatus() != RideStatus.DRIVER_INCOMING) {
-            throw new IllegalStateException("Ride is not in DRIVER_INCOMING status");
+        if (ride.getStatus() != RideStatus.DRIVER_ARRIVED) {
+            throw new IllegalStateException("Driver must be at pickup to start ride");
         }
 
         // Start the ride
         ride.setActualStartTime(LocalDateTime.now());
         ride.setStatus(RideStatus.ACTIVE);
+        ride.setTargetWaypointIndex(1); // Next target is first destination
+
+        // Generate path from pickup to first destination
+        generateNextSegmentPath(ride);
 
         activeRideRepository.save(ride);
 
@@ -303,18 +485,85 @@ public class RideServiceImpl implements RideService {
         return response;
     }
 
-    @Override
+    private void initializeDriverToPickupMovement(ActiveRide ride) {
+        Driver driver = ride.getDriver();
+        WayPoint pickupPoint = ride.getRoute().getWaypoints().getFirst();
+        Double driverLat = driver.getCurrentLatitude();
+        Double driverLng = driver.getCurrentLongitude();
+
+        if (driverLat == null || driverLng == null) {
+            driverLat = defaultDriverLatitude;
+            driverLng = defaultDriverLongitude;
+            driver.setCurrentLatitude(driverLat);
+            driver.setCurrentLongitude(driverLng);
+            driver.setLastLocationUpdate(LocalDateTime.now());
+            driverRepository.save(driver);
+        }
+
+        MapboxRoutingService.RouteResponse route = routingService.getRoute(
+                driverLat, driverLng,
+                pickupPoint.getLatitude(), pickupPoint.getLongitude()
+        );
+
+        String pathJson = convertCoordinatesToJson(route.coordinates());
+
+        ride.setMovementPathJson(pathJson);
+        ride.setCurrentPathIndex(0);
+        ride.setEstimatedDurationMin(route.realDurationSeconds() / 60.0);
+        ride.setTargetWaypointIndex(0);
+
+        Route rideRoute = ride.getRoute();
+        rideRoute.setEstDistanceKm(route.distanceKm());
+        rideRoute.setEstTimeMin(route.realDurationSeconds() / 60.0);
+    }
+
+    private void generateNextSegmentPath(ActiveRide ride) {
+        List<WayPoint> waypoints = ride.getRoute().getWaypoints();
+        Integer currentTarget = ride.getTargetWaypointIndex();
+        Integer previousTarget = currentTarget - 1;
+
+        WayPoint from = waypoints.get(previousTarget);
+        WayPoint to = waypoints.get(currentTarget);
+
+        MapboxRoutingService.RouteResponse route = routingService.getRoute(
+                from.getLatitude(), from.getLongitude(),
+                to.getLatitude(), to.getLongitude()
+        );
+
+        String pathJson = convertCoordinatesToJson(route.coordinates());
+        ride.setMovementPathJson(pathJson);
+        ride.setCurrentPathIndex(0);
+    }
+
+    private String convertCoordinatesToJson(List<MapboxRoutingService.Coordinate> coordinates) {
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < coordinates.size(); i++) {
+            MapboxRoutingService.Coordinate coord = coordinates.get(i);
+            json.append(String.format("[%.6f,%.6f]", coord.longitude(), coord.latitude()));
+            if (i < coordinates.size() - 1) {
+                json.append(",");
+            }
+        }
+        json.append("]");
+        return json.toString();
+    }
+
     public GetDriverActiveRideDTO getDriverActiveRide(String driverEmail) {
         Driver driver = driverRepository.findByEmail(driverEmail)
                 .orElseThrow(() -> new RuntimeException("Driver not found"));
 
-        // Find ride that's waiting for driver to start
         ActiveRide ride = activeRideRepository
-                .findByDriverAndStatus(driver, RideStatus.DRIVER_INCOMING)
+                .findByDriverAndStatusIn(
+                        driver,
+                        List.of(RideStatus.DRIVER_READY,
+                                RideStatus.DRIVER_INCOMING,
+                                RideStatus.DRIVER_ARRIVED,
+                                RideStatus.ACTIVE)
+                )
+                .stream()
+                .findFirst()
                 .orElse(null);
-        if (ride == null) {
-            return null;
-        }
+        if (ride == null) return null;
 
         GetDriverActiveRideDTO dto = new GetDriverActiveRideDTO();
         dto.setRideId(ride.getId());
@@ -324,6 +573,7 @@ public class RideServiceImpl implements RideService {
         dto.setEstimatedTimeMin(ride.getRoute().getEstTimeMin());
         dto.setPassengerName(ride.getPayingPassenger().getName() + " " + ride.getPayingPassenger().getSurname());
         dto.setPassengerCount(1 + (ride.getLinkedPassengers() != null ? ride.getLinkedPassengers().size() : 0));
+        dto.setStatus(ride.getStatus().toString());
 
         return dto;
     }
@@ -431,7 +681,6 @@ public class RideServiceImpl implements RideService {
 
         return response;
     }
-
 
 
 }

@@ -110,7 +110,7 @@ export class PassengerHome implements AfterViewInit, OnDestroy {
     const diffHours = diffMs / (1000 * 60 * 60);
 
     if (diffHours > 5) {
-      return '⚠️ Time must be within 5 hours from now';
+      return 'Time must be within 5 hours from now';
     }
 
     const dateStr = scheduled.toLocaleDateString('en-US', {
@@ -174,6 +174,21 @@ export class PassengerHome implements AfterViewInit, OnDestroy {
     }
 
     this.setActive(null);
+
+    // Update route on map after adding new waypoint
+    this.updateMapRoute();
+  }
+
+  private updateMapRoute(): void {
+    const validCoords = this.destinationCoords.filter(c => c !== null) as Array<{ lat: number; lng: number }>;
+
+    if (this.mapEl?.nativeElement) {
+      const event = new CustomEvent<{ waypoints: Array<{ lat: number; lng: number }> }>('update-route', {
+        detail: { waypoints: validCoords },
+        bubbles: true
+      });
+      this.mapEl.nativeElement.dispatchEvent(event);
+    }
   }
 
   submit() {
@@ -270,13 +285,12 @@ export class PassengerHome implements AfterViewInit, OnDestroy {
     this.successMessage = null;
     this.activeInputIndex = null;
 
-    // Notify map
+    // Reset map
     if (this.mapEl?.nativeElement) {
-      const event = new CustomEvent<{ input: number | null }>('set-active-input-index', {
-        detail: {input: null},
+      const resetEvent = new CustomEvent('reset-map', {
         bubbles: true
       });
-      this.mapEl.nativeElement.dispatchEvent(event);
+      this.mapEl.nativeElement.dispatchEvent(resetEvent);
     }
   }
 }

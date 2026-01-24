@@ -5,10 +5,7 @@ import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
 import rs.getgo.backend.dtos.authentication.UpdateDriverPasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
-import rs.getgo.backend.dtos.driver.GetDriverDTO;
-import rs.getgo.backend.dtos.driver.UpdateDriverLocationDTO;
-import rs.getgo.backend.dtos.driver.UpdateDriverPersonalDTO;
-import rs.getgo.backend.dtos.driver.UpdateDriverVehicleDTO;
+import rs.getgo.backend.dtos.driver.*;
 import rs.getgo.backend.dtos.request.CreatedDriverChangeRequestDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.model.entities.ActiveRide;
@@ -18,6 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface DriverService {
+    List<GetActiveDriverLocationDTO> getActiveDriverLocations();
     List<GetRideDTO> getDriverRides(String email, LocalDate startDate);
     GetActivationTokenDTO validateActivationToken(String token);
     UpdatedPasswordDTO setDriverPassword(UpdateDriverPasswordDTO passwordDTO);

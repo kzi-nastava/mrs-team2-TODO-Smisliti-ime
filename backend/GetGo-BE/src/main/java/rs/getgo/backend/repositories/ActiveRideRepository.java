@@ -10,4 +10,5 @@ import java.util.Optional;
 
 public interface ActiveRideRepository extends JpaRepository<ActiveRide, Long> {
     Optional<ActiveRide> findByDriverAndStatus(Driver driver, RideStatus status);
+    Optional<ActiveRide> findFirstByDriverAndStatusOrderByScheduledTimeAsc(Driver driver, RideStatus status);
 }

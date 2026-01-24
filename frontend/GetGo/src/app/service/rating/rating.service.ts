@@ -1,6 +1,6 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, of } from 'rxjs';
 import { GetRatingDTO } from '../../model/rating.model';
 import { environment } from '../../../env/environment';
 import {rxResource} from '@angular/core/rxjs-interop';
@@ -14,18 +14,20 @@ export class RatingService {
 
   private readonly http = inject(HttpClient);
 
-  private rideId = signal<number>(0);
+  private rideId = signal<number | null>(null);
+  private driverId = signal<number | null>(null);
+  private token: string | null = null;
 
   ratingsResource = rxResource({
-    params: () => ({ rideId: this.rideId() }),
+    params: () => ({ driverId: this.driverId() }),
     stream: ({params}) => {
-      const token = sessionStorage.getItem(this.TOKEN_KEY);
+      if (params.driverId === null) return of([]);
       return this.http.get<GetRatingDTO[]>(
-        `${environment.apiHost}/api/ratings/ride/${params.rideId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${environment.apiHost}/api/ratings/driver/${params.driverId}`
       );
     }
-  })
+  });
+
 
 //   ratingsResource = rxResource({
 //       params: () => ({ rideId: this.rideId() }),
@@ -54,8 +56,9 @@ export class RatingService {
       : 0;
   });
 
-  setRide(id: number): void {
-    this.rideId.set(id);
+  setDriver(id: number): void {
+    this.driverId.set(id);
+    this.reloadRatings();
   }
 
   createRating(rating: { driverRating: number, vehicleRating: number, comment: string, rideId: number }): Observable<GetRatingDTO> {

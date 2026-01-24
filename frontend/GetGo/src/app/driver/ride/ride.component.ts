@@ -31,21 +31,22 @@ export class RideComponent {
 
   constructor(private service: RideService) {
     this.rides = this.service.rides;
-    this.service.loadRides(this.driverId);
+//     this.service.loadRides(this.driverId);
+    this.service.loadRides();
   }
 
   searchRides() {
       const selectedDate = this.searchRideForm.value.date;
       if (!selectedDate) return;
 
-      this.service.searchRidesByDate(this.driverId, selectedDate);
+      this.service.searchRidesByDate(selectedDate);
     }
 
 
 
   resetFilter(){
     this.searchRideForm.reset();
-    this.service.resetFilter(this.driverId);
+    this.service.resetFilter();
   }
 
 

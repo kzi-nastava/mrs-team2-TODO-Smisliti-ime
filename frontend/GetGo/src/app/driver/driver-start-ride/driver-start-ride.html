@@ -54,14 +54,15 @@
       </div>
 
       <!-- Start Button -->
-      <div class="form-actions">
-        <button
-          type="button"
-          (click)="startRide()"
-          [disabled]="isStarting"
-          class="start-btn">
-          {{ isStarting ? 'Starting...' : 'Start Ride' }}
+      <div class="form-actions" *ngIf="activeRide">
+        <button type="button"
+                (click)="handleRideButton()"
+                [disabled]="isStarting"
+                [ngClass]="rideButtonClass"
+                [title]="isRideInProgress ? 'Ride in progress' : 'Start the ride'">
+          {{ rideButtonLabel }}
         </button>
+
       </div>
     </div>
 

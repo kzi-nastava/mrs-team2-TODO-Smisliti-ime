@@ -10,7 +10,10 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    public EmailService(JavaMailSender mailSender) { this.mailSender = mailSender; }
+    public EmailService(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
+
 
     @Value("${spring.mail.from}")
     private String fromEmail;
@@ -60,4 +63,33 @@ public class EmailService {
         );
         mailSender.send(message);
     }
+
+    public void sendRideFinishedEmail(
+            String toEmail,
+            String passengerName,
+            Long rideId,
+            Long passengerId
+    ) {
+
+        String ratingLink = "http://localhost:4200/rides/" + rideId + "/rate";
+
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("Your GetGo ride has been completed");
+        message.setText(
+                "Hello " + passengerName + ",\n\n" +
+                        "Your ride has been successfully completed.\n\n" +
+                        "We would appreciate it if you could rate your ride:\n" +
+                        ratingLink + "\n\n" +
+                        "Thank you for choosing GetGo!\n\n" +
+                        "Best regards,\nGetGo Team"
+        );
+
+        mailSender.send(message);
+    }
+
+
+
 }

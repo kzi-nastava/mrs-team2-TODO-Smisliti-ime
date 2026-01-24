@@ -80,8 +80,13 @@ public class DriverServiceImpl implements DriverService {
         for (CompletedRide r : rides) {
 
             // filtering by startDate
-            if (startDate != null && !r.getScheduledTime().toLocalDate().isEqual(startDate)) {
-                continue;
+            if (startDate != null) {
+                if (r.getStartTime() == null) {
+                    continue;
+                }
+                if (!r.getStartTime().toLocalDate().isEqual(startDate)) {
+                    continue;
+                }
             }
 
 

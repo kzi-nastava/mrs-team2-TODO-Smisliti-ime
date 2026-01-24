@@ -63,7 +63,7 @@ public class RideController {
     @PutMapping(value = "/{id}/finish", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedRideDTO> finishRide(@RequestBody UpdateRideDTO ride, @PathVariable Long id)
             throws Exception {
-        UpdatedRideDTO updatedRide = new UpdatedRideDTO(id, ride.getStatus(), java.time.LocalDateTime.now());
+        UpdatedRideDTO updatedRide = rideService.finishRide(id, ride);
 
         return new ResponseEntity<UpdatedRideDTO>(updatedRide, HttpStatus.OK);
     }
@@ -163,5 +163,7 @@ public class RideController {
     public ResponseEntity<Void> unfavoriteRide(@PathVariable Long rideId) {
         return ResponseEntity.noContent().build();
     }
+
+
 
 }

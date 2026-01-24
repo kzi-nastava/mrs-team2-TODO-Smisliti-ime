@@ -11,6 +11,7 @@ import lombok.Setter;
 @Setter
 public class CreatedRatingDTO {
     private Long id;
+    private Long passengerId;
     private Long rideId;
     private Long driverId;
     private Long vehicleId;

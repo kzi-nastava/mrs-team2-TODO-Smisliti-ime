@@ -122,6 +122,16 @@
           class="start-btn">
           {{ isStarting ? 'Starting...' : 'Start Ride' }}
         </button>
+
+        <!-- Stop Ride Button (ACTIVE) -->
+        <button
+          *ngIf="activeRide.status === 'ACTIVE'"
+          type="button"
+          (click)="stopRide()"
+          [disabled]="isStopping"
+          class="stop-btn">
+          {{ isStopping ? 'Stopping...' : 'Stop Ride' }}
+        </button>
       </div>
     </div>
 

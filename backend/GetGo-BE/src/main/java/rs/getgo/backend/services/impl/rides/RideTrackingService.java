@@ -57,7 +57,7 @@ public class RideTrackingService {
 
         // Will be set later when completed ride is implemented
 //        Passenger loggedInPassenger = securityService.getLoggedInPassenger();
-        Passenger passenger = passengerRepository.findById(10L)
+        Passenger passenger = passengerRepository.findById(1L)
                 .orElseThrow(() -> new Exception("Passenger not found"));
 //        report.setPassenger(loggedInPassenger);
         report.setPassenger(passenger);

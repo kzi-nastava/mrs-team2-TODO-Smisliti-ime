@@ -93,22 +93,27 @@ public class RideController {
         }
     }
 
-    // 2.6.5 – Stop ride
+    // 2.6.5 – Stop ride while in progress
     @PreAuthorize("hasRole('DRIVER')")
-    @PutMapping("/{rideId}/stop")
-    public ResponseEntity<CreatedRideStatusDTO> stopRide(@PathVariable Long rideId) {
-        CreatedRideStatusDTO response = new CreatedRideStatusDTO(rideId, "FINISHED");
-        return ResponseEntity.ok(response);
+    @PutMapping(value = "/{rideId}/stop", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RideCompletionDTO> stopRide(@PathVariable Long rideId, @RequestBody StopRideDTO stopRideDTO) throws Exception {
+        RideCompletionDTO completion = rideService.stopRide(rideId, stopRideDTO);
+        return ResponseEntity.ok(completion);
+    }
+
+    @PreAuthorize("hasRole('DRIVER')")
+    @PostMapping(value = "/{rideId}/stop", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RideCompletionDTO> stopRidePost(@PathVariable Long rideId, @RequestBody StopRideDTO stopRideDTO) throws Exception {
+        RideCompletionDTO completion = rideService.stopRide(rideId, stopRideDTO);
+        return ResponseEntity.ok(completion);
     }
 
     // 2.6.3 - PANIC button
     @PreAuthorize("hasRole('DRIVER') or hasRole('PASSENGER')")
     @PostMapping("/{rideId}/panic")
-    public ResponseEntity<Void> createPanic(
-            @PathVariable Long rideId,
-            @PathVariable String email
-    ) {
-        rideService.triggerPanic(1L, email);
+    public ResponseEntity<Void> createPanic(@PathVariable Long rideId) {
+        String email = AuthUtils.getCurrentUserEmail();
+        rideService.triggerPanic(rideId, email);
         return ResponseEntity.ok().build();
     }
 

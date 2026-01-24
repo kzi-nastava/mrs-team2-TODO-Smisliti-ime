@@ -108,11 +108,6 @@ public class RideServiceImpl implements RideService {
     }
 
     @Override
-    public void stopRide() {
-        // TODO
-    }
-
-    @Override
     public CreatedRideResponseDTO orderRide(CreateRideRequestDTO createRideRequestDTO, String userEmail) {
         // TODO: DO WITH VALIDATORS
         // Validate request
@@ -682,5 +677,88 @@ public class RideServiceImpl implements RideService {
         return response;
     }
 
+    @Override
+    public RideCompletionDTO stopRide(Long rideId, StopRideDTO stopRideDTO) {
+        ActiveRide ride = activeRideRepository.findById(rideId)
+                .orElseThrow(() -> new IllegalStateException("Ride not found"));
+
+        if (ride.getStatus() != RideStatus.ACTIVE) {
+            throw new IllegalStateException("Only ACTIVE rides can be stopped");
+        }
+
+        LocalDateTime endTime = LocalDateTime.now();
+        LocalDateTime startTime = ride.getActualStartTime();
+
+        // Calculate actual duration
+        long durationMinutes = java.time.Duration.between(startTime, endTime).toMinutes();
+
+        // Calculate actual price (proportional or full based on business logic)
+        double actualPrice = calculateStoppedRidePrice(ride, durationMinutes);
+
+        // Create CompletedRide with stoppedEarly flag
+        CompletedRide completedRide = new CompletedRide();
+        completedRide.setRoute(ride.getRoute());
+        completedRide.setScheduledTime(ride.getScheduledTime());
+        completedRide.setStartTime(startTime);
+        completedRide.setEndTime(endTime);
+        completedRide.setEstimatedPrice(ride.getEstimatedPrice());
+        completedRide.setVehicleType(ride.getVehicleType());
+        completedRide.setDriverId(ride.getDriver() != null ? ride.getDriver().getId() : null);
+        completedRide.setDriverName(ride.getDriver() != null ? ride.getDriver().getName() : null);
+        completedRide.setDriverEmail(ride.getDriver() != null ? ride.getDriver().getEmail() : null);
+        completedRide.setPayingPassengerId(ride.getPayingPassenger().getId());
+        completedRide.setPayingPassengerName(ride.getPayingPassenger().getName() + " " + ride.getPayingPassenger().getSurname());
+        completedRide.setPayingPassengerEmail(ride.getPayingPassenger().getEmail());
+        completedRide.setLinkedPassengerIds(
+                ride.getLinkedPassengers() != null
+                        ? ride.getLinkedPassengers().stream().map(Passenger::getId).toList()
+                        : List.of()
+        );
+        completedRide.setCompletedNormally(false);
+        completedRide.setCancelled(false);
+        completedRide.setStoppedEarly(true);
+        completedRide.setPanicPressed(false);
+
+        completedRide = completedRideRepository.save(completedRide);
+
+        // Release driver
+        Driver driver = ride.getDriver();
+        if (driver != null) {
+            driver.setActive(true);
+            driverRepository.save(driver);
+        }
+
+        // Remove active ride
+        activeRideRepository.delete(ride);
+
+        // Build response
+        RideCompletionDTO response = new RideCompletionDTO();
+        response.setRideId(completedRide.getId());
+        response.setStatus("STOPPED_EARLY");
+        response.setPrice(actualPrice);
+        response.setStartTime(startTime);
+        response.setEndTime(endTime);
+        response.setDurationMinutes(durationMinutes);
+
+        return response;
+    }
+
+    private double calculateStoppedRidePrice(ActiveRide ride, long durationMinutes) {
+        // Business logic: charge proportional price based on time driven
+        double estimatedPrice = ride.getEstimatedPrice();
+        double estimatedDuration = ride.getRoute().getEstTimeMin();
+
+        if (estimatedDuration <= 0) {
+            return estimatedPrice; // fallback
+        }
+
+        // Proportional price
+        double proportionalPrice = (durationMinutes / estimatedDuration) * estimatedPrice;
+
+        // Minimum charge (e.g., at least 50% of estimated price)
+        double minCharge = estimatedPrice * 0.5;
+
+        return Math.max(proportionalPrice, minCharge);
+    }
 
 }

@@ -29,6 +29,7 @@ export class DriverHome implements OnInit {
   isLoading = true;
   isStarting = false;
   isAccepting = false;
+  isStopping = false;
 
   errorMessage: string | null = null;
   successMessage: string | null = null;
@@ -280,6 +281,34 @@ export class DriverHome implements OnInit {
         console.error('Failed to start ride:', err);
         this.errorMessage = err.error?.message || 'Failed to start ride. Driver must be at pickup location.';
         this.isStarting = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  stopRide() {
+    if (!this.activeRide || !this.driverLocation) return;
+
+    this.isStopping = true;
+    this.errorMessage = null;
+
+    const payload = {
+      latitude: this.driverLocation.lat,
+      longitude: this.driverLocation.lng,
+      stoppedAt: new Date().toISOString()
+    };
+
+    this.rideService.stopRide(this.activeRide.rideId, payload).subscribe({
+      next: (completion) => {
+        this.rideCompletion = completion;
+        this.activeRide!.status = 'FINISHED';
+        this.successMessage = 'Ride stopped at passenger request.';
+        this.isStopping = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to stop ride.';
+        this.isStopping = false;
         this.cdr.detectChanges();
       }
     });

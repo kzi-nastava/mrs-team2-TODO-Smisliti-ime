@@ -313,6 +313,29 @@ button.mini:disabled {
   transform: none;
 }
 
+/* Stop Button */
+.stop-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.stop-btn:hover {
+  background-color: #c82333;
+}
+
+.stop-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
 /* Completion Card */
 .completion-card {
   background: linear-gradient(135deg, #133E87 0%, #0f3270 100%);

@@ -70,6 +70,12 @@ export interface RideCompletionDTO {
   durationMinutes: number;
 }
 
+export interface StopRideDTO {
+  latitude: number;
+  longitude: number;
+  stoppedAt: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -100,5 +106,9 @@ export class RideService {
 
   endRide(rideId: number): Observable<UpdatedRideDTO> {
     return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/finish`, {});
+  }
+
+  stopRide(rideId: number, payload: StopRideDTO) {
+    return this.http.post<RideCompletionDTO>(`${this.apiUrl}/${rideId}/stop`, payload);
   }
 }

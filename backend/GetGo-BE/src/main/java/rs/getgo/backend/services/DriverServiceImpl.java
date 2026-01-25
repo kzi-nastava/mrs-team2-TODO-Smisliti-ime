@@ -80,7 +80,8 @@ public class DriverServiceImpl implements DriverService {
                     boolean isBusy = activeRideRepository.existsByDriverAndStatusIn(
                             driver,
                             List.of(RideStatus.DRIVER_READY, RideStatus.DRIVER_INCOMING,
-                                    RideStatus.DRIVER_ARRIVED, RideStatus.ACTIVE)
+                                    RideStatus.DRIVER_ARRIVED, RideStatus.ACTIVE, RideStatus.DRIVER_ARRIVED_AT_DESTINATION
+                            )
                     );
                     dto.setIsAvailable(!isBusy);
 

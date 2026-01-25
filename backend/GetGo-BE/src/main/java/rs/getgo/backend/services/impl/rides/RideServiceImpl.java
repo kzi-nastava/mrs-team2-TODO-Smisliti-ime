@@ -399,6 +399,10 @@ public class RideServiceImpl implements RideService {
         );
     }
 
+    private boolean isLastWaypointReached(ActiveRide ride) {
+        return ride.getTargetWaypointIndex() >= ride.getRoute().getWaypoints().size() - 1;
+    }
+
     private void handleDriverArrivedAtRideWaypoint(ActiveRide ride) {
         Integer targetIndex = ride.getTargetWaypointIndex();
         List<WayPoint> waypoints = ride.getRoute().getWaypoints();
@@ -410,13 +414,34 @@ public class RideServiceImpl implements RideService {
         routeRepository.save(ride.getRoute());
 
         // Check if there are more waypoints
-        if (targetIndex < waypoints.size() - 1) {
+        if (!isLastWaypointReached(ride)) {
             // Move to next waypoint
             ride.setTargetWaypointIndex(targetIndex + 1);
             generateNextSegmentPath(ride);
             activeRideRepository.save(ride);
         } else {
-            // Reached final destination
+            ride.setStatus(RideStatus.DRIVER_ARRIVED_AT_DESTINATION);
+            activeRideRepository.save(ride);
+
+            // Notify driver and passenger
+            webSocketController.notifyDriverStatusUpdate(
+                    ride.getDriver().getEmail(),
+                    ride.getId(),
+                    RideStatus.DRIVER_ARRIVED_AT_DESTINATION.toString()
+            );
+            webSocketController.notifyPassengerRideStatusUpdate(
+                    ride.getId(),
+                    RideStatus.DRIVER_ARRIVED_AT_DESTINATION.toString(),
+                    "Driver has arrived at the destination!"
+            );
+
+            // Small delay to ensure front gets update before finishing
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
             handleRideFinished(ride);
         }
     }

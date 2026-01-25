@@ -463,6 +463,10 @@ public class RideServiceImpl implements RideService {
         );
     }
 
+    private boolean isLastWaypointReached(ActiveRide ride) {
+        return ride.getTargetWaypointIndex() >= ride.getRoute().getWaypoints().size() - 1;
+    }
+
     private void handleDriverArrivedAtRideWaypoint(ActiveRide ride) {
         Integer targetIndex = ride.getTargetWaypointIndex();
         List<WayPoint> waypoints = ride.getRoute().getWaypoints();
@@ -474,14 +478,27 @@ public class RideServiceImpl implements RideService {
         routeRepository.save(ride.getRoute());
 
         // Check if there are more waypoints
-        if (targetIndex < waypoints.size() - 1) {
+        if (!isLastWaypointReached(ride)) {
             // Move to next waypoint
             ride.setTargetWaypointIndex(targetIndex + 1);
             generateNextSegmentPath(ride);
             activeRideRepository.save(ride);
         } else {
-            // Reached final destination
-            handleRideFinished(ride);
+            ride.setStatus(RideStatus.DRIVER_ARRIVED_AT_DESTINATION);
+            activeRideRepository.save(ride);
+
+            // Notify driver and passenger
+            webSocketController.notifyDriverStatusUpdate(
+                    ride.getDriver().getEmail(),
+                    ride.getId(),
+                    RideStatus.DRIVER_ARRIVED_AT_DESTINATION.toString()
+            );
+            webSocketController.notifyPassengerRideStatusUpdate(
+                    ride.getId(),
+                    RideStatus.DRIVER_ARRIVED_AT_DESTINATION.toString(),
+                    "Driver has arrived at the destination!"
+            );
+
         }
     }
 
@@ -705,9 +722,11 @@ public class RideServiceImpl implements RideService {
         ActiveRide ride = activeRideRepository.findById(rideId)
                 .orElseThrow(() -> new IllegalStateException("Ride not found"));
 
-        if (ride.getStatus() != RideStatus.ACTIVE) {
-            throw new IllegalStateException("Ride is not ACTIVE and cannot be finished");
+        if (ride.getStatus() != RideStatus.ACTIVE &&
+                ride.getStatus() != RideStatus.DRIVER_ARRIVED_AT_DESTINATION) {
+            throw new IllegalStateException("Ride cannot be finished in current state");
         }
+
 
         // Create CompletedRide
         CompletedRide completedRide = new CompletedRide();
@@ -775,15 +794,35 @@ public class RideServiceImpl implements RideService {
             }
         }
 
+        // === WS: notify DRIVER ===
+        webSocketController.notifyDriverRideFinished(
+                ride.getDriver().getEmail(),
+                ride.getId(),
+                completedRide.getEstimatedPrice(),
+                completedRide.getStartTime(),
+                completedRide.getEndTime()
+        );
 
-        // Remove active ride
-        activeRideRepository.delete(ride);
+        // === WS: notify PASSENGERS ===
+        webSocketController.notifyPassengerRideFinished(
+                ride.getId(),
+                completedRide.getEstimatedPrice(),
+                completedRide.getStartTime(),
+                completedRide.getEndTime()
+        );
 
         // Return DTO
         UpdatedRideDTO response = new UpdatedRideDTO();
         response.setId(completedRide.getId());
         response.setStatus("FINISHED");
         response.setEndTime(completedRide.getEndTime());
+
+        activeRideRepository.delete(ride);
+
+        // Activate waiting ride (if exists)
+        if (driver != null) {
+            activateWaitingRideForDriver(driver);
+        }
 
         return response;
     }

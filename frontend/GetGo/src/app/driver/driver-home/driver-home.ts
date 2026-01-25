@@ -31,6 +31,7 @@ export class DriverHome implements OnInit {
   isStarting = false;
   isAccepting = false;
   isStopping = false;
+  isEnding = false;
 
   errorMessage: string | null = null;
   successMessage: string | null = null;
@@ -164,7 +165,8 @@ export class DriverHome implements OnInit {
           if (this.activeRide) {
             this.activeRide.status = 'FINISHED';
           }
-          this.successMessage = null;
+          this.isEnding = false;
+          this.successMessage = 'Ride completed! Click "End Ride" to finalize.';
           this.cdr.detectChanges();
         },
         error: (err) => console.error('Error receiving completion:', err)
@@ -420,7 +422,7 @@ export class DriverHome implements OnInit {
     this.rideCompletion = null;
     this.activeRide = null;
     this.resetMap();
-    this.loadActiveRide(); // Check for next ride
+//     this.loadActiveRide(); // Check for next ride
   }
 
   private resetMap(): void {
@@ -436,4 +438,27 @@ export class DriverHome implements OnInit {
     });
     this.mapComponent.nativeElement.dispatchEvent(event);
   }
+
+  finishRide() {
+    if (!this.activeRide) return;
+
+    this.isEnding = true;
+    this.errorMessage = null;
+
+    const rideId = this.activeRide.rideId;
+    this.activeRide = null;
+
+    this.rideService.endRide(rideId).subscribe({
+      next: () => {
+        this.isEnding = false;
+        this.successMessage = 'Ride ended successfully!';
+
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to end ride';
+        this.isEnding = false;
+      }
+    });
+  }
+
 }

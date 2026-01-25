@@ -22,6 +22,7 @@
         class="start-btn">
         OK
       </button>
+
     </div>
 
     <!-- No Active Ride -->
@@ -101,6 +102,15 @@
         Ride in progress!
       </div>
 
+      <div *ngIf="activeRide.status === 'DRIVER_ARRIVED_AT_DESTINATION'" class="hint">
+        Arrived at destination! Ready to end the ride.
+      </div>
+
+      <div *ngIf="activeRide.status === 'FINISHED'" class="hint">
+        Ride completed!
+      </div>
+
+
       <!-- Action Buttons -->
       <div class="form-actions">
         <!-- Accept Ride Button (DRIVER_READY) -->
@@ -122,6 +132,16 @@
           class="start-btn">
           {{ isStarting ? 'Starting...' : 'Start Ride' }}
         </button>
+
+        <button
+          *ngIf="activeRide.status === 'DRIVER_ARRIVED_AT_DESTINATION'"
+          type="button"
+          (click)="finishRide()"
+          [disabled]="isEnding"
+          class="end-btn">
+          {{ isEnding ? 'Ending...' : 'End Ride' }}
+        </button>
+
 
         <!-- Stop Ride Button (ACTIVE) -->
         <button

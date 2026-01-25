@@ -8,6 +8,7 @@ public enum RideStatus {
     DRIVER_ARRIVED,                     // Driver waiting to start ride at start point
     ACTIVE,                             // Driver moving towards end point through waypoints
     CANCELLED,
+    DRIVER_ARRIVED_AT_DESTINATION,
     FINISHED,
     // TODO: add PANIC_PRESSED and potentially more to reduce attribute count from completed ride?
 }

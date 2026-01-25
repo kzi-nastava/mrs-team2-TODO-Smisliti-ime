@@ -158,7 +158,8 @@ export class DriverHome implements OnInit {
           if (this.activeRide) {
             this.activeRide.status = 'FINISHED';
           }
-          this.successMessage = null;
+          this.isEnding = false;
+          this.successMessage = 'Ride completed! Click "End Ride" to finalize.';
           this.cdr.detectChanges();
         },
         error: (err) => console.error('Error receiving completion:', err)
@@ -313,9 +314,14 @@ export class DriverHome implements OnInit {
     this.isEnding = true;
     this.errorMessage = null;
 
-    this.rideService.endRide(this.activeRide.rideId).subscribe({
+    const rideId = this.activeRide.rideId;
+    this.activeRide = null;
+
+    this.rideService.endRide(rideId).subscribe({
       next: () => {
         this.isEnding = false;
+        this.successMessage = 'Ride ended successfully!';
+
         // čekamo WS event
       },
       error: (err) => {

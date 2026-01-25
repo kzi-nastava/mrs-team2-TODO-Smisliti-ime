@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import rs.getgo.backend.model.entities.ActiveRide;
 import rs.getgo.backend.model.entities.Driver;
+import rs.getgo.backend.model.entities.Passenger;
 import rs.getgo.backend.model.enums.RideStatus;
 
 import java.util.List;
@@ -18,4 +19,6 @@ public interface ActiveRideRepository extends JpaRepository<ActiveRide, Long> {
     boolean existsByDriverAndStatusIn(Driver driver, List<RideStatus> statuses);
     boolean existsByDriverAndStatus(Driver driver, RideStatus status);
     Optional<ActiveRide> findFirstByDriverAndStatusOrderByScheduledTimeAsc(Driver driver, RideStatus status);
+    @EntityGraph(attributePaths = {"route", "route.waypoints", "driver", "payingPassenger"})
+    Optional<ActiveRide> findByPayingPassengerAndStatusIn(Passenger passenger, List<RideStatus> status);
 }

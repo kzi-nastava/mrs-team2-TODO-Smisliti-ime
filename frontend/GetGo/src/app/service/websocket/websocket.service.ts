@@ -81,6 +81,16 @@ export class WebSocketService {
     return this.createSubscription(topic);
   }
 
+  subscribeToRideStatusUpdates(rideId: number): Observable<any> {
+    const topic = `/socket-publisher/ride/${rideId}/status-update`;
+    return this.createSubscription(topic);
+  }
+
+  subscribeToPassengerRideFinished(rideId: number): Observable<any> {
+    const topic = `/socket-publisher/ride/${rideId}/ride-finished`;
+    return this.createSubscription(topic);
+  }
+
   // Generic subscription creator
   public createSubscription(topic: string): Observable<any> {
     return new Observable(observer => {

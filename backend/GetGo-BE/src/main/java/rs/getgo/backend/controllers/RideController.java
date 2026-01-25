@@ -36,10 +36,21 @@ public class RideController {
         this.rideTrackingService = rideTrackingService;
     }
 
+    @PreAuthorize("hasRole('PASSENGER')")
+    @GetMapping(value = "/passenger/active", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetPassengerActiveRideDTO> getPassengerActiveRide() {
+        String email = AuthUtils.getCurrentUserEmail();
+        GetPassengerActiveRideDTO ride = rideTrackingService.getPassengerActiveRide(email);
+        if (ride == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(ride);
+    }
+
     // 2.6.2 – Track ride
 //    @PreAuthorize("hasRole('PASSENGER') or hasRole('DRIVER')")
     @GetMapping(value = "/{id}/tracking", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GetRideTrackingDTO> trackRide(@PathVariable("id") Long id) {
+    public ResponseEntity<GetRideTrackingDTO> getRideTracking(@PathVariable("id") Long id) {
         GetRideTrackingDTO ride = rideTrackingService.getRideTracking(id);
 
         return ResponseEntity.ok(ride);

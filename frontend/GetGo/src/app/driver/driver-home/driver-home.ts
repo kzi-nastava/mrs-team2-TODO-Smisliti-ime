@@ -322,7 +322,6 @@ export class DriverHome implements OnInit {
         this.isEnding = false;
         this.successMessage = 'Ride ended successfully!';
 
-        // čekamo WS event
       },
       error: (err) => {
         this.errorMessage = err.error?.message || 'Failed to end ride';

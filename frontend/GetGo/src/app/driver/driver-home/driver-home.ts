@@ -26,7 +26,7 @@ export class DriverHome implements OnInit {
   activeRide: GetDriverActiveRideDTO | null = null;
   driverLocation: { lat: number; lng: number } | null = null;
   rideCompletion: RideCompletionDTO | null = null;
-
+  initialEstimatedMinutes: number = 0;
 
   isLoading = true;
   isStarting = false;
@@ -467,9 +467,15 @@ export class DriverHome implements OnInit {
   }
 
   onEstimatedTimeChange(minutes: number) {
+    this.initialEstimatedMinutes = minutes;
     if (this.activeRide) {
       this.activeRide.estimatedTimeMin = minutes;
-      this.cdr.detectChanges();
     }
+    this.cdr.detectChanges();
   }
+
+//   onEstimatedTimeChange(minutes: number) {
+//     this.initialEstimatedMinutes = minutes;
+//     this.cdr.detectChanges();
+//   }
 }

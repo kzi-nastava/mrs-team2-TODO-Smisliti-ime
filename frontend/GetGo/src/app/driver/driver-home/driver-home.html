@@ -14,7 +14,8 @@
       <h2>Ride Completed!</h2>
       <div class="completion-info">
         <p><strong>Price:</strong> {{ rideCompletion.price | number:'1.2-2' }} RSD</p>
-        <p><strong>Duration:</strong> {{ rideCompletion.durationMinutes }} minutes</p>
+<!--        <p><strong>Duration:</strong> {{ rideCompletion.durationMinutes }} minutes</p>-->
+        <p><strong>Duration:</strong> {{ initialEstimatedMinutes  }} minutes</p>
       </div>
       <button
         type="button"

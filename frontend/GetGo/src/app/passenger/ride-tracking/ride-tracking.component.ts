@@ -413,6 +413,12 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     return Math.ceil(this.initialEstimatedMinutes * remainingPercent / 100);
   }
 
+  get estimatedRideDuration(): number {
+
+    return this.initialEstimatedMinutes;
+  }
+
+
 
 
 }

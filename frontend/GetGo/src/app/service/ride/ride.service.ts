@@ -70,6 +70,37 @@ export interface RideCompletionDTO {
   durationMinutes: number;
 }
 
+export interface GetPassengerActiveRideDTO {
+  rideId: number;
+  startingPoint: string;
+  endingPoint: string;
+  estimatedPrice: number;
+  estimatedTimeMin: number;
+  driverName?: string;
+  status: string;
+  latitudes: number[];
+  longitudes: number[];
+  addresses: string[];
+}
+
+export interface PassengerStatusUpdateDTO {
+  rideId: number;
+  status: string;
+  message: string;
+  timestamp: string;
+}
+
+export interface PassengerRideFinishedDTO {
+  rideId: number;
+  status: string;
+  price: number;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  message: string;
+  timestamp: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -100,5 +131,9 @@ export class RideService {
 
   endRide(rideId: number): Observable<UpdatedRideDTO> {
     return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/finish`, {});
+  }
+
+  getPassengerActiveRide(): Observable<GetPassengerActiveRideDTO | null> {
+    return this.http.get<GetPassengerActiveRideDTO>(`${this.apiUrl}/passenger/active`);
   }
 }

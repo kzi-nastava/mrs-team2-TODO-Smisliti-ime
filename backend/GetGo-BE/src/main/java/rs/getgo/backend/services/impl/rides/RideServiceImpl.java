@@ -76,7 +76,7 @@ public class RideServiceImpl implements RideService {
     }
 
     @Override
-    public CreatedRideStatusDTO cancelRide(Long rideId, CancelRideDTO req) {
+    public CreatedRideStatusDTO cancelRide(ActiveRide ride, CancelRideDTO req) {
         String role = req.getRole() != null ? req.getRole().toUpperCase() : "PASSENGER";
 
         if ("DRIVER".equals(role)) {
@@ -98,14 +98,16 @@ public class RideServiceImpl implements RideService {
 
         // persist cancellation
         RideCancellation rc = new RideCancellation();
-        rc.setRideId(rideId);
+        rc.setRideId(ride.getId());
         rc.setCancelerId(req.getCancelerId());
         rc.setRole(role);
         rc.setReason(req.getReason());
         rc.setCreatedAt(LocalDateTime.now());
         cancellationRepository.save(rc);
 
-        return new CreatedRideStatusDTO(rideId, "CANCELED");
+        activeRideRepository.delete(ride);
+
+        return new CreatedRideStatusDTO(ride.getId(), "CANCELED");
     }
 
     public void cancelRideByDriver(Long rideId, String reason, Long driverId) {
@@ -130,47 +132,7 @@ public class RideServiceImpl implements RideService {
         dto.setCancelerId(driverId);
         dto.setPassengersEntered(false);
         dto.setScheduledStartTime(ride.getScheduledTime());
-        cancelRide(rideId, dto);
-
-        // Mark old driver free and make sure he won't be re-assigned to this ride
-        oldDriver.setActive(true);
-        driverRepository.save(oldDriver);
-
-        /*// Try to find a new driver, explicitly excluding the one who canceled
-        Driver newDriver = driverService.findAvailableDriverExcluding(ride, oldDriver);
-
-        if (newDriver == null) {
-            // No replacement driver available → cancel ride for passenger
-            ride.setStatus(RideStatus.CANCELLED);
-            activeRideRepository.save(ride);
-
-            // Optionally notify passenger that ride is cancelled due to no drivers
-            webSocketController.notifyPassengerRideStatusUpdate(
-                    ride.getId(),
-                    RideStatus.CANCELLED.toString(),
-                    "Your driver canceled and no replacement is currently available."
-            );
-            return;
-        }
-
-        // Reassign ride to new driver and reset status so he can accept
-        ride.setDriver(newDriver);
-        ride.setStatus(RideStatus.DRIVER_READY);
-        ride.setMovementPathJson(null);
-        ride.setCurrentPathIndex(0);
-        ride.setTargetWaypointIndex(null);
-        activeRideRepository.save(ride);
-
-        // Notify new driver about assigned ride
-        GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(ride);
-        webSocketController.notifyDriverRideAssigned(newDriver.getEmail(), rideDTO);
-
-        // Notify passenger that a new driver will pick them up
-        webSocketController.notifyPassengerRideStatusUpdate(
-                ride.getId(),
-                RideStatus.DRIVER_READY.toString(),
-                "Your previous driver canceled the ride. A new driver has been assigned."
-        );*/
+        cancelRide(ride, dto);
     }
 
     public void cancelRideByPassenger(Long rideId, String reason, Long passengerId) {
@@ -195,7 +157,7 @@ public class RideServiceImpl implements RideService {
         dto.setPassengersEntered(false);
         dto.setScheduledStartTime(scheduled);
 
-        cancelRide(rideId, dto);
+        cancelRide(ride, dto);
 
         ride.setStatus(RideStatus.CANCELLED);
         activeRideRepository.save(ride);

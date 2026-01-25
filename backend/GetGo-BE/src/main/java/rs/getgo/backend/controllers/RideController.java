@@ -99,21 +99,6 @@ public class RideController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // 2.5 – Cancel ride
-    @PreAuthorize("hasRole('PASSENGER')")
-    @PutMapping("/{rideId}/cancel")
-    public ResponseEntity<CreatedRideStatusDTO> cancelRide(@PathVariable Long rideId,
-                                                           @RequestBody CancelRideDTO cancelRequest) {
-        try {
-            CreatedRideStatusDTO response = rideService.cancelRide(rideId, cancelRequest);
-            return ResponseEntity.ok(response);
-        } catch (IllegalStateException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-
     // Driver cancels assigned ride before passengers enter
     @PreAuthorize("hasRole('DRIVER')")
     @PostMapping("/{rideId}/cancel/driver")

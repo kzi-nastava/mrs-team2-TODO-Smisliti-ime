@@ -6,7 +6,7 @@ import rs.getgo.backend.model.entities.ActiveRide;
 
 public interface RideService {
     // cancel a ride (passenger/driver) and return resulting status
-    public CreatedRideStatusDTO cancelRide(Long rideId, CancelRideDTO req);
+    public CreatedRideStatusDTO cancelRide(ActiveRide ride, CancelRideDTO req);
     public CreatedRideResponseDTO orderRide(CreateRideRequestDTO createRideRequestDTO, String email);
     UpdatedRideDTO startRide(Long rideId);
     UpdatedRideDTO acceptRide(Long rideId);

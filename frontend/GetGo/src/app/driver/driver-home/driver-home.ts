@@ -329,12 +329,44 @@ export class DriverHome implements OnInit {
       return false;
     }
 
-    return status === 'DRIVER_INCOMING' || status === 'DRIVER_ARRIVED';
+    // Cancel je dozvoljen u READY, INCOMING i ARRIVED fazama
+    return status === 'DRIVER_INCOMING' || status === 'DRIVER_ARRIVED' || status === 'DRIVER_READY';
   }
 
   openCancelForm(): void {
     this.errorMessage = null;
     this.successMessage = null;
+
+    if (!this.activeRide) {
+      return;
+    }
+
+    const status = (this.activeRide.status || '').toUpperCase();
+
+    if (status === 'DRIVER_READY') {
+      if (this.isCancelling) return;
+
+      this.isCancelling = true;
+      this.rideService
+        .cancelRideByDriver(this.activeRide.rideId, { reason: '' })
+        .subscribe({
+          next: () => {
+            this.successMessage = 'Ride successfully cancelled.';
+            this.activeRide = null;
+            this.isCancelling = false;
+            this.resetMap();
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.errorMessage = err.error?.message || 'Failed to cancel ride.';
+            this.isCancelling = false;
+            this.cdr.detectChanges();
+          }
+        });
+
+      return;
+    }
+
     this.cancelReason = '';
     this.showCancelForm = true;
   }
@@ -346,17 +378,26 @@ export class DriverHome implements OnInit {
   }
 
   confirmCancelRide(): void {
-    if (!this.activeRide || !this.cancelReason.trim()) {
-      this.errorMessage = 'Cancellation reason is required.';
-      this.cdr.detectChanges();
+    if (!this.activeRide) {
       return;
+    }
+
+    const status = (this.activeRide.status || '').toUpperCase();
+
+    // Za INCOMING/ARRIVED zahtevamo reason kao i do sada
+    if (status === 'DRIVER_INCOMING' || status === 'DRIVER_ARRIVED') {
+      if (!this.cancelReason.trim()) {
+        this.errorMessage = 'Cancellation reason is required.';
+        this.cdr.detectChanges();
+        return;
+      }
     }
 
     this.isCancelling = true;
     this.errorMessage = null;
 
     this.rideService
-      .cancelRideByDriver(this.activeRide.rideId, { reason: this.cancelReason.trim() })
+      .cancelRideByDriver(this.activeRide.rideId, { reason: this.cancelReason.trim() || '' })
       .subscribe({
         next: () => {
           this.successMessage = 'Ride successfully cancelled.';

@@ -63,7 +63,7 @@ export class RideTrackingMapComponent implements AfterViewInit{
     // Listen for update driver position (move driver marker)
     this.elementRef.nativeElement.addEventListener('update-driver-position', (ev: Event) => {
       const ce = ev as CustomEvent<{ lat: number; lng: number }>;
-      console.log('RideTrackingMap received update-driver-position:', ce.detail);
+      /*console.log('RideTrackingMap received update-driver-position:', ce.detail);*/
       this.updateDriverMarker(ce.detail.lat, ce.detail.lng);
     });
 

@@ -124,7 +124,7 @@ export class DriverHome implements OnInit {
       .subscribeToDriverLocation(driverEmail)
       .subscribe({
         next: (location: DriverLocationDTO) => {
-          console.log('Driver location update:', location);
+          /*console.log('Driver location update:', location);*/
           this.driverLocation = {
             lat: location.latitude,
             lng: location.longitude

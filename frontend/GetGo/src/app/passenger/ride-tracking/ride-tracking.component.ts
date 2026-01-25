@@ -113,7 +113,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       .subscribeToRideDriverLocation(rideId)
       .subscribe({
         next: (location: DriverLocationDTO) => {
-          console.log('Driver location update:', location);
+          /*console.log('Driver location update:', location);*/
           this.driverLocation = {
             lat: location.latitude,
             lng: location.longitude

@@ -666,9 +666,11 @@ public class RideServiceImpl implements RideService {
         ActiveRide ride = activeRideRepository.findById(rideId)
                 .orElseThrow(() -> new IllegalStateException("Ride not found"));
 
-        if (ride.getStatus() != RideStatus.ACTIVE) {
-            throw new IllegalStateException("Ride is not ACTIVE and cannot be finished");
+        if (ride.getStatus() != RideStatus.ACTIVE &&
+                ride.getStatus() != RideStatus.DRIVER_ARRIVED_AT_DESTINATION) {
+            throw new IllegalStateException("Ride cannot be finished in current state");
         }
+
 
         // Create CompletedRide
         CompletedRide completedRide = new CompletedRide();
@@ -735,6 +737,24 @@ public class RideServiceImpl implements RideService {
                 );
             }
         }
+
+        // === WS: notify DRIVER ===
+        webSocketController.notifyDriverRideFinished(
+                ride.getDriver().getEmail(),
+                ride.getId(),
+                completedRide.getEstimatedPrice(),
+                completedRide.getStartTime(),
+                completedRide.getEndTime()
+        );
+
+        // === WS: notify PASSENGERS ===
+        webSocketController.notifyPassengerRideFinished(
+                ride.getId(),
+                completedRide.getEstimatedPrice(),
+                completedRide.getStartTime(),
+                completedRide.getEndTime()
+        );
+
 
 
         // Remove active ride

@@ -7,7 +7,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowCompat;
 
+import com.example.getgo.auth.AuthRepository;
 import com.example.getgo.model.UserRole;
 
 public class LoginActivity extends AppCompatActivity {
@@ -21,7 +23,12 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // replace EdgeToEdge.enable(...) which caused compile errors
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_login);
+
+        // set background drawable (res/drawable/background.png)
+        findViewById(android.R.id.content).setBackgroundResource(R.drawable.background);
 
         initializeViews();
         setupListeners();
@@ -51,8 +58,8 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Try login
-        UserRole role = authenticateUser(username, password);
+        // Use DB-backed auth
+        UserRole role = AuthRepository.getInstance(this).authenticateUser(username, password);
 
         if (role != null) {
             Intent intent = new Intent(this, MainActivity.class);
@@ -60,7 +67,7 @@ public class LoginActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         } else {
-            Toast.makeText(this, "Invalid username or password", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid username/password or account not active", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -72,17 +79,5 @@ public class LoginActivity extends AppCompatActivity {
     private void handleForgotPassword() {
         Intent intent = new Intent(this, ResetPasswordActivity.class);
         startActivity(intent);
-    }
-
-    // TODO: Replace with real authentication
-    private UserRole authenticateUser(String username, String password) {
-        if (username.equals("a") && password.equals("a")) {
-            return UserRole.ADMIN;
-        } else if (username.equals("d") && password.equals("d")) {
-            return UserRole.DRIVER;
-        } else if (username.equals("p") && password.equals("p")) {
-            return UserRole.PASSENGER;
-        }
-        return null;
     }
 }

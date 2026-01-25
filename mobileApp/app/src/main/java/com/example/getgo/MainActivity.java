@@ -9,7 +9,6 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.ActionBar;
@@ -17,6 +16,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
+import androidx.core.view.WindowCompat;
 
 import com.example.getgo.helpers.NavigationHelper;
 import com.example.getgo.model.UserRole;
@@ -31,7 +31,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+        // replace EdgeToEdge.enable(...) which caused compile errors
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_main);
 
         // Get user role from login
@@ -39,21 +40,19 @@ public class MainActivity extends AppCompatActivity {
         if (roleString != null) {
             currentUserRole = UserRole.valueOf(roleString);
         } else {
-            // No role provided - redirect to login
-//            redirectToLogin();
             currentUserRole = UserRole.GUEST;
-//            return;
         }
 
         boolean isGuest = currentUserRole == UserRole.GUEST;
 
         if (isGuest) {
             // hide bottom navigation
-            findViewById(R.id.bottom_nav).setVisibility(View.GONE);
+            View bottom = findViewById(R.id.bottom_nav);
+            if (bottom != null) bottom.setVisibility(View.GONE);
 
             // hide drawer (hamburger)
             drawer = findViewById(R.id.drawer_layout);
-            drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+            if (drawer != null) drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
         }
 
         // Initialize navigation helper

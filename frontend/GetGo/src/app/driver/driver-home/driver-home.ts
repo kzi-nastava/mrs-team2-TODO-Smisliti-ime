@@ -29,6 +29,7 @@ export class DriverHome implements OnInit {
   isLoading = true;
   isStarting = false;
   isAccepting = false;
+  isEnding = false;
 
   errorMessage: string | null = null;
   successMessage: string | null = null;
@@ -290,7 +291,6 @@ export class DriverHome implements OnInit {
     this.rideCompletion = null;
     this.activeRide = null;
     this.resetMap();
-    this.loadActiveRide(); // Check for next ride
   }
 
   private resetMap(): void {
@@ -306,4 +306,23 @@ export class DriverHome implements OnInit {
     });
     this.mapComponent.nativeElement.dispatchEvent(event);
   }
+
+  finishRide() {
+    if (!this.activeRide) return;
+
+    this.isEnding = true;
+    this.errorMessage = null;
+
+    this.rideService.endRide(this.activeRide.rideId).subscribe({
+      next: () => {
+        this.isEnding = false;
+        // čekamo WS event
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to end ride';
+        this.isEnding = false;
+      }
+    });
+  }
+
 }

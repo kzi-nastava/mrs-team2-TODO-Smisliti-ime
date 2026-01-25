@@ -18,12 +18,13 @@ export class AuthGuard implements CanActivate {
     const expectedRoles: UserRole[] = route.data['roles'] || [];
 
     if (!this.auth.isLoggedIn()) {
+      console.log('AuthGuard: user not logged in, clearing session');
+      this.auth.clearSession();
       return this.router.createUrlTree(
         ['/login'],
         { queryParams: { redirectUrl: state.url } }
       );
     }
-
 
     const currentRole = this.auth.role();
     if (expectedRoles.length && !expectedRoles.includes(currentRole)) {
@@ -43,7 +44,8 @@ export const authGuard: CanActivateFn = (route, state) => {
       const role = auth.role();
       if (role !== undefined) {
         if (!auth.isLoggedIn()) {
-//           resolve(router.createUrlTree(['/login']));
+          console.log('authGuard: user not logged in, clearing session');
+          auth.clearSession();
           const redirect = state.url;
           resolve(router.createUrlTree(['/login'], { queryParams: { redirectUrl: redirect } }));
         } else {

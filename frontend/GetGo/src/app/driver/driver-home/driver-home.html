@@ -142,6 +142,55 @@
           {{ isEnding ? 'Ending...' : 'End Ride' }}
         </button>
 
+
+        <!-- Stop Ride Button (ACTIVE) -->
+        <button
+          *ngIf="activeRide.status === 'ACTIVE'"
+          type="button"
+          (click)="stopRide()"
+          [disabled]="isStopping"
+          class="stop-btn">
+          {{ isStopping ? 'Stopping...' : 'Stop Ride' }}
+        </button>
+
+        <!-- Cancel Ride Button (after accept, before start) -->
+        <button
+          *ngIf="canShowCancelButton()"
+          type="button"
+          (click)="openCancelForm()"
+          [disabled]="isCancelling"
+          class="stop-btn">
+          {{ isCancelling ? 'Cancelling...' : 'Cancel Ride' }}
+        </button>
+      </div>
+
+      <!-- Cancel Ride Reason Form -->
+      <div *ngIf="showCancelForm" class="cancel-overlay">
+        <div class="cancel-dialog">
+          <h3>Cancel Ride</h3>
+          <p>Please provide a reason for cancelling this ride:</p>
+          <textarea
+            [(ngModel)]="cancelReason"
+            rows="3"
+            placeholder="E.g. Passenger not at pickup location, health issue, etc.">
+          </textarea>
+          <div class="cancel-actions">
+            <button
+              type="button"
+              class="start-btn"
+              (click)="confirmCancelRide()"
+              [disabled]="isCancelling">
+              {{ isCancelling ? 'Cancelling...' : 'Confirm Cancel' }}
+            </button>
+            <button
+              type="button"
+              class="stop-btn"
+              (click)="closeCancelForm()"
+              [disabled]="isCancelling">
+              Close
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 

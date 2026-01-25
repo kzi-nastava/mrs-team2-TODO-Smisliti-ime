@@ -16,6 +16,7 @@ import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.DriverService;
 import rs.getgo.backend.services.EmailService;
 import rs.getgo.backend.services.RideService;
+import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -76,7 +77,7 @@ public class RideServiceImpl implements RideService {
     }
 
     @Override
-    public CreatedRideStatusDTO cancelRide(Long rideId, CancelRideDTO req) {
+    public void cancelRide(ActiveRide ride, CancelRideDTO req) {
         String role = req.getRole() != null ? req.getRole().toUpperCase() : "PASSENGER";
 
         if ("DRIVER".equals(role)) {
@@ -98,19 +99,82 @@ public class RideServiceImpl implements RideService {
 
         // persist cancellation
         RideCancellation rc = new RideCancellation();
-        rc.setRideId(rideId);
+        rc.setRideId(ride.getId());
         rc.setCancelerId(req.getCancelerId());
         rc.setRole(role);
         rc.setReason(req.getReason());
         rc.setCreatedAt(LocalDateTime.now());
         cancellationRepository.save(rc);
 
-        return new CreatedRideStatusDTO(rideId, "CANCELED");
+        activeRideRepository.delete(ride);
+
+        new CreatedRideStatusDTO(ride.getId(), "CANCELED");
+    }
+
+    // low‑level helper already existing – leave as is
+    @Override
+    public void cancelRideByDriver(Long rideId, String reason) {
+        String email = AuthUtils.getCurrentUserEmail();
+        Long driverId = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("Driver not found"))
+                .getId();
+
+        ActiveRide ride = activeRideRepository.findById(rideId)
+                .orElseThrow(() -> new IllegalStateException("Ride not found"));
+
+        // Allowed statuses: DRIVER_READY, DRIVER_INCOMING (before pickup).
+        // Disallow after ACTIVE.
+        if (ride.getStatus() == RideStatus.ACTIVE) {
+            throw new IllegalStateException("Driver cannot cancel after ride started");
+        }
+
+        Driver oldDriver = ride.getDriver();
+        if (oldDriver == null || !oldDriver.getId().equals(driverId)) {
+            throw new IllegalStateException("Only assigned driver can cancel this ride");
+        }
+
+        // Log cancellation for this driver
+        CancelRideDTO dto = new CancelRideDTO();
+        dto.setRole("DRIVER");
+        dto.setReason(reason);
+        dto.setCancelerId(driverId);
+        dto.setPassengersEntered(false);
+        dto.setScheduledStartTime(ride.getScheduledTime());
+        cancelRide(ride, dto);
     }
 
     @Override
-    public void stopRide() {
-        // TODO
+    public void cancelRideByPassenger(Long rideId, String reason) {
+        ActiveRide ride = activeRideRepository.findById(rideId)
+                .orElseThrow(() -> new IllegalStateException("Ride not found"));
+
+        String email = AuthUtils.getCurrentUserEmail();
+        Long passengerId = passengerRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("Passenger not found"))
+                .getId();
+
+        LocalDateTime scheduled = ride.getScheduledTime();
+        if (scheduled == null) {
+            throw new IllegalStateException("Ride is not scheduled and cannot be canceled this way");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime cutoff = scheduled.minusMinutes(PASSENGER_CANCEL_MINUTES_BEFORE);
+        if (!now.isBefore(cutoff)) {
+            throw new IllegalStateException("Too late to cancel (must cancel at least 10 minutes before start)");
+        }
+
+        CancelRideDTO dto = new CancelRideDTO();
+        dto.setRole("PASSENGER");
+        dto.setReason(reason);
+        dto.setCancelerId(passengerId);
+        dto.setPassengersEntered(false);
+        dto.setScheduledStartTime(scheduled);
+
+        cancelRide(ride, dto);
+
+        ride.setStatus(RideStatus.CANCELLED);
+        activeRideRepository.save(ride);
     }
 
     @Override
@@ -769,5 +833,88 @@ public class RideServiceImpl implements RideService {
         return response;
     }
 
+    @Override
+    public RideCompletionDTO stopRide(Long rideId, StopRideDTO stopRideDTO) {
+        ActiveRide ride = activeRideRepository.findById(rideId)
+                .orElseThrow(() -> new IllegalStateException("Ride not found"));
+
+        if (ride.getStatus() != RideStatus.ACTIVE) {
+            throw new IllegalStateException("Only ACTIVE rides can be stopped");
+        }
+
+        LocalDateTime endTime = LocalDateTime.now();
+        LocalDateTime startTime = ride.getActualStartTime();
+
+        // Calculate actual duration
+        long durationMinutes = java.time.Duration.between(startTime, endTime).toMinutes();
+
+        // Calculate actual price (proportional or full based on business logic)
+        double actualPrice = calculateStoppedRidePrice(ride, durationMinutes);
+
+        // Create CompletedRide with stoppedEarly flag
+        CompletedRide completedRide = new CompletedRide();
+        completedRide.setRoute(ride.getRoute());
+        completedRide.setScheduledTime(ride.getScheduledTime());
+        completedRide.setStartTime(startTime);
+        completedRide.setEndTime(endTime);
+        completedRide.setEstimatedPrice(ride.getEstimatedPrice());
+        completedRide.setVehicleType(ride.getVehicleType());
+        completedRide.setDriverId(ride.getDriver() != null ? ride.getDriver().getId() : null);
+        completedRide.setDriverName(ride.getDriver() != null ? ride.getDriver().getName() : null);
+        completedRide.setDriverEmail(ride.getDriver() != null ? ride.getDriver().getEmail() : null);
+        completedRide.setPayingPassengerId(ride.getPayingPassenger().getId());
+        completedRide.setPayingPassengerName(ride.getPayingPassenger().getName() + " " + ride.getPayingPassenger().getSurname());
+        completedRide.setPayingPassengerEmail(ride.getPayingPassenger().getEmail());
+        completedRide.setLinkedPassengerIds(
+                ride.getLinkedPassengers() != null
+                        ? ride.getLinkedPassengers().stream().map(Passenger::getId).toList()
+                        : List.of()
+        );
+        completedRide.setCompletedNormally(false);
+        completedRide.setCancelled(false);
+        completedRide.setStoppedEarly(true);
+        completedRide.setPanicPressed(false);
+
+        completedRide = completedRideRepository.save(completedRide);
+
+        // Release driver
+        Driver driver = ride.getDriver();
+        if (driver != null) {
+            driver.setActive(true);
+            driverRepository.save(driver);
+        }
+
+        // Remove active ride
+        activeRideRepository.delete(ride);
+
+        // Build response
+        RideCompletionDTO response = new RideCompletionDTO();
+        response.setRideId(completedRide.getId());
+        response.setStatus("STOPPED_EARLY");
+        response.setPrice(actualPrice);
+        response.setStartTime(startTime);
+        response.setEndTime(endTime);
+        response.setDurationMinutes(durationMinutes);
+
+        return response;
+    }
+
+    private double calculateStoppedRidePrice(ActiveRide ride, long durationMinutes) {
+        // Business logic: charge proportional price based on time driven
+        double estimatedPrice = ride.getEstimatedPrice();
+        double estimatedDuration = ride.getRoute().getEstTimeMin();
+
+        if (estimatedDuration <= 0) {
+            return estimatedPrice; // fallback
+        }
+
+        // Proportional price
+        double proportionalPrice = (durationMinutes / estimatedDuration) * estimatedPrice;
+
+        // Minimum charge (e.g., at least 50% of estimated price)
+        double minCharge = estimatedPrice * 0.5;
+
+        return Math.max(proportionalPrice, minCharge);
+    }
 
 }

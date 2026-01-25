@@ -3,9 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { environment } from '../../../env/environment';
 import { RideTracking } from '../../model/ride-tracking.model';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, throwError } from 'rxjs';
 import { CreateInconsistencyReportDTO, CreatedInconsistencyReportDTO } from '../../model/inconsistency-report.model';
-import {User} from '../../model/user.model';
+import { catchError } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root',
@@ -13,32 +13,41 @@ import {User} from '../../model/user.model';
 export class RideTrackingService {
   private readonly http = inject(HttpClient);
 
-  private rideId = signal<number | null> (null);
+  private rideId = signal<number | null>(null);
+  // novi signal: status vožnje (iz glavnog ride DTO, ne iz RideTracking)
+  private rideStatus = signal<string | null>(null);
 
-  // resource koji se automatski refetchuje kad se rideId promeni
   trackingResource = rxResource({
     params: () => {
       const id = this.rideId();
-       return id ? { id } : null;
+      return id ? { id } : null;
     },
     stream: ({ params }) => {
       const token = localStorage.getItem('authToken');
-      return this.http.get<RideTracking>(`${environment.apiHost}/api/rides/${params!.id}/tracking`,
+      return this.http.get<RideTracking>(
+        `${environment.apiHost}/api/rides/${params!.id}/tracking`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           }
         }
-        );
+      );
     },
   });
 
   tracking = computed(() => this.trackingResource.value() ?? null);
-  // loading signal (spinner)
   loading = computed(() => this.trackingResource.isLoading());
 
-  startTracking(id: number): void {
+
+  startTracking(id: number, status?: string): void {
     this.rideId.set(id);
+    if (status) {
+      this.rideStatus.set(status);
+    }
+  }
+
+  getCurrentRideStatus(): string | null {
+    return this.rideStatus();
   }
 
   createInconsistencyReport(dto: CreateInconsistencyReportDTO): Observable<CreatedInconsistencyReportDTO> {
@@ -91,6 +100,34 @@ export class RideTrackingService {
           Authorization: `Bearer ${token}`,
         }
       }
+    );
+  }
+
+  cancelRide(reason: string): Observable<any> {
+    const rideId = this.rideId();
+    if (!rideId) {
+      return throwError(() => new Error('No active ride to cancel'));
+    }
+
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+
+    return this.http.post(
+      `${environment.apiHost}/api/rides/${rideId}/cancel`,
+      { reason },
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }
+    ).pipe(
+      tap(() => {
+        console.log('Ride cancelled successfully');
+        this.rideId.set(null);
+        this.rideStatus.set(null);
+        this.trackingResource.reload();
+      }),
+      catchError((error) => {
+        console.error('Error cancelling ride:', error);
+        return throwError(() => error);
+      })
     );
   }
 }

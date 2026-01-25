@@ -436,13 +436,13 @@ public class RideServiceImpl implements RideService {
             );
 
             // Small delay to ensure front gets update before finishing
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-            handleRideFinished(ride);
+//            try {
+//                Thread.sleep(100);
+//            } catch (InterruptedException e) {
+//                Thread.currentThread().interrupt();
+//            }
+//
+//            handleRideFinished(ride);
         }
     }
 

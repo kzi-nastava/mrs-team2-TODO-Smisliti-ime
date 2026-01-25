@@ -499,14 +499,6 @@ public class RideServiceImpl implements RideService {
                     "Driver has arrived at the destination!"
             );
 
-            // Small delay to ensure front gets update before finishing
-//            try {
-//                Thread.sleep(100);
-//            } catch (InterruptedException e) {
-//                Thread.currentThread().interrupt();
-//            }
-//
-//            handleRideFinished(ride);
         }
     }
 
@@ -819,16 +811,18 @@ public class RideServiceImpl implements RideService {
                 completedRide.getEndTime()
         );
 
-
-
-        // Remove active ride
-        activeRideRepository.delete(ride);
-
         // Return DTO
         UpdatedRideDTO response = new UpdatedRideDTO();
         response.setId(completedRide.getId());
         response.setStatus("FINISHED");
         response.setEndTime(completedRide.getEndTime());
+
+        activeRideRepository.delete(ride);
+
+        // Activate waiting ride (if exists)
+        if (driver != null) {
+            activateWaitingRideForDriver(driver);
+        }
 
         return response;
     }

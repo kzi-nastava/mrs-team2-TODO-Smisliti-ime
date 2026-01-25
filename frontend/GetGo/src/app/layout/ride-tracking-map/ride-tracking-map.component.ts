@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, ElementRef } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, EventEmitter, Output } from '@angular/core';
 import * as L from 'leaflet';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
@@ -12,6 +12,7 @@ import { DriverService, GetActiveDriverLocationDTO } from '../../service/driver/
   styleUrl: './ride-tracking-map.component.css',
 })
 export class RideTrackingMapComponent implements AfterViewInit{
+  @Output() estimatedTimeChange = new EventEmitter<number>();
   private map: any;
   private driverMarker: L.Marker | null = null;
   private routeControl: any = null;
@@ -111,11 +112,16 @@ export class RideTrackingMapComponent implements AfterViewInit{
     this.routeControl.on('routesfound', (e: any) => {
       const routes = e.routes;
       const summary = routes[0].summary;
-      console.log(`Route: ${summary.totalDistance / 1000} km, ${Math.round(summary.totalTime / 60)} minutes`);
+
+      const estimatedMinutes = Math.round(summary.totalTime / 60);
+      this.initialEstimatedMinutes = estimatedMinutes;
+       this.estimatedTimeChange.emit(estimatedMinutes);
+
+      console.log(`Route: ${summary.totalDistance / 1000} km, ${estimatedMinutes} minutes`);
 
       const event = new CustomEvent('route-estimated-time', {
-        detail: { estimatedTimeMinutes: Math.round(summary.totalTime / 60) },
-        bubbles: true
+          detail: { estimatedTimeMinutes: estimatedMinutes },
+          bubbles: true
       });
       this.elementRef.nativeElement.dispatchEvent(event);
     });

@@ -50,7 +50,7 @@
           </div>
 
           <div *ngIf="activeRide.status !== 'ACTIVE'" class="estimated-info">
-            <p><strong>Estimated Time:</strong> {{ activeRide.estimatedTimeMin | number:'1.0-0' }} min</p>
+            <p><strong>Estimated Time:</strong> {{ estimatedTimeToArrival }} min</p>
             <p><strong>Estimated Price:</strong> {{ activeRide.estimatedPrice | number:'1.2-2' }} RSD</p>
           </div>
         </div>

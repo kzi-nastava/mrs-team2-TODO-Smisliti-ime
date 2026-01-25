@@ -76,7 +76,7 @@
 
         <div class="info-row">
           <label>Estimated Time:</label>
-          <span>{{ activeRide.estimatedTimeMin | number:'1.0-0' }} min</span>
+          <span>{{ activeRide.estimatedTimeMin || 0 }} min</span>
         </div>
 
         <div class="info-row">
@@ -200,6 +200,6 @@
   </div>
 
   <div class="right">
-    <app-ride-tracking-map></app-ride-tracking-map>
+    <app-ride-tracking-map (estimatedTimeChange)="onEstimatedTimeChange($event)"></app-ride-tracking-map>
   </div>
 </div>

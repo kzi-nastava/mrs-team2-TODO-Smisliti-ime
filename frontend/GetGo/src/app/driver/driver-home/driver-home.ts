@@ -320,19 +320,16 @@ export class DriverHome implements OnInit {
     });
   }
 
-  // === CANCEL BUTTON VIDLJIVOST: posle accept, pre start ===
   canShowCancelButton(): boolean {
     if (!this.activeRide) return false;
 
     const status = (this.activeRide.status || '').toUpperCase();
 
-    // ne dozvoljavamo cancel kada je vožnja aktivna ili završena
     if (status === 'ACTIVE' || status === 'FINISHED') {
       return false;
     }
 
-    // prikazujemo cancel samo nakon prihvatanja (DRIVER_INCOMING) i dok nije startovana
-    return status === 'DRIVER_INCOMING';
+    return status === 'DRIVER_INCOMING' || status === 'DRIVER_ARRIVED';
   }
 
   openCancelForm(): void {

@@ -113,7 +113,7 @@ public class RideServiceImpl implements RideService {
                 .orElseThrow(() -> new IllegalStateException("Ride not found"));
 
         // Allowed statuses: DRIVER_READY, DRIVER_INCOMING (before pickup).
-        // Disallow after DRIVER_ARRIVED / ACTIVE.
+        // Disallow after ACTIVE.
         if (ride.getStatus() == RideStatus.ACTIVE) {
             throw new IllegalStateException("Driver cannot cancel after ride started");
         }

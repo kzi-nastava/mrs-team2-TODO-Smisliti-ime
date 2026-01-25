@@ -16,6 +16,7 @@ import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.DriverService;
 import rs.getgo.backend.services.EmailService;
 import rs.getgo.backend.services.RideService;
+import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -76,7 +77,7 @@ public class RideServiceImpl implements RideService {
     }
 
     @Override
-    public CreatedRideStatusDTO cancelRide(ActiveRide ride, CancelRideDTO req) {
+    public void cancelRide(ActiveRide ride, CancelRideDTO req) {
         String role = req.getRole() != null ? req.getRole().toUpperCase() : "PASSENGER";
 
         if ("DRIVER".equals(role)) {
@@ -107,10 +108,17 @@ public class RideServiceImpl implements RideService {
 
         activeRideRepository.delete(ride);
 
-        return new CreatedRideStatusDTO(ride.getId(), "CANCELED");
+        new CreatedRideStatusDTO(ride.getId(), "CANCELED");
     }
 
-    public void cancelRideByDriver(Long rideId, String reason, Long driverId) {
+    // low‑level helper already existing – leave as is
+    @Override
+    public void cancelRideByDriver(Long rideId, String reason) {
+        String email = AuthUtils.getCurrentUserEmail();
+        Long driverId = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("Driver not found"))
+                .getId();
+
         ActiveRide ride = activeRideRepository.findById(rideId)
                 .orElseThrow(() -> new IllegalStateException("Ride not found"));
 
@@ -135,9 +143,15 @@ public class RideServiceImpl implements RideService {
         cancelRide(ride, dto);
     }
 
-    public void cancelRideByPassenger(Long rideId, String reason, Long passengerId) {
+    @Override
+    public void cancelRideByPassenger(Long rideId, String reason) {
         ActiveRide ride = activeRideRepository.findById(rideId)
                 .orElseThrow(() -> new IllegalStateException("Ride not found"));
+
+        String email = AuthUtils.getCurrentUserEmail();
+        Long passengerId = passengerRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("Passenger not found"))
+                .getId();
 
         LocalDateTime scheduled = ride.getScheduledTime();
         if (scheduled == null) {

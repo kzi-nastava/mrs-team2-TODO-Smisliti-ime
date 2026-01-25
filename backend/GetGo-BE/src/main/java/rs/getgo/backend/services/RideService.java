@@ -1,12 +1,13 @@
 package rs.getgo.backend.services;
 
 import rs.getgo.backend.dtos.ride.*;
-import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
 import rs.getgo.backend.model.entities.ActiveRide;
 
 public interface RideService {
     // cancel a ride (passenger/driver) and return resulting status
-    public CreatedRideStatusDTO cancelRide(ActiveRide ride, CancelRideDTO req);
+    public void cancelRide(ActiveRide ride, CancelRideDTO req);
+    void cancelRideByDriver(Long rideId, String reason);
+    void cancelRideByPassenger(Long rideId, String reason);
     public CreatedRideResponseDTO orderRide(CreateRideRequestDTO createRideRequestDTO, String email);
     UpdatedRideDTO startRide(Long rideId);
     UpdatedRideDTO acceptRide(Long rideId);
@@ -16,3 +17,4 @@ public interface RideService {
     public UpdatedRideDTO finishRide(Long rideId, UpdateRideDTO rideRequest);
     public RideCompletionDTO stopRide(Long rideId, StopRideDTO stopRideDTO);
 }
+

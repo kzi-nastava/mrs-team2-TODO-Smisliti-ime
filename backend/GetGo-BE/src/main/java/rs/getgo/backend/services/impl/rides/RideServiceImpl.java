@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import rs.getgo.backend.controllers.WebSocketController;
+import rs.getgo.backend.dtos.driver.GetDriverLocationDTO;
 import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
 import rs.getgo.backend.model.entities.*;
@@ -364,14 +365,6 @@ public class RideServiceImpl implements RideService {
 
     @Override
     public void handleWaypointReached(ActiveRide ride) {
-        Integer targetIndex = ride.getTargetWaypointIndex();
-        List<WayPoint> waypoints = ride.getRoute().getWaypoints();
-
-        System.out.printf(
-                "Ride %d: Driver reached waypoint %d/%d (Status: %s)%n",
-                ride.getId(), targetIndex, waypoints.size() - 1, ride.getStatus()
-        );
-
         if (ride.getStatus() == RideStatus.DRIVER_INCOMING) {
             handleDriverArrivedAtPickup(ride);
         } else if (ride.getStatus() == RideStatus.ACTIVE) {
@@ -429,6 +422,26 @@ public class RideServiceImpl implements RideService {
     }
 
     private void handleRideFinished(ActiveRide ride) {
+        // Force broadcast location update to ensure front gets last position before ride is finished
+        Driver driver = ride.getDriver();
+        WayPoint finalDestination = ride.getRoute().getWaypoints().getLast();
+        GetDriverLocationDTO finalLocation = new GetDriverLocationDTO(
+                driver.getId(),
+                ride.getId(),
+                finalDestination.getLatitude(),
+                finalDestination.getLongitude(),
+                RideStatus.ACTIVE.toString()
+        );
+        webSocketController.broadcastDriverLocation(driver.getEmail(), finalLocation);
+        webSocketController.broadcastDriverLocationToRide(ride.getId(), finalLocation);
+
+        // Delay to ensure message is sent
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
         ride.setStatus(RideStatus.FINISHED);
         ride.setMovementPathJson(null);
         ride.setCurrentPathIndex(0);

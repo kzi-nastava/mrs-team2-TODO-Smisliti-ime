@@ -13,11 +13,12 @@ import {
 import { WebSocketService } from '../../service/websocket/websocket.service';
 import { AuthService } from '../../service/auth-service/auth.service';
 import { Subscription } from 'rxjs';
+import {FormsModule} from '@angular/forms';
 
 @Component({
   selector: 'app-driver-home',
   standalone: true,
-  imports: [CommonModule, NavBarComponent, RideTrackingMapComponent],
+  imports: [CommonModule, NavBarComponent, RideTrackingMapComponent, FormsModule],
   templateUrl: './driver-home.html',
   styleUrl: './driver-home.css',
 })
@@ -29,9 +30,15 @@ export class DriverHome implements OnInit {
   isLoading = true;
   isStarting = false;
   isAccepting = false;
+  isStopping = false;
 
   errorMessage: string | null = null;
   successMessage: string | null = null;
+
+  // Cancel ride UI state
+  isCancelling = false;
+  showCancelForm = false;
+  cancelReason = '';
 
   private rideSubscription?: Subscription;
   private locationSubscription?: Subscription;
@@ -117,7 +124,7 @@ export class DriverHome implements OnInit {
       .subscribeToDriverLocation(driverEmail)
       .subscribe({
         next: (location: DriverLocationDTO) => {
-          console.log('Driver location update:', location);
+          /*console.log('Driver location update:', location);*/
           this.driverLocation = {
             lat: location.latitude,
             lng: location.longitude
@@ -283,6 +290,129 @@ export class DriverHome implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  stopRide() {
+    if (!this.activeRide || !this.driverLocation) return;
+
+    this.isStopping = true;
+    this.errorMessage = null;
+
+    const payload = {
+      latitude: this.driverLocation.lat,
+      longitude: this.driverLocation.lng,
+      stoppedAt: new Date().toISOString()
+    };
+
+    this.rideService.stopRide(this.activeRide.rideId, payload).subscribe({
+      next: (completion) => {
+        this.rideCompletion = completion;
+        this.activeRide!.status = 'FINISHED';
+        this.successMessage = 'Ride stopped at passenger request.';
+        this.isStopping = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to stop ride.';
+        this.isStopping = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  canShowCancelButton(): boolean {
+    if (!this.activeRide) return false;
+
+    const status = (this.activeRide.status || '').toUpperCase();
+
+    if (status === 'ACTIVE' || status === 'FINISHED') {
+      return false;
+    }
+
+    // Cancel je dozvoljen u READY, INCOMING i ARRIVED fazama
+    return status === 'DRIVER_INCOMING' || status === 'DRIVER_ARRIVED' || status === 'DRIVER_READY';
+  }
+
+  openCancelForm(): void {
+    this.errorMessage = null;
+    this.successMessage = null;
+
+    if (!this.activeRide) {
+      return;
+    }
+
+    const status = (this.activeRide.status || '').toUpperCase();
+
+    if (status === 'DRIVER_READY') {
+      if (this.isCancelling) return;
+
+      this.isCancelling = true;
+      this.rideService
+        .cancelRideByDriver(this.activeRide.rideId, { reason: '' })
+        .subscribe({
+          next: () => {
+            this.successMessage = 'Ride successfully cancelled.';
+            this.activeRide = null;
+            this.isCancelling = false;
+            this.resetMap();
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.errorMessage = err.error?.message || 'Failed to cancel ride.';
+            this.isCancelling = false;
+            this.cdr.detectChanges();
+          }
+        });
+
+      return;
+    }
+
+    this.cancelReason = '';
+    this.showCancelForm = true;
+  }
+
+  closeCancelForm(): void {
+    if (this.isCancelling) return;
+    this.showCancelForm = false;
+    this.cancelReason = '';
+  }
+
+  confirmCancelRide(): void {
+    if (!this.activeRide) {
+      return;
+    }
+
+    const status = (this.activeRide.status || '').toUpperCase();
+
+    // Za INCOMING/ARRIVED zahtevamo reason kao i do sada
+    if (status === 'DRIVER_INCOMING' || status === 'DRIVER_ARRIVED') {
+      if (!this.cancelReason.trim()) {
+        this.errorMessage = 'Cancellation reason is required.';
+        this.cdr.detectChanges();
+        return;
+      }
+    }
+
+    this.isCancelling = true;
+    this.errorMessage = null;
+
+    this.rideService
+      .cancelRideByDriver(this.activeRide.rideId, { reason: this.cancelReason.trim() || '' })
+      .subscribe({
+        next: () => {
+          this.successMessage = 'Ride successfully cancelled.';
+          this.activeRide = null;
+          this.showCancelForm = false;
+          this.isCancelling = false;
+          this.resetMap();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.errorMessage = err.error?.message || 'Failed to cancel ride.';
+          this.isCancelling = false;
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   acknowledgeCompletion() {

@@ -30,6 +30,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
 
   showReportForm = false;
   reportText = '';
+  showCancelForm = false;
 
   // Ride data
   activeRide: GetPassengerActiveRideDTO | null = null;
@@ -112,7 +113,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       .subscribeToRideDriverLocation(rideId)
       .subscribe({
         next: (location: DriverLocationDTO) => {
-          console.log('Driver location update:', location);
+          /*console.log('Driver location update:', location);*/
           this.driverLocation = {
             lat: location.latitude,
             lng: location.longitude
@@ -261,5 +262,41 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     this.rideCompletion = null;
     this.activeRide = null;
     this.router.navigate(['/registered-home']);
+  }
+  submitCancel(): void {
+    if (!this.activeRide) {
+      console.error('No active ride to cancel');
+      return;
+    }
+
+    this.showCancelForm = false;
+
+    console.log('Cancelling ride as passenger without explicit reason');
+    this.rideService
+      .cancelRideByPassenger(this.activeRide.rideId, { reason: '' })
+      .subscribe({
+        next: () => {
+          console.log('Ride cancelled successfully');
+          this.activeRide = null;
+          this.rideCompletion = null;
+          this.statusMessage = 'Ride has been cancelled.';
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error cancelling ride', error);
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  canShowCancelRide(): boolean {
+    if (!this.activeRide) return false;
+
+    const status = (this.activeRide.status || '').toUpperCase();
+
+    if (status === 'ACTIVE' || status === 'FINISHED') {
+      return false;
+    }
+    return true;
   }
 }

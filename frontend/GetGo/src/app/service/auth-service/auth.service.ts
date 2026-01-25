@@ -43,21 +43,33 @@ export class AuthService {
   }
 
   logout() {
+    console.log('AuthService: logging out user');
+    this.clearSession();
+
     this.http.post(`${environment.apiHost}/api/auth/logout`, {}).subscribe({
-      next: () => this.finishLogout(),
+      next: () => {
+        console.log('AuthService: logout successful');
+        this.router.navigate(['/home']);
+      },
       error: (err) => {
         console.error('AuthService: logout request failed', err);
-        this.finishLogout(); // optional fallback
+        this.router.navigate(['/home']);
       }
     });
   }
 
-  private finishLogout() {
+  clearSession() {
+    console.log('AuthService: clearing session');
     localStorage.removeItem(this.TOKEN_KEY);
     sessionStorage.removeItem(this.TOKEN_KEY);
 
     this.roleSignal.set(UserRole.Guest);
     this.fullNameSignal.set('');
+    this.profilePictureSignal.set('/assets/images/sussy_cat.jpg');
+  }
+
+  private finishLogout() {
+    this.clearSession();
     this.router.navigate(['/']);
   }
 

@@ -11,8 +11,7 @@ public class CancelRideDTO {
     private Long cancelerId;
     private String role; // "DRIVER" or "PASSENGER"
     private String reason;
-    private LocalDateTime scheduledStartTime; // optional; needed to validate passenger cancellations
-    private Boolean passengersEntered; // optional; needed to validate driver cancellations
 
+    private Boolean passengersEntered;
+    private LocalDateTime scheduledStartTime;
 }
-

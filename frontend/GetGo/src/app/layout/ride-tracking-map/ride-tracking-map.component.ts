@@ -15,6 +15,7 @@ export class RideTrackingMapComponent implements AfterViewInit{
   private map: any;
   private driverMarker: L.Marker | null = null;
   private routeControl: any = null;
+  initialEstimatedMinutes: number = 0;
 
   constructor(
       private http: HttpClient,
@@ -111,6 +112,12 @@ export class RideTrackingMapComponent implements AfterViewInit{
       const routes = e.routes;
       const summary = routes[0].summary;
       console.log(`Route: ${summary.totalDistance / 1000} km, ${Math.round(summary.totalTime / 60)} minutes`);
+
+      const event = new CustomEvent('route-estimated-time', {
+        detail: { estimatedTimeMinutes: Math.round(summary.totalTime / 60) },
+        bubbles: true
+      });
+      this.elementRef.nativeElement.dispatchEvent(event);
     });
   }
 
@@ -206,4 +213,7 @@ export class RideTrackingMapComponent implements AfterViewInit{
       alert('Total distance is ' + summary.totalDistance / 1000 + ' km and total time is ' + Math.round(summary.totalTime % 3600 / 60) + ' minutes');
     });
   }
+
+
+
 }

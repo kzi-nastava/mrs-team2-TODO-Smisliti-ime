@@ -446,17 +446,21 @@ export class DriverHome implements OnInit {
     this.errorMessage = null;
 
     const rideId = this.activeRide.rideId;
-    this.activeRide = null;
+//     this.activeRide = null;
 
     this.rideService.endRide(rideId).subscribe({
       next: () => {
         this.isEnding = false;
         this.successMessage = 'Ride ended successfully!';
+        this.activeRide = null;
+        this.resetMap();
+        this.cdr.detectChanges();
 
       },
       error: (err) => {
         this.errorMessage = err.error?.message || 'Failed to end ride';
         this.isEnding = false;
+        this.cdr.detectChanges();
       }
     });
   }

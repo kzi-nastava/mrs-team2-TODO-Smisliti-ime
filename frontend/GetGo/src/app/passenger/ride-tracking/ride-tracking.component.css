@@ -236,3 +236,42 @@
   resize: vertical;
   font-family: inherit;
 }
+
+.driver-info {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #133E87;
+}
+
+.driver-info p {
+  margin: 4px 0;
+  font-size: 1em;
+}
+
+.estimated-info {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #133E87;
+}
+
+.estimated-info p {
+  margin: 4px 0;
+  font-size: 0.95em;
+}
+
+.completion-modal {
+  text-align: center;
+}
+
+.completion-modal h2 {
+  margin-bottom: 16px;
+}
+
+.completion-modal .ride-info-box {
+  margin-bottom: 16px;
+}
+
+.completion-modal p {
+  margin: 8px 0;
+  font-size: 1em;
+}

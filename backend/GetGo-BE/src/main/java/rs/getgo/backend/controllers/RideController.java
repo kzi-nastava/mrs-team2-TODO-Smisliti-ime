@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.services.impl.rides.RideTrackingService;
 import rs.getgo.backend.utils.AuthUtils;
+import rs.getgo.backend.repositories.DriverRepository;
+import rs.getgo.backend.repositories.PassengerRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,17 +31,36 @@ public class RideController {
     private final RideEstimateService rideEstimateService;
     private final RideService rideService;
     private final RideTrackingService rideTrackingService;
+    private final DriverRepository driverRepository;
+    private final PassengerRepository passengerRepository;
 
-    public RideController(RideEstimateService rideEstimateService, RideService rideService, RideTrackingService rideTrackingService) {
+    public RideController(RideEstimateService rideEstimateService,
+                          RideService rideService,
+                          RideTrackingService rideTrackingService,
+                          DriverRepository driverRepository,
+                          PassengerRepository passengerRepository) {
         this.rideEstimateService = rideEstimateService;
         this.rideService = rideService;
         this.rideTrackingService = rideTrackingService;
+        this.driverRepository = driverRepository;
+        this.passengerRepository = passengerRepository;
+    }
+
+    @PreAuthorize("hasRole('PASSENGER')")
+    @GetMapping(value = "/passenger/active", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetPassengerActiveRideDTO> getPassengerActiveRide() {
+        String email = AuthUtils.getCurrentUserEmail();
+        GetPassengerActiveRideDTO ride = rideTrackingService.getPassengerActiveRide(email);
+        if (ride == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(ride);
     }
 
     // 2.6.2 – Track ride
 //    @PreAuthorize("hasRole('PASSENGER') or hasRole('DRIVER')")
     @GetMapping(value = "/{id}/tracking", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GetRideTrackingDTO> trackRide(@PathVariable("id") Long id) {
+    public ResponseEntity<GetRideTrackingDTO> getRideTracking(@PathVariable("id") Long id) {
         GetRideTrackingDTO ride = rideTrackingService.getRideTracking(id);
 
         return ResponseEntity.ok(ride);
@@ -93,14 +114,57 @@ public class RideController {
         }
     }
 
-    // 2.6.5 – Stop ride while in progress
+    // Driver cancels assigned ride before passengers enter
     @PreAuthorize("hasRole('DRIVER')")
-    @PutMapping(value = "/{rideId}/stop", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<RideCompletionDTO> stopRide(@PathVariable Long rideId, @RequestBody StopRideDTO stopRideDTO) throws Exception {
-        RideCompletionDTO completion = rideService.stopRide(rideId, stopRideDTO);
-        return ResponseEntity.ok(completion);
+    @PostMapping("/{rideId}/cancel/driver")
+    public ResponseEntity<Void> cancelRideByDriver(@PathVariable Long rideId,
+                                                   @RequestBody CancelRideRequestDTO body) {
+        try {
+            String email = AuthUtils.getCurrentUserEmail();
+            Long driverId = driverRepository.findByEmail(email)
+                    .orElseThrow(() -> new IllegalStateException("Driver not found"))
+                    .getId();
+
+            if (rideService instanceof rs.getgo.backend.services.impl.rides.RideServiceImpl impl) {
+                impl.cancelRideByDriver(rideId, body.getReason(), driverId);
+            } else {
+                throw new IllegalStateException("RideService implementation does not support driver cancel");
+            }
+
+            return ResponseEntity.ok().build();
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
+    // Passenger cancels ride at least 10 minutes before start
+    @PreAuthorize("hasRole('PASSENGER')")
+    @PostMapping("/{rideId}/cancel/passenger")
+    public ResponseEntity<Void> cancelRideByPassenger(@PathVariable Long rideId,
+                                                      @RequestBody CancelRideRequestDTO body) {
+        try {
+            String email = AuthUtils.getCurrentUserEmail();
+            Long passengerId = passengerRepository.findByEmail(email)
+                    .orElseThrow(() -> new IllegalStateException("Passenger not found"))
+                    .getId();
+
+            if (rideService instanceof rs.getgo.backend.services.impl.rides.RideServiceImpl impl) {
+                impl.cancelRideByPassenger(rideId, body.getReason(), passengerId);
+            } else {
+                throw new IllegalStateException("RideService implementation does not support passenger cancel");
+            }
+
+            return ResponseEntity.ok().build();
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // 2.6.5 – Stop ride while in progress
     @PreAuthorize("hasRole('DRIVER')")
     @PostMapping(value = "/{rideId}/stop", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<RideCompletionDTO> stopRidePost(@PathVariable Long rideId, @RequestBody StopRideDTO stopRideDTO) throws Exception {
@@ -175,7 +239,4 @@ public class RideController {
     public ResponseEntity<Void> unfavoriteRide(@PathVariable Long rideId) {
         return ResponseEntity.noContent().build();
     }
-
-
-
 }

@@ -26,7 +26,6 @@ public class DriverMovementSimulator {
     private final ActiveRideRepository activeRideRepository;
     private final DriverRepository driverRepository;
     private final RideService rideService;
-    private final WebSocketController webSocketController;
 
     @Value("${simulation.speed.multiplier}")
     private int speedMultiplier;
@@ -34,13 +33,11 @@ public class DriverMovementSimulator {
     public DriverMovementSimulator(
             ActiveRideRepository activeRideRepository,
             DriverRepository driverRepository,
-            @Lazy RideService rideService,
-            WebSocketController webSocketController
+            @Lazy RideService rideService
     ) {
         this.activeRideRepository = activeRideRepository;
         this.driverRepository = driverRepository;
         this.rideService = rideService;
-        this.webSocketController = webSocketController;
     }
 
     /**
@@ -57,56 +54,6 @@ public class DriverMovementSimulator {
                 updateSingleDriverPosition(ride);
             } catch (Exception e) {
                 System.err.println("Failed to update driver position for ride " + ride.getId() + ": " + e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Broadcast active driver location to:
-     * - Driver themselves
-     * - To passengers of driver's ride if driver has active ride
-     */
-    @Scheduled(fixedRate = 1000)
-    public void broadcastAllActiveDriverLocations() {
-        List<Driver> activeDrivers = driverRepository.findByIsActive(true);
-
-        for (Driver driver : activeDrivers) {
-            try {
-                // Skip drivers without location set
-                if (driver.getCurrentLatitude() == null || driver.getCurrentLongitude() == null) {
-                    continue;
-                }
-
-                // Find if driver has an active ride
-                ActiveRide activeRide = activeRideRepository
-                        .findByDriverAndStatusIn(
-                                driver,
-                                List.of(
-                                        RideStatus.DRIVER_READY,
-                                        RideStatus.DRIVER_INCOMING,
-                                        RideStatus.DRIVER_ARRIVED,
-                                        RideStatus.ACTIVE
-                                )
-                        )
-                        .stream()
-                        .findFirst()
-                        .orElse(null);
-
-                GetDriverLocationDTO locationUpdate = new GetDriverLocationDTO(
-                        driver.getId(),
-                        activeRide != null ? activeRide.getId() : null,
-                        driver.getCurrentLatitude(),
-                        driver.getCurrentLongitude(),
-                        activeRide != null ? activeRide.getStatus().toString() : ""
-                );
-
-                webSocketController.broadcastDriverLocation(driver.getEmail(), locationUpdate);
-                if (activeRide != null) {
-                    webSocketController.broadcastDriverLocationToRide(activeRide.getId(), locationUpdate);
-                }
-
-            } catch (Exception e) {
-                System.err.println("Failed to broadcast location for driver " + driver.getId() + ": " + e.getMessage());
             }
         }
     }
@@ -135,7 +82,6 @@ public class DriverMovementSimulator {
 
         // Move to next coordinate
         MapboxRoutingService.Coordinate nextPosition = path.get(currentIndex + 1);
-
         updateDriverLocation(ride, nextPosition, nextIndex);
     }
 
@@ -149,17 +95,6 @@ public class DriverMovementSimulator {
         // Update ride
         ride.setCurrentPathIndex(pathIndex);
         activeRideRepository.save(ride);
-
-        // Broadcast to frontend
-        GetDriverLocationDTO locationUpdate = new GetDriverLocationDTO(
-                driver.getId(),
-                ride.getId(),
-                position.latitude(),
-                position.longitude(),
-                ride.getStatus().toString()
-        );
-        webSocketController.broadcastDriverLocation(driver.getEmail(), locationUpdate);
-        webSocketController.broadcastDriverLocationToRide(ride.getId(), locationUpdate);
     }
 
     private List<MapboxRoutingService.Coordinate> parseJsonToCoordinates(String json) {

@@ -4,6 +4,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import rs.getgo.backend.dtos.driver.GetDriverLocationDTO;
 import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
+import rs.getgo.backend.model.enums.RideStatus;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -64,7 +65,7 @@ public class WebSocketController {
                                          LocalDateTime startTime, LocalDateTime endTime) {
         Map<String, Object> completion = new HashMap<>();
         completion.put("rideId", rideId);
-        completion.put("status", "FINISHED");
+        completion.put("status", RideStatus.FINISHED.toString());
         completion.put("price", price);
         completion.put("startTime", startTime);
         completion.put("endTime", endTime);
@@ -73,6 +74,37 @@ public class WebSocketController {
 
         messagingTemplate.convertAndSend(
                 "/socket-publisher/driver/" + driverEmail + "/ride-finished",
+                completion
+        );
+    }
+
+    public void notifyPassengerRideStatusUpdate(Long rideId, String status, String message) {
+        Map<String, Object> update = new HashMap<>();
+        update.put("rideId", rideId);
+        update.put("status", status);
+        update.put("message", message);
+        update.put("timestamp", LocalDateTime.now());
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/ride/" + rideId + "/status-update",
+                update
+        );
+    }
+
+    public void notifyPassengerRideFinished(Long rideId, Double price, LocalDateTime startTime, LocalDateTime endTime) {
+        Map<String, Object> completion = new HashMap<>();
+        completion.put("rideId", rideId);
+        completion.put("status", RideStatus.FINISHED.toString());
+        completion.put("price", price);
+        completion.put("startTime", startTime);
+        completion.put("endTime", endTime);
+        completion.put("durationMinutes",
+                java.time.Duration.between(startTime, endTime).toMinutes());
+        completion.put("message", "Ride completed! Total: " + price + " RSD");
+        completion.put("timestamp", LocalDateTime.now());
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/ride/" + rideId + "/ride-finished",
                 completion
         );
     }

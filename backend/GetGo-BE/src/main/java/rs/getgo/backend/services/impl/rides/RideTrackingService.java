@@ -3,12 +3,16 @@ package rs.getgo.backend.services.impl.rides;
 import org.springframework.stereotype.Service;
 import rs.getgo.backend.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
+import rs.getgo.backend.dtos.ride.GetPassengerActiveRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideTrackingDTO;
 import rs.getgo.backend.model.entities.*;
+import rs.getgo.backend.model.enums.RideStatus;
 import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.ActiveRideRepository;
 import rs.getgo.backend.repositories.InconsistencyReportRepository;
 import rs.getgo.backend.repositories.PassengerRepository;
+
+import java.util.List;
 
 @Service
 public class RideTrackingService {
@@ -21,6 +25,54 @@ public class RideTrackingService {
         this.activeRideRepository = activeRideRepository;
         this.reportRepository = reportRepository;
         this.passengerRepository = passengerRepository;
+    }
+
+    public GetPassengerActiveRideDTO getPassengerActiveRide(String passengerEmail) {
+        Passenger passenger = passengerRepository.findByEmail(passengerEmail)
+                .orElseThrow(() -> new RuntimeException("Passenger not found"));
+
+        ActiveRide ride = activeRideRepository.findByPayingPassengerAndStatusIn(
+                passenger,
+                List.of(
+                        RideStatus.SCHEDULED,
+                        RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE,
+                        RideStatus.DRIVER_READY,
+                        RideStatus.DRIVER_INCOMING,
+                        RideStatus.DRIVER_ARRIVED,
+                        RideStatus.ACTIVE
+                )
+        ).stream().findFirst().orElse(null);
+
+        if (ride == null) return null;
+
+        return buildGetPassengerActiveRideDTO(ride);
+    }
+
+    public GetPassengerActiveRideDTO buildGetPassengerActiveRideDTO(ActiveRide ride) {
+        GetPassengerActiveRideDTO dto = new GetPassengerActiveRideDTO();
+        dto.setRideId(ride.getId());
+        dto.setStartingPoint(ride.getRoute().getStartingPoint());
+        dto.setEndingPoint(ride.getRoute().getEndingPoint());
+        dto.setEstimatedPrice(ride.getEstimatedPrice());
+        dto.setEstimatedTimeMin(ride.getRoute().getEstTimeMin());
+        dto.setStatus(ride.getStatus().toString());
+
+        if (ride.getDriver() != null) {
+            dto.setDriverName(ride.getDriver().getName() + " " + ride.getDriver().getSurname());
+        }
+
+        // Add waypoints
+        dto.setLatitudes(ride.getRoute().getWaypoints().stream()
+                .map(WayPoint::getLatitude)
+                .toList());
+        dto.setLongitudes(ride.getRoute().getWaypoints().stream()
+                .map(WayPoint::getLongitude)
+                .toList());
+        dto.setAddresses(ride.getRoute().getWaypoints().stream()
+                .map(WayPoint::getAddress)
+                .toList());
+
+        return dto;
     }
 
     public GetRideTrackingDTO getRideTracking(Long rideId) {

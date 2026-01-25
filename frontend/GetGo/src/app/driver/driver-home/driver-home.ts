@@ -13,11 +13,12 @@ import {
 import { WebSocketService } from '../../service/websocket/websocket.service';
 import { AuthService } from '../../service/auth-service/auth.service';
 import { Subscription } from 'rxjs';
+import {FormsModule} from '@angular/forms';
 
 @Component({
   selector: 'app-driver-home',
   standalone: true,
-  imports: [CommonModule, NavBarComponent, RideTrackingMapComponent],
+  imports: [CommonModule, NavBarComponent, RideTrackingMapComponent, FormsModule],
   templateUrl: './driver-home.html',
   styleUrl: './driver-home.css',
 })
@@ -33,6 +34,11 @@ export class DriverHome implements OnInit {
 
   errorMessage: string | null = null;
   successMessage: string | null = null;
+
+  // Cancel ride UI state
+  isCancelling = false;
+  showCancelForm = false;
+  cancelReason = '';
 
   private rideSubscription?: Subscription;
   private locationSubscription?: Subscription;
@@ -312,6 +318,63 @@ export class DriverHome implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  // === CANCEL BUTTON VIDLJIVOST: posle accept, pre start ===
+  canShowCancelButton(): boolean {
+    if (!this.activeRide) return false;
+
+    const status = (this.activeRide.status || '').toUpperCase();
+
+    // ne dozvoljavamo cancel kada je vožnja aktivna ili završena
+    if (status === 'ACTIVE' || status === 'FINISHED') {
+      return false;
+    }
+
+    // prikazujemo cancel samo nakon prihvatanja (DRIVER_INCOMING) i dok nije startovana
+    return status === 'DRIVER_INCOMING';
+  }
+
+  openCancelForm(): void {
+    this.errorMessage = null;
+    this.successMessage = null;
+    this.cancelReason = '';
+    this.showCancelForm = true;
+  }
+
+  closeCancelForm(): void {
+    if (this.isCancelling) return;
+    this.showCancelForm = false;
+    this.cancelReason = '';
+  }
+
+  confirmCancelRide(): void {
+    if (!this.activeRide || !this.cancelReason.trim()) {
+      this.errorMessage = 'Cancellation reason is required.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.isCancelling = true;
+    this.errorMessage = null;
+
+    this.rideService
+      .cancelRideByDriver(this.activeRide.rideId, { reason: this.cancelReason.trim() })
+      .subscribe({
+        next: () => {
+          this.successMessage = 'Ride successfully cancelled.';
+          this.activeRide = null;
+          this.showCancelForm = false;
+          this.isCancelling = false;
+          this.resetMap();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.errorMessage = err.error?.message || 'Failed to cancel ride.';
+          this.isCancelling = false;
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   acknowledgeCompletion() {

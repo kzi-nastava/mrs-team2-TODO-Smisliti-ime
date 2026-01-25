@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import rs.getgo.backend.controllers.WebSocketController;
+import rs.getgo.backend.dtos.driver.GetDriverLocationDTO;
 import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
 import rs.getgo.backend.model.entities.*;
@@ -105,6 +106,99 @@ public class RideServiceImpl implements RideService {
         cancellationRepository.save(rc);
 
         return new CreatedRideStatusDTO(rideId, "CANCELED");
+    }
+
+    public void cancelRideByDriver(Long rideId, String reason, Long driverId) {
+        ActiveRide ride = activeRideRepository.findById(rideId)
+                .orElseThrow(() -> new IllegalStateException("Ride not found"));
+
+        // Allowed statuses: DRIVER_READY, DRIVER_INCOMING (before pickup).
+        // Disallow after DRIVER_ARRIVED / ACTIVE.
+        if (ride.getStatus() == RideStatus.ACTIVE) {
+            throw new IllegalStateException("Driver cannot cancel after ride started");
+        }
+
+        Driver oldDriver = ride.getDriver();
+        if (oldDriver == null || !oldDriver.getId().equals(driverId)) {
+            throw new IllegalStateException("Only assigned driver can cancel this ride");
+        }
+
+        // Log cancellation for this driver
+        CancelRideDTO dto = new CancelRideDTO();
+        dto.setRole("DRIVER");
+        dto.setReason(reason);
+        dto.setCancelerId(driverId);
+        dto.setPassengersEntered(false);
+        dto.setScheduledStartTime(ride.getScheduledTime());
+        cancelRide(rideId, dto);
+
+        // Mark old driver free and make sure he won't be re-assigned to this ride
+        oldDriver.setActive(true);
+        driverRepository.save(oldDriver);
+
+        /*// Try to find a new driver, explicitly excluding the one who canceled
+        Driver newDriver = driverService.findAvailableDriverExcluding(ride, oldDriver);
+
+        if (newDriver == null) {
+            // No replacement driver available → cancel ride for passenger
+            ride.setStatus(RideStatus.CANCELLED);
+            activeRideRepository.save(ride);
+
+            // Optionally notify passenger that ride is cancelled due to no drivers
+            webSocketController.notifyPassengerRideStatusUpdate(
+                    ride.getId(),
+                    RideStatus.CANCELLED.toString(),
+                    "Your driver canceled and no replacement is currently available."
+            );
+            return;
+        }
+
+        // Reassign ride to new driver and reset status so he can accept
+        ride.setDriver(newDriver);
+        ride.setStatus(RideStatus.DRIVER_READY);
+        ride.setMovementPathJson(null);
+        ride.setCurrentPathIndex(0);
+        ride.setTargetWaypointIndex(null);
+        activeRideRepository.save(ride);
+
+        // Notify new driver about assigned ride
+        GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(ride);
+        webSocketController.notifyDriverRideAssigned(newDriver.getEmail(), rideDTO);
+
+        // Notify passenger that a new driver will pick them up
+        webSocketController.notifyPassengerRideStatusUpdate(
+                ride.getId(),
+                RideStatus.DRIVER_READY.toString(),
+                "Your previous driver canceled the ride. A new driver has been assigned."
+        );*/
+    }
+
+    public void cancelRideByPassenger(Long rideId, String reason, Long passengerId) {
+        ActiveRide ride = activeRideRepository.findById(rideId)
+                .orElseThrow(() -> new IllegalStateException("Ride not found"));
+
+        LocalDateTime scheduled = ride.getScheduledTime();
+        if (scheduled == null) {
+            throw new IllegalStateException("Ride is not scheduled and cannot be canceled this way");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime cutoff = scheduled.minusMinutes(PASSENGER_CANCEL_MINUTES_BEFORE);
+        if (!now.isBefore(cutoff)) {
+            throw new IllegalStateException("Too late to cancel (must cancel at least 10 minutes before start)");
+        }
+
+        CancelRideDTO dto = new CancelRideDTO();
+        dto.setRole("PASSENGER");
+        dto.setReason(reason);
+        dto.setCancelerId(passengerId);
+        dto.setPassengersEntered(false);
+        dto.setScheduledStartTime(scheduled);
+
+        cancelRide(rideId, dto);
+
+        ride.setStatus(RideStatus.CANCELLED);
+        activeRideRepository.save(ride);
     }
 
     @Override
@@ -214,11 +308,12 @@ public class RideServiceImpl implements RideService {
         // Save ride
         ActiveRide savedRide = activeRideRepository.save(ride);
 
-        // Notify driver about assigned ride
+        // Notify driver and passengers about assigned ride
         if (savedRide.getStatus() == RideStatus.DRIVER_READY) {
             GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(savedRide);
             webSocketController.notifyDriverRideAssigned(savedRide.getDriver().getEmail(), rideDTO);
         }
+        // Note: there is no notifying passenger because passenger has separate order ride and track ride pages
 
         return new CreatedRideResponseDTO(
                 "SUCCESS",
@@ -335,16 +430,22 @@ public class RideServiceImpl implements RideService {
         initializeDriverToPickupMovement(ride);
         activeRideRepository.save(ride);
 
-        // Notify driver of status change
+        // Notify driver
         webSocketController.notifyDriverStatusUpdate(
                 ride.getDriver().getEmail(),
                 ride.getId(),
                 RideStatus.DRIVER_INCOMING.toString()
         );
+        // Notify passenger
+        webSocketController.notifyPassengerRideStatusUpdate(
+                ride.getId(),
+                RideStatus.DRIVER_INCOMING.toString(),
+                "Driver is on the way to pick you up!"
+        );
 
         UpdatedRideDTO response = new UpdatedRideDTO();
         response.setId(ride.getId());
-        response.setStatus("DRIVER_INCOMING");
+        response.setStatus(RideStatus.DRIVER_INCOMING.toString());
         response.setStartTime(null);
 
         return response;
@@ -352,14 +453,6 @@ public class RideServiceImpl implements RideService {
 
     @Override
     public void handleWaypointReached(ActiveRide ride) {
-        Integer targetIndex = ride.getTargetWaypointIndex();
-        List<WayPoint> waypoints = ride.getRoute().getWaypoints();
-
-        System.out.printf(
-                "Ride %d: Driver reached waypoint %d/%d (Status: %s)%n",
-                ride.getId(), targetIndex, waypoints.size() - 1, ride.getStatus()
-        );
-
         if (ride.getStatus() == RideStatus.DRIVER_INCOMING) {
             handleDriverArrivedAtPickup(ride);
         } else if (ride.getStatus() == RideStatus.ACTIVE) {
@@ -380,11 +473,17 @@ public class RideServiceImpl implements RideService {
 
         activeRideRepository.save(ride);
 
-        // Notify driver via websocket
+        // Notify driver
         webSocketController.notifyDriverStatusUpdate(
                 ride.getDriver().getEmail(),
                 ride.getId(),
                 RideStatus.DRIVER_ARRIVED.toString()
+        );
+        // Notify passenger
+        webSocketController.notifyPassengerRideStatusUpdate(
+                ride.getId(),
+                RideStatus.DRIVER_ARRIVED.toString(),
+                "Driver has arrived at pickup location!"
         );
     }
 
@@ -411,14 +510,41 @@ public class RideServiceImpl implements RideService {
     }
 
     private void handleRideFinished(ActiveRide ride) {
+        // Force broadcast location update to ensure front gets last position before ride is finished
+        Driver driver = ride.getDriver();
+        WayPoint finalDestination = ride.getRoute().getWaypoints().getLast();
+        GetDriverLocationDTO finalLocation = new GetDriverLocationDTO(
+                driver.getId(),
+                ride.getId(),
+                finalDestination.getLatitude(),
+                finalDestination.getLongitude(),
+                RideStatus.ACTIVE.toString()
+        );
+        webSocketController.broadcastDriverLocation(driver.getEmail(), finalLocation);
+        webSocketController.broadcastDriverLocationToRide(ride.getId(), finalLocation);
+
+        // Delay to ensure message is sent
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
         ride.setStatus(RideStatus.FINISHED);
         ride.setMovementPathJson(null);
         ride.setCurrentPathIndex(0);
         activeRideRepository.save(ride);
 
-        // Notify driver the ride is finished
+        // Notify driver
         webSocketController.notifyDriverRideFinished(
                 ride.getDriver().getEmail(),
+                ride.getId(),
+                ride.getEstimatedPrice(),
+                ride.getActualStartTime(),
+                LocalDateTime.now()
+        );
+        // Notify passenger(s)
+        webSocketController.notifyPassengerRideFinished(
                 ride.getId(),
                 ride.getEstimatedPrice(),
                 ride.getActualStartTime(),
@@ -438,18 +564,20 @@ public class RideServiceImpl implements RideService {
                 .orElse(null);
 
         if (waitingRide != null) {
-            System.out.println("Ride " + waitingRide.getId() + ": Driver finished previous ride, now moving to pickup");
-
             waitingRide.setStatus(RideStatus.DRIVER_READY);
             activeRideRepository.save(waitingRide);
 
             // Notify driver about next ride
             GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(waitingRide);
             webSocketController.notifyDriverRideAssigned(driver.getEmail(), rideDTO);
+            // Notify passenger
+            webSocketController.notifyPassengerRideStatusUpdate(
+                    waitingRide.getId(),
+                    RideStatus.DRIVER_READY.toString(),
+                    "Driver finished previous ride! Waiting for driver to accept ride..."
+            );
         }
     }
-
-
 
     // Starts a ride if driver's arrived at pickup point for it
     @Override
@@ -471,6 +599,13 @@ public class RideServiceImpl implements RideService {
         generateNextSegmentPath(ride);
 
         activeRideRepository.save(ride);
+
+        // Notify passengers
+        webSocketController.notifyPassengerRideStatusUpdate(
+                ride.getId(),
+                RideStatus.ACTIVE.toString(),
+                "Ride started!"
+        );
 
         UpdatedRideDTO response = new UpdatedRideDTO();
         response.setId(ride.getId());

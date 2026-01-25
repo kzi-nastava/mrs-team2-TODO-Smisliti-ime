@@ -76,6 +76,41 @@ export interface StopRideDTO {
   stoppedAt: string;
 }
 
+export interface GetPassengerActiveRideDTO {
+  rideId: number;
+  startingPoint: string;
+  endingPoint: string;
+  estimatedPrice: number;
+  estimatedTimeMin: number;
+  driverName?: string;
+  status: string;
+  latitudes: number[];
+  longitudes: number[];
+  addresses: string[];
+}
+
+export interface PassengerStatusUpdateDTO {
+  rideId: number;
+  status: string;
+  message: string;
+  timestamp: string;
+}
+
+export interface PassengerRideFinishedDTO {
+  rideId: number;
+  status: string;
+  price: number;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  message: string;
+  timestamp: string;
+}
+
+export interface CancelRideRequestDTO {
+  reason: string; // driver must provide reason; passenger sends empty string
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -108,7 +143,19 @@ export class RideService {
     return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/finish`, {});
   }
 
+  getPassengerActiveRide(): Observable<GetPassengerActiveRideDTO | null> {
+    return this.http.get<GetPassengerActiveRideDTO>(`${this.apiUrl}/passenger/active`);
+  }
+
   stopRide(rideId: number, payload: StopRideDTO) {
     return this.http.post<RideCompletionDTO>(`${this.apiUrl}/${rideId}/stop`, payload);
+  }
+
+  cancelRideByDriver(rideId: number, body: CancelRideRequestDTO): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${rideId}/cancel/driver`, body);
+  }
+
+  cancelRideByPassenger(rideId: number, body: CancelRideRequestDTO): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${rideId}/cancel/passenger`, body);
   }
 }

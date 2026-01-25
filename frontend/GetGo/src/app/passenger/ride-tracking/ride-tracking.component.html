@@ -1,82 +1,110 @@
 <div class="page-bg" [ngStyle]="{ 'min-height': showReportForm || showCancelForm ? '110vh' : '100vh' }">
-<div class="main-container">
+  <div class="main-container">
 
-  <div class="ride-status">
+    <div class="ride-status">
 
-    <h2>On my way</h2>
-
-    <div *ngIf="loading(); else rideBlock"> Loading ride... </div>
-
-    <ng-template #rideBlock>
-    <div *ngIf="tracking() as ride; else noRide" class="ride-info-box">
-
-      <div class="ride-address">
-        <img src="assets/images/location.png" class="start-icon" />
-        {{ ride.startAddress }}
+      <!-- Loading -->
+      <div *ngIf="isLoading">
+        <h2>Loading...</h2>
+        <p>Fetching ride information...</p>
       </div>
 
-      <div class="ride-address">
-        <img src="assets/images/finish.png" class="finish-icon" />
-        {{ ride.destinationAddress }}
+      <!-- Error -->
+      <div *ngIf="errorMessage && !isLoading">
+        <h2>Error</h2>
+        <p>{{ errorMessage }}</p>
+        <button class="report-route-btn" (click)="loadActiveRide()">Retry</button>
       </div>
 
-      <div class="ride-progress">
-        <p class="progress-label">Your progress</p>
+      <!-- Active Ride -->
+      <div *ngIf="activeRide && !isLoading && !rideCompletion">
+        <h2>{{ statusMessage || 'On my way' }}</h2>
 
-        <div class="progress-row">
-          <span class="progress-value"> {{ progressPercent() }}% to complete </span>
-          <span class="ride-time"> &#128337; {{ ride.estimatedTime }} min </span>
+        <div class="ride-info-box">
+          <div class="ride-address">
+            <img src="assets/images/location.png" class="start-icon" alt="Start" />
+            {{ activeRide.startingPoint }}
+          </div>
+
+          <div class="ride-address">
+            <img src="assets/images/finish.png" class="finish-icon" alt="Finish" />
+            {{ activeRide.endingPoint }}
+          </div>
+
+          <!-- Driver Info -->
+          <div *ngIf="activeRide.driverName" class="driver-info">
+            <p><strong>Driver:</strong> {{ activeRide.driverName }}</p>
+          </div>
+
+          <div *ngIf="activeRide.status === 'ACTIVE'" class="ride-progress">
+            <p class="progress-label">Your progress</p>
+
+            <div class="progress-row">
+              <span class="progress-value">{{ progressPercent() }}% to complete</span>
+              <span class="ride-time">{{ activeRide.estimatedTimeMin | number:'1.0-0' }} min</span>
+            </div>
+
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fg" [style.width.%]="progressPercent()"></div>
+            </div>
+          </div>
+
+          <div *ngIf="activeRide.status !== 'ACTIVE'" class="estimated-info">
+            <p><strong>Estimated Time:</strong> {{ activeRide.estimatedTimeMin | number:'1.0-0' }} min</p>
+            <p><strong>Estimated Price:</strong> {{ activeRide.estimatedPrice | number:'1.2-2' }} RSD</p>
+          </div>
         </div>
 
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fg" [style.width.%]="progressPercent()"> </div>
+        <!-- Report Button -->
+        <button class="report-route-btn" (click)="showReportForm = true">
+          Report route
+        </button>
+
+        <!-- Report Form -->
+        <div *ngIf="showReportForm" class="report-form">
+          <label for="reportText">Describe the issue:</label>
+          <textarea
+            id="reportText"
+            [(ngModel)]="reportText"
+            placeholder="Enter your note...">
+          </textarea>
+          <button type="button" (click)="submitReport()">Submit</button>
+          <button class="cancel-btn" (click)="showReportForm = false">Cancel</button>
         </div>
       </div>
-    </div>
-    </ng-template>
 
+      <!-- Ride Completion -->
+      <div *ngIf="rideCompletion" class="completion-modal">
+        <h2>Ride Completed!</h2>
+        <div class="ride-info-box">
+          <p><strong>Total Price:</strong> {{ rideCompletion.price | number:'1.2-2' }} RSD</p>
+          <p><strong>Duration:</strong> {{ rideCompletion.durationMinutes }} minutes</p>
+          <p><strong>Start:</strong> {{ rideCompletion.startTime | date:'short' }}</p>
+          <p><strong>End:</strong> {{ rideCompletion.endTime | date:'short' }}</p>
+        </div>
+        <button class="report-route-btn" (click)="acknowledgeCompletion()">OK</button>
+      </div>
 
-    <ng-template #noRide>
-      <p>No active ride</p>
-    </ng-template>
+      <button
+        *ngIf="canShowCancelRide()"
+        class="cancel-ride-btn"
+        (click)="showCancelForm = true">
+        Cancel ride
+      </button>
 
-    <ng-template #loadingBlock>
-      <p>Loading ride...</p>
-    </ng-template>
+      <div *ngIf="showCancelForm" class="cancel-form">
+        <p>Are you sure you want to cancel this ride?</p>
+        <button type="button" (click)="submitCancel()">Confirm cancel</button>
+        <button class="cancel-btn" (click)="showCancelForm = false">Close</button>
+      </div>
 
-    <button class="report-route-btn" (click)="showReportForm = true">Report route</button>
-    <div *ngIf="showReportForm" class="report-form">
-      <label for="reportText">Describe the issue:</label>
-      <textarea id="reportText" [(ngModel)]="reportText" placeholder="Enter your note..."></textarea>
-      <button type="button" (click)="submitReport()">Submit</button>
-      <button class="cancel-btn" (click)="showReportForm = false">Cancel</button>
-    </div>
-
-    <button
-      *ngIf="canShowCancelRide()"
-      class="cancel-ride-btn"
-      (click)="showCancelForm = true">
-      Cancel ride
-    </button>
-
-    <div *ngIf="showCancelForm" class="cancel-form">
-      <label for="cancelReason">Reason for cancellation:</label>
-      <textarea
-        id="cancelReason"
-        [(ngModel)]="cancelReason"
-        placeholder="Enter cancellation reason..."></textarea>
-      <button type="button" (click)="submitCancel()">Confirm cancel</button>
-      <button class="cancel-btn" (click)="showCancelForm = false">Close</button>
+      <button class="panic-btn" (click)="submitPanic()">
+        PANIC
+      </button>
     </div>
 
-    <button class="panic-btn" (click)="submitPanic()">
-      PANIC
-    </button>
-
+    <div class="map-container">
+      <app-ride-tracking-map></app-ride-tracking-map>
+    </div>
   </div>
-
-  <div class="map-container">
-    <app-ride-tracking-map></app-ride-tracking-map>
-  </div>
-</div>
 </div>

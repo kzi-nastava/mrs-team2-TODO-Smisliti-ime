@@ -7,7 +7,15 @@
 
   <span [routerLink]="['/home']" class="app-title">GetGo</span>
   <span class="spacer"></span>
-<!--  <button mat-raised-button [routerLink]="['/ride']" >Ride</button>-->
+
+  <!-- Driver active toggle -->
+  <mat-slide-toggle
+    class="white-toggle"
+    style="color: white;"
+    [checked]="initialChecked"
+    (change)="onToggleChange($event)">
+  </mat-slide-toggle>
+
   <span>{{ fullName }}</span>
   <img class="profile-icon" [src]="auth.userProfilePictureUrl() || '/assets/images/sussy_cat.png'" alt="Profile icon">
 </mat-toolbar>
@@ -34,5 +42,3 @@
   </button>
 
 </mat-menu>
-
-

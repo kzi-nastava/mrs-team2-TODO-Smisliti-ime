@@ -704,6 +704,7 @@ public class RideServiceImpl implements RideService {
         completedRide.setStoppedEarly(false);
         completedRide.setPanicPressed(false);
 
+
         // Save completed ride
         completedRide = completedRideRepository.save(completedRide);
 

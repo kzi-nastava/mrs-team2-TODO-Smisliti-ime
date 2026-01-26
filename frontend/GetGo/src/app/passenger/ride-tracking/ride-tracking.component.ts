@@ -30,7 +30,6 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
 
   showReportForm = false;
   reportText = '';
-  showCancelForm = false;
 
   // Ride data
   activeRide: GetPassengerActiveRideDTO | null = null;
@@ -286,6 +285,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // RideTrackingService now only needs rideId, no token decoding / email body
     this.rideTrackingService.createPanicAlert().subscribe({
       next: () => {
         console.log('PANIC alert sent');
@@ -304,15 +304,15 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     this.activeRide = null;
     this.router.navigate(['/registered-home']);
   }
+
   submitCancel(): void {
     if (!this.activeRide) {
       console.error('No active ride to cancel');
       return;
     }
 
-    this.showCancelForm = false;
+    console.log('Cancelling ride as passenger (no explicit reason sent to backend)');
 
-    console.log('Cancelling ride as passenger without explicit reason');
     this.rideService
       .cancelRideByPassenger(this.activeRide.rideId, { reason: '' })
       .subscribe({
@@ -325,6 +325,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Error cancelling ride', error);
+          this.statusMessage = 'Ride cannot be cancelled at this time.';
           this.cdr.detectChanges();
         }
       });
@@ -335,6 +336,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
 
     const status = (this.activeRide.status || '').toUpperCase();
 
+    // passenger can cancel only before ride starts (not ACTIVE, not FINISHED)
     if (status === 'ACTIVE' || status === 'FINISHED') {
       return false;
     }

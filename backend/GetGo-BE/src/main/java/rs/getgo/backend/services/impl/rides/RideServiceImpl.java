@@ -23,6 +23,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -109,6 +110,13 @@ public class RideServiceImpl implements RideService {
         rc.setCreatedAt(LocalDateTime.now());
         cancellationRepository.save(rc);
 
+        List<Panic> ridePanics = panicRepository.findAll().stream()
+                .filter(p -> p.getRide() != null && p.getRide().getId().equals(ride.getId()))
+                .collect(Collectors.toList());
+        if (!ridePanics.isEmpty()) {
+            panicRepository.deleteAll(ridePanics);
+        }
+
         activeRideRepository.delete(ride);
 
         new CreatedRideStatusDTO(ride.getId(), "CANCELED");
@@ -175,9 +183,6 @@ public class RideServiceImpl implements RideService {
         dto.setScheduledStartTime(scheduled);
 
         cancelRide(ride, dto);
-
-        ride.setStatus(RideStatus.CANCELLED);
-        activeRideRepository.save(ride);
     }
 
     @Override

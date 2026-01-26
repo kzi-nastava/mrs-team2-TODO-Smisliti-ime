@@ -160,4 +160,7 @@ export class RideService {
     return this.http.post<void>(`${this.apiUrl}/${rideId}/cancel/passenger`, body);
   }
 
+  createPanic(rideId: number): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${rideId}/panic`, {});
+  }
 }

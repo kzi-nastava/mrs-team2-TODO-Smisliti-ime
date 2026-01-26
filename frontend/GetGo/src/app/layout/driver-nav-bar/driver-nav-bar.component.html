@@ -28,6 +28,11 @@
     <span>Profile data</span>
   </button>
 
+  <button mat-menu-item [routerLink]="['/driver/all-scheduled']">
+    <mat-icon>edit</mat-icon>
+    <span>All scheduled rides</span>
+  </button>
+
   <button mat-menu-item (click)="logout()">
     <mat-icon>person</mat-icon>
     <span>Log out</span>

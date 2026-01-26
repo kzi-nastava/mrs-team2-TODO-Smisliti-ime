@@ -15,6 +15,7 @@ import java.util.Optional;
 public interface ActiveRideRepository extends JpaRepository<ActiveRide, Long> {
     Optional<ActiveRide> findByDriverAndStatus(Driver driver, RideStatus status);
     List<ActiveRide> findByDriverAndStatusIn(Driver driver, List<RideStatus> statuses);
+    List<ActiveRide> findByStatus(RideStatus status);
     @EntityGraph(attributePaths = {"route", "route.waypoints", "driver"})
     List<ActiveRide> findByStatusIn(List<RideStatus> statuses);
     boolean existsByDriverAndStatusIn(Driver driver, List<RideStatus> statuses);

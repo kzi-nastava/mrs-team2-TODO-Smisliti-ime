@@ -4,11 +4,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import rs.getgo.backend.controllers.WebSocketController;
+import rs.getgo.backend.dtos.ride.GetActiveRideDTO;
 import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
-import rs.getgo.backend.model.entities.ActiveRide;
-import rs.getgo.backend.model.entities.Driver;
-import rs.getgo.backend.model.entities.RideCancellation;
-import rs.getgo.backend.model.entities.WayPoint;
+import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RideStatus;
 import rs.getgo.backend.repositories.ActiveRideRepository;
 import rs.getgo.backend.repositories.RideCancellationRepository;
@@ -48,6 +46,48 @@ public class ScheduledRideService {
     public void processScheduledRides() {
         cancelOverdueScheduledRides();
         activateScheduledRides();
+    }
+
+    public List<GetActiveRideDTO> getScheduledRides() {
+        List<ActiveRide> rides = activeRideRepository.findByStatus(RideStatus.SCHEDULED);
+        return rides.stream()
+                .map(this::mapToGetActiveRideDTO)
+                .toList();
+    }
+
+    private GetActiveRideDTO mapToGetActiveRideDTO(ActiveRide ride) {
+        GetActiveRideDTO dto = new GetActiveRideDTO();
+
+        dto.setId(ride.getId());
+        dto.setStartingPoint(ride.getRoute().getStartingPoint());
+        dto.setEndingPoint(ride.getRoute().getEndingPoint());
+        dto.setWaypointAddresses(
+                ride.getRoute().getWaypoints().stream()
+                        .map(WayPoint::getAddress)
+                        .toList()
+        );
+
+        // Don't set driver info as scheduled rides don't have driver
+
+        dto.setPayingPassengerEmail(ride.getPayingPassenger().getEmail());
+        dto.setLinkedPassengerEmails(
+                ride.getLinkedPassengers() != null
+                        ? ride.getLinkedPassengers().stream()
+                        .map(Passenger::getEmail)
+                        .toList()
+                        : List.of()
+        );
+
+        dto.setEstimatedPrice(ride.getEstimatedPrice());
+        dto.setSetEstimatedDurationMin(ride.getEstimatedDurationMin());
+        dto.setScheduledTime(ride.getScheduledTime());
+        dto.setActualStartTime(ride.getActualStartTime());
+        dto.setStatus(ride.getStatus().toString());
+        dto.setVehicleType(ride.getVehicleType() != null ? ride.getVehicleType().toString() : "ANY");
+        dto.setNeedsBabySeats(ride.isNeedsBabySeats());
+        dto.setNeedsPetFriendly(ride.isNeedsPetFriendly());
+
+        return dto;
     }
 
     private void activateScheduledRides() {

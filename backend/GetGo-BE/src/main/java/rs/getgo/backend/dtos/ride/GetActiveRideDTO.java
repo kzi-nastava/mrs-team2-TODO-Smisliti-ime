@@ -24,6 +24,7 @@ public class GetActiveRideDTO {
     private List<String> linkedPassengerEmails;
 
     private Double estimatedPrice;
+    private Double setEstimatedDurationMin;
     private LocalDateTime scheduledTime;
     private LocalDateTime actualStartTime;
     private String status;

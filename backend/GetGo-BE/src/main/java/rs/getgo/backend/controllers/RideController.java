@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.services.impl.rides.RideTrackingService;
+import rs.getgo.backend.services.impl.rides.ScheduledRideService;
 import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDateTime;
@@ -34,19 +35,21 @@ public class RideController {
     private final RideEstimateService rideEstimateService;
     private final RideService rideService;
     private final RideTrackingService rideTrackingService;
+    private final ScheduledRideService scheduledRideService;
     private final CompletedRideService completedRideService;
 
 
     public RideController(RideEstimateService rideEstimateService,
                           RideService rideService,
                           RideTrackingService rideTrackingService,
+                          ScheduledRideService scheduledRideService,
                           CompletedRideService completedRideService) {
         this.rideEstimateService = rideEstimateService;
         this.rideService = rideService;
         this.rideTrackingService = rideTrackingService;
+        this.scheduledRideService = scheduledRideService;
         this.completedRideService = completedRideService;
     }
-
 
     @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/passenger/active", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -57,6 +60,13 @@ public class RideController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
         return ResponseEntity.ok(ride);
+    }
+
+    @PreAuthorize("hasRole('DRIVER')")
+    @GetMapping(value = "driver/all-scheduled", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<GetActiveRideDTO>> getAllScheduledRides() {
+        List<GetActiveRideDTO> rides = scheduledRideService.getScheduledRides();
+        return ResponseEntity.ok(rides);
     }
 
     // 2.6.2 – Track ride
@@ -80,7 +90,6 @@ public class RideController {
 //        return new ResponseEntity<CreatedInconsistencyReportDTO>(savedInconsistencyReport, HttpStatus.CREATED);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedReportDTO);
     }
-
 
     // 2.7 – Finish ride
     @PreAuthorize("hasRole('DRIVER')")
@@ -207,5 +216,4 @@ public class RideController {
     public ResponseEntity<Void> unfavoriteRide(@PathVariable Long rideId) {
         return ResponseEntity.noContent().build();
     }
-
 }

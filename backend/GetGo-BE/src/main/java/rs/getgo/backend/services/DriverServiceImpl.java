@@ -114,6 +114,15 @@ public class DriverServiceImpl implements DriverService {
 
             // mapping passengers
             List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
+
+            // Add paying passenger first
+            if (r.getPayingPassengerId() != null) {
+                passengerDTOs.add(new GetRidePassengerDTO(
+                        r.getPayingPassengerId(),
+                        r.getPayingPassengerEmail()
+                ));
+            }
+            // Add other linked passengers
             if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
                 List<Passenger> passengers = passengerRepository.findAllById(r.getLinkedPassengerIds());
 

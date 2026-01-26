@@ -164,7 +164,14 @@ public CreatedInconsistencyReportDTO saveInconsistencyReport(long rideId, Create
             saved.getPassenger().getId(),
             saved.getText()
         );
-}
+    }
+
+    public void linkReportToCompletedRide(long reportId, CompletedRide completedRide) throws Exception {
+        InconsistencyReport report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new Exception("Report not found"));
+        report.setCompletedRide(completedRide);
+        reportRepository.save(report);
+    }
 
 
 }

@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.services.impl.rides.RideTrackingService;
+import rs.getgo.backend.services.impl.rides.ScheduledRideService;
 import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDateTime;
@@ -29,13 +30,16 @@ public class RideController {
     private final RideEstimateService rideEstimateService;
     private final RideService rideService;
     private final RideTrackingService rideTrackingService;
+    private final ScheduledRideService scheduledRideService;
 
     public RideController(RideEstimateService rideEstimateService,
                           RideService rideService,
-                          RideTrackingService rideTrackingService) {
+                          RideTrackingService rideTrackingService,
+                          ScheduledRideService scheduledRideService) {
         this.rideEstimateService = rideEstimateService;
         this.rideService = rideService;
         this.rideTrackingService = rideTrackingService;
+        this.scheduledRideService = scheduledRideService;
     }
 
     @PreAuthorize("hasRole('PASSENGER')")
@@ -47,6 +51,13 @@ public class RideController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
         return ResponseEntity.ok(ride);
+    }
+
+    @PreAuthorize("hasRole('DRIVER')")
+    @GetMapping(value = "driver/all-scheduled", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<GetActiveRideDTO>> getAllScheduledRides() {
+        List<GetActiveRideDTO> rides = scheduledRideService.getScheduledRides();
+        return ResponseEntity.ok(rides);
     }
 
     // 2.6.2 – Track ride

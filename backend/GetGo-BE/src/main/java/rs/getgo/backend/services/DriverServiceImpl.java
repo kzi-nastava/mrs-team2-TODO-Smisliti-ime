@@ -144,7 +144,7 @@ public class DriverServiceImpl implements DriverService {
                     r.isCancelled(),
                     false,
                     r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
-                    r.getActualPrice(),
+                    r.getEstimatedPrice(),
                     r.isPanicPressed()
             );
 

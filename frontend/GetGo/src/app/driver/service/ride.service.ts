@@ -91,6 +91,6 @@ export class RideService {
    }
 
   getInconsistencyReports(rideId: number) {
-    return this.http.get<GetInconsistencyReportDTO[]>(`${environment.apiHost}/completed-rides/${rideId}/inconsistencies`);
+    return this.http.get<GetInconsistencyReportDTO[]>(`${environment.apiHost}/api/completed-rides/${rideId}/inconsistencies`);
   }
 }

@@ -1,4 +1,4 @@
-import { Component, Signal, computed } from '@angular/core';
+import { Component, Signal, computed, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { RideService } from '../service/ride.service';
 import { Ride, GetRideDTO } from '../model/ride.model';
@@ -17,8 +17,8 @@ export class RideDetailsComponent {
   rideId!: number;
 
   ride: Signal<GetRideDTO | undefined>;
-  reports: GetInconsistencyReportDTO[] = [];
-  loadingReports = true;
+  reports = signal<GetInconsistencyReportDTO[]>([]);
+  loadingReports = signal(true);
 
   constructor(private route: ActivatedRoute, private rideService: RideService) {
     this.rideId = Number(this.route.snapshot.paramMap.get('id'));
@@ -30,12 +30,12 @@ export class RideDetailsComponent {
 
   ngOnInit(){
     this.rideService.getInconsistencyReports(this.rideId).subscribe({
-      next: (reports) => {
-        this.reports = reports;
-        this.loadingReports = false;
+      next: (data) => {
+        this.reports.set(data);
+        this.loadingReports.set(false);
       },
       error: (err) => {
-        this.loadingReports = false;
+        this.loadingReports.set(false);
       }
     })
   }

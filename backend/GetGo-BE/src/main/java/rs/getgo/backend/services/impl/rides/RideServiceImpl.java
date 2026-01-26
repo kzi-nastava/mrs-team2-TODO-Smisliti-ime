@@ -862,7 +862,6 @@ public class RideServiceImpl implements RideService {
         // Remove active ride
         activeRideRepository.delete(ride);
 
-        // Build response
         RideCompletionDTO response = new RideCompletionDTO();
         response.setRideId(completedRide.getId());
         response.setStatus("STOPPED_EARLY");

@@ -40,17 +40,17 @@ export class AuthService {
       console.error('setToken: failed to decode token when deciding storage location', e);
     }
 
-    if (isDriver) {
+    /*if (isDriver) {
       localStorage.setItem(this.TOKEN_KEY, token);
       sessionStorage.removeItem(this.TOKEN_KEY);
-    } else {
+    } else {*/
       if (!persistent) {
         sessionStorage.setItem(this.TOKEN_KEY, token);
         localStorage.removeItem(this.TOKEN_KEY);
       } else {
         localStorage.setItem(this.TOKEN_KEY, token);
         sessionStorage.removeItem(this.TOKEN_KEY);
-      }
+      /*}*/
     }
 
     this.loadRoleFromToken(token);

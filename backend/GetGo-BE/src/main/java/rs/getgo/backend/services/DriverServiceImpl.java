@@ -2,6 +2,10 @@ package rs.getgo.backend.services;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -91,68 +95,82 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public List<GetRideDTO> getDriverRides(String email, LocalDate startDate) {
+    public Page<GetRideDTO> getDriverRides(String email, LocalDate startDate, int page, int size) {
         Driver driver = driverRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 
-        List<CompletedRide> rides = completedRideRepository.findByDriverId(driver.getId());
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("startTime").descending()
+        );
 
-        List<GetRideDTO> dtoList = new ArrayList<>();
+        Page<CompletedRide> ridesPage;
 
-        for (CompletedRide r : rides) {
+        if (startDate == null) {
+            ridesPage = completedRideRepository
+                    .findByDriverId(driver.getId(), pageable);
+        } else {
+            LocalDateTime start = startDate.atStartOfDay();
+            LocalDateTime end = startDate.atTime(23, 59, 59);
 
-            // filtering by startDate
-            if (startDate != null) {
-                if (r.getStartTime() == null) {
-                    continue;
-                }
-                if (!r.getStartTime().toLocalDate().isEqual(startDate)) {
-                    continue;
-                }
-            }
-
-
-            // mapping passengers
-            List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
-
-            // Add paying passenger first
-            if (r.getPayingPassengerId() != null) {
-                passengerDTOs.add(new GetRidePassengerDTO(
-                        r.getPayingPassengerId(),
-                        r.getPayingPassengerEmail()
-                ));
-            }
-            // Add other linked passengers
-            if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
-                List<Passenger> passengers = passengerRepository.findAllById(r.getLinkedPassengerIds());
-
-                for (Passenger p : passengers) {
-                    passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getEmail()));
-                }
-            }
-
-            GetRideDTO dto = new GetRideDTO(
-                    r.getId(),
-                    r.getDriverId(),
-                    passengerDTOs,
-                    r.getRoute() != null ? r.getRoute().getStartingPoint() : "Unknown",
-                    r.getRoute() != null ? r.getRoute().getEndingPoint() : "Unknown",
-                    r.getStartTime(),
-                    r.getEndTime(),
-                    r.getStartTime() != null && r.getEndTime() != null ?
-                            (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
-                    r.isCancelled(),
-                    false,
-                    r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
-                    r.getEstimatedPrice(),
-                    r.isPanicPressed()
+            ridesPage = completedRideRepository.findByDriverIdAndStartTimeBetween(
+                    driver.getId(),
+                    start,
+                    end,
+                    pageable
             );
-
-            dtoList.add(dto);
         }
 
-        return dtoList;
+        return ridesPage.map(this::mapToDTO);
     }
+
+    private GetRideDTO mapToDTO(CompletedRide r) {
+
+        List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
+
+        if (r.getPayingPassengerId() != null) {
+            passengerDTOs.add(
+                    new GetRidePassengerDTO(
+                            r.getPayingPassengerId(),
+                            r.getPayingPassengerEmail()
+                    )
+            );
+        }
+
+        if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
+            List<Passenger> passengers =
+                    passengerRepository.findAllById(r.getLinkedPassengerIds());
+
+            passengers.forEach(p ->
+                    passengerDTOs.add(
+                            new GetRidePassengerDTO(p.getId(), p.getEmail())
+                    )
+            );
+        }
+
+        return new GetRideDTO(
+                r.getId(),
+                r.getDriverId(),
+                passengerDTOs,
+                r.getRoute() != null ? r.getRoute().getStartingPoint() : "Unknown",
+                r.getRoute() != null ? r.getRoute().getEndingPoint() : "Unknown",
+                r.getStartTime(),
+                r.getEndTime(),
+                r.getStartTime() != null && r.getEndTime() != null
+                        ? (int) java.time.Duration
+                        .between(r.getStartTime(), r.getEndTime())
+                        .toMinutes()
+                        : 0,
+                r.isCancelled(),
+                false,
+                r.isCompletedNormally() ? "FINISHED" :
+                        (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
+                r.getEstimatedPrice(),
+                r.isPanicPressed()
+        );
+    }
+
 
     @Override
     public GetActivationTokenDTO validateActivationToken(String token) {

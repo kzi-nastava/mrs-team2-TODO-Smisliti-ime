@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.springframework.web.bind.annotation.RequestParam;
 import rs.getgo.backend.services.FileStorageService;
+import rs.getgo.backend.utils.AuthUtils;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -58,8 +59,9 @@ public class AuthController {
         if (auth == null || !auth.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        String username = auth.getName(); // typically email or principal username
-        boolean allowed = authService.canLogout(username); // true = allowed to logout; false = blocked (e.g. active driver)
+        String email = AuthUtils.getCurrentUserEmail();
+        String role = AuthUtils.getCurrentUserRole();
+        boolean allowed = authService.canLogout(email, role); // true = allowed to logout; false = blocked (e.g. active driver)
         return ResponseEntity.ok(allowed);
     }
 

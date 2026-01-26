@@ -159,6 +159,15 @@ public class DriverController {
         return ResponseEntity.ok(location);
     }
 
+    // Get driver active/inactive status
+    @PreAuthorize("hasRole('DRIVER')")
+    @GetMapping("/status")
+    public ResponseEntity<Boolean> getStatus() {
+        String email = AuthUtils.getCurrentUserEmail();
+        boolean isActive = driverService.isDriverActive(email);
+        return ResponseEntity.ok(isActive);
+    }
+
     // Set driver active/inactive
     @PreAuthorize("hasRole('DRIVER')")
     @PutMapping("/status")

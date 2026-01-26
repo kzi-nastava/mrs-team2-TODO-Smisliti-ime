@@ -339,6 +339,27 @@ export class DriverHome implements OnInit {
     });
   }
 
+  // PANIC for driver while ride is ACTIVE
+  submitDriverPanic(): void {
+    if (!this.activeRide) {
+      console.warn('No active ride to trigger panic for');
+      return;
+    }
+
+    this.rideService.createPanic(this.activeRide.rideId).subscribe({
+      next: () => {
+        console.log('Driver PANIC alert sent');
+        this.successMessage = 'Emergency alert sent!';
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to send driver PANIC', err);
+        this.errorMessage = 'Failed to send emergency alert.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   canShowCancelButton(): boolean {
     if (!this.activeRide) return false;
 
@@ -348,7 +369,6 @@ export class DriverHome implements OnInit {
       return false;
     }
 
-    // Cancel je dozvoljen u READY, INCOMING i ARRIVED fazama
     return status === 'DRIVER_INCOMING' || status === 'DRIVER_ARRIVED' || status === 'DRIVER_READY';
   }
 
@@ -403,7 +423,6 @@ export class DriverHome implements OnInit {
 
     const status = (this.activeRide.status || '').toUpperCase();
 
-    // Za INCOMING/ARRIVED zahtevamo reason kao i do sada
     if (status === 'DRIVER_INCOMING' || status === 'DRIVER_ARRIVED') {
       if (!this.cancelReason.trim()) {
         this.errorMessage = 'Cancellation reason is required.';

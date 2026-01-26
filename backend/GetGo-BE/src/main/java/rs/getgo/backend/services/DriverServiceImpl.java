@@ -428,6 +428,13 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
+    public boolean isDriverActive(String email) {
+        Driver driver = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found"));
+        return driver.getActive();
+    }
+
+    @Override
     public Driver findAvailableDriver(ActiveRide ride) {
         WayPoint startPoint = ride.getRoute().getWaypoints().getFirst();
         double lat = startPoint.getLatitude();

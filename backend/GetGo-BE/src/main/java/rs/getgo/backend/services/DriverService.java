@@ -28,5 +28,8 @@ public interface DriverService {
     void updateLocation(String driverEmail, Double latitude, Double longitude);
     UpdateDriverLocationDTO getLocation(String driverEmail);
     void updateActiveStatus(String driverEmail, boolean isActive);
+
+    boolean isDriverActive(String email);
+
     Driver findAvailableDriver(ActiveRide ride);
 }

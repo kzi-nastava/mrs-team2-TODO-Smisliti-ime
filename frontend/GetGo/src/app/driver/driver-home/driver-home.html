@@ -164,6 +164,15 @@
           {{ isStopping ? 'Stopping...' : 'Stop Ride' }}
         </button>
 
+        <!-- PANIC button - driver, only while ride is ACTIVE -->
+        <button
+          *ngIf="activeRide.status === 'ACTIVE'"
+          type="button"
+          (click)="submitDriverPanic()"
+          class="stop-btn">
+          PANIC
+        </button>
+
         <!-- Cancel Ride Button (after accept, before start) -->
         <button
           *ngIf="canShowCancelButton()"

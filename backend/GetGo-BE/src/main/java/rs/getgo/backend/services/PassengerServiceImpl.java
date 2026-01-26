@@ -1,18 +1,25 @@
 package rs.getgo.backend.services;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.passenger.GetPassengerDTO;
+import rs.getgo.backend.dtos.passenger.GetRidePassengerDTO;
 import rs.getgo.backend.dtos.passenger.UpdatePassengerDTO;
 import rs.getgo.backend.dtos.passenger.UpdatedPassengerDTO;
+import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.dtos.user.UpdatedProfilePictureDTO;
+import rs.getgo.backend.model.entities.CompletedRide;
 import rs.getgo.backend.model.entities.Passenger;
+import rs.getgo.backend.repositories.CompletedRideRepository;
 import rs.getgo.backend.repositories.PassengerRepository;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class PassengerServiceImpl implements PassengerService {
@@ -21,17 +28,19 @@ public class PassengerServiceImpl implements PassengerService {
     private final ModelMapper modelMapper;
     private final FileStorageService fileStorageService;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final CompletedRideRepository completedRideRepository;
 
     public PassengerServiceImpl(
             PassengerRepository passengerRepo,
             ModelMapper modelMapper,
             FileStorageService fileStorageService,
-            BCryptPasswordEncoder passwordEncoder
+            BCryptPasswordEncoder passwordEncoder, CompletedRideRepository completedRideRepository
     ) {
         this.passengerRepo = passengerRepo;
         this.modelMapper = modelMapper;
         this.fileStorageService = fileStorageService;
         this.passwordEncoder = passwordEncoder;
+        this.completedRideRepository = completedRideRepository;
     }
 
     public GetPassengerDTO getPassenger(String email) {
@@ -97,4 +106,121 @@ public class PassengerServiceImpl implements PassengerService {
                 fileUrl,
                 "Profile picture updated successfully");
     }
+
+    @Override
+    public List<GetRideDTO> getPassengerRides(String email, LocalDate startDate) {
+        Passenger passenger = passengerRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
+
+        List<CompletedRide> rides = completedRideRepository.findByPayingPassengerId(passenger.getId());
+
+        List<GetRideDTO> dtoList = new ArrayList<>();
+
+        for (CompletedRide r : rides) {
+
+            // filtering by startDate
+            if (startDate != null) {
+                if (r.getStartTime() == null) {
+                    continue;
+                }
+                if (!r.getStartTime().toLocalDate().isEqual(startDate)) {
+                    continue;
+                }
+            }
+
+
+            // mapping passengers
+            List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
+
+            // Add paying passenger first
+            if (r.getPayingPassengerId() != null) {
+                passengerDTOs.add(new GetRidePassengerDTO(
+                        r.getPayingPassengerId(),
+                        r.getPayingPassengerEmail()
+                ));
+            }
+            // Add other linked passengers
+            if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
+                List<Passenger> passengers = passengerRepo.findAllById(r.getLinkedPassengerIds());
+
+                for (Passenger p : passengers) {
+                    passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getEmail()));
+                }
+            }
+
+            GetRideDTO dto = new GetRideDTO(
+                    r.getId(),
+                    r.getDriverId(),
+                    passengerDTOs,
+                    r.getRoute() != null ? r.getRoute().getStartingPoint() : "Unknown",
+                    r.getRoute() != null ? r.getRoute().getEndingPoint() : "Unknown",
+                    r.getStartTime(),
+                    r.getEndTime(),
+                    r.getStartTime() != null && r.getEndTime() != null ?
+                            (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
+                    r.isCancelled(),
+                    false,
+                    r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
+                    r.getActualPrice(),
+                    r.isPanicPressed()
+            );
+
+            dtoList.add(dto);
+        }
+
+        return dtoList;
+    }
+
+    @Override
+    public GetRideDTO getPassengerRideById(String email, Long rideId) {
+        Passenger passenger = passengerRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
+
+        CompletedRide r = completedRideRepository.findById(rideId)
+                .orElseThrow(() -> new RuntimeException("Ride not found with id: " + rideId));
+
+        // ensure this passenger is part of the ride (paying or linked)
+        boolean isPaying = r.getPayingPassengerId() != null && r.getPayingPassengerId().equals(passenger.getId());
+        boolean isLinked = r.getLinkedPassengerIds() != null
+                && r.getLinkedPassengerIds().contains(passenger.getId());
+
+        if (!isPaying && !isLinked) {
+            throw new RuntimeException("Passenger is not allowed to view this ride");
+        }
+
+        // mapping passengers (reuse logic from getPassengerRides)
+        List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
+
+        if (r.getPayingPassengerId() != null) {
+            passengerDTOs.add(new GetRidePassengerDTO(
+                    r.getPayingPassengerId(),
+                    r.getPayingPassengerEmail()
+            ));
+        }
+
+        if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
+            List<Passenger> passengers = passengerRepo.findAllById(r.getLinkedPassengerIds());
+            for (Passenger p : passengers) {
+                passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getEmail()));
+            }
+        }
+
+        return new GetRideDTO(
+                r.getId(),
+                r.getDriverId(),
+                passengerDTOs,
+                r.getRoute() != null ? r.getRoute().getStartingPoint() : "Unknown",
+                r.getRoute() != null ? r.getRoute().getEndingPoint() : "Unknown",
+                r.getStartTime(),
+                r.getEndTime(),
+                r.getStartTime() != null && r.getEndTime() != null ?
+                        (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
+                r.isCancelled(),
+                false,
+                r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
+                r.getActualPrice(),
+                r.isPanicPressed()
+        );
+    }
 }
+

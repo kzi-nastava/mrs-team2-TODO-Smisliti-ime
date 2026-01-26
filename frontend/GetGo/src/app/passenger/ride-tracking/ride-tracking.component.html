@@ -1,4 +1,4 @@
-<div class="page-bg" [ngStyle]="{ 'min-height': showReportForm || showCancelForm ? '110vh' : '100vh' }">
+<div class="page-bg" [ngStyle]="{ 'min-height': showReportForm ? '110vh' : '100vh' }">
   <div class="main-container">
 
     <div class="ride-status">
@@ -85,18 +85,13 @@
         <button class="report-route-btn" (click)="acknowledgeCompletion()">OK</button>
       </div>
 
+      <!-- Single cancel button, no confirm dialog -->
       <button
         *ngIf="canShowCancelRide()"
         class="cancel-ride-btn"
-        (click)="showCancelForm = true">
+        (click)="submitCancel()">
         Cancel ride
       </button>
-
-      <div *ngIf="showCancelForm" class="cancel-form">
-        <p>Are you sure you want to cancel this ride?</p>
-        <button type="button" (click)="submitCancel()">Confirm cancel</button>
-        <button class="cancel-btn" (click)="showCancelForm = false">Close</button>
-      </div>
 
       <button class="panic-btn" (click)="submitPanic()">
         PANIC

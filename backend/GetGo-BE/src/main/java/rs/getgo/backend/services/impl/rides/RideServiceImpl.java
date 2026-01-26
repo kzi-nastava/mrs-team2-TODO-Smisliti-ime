@@ -23,6 +23,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -109,6 +110,13 @@ public class RideServiceImpl implements RideService {
         rc.setCreatedAt(LocalDateTime.now());
         cancellationRepository.save(rc);
 
+        List<Panic> ridePanics = panicRepository.findAll().stream()
+                .filter(p -> p.getRideId() != null && p.getRideId().equals(ride.getId()))
+                .collect(Collectors.toList());
+        if (!ridePanics.isEmpty()) {
+            panicRepository.deleteAll(ridePanics);
+        }
+
         activeRideRepository.delete(ride);
 
         new CreatedRideStatusDTO(ride.getId(), "CANCELED");
@@ -175,9 +183,6 @@ public class RideServiceImpl implements RideService {
         dto.setScheduledStartTime(scheduled);
 
         cancelRide(ride, dto);
-
-        ride.setStatus(RideStatus.CANCELLED);
-        activeRideRepository.save(ride);
     }
 
     @Override
@@ -654,7 +659,7 @@ public class RideServiceImpl implements RideService {
                 .orElseThrow(() -> new EntityNotFoundException("Ride not found"));
 
         Panic panic = new Panic();
-        panic.setRide(ride);
+        panic.setRideId(ride.getId());
         panic.setTriggeredByUserId(userRepository.findIdByEmail(email));
         panic.setTriggeredAt(LocalDateTime.now());
 
@@ -780,7 +785,6 @@ public class RideServiceImpl implements RideService {
 
         activeRideRepository.delete(ride);
 
-        // Activate waiting ride (if exists)
         if (driver != null) {
             activateWaitingRideForDriver(driver);
         }
@@ -799,14 +803,9 @@ public class RideServiceImpl implements RideService {
 
         LocalDateTime endTime = LocalDateTime.now();
         LocalDateTime startTime = ride.getActualStartTime();
-
-        // Calculate actual duration
         long durationMinutes = java.time.Duration.between(startTime, endTime).toMinutes();
-
-        // Calculate actual price (proportional or full based on business logic)
         double actualPrice = calculateStoppedRidePrice(ride, durationMinutes);
 
-        // Create CompletedRide with stoppedEarly flag
         CompletedRide completedRide = new CompletedRide();
         completedRide.setRoute(ride.getRoute());
         completedRide.setScheduledTime(ride.getScheduledTime());
@@ -857,7 +856,13 @@ public class RideServiceImpl implements RideService {
         // Remove active ride
         activeRideRepository.delete(ride);
 
-        // Build response
+        List<Panic> ridePanics = panicRepository.findAll().stream()
+                .filter(p -> p.getRideId() != null && p.getRideId().equals(ride.getId()))
+                .collect(Collectors.toList());
+        if (!ridePanics.isEmpty()) {
+            panicRepository.deleteAll(ridePanics);
+        }
+
         RideCompletionDTO response = new RideCompletionDTO();
         response.setRideId(completedRide.getId());
         response.setStatus("STOPPED_EARLY");

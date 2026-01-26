@@ -17,4 +17,3 @@ public interface RideService {
     public UpdatedRideDTO finishRide(Long rideId, UpdateRideDTO rideRequest);
     public RideCompletionDTO stopRide(Long rideId, StopRideDTO stopRideDTO);
 }
-

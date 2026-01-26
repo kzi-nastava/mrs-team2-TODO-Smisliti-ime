@@ -41,7 +41,7 @@
 
             <div class="progress-row">
               <span class="progress-value">{{ progressPercent() }}% to complete</span>
-              <span class="ride-time">{{ activeRide.estimatedTimeMin | number:'1.0-0' }} min</span>
+              <span class="ride-time">{{ estimatedTimeToArrival }} min</span>
             </div>
 
             <div class="progress-bar-bg">
@@ -50,7 +50,7 @@
           </div>
 
           <div *ngIf="activeRide.status !== 'ACTIVE'" class="estimated-info">
-            <p><strong>Estimated Time:</strong> {{ activeRide.estimatedTimeMin | number:'1.0-0' }} min</p>
+            <p><strong>Estimated Time:</strong> {{ estimatedTimeToArrival }} min</p>
             <p><strong>Estimated Price:</strong> {{ activeRide.estimatedPrice | number:'1.2-2' }} RSD</p>
           </div>
         </div>
@@ -78,7 +78,7 @@
         <h2>Ride Completed!</h2>
         <div class="ride-info-box">
           <p><strong>Total Price:</strong> {{ rideCompletion.price | number:'1.2-2' }} RSD</p>
-          <p><strong>Duration:</strong> {{ rideCompletion.durationMinutes }} minutes</p>
+          <p><strong>Duration:</strong> {{ estimatedRideDuration  }} minutes</p>
           <p><strong>Start:</strong> {{ rideCompletion.startTime | date:'short' }}</p>
           <p><strong>End:</strong> {{ rideCompletion.endTime | date:'short' }}</p>
         </div>

@@ -26,6 +26,7 @@ export class DriverHome implements OnInit {
   activeRide: GetDriverActiveRideDTO | null = null;
   driverLocation: { lat: number; lng: number } | null = null;
   rideCompletion: RideCompletionDTO | null = null;
+  initialEstimatedMinutes: number = 0;
 
   isLoading = true;
   isStarting = false;
@@ -462,19 +463,35 @@ export class DriverHome implements OnInit {
     this.errorMessage = null;
 
     const rideId = this.activeRide.rideId;
-    this.activeRide = null;
+//     this.activeRide = null;
 
     this.rideService.endRide(rideId).subscribe({
       next: () => {
         this.isEnding = false;
         this.successMessage = 'Ride ended successfully!';
+        this.activeRide = null;
+        this.resetMap();
+        this.cdr.detectChanges();
 
       },
       error: (err) => {
         this.errorMessage = err.error?.message || 'Failed to end ride';
         this.isEnding = false;
+        this.cdr.detectChanges();
       }
     });
   }
 
+  onEstimatedTimeChange(minutes: number) {
+    this.initialEstimatedMinutes = minutes;
+    if (this.activeRide) {
+      this.activeRide.estimatedTimeMin = minutes;
+    }
+    this.cdr.detectChanges();
+  }
+
+//   onEstimatedTimeChange(minutes: number) {
+//     this.initialEstimatedMinutes = minutes;
+//     this.cdr.detectChanges();
+//   }
 }

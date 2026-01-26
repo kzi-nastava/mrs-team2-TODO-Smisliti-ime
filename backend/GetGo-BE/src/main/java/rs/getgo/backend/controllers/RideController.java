@@ -1,13 +1,18 @@
 package rs.getgo.backend.controllers;
 
+import org.apache.coyote.Response;
 import org.springframework.security.access.prepost.PreAuthorize;
+import rs.getgo.backend.dtos.completedRide.CompletedRideDTO;
 import rs.getgo.backend.dtos.favorite.CreatedFavoriteDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
+import rs.getgo.backend.dtos.inconsistencyReport.GetInconsistencyReportDTO;
 import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
 import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
+import rs.getgo.backend.model.entities.CompletedRide;
+import rs.getgo.backend.services.CompletedRideService;
 import rs.getgo.backend.services.RideEstimateService;
 import rs.getgo.backend.services.RideService;
 import org.springframework.http.HttpStatus;
@@ -31,15 +36,19 @@ public class RideController {
     private final RideService rideService;
     private final RideTrackingService rideTrackingService;
     private final ScheduledRideService scheduledRideService;
+    private final CompletedRideService completedRideService;
+
 
     public RideController(RideEstimateService rideEstimateService,
                           RideService rideService,
                           RideTrackingService rideTrackingService,
-                          ScheduledRideService scheduledRideService) {
+                          ScheduledRideService scheduledRideService,
+                          CompletedRideService completedRideService) {
         this.rideEstimateService = rideEstimateService;
         this.rideService = rideService;
         this.rideTrackingService = rideTrackingService;
         this.scheduledRideService = scheduledRideService;
+        this.completedRideService = completedRideService;
     }
 
     @PreAuthorize("hasRole('PASSENGER')")

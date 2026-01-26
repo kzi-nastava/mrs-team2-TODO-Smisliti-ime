@@ -11,17 +11,17 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Setter @Getter
-@Table(name="panic")
+@Setter
+@Getter
+@Table(name = "panic")
 public class Panic {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "ride_id", nullable = false)
-    private ActiveRide ride;
+    @Column(name = "ride_id", nullable = false)
+    private Long rideId;
 
     @Column(name = "triggered_by_user_id", nullable = false)
     private Long triggeredByUserId;

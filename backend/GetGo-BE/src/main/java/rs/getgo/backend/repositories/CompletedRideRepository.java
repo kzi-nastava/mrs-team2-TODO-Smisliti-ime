@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface CompletedRideRepository extends JpaRepository<CompletedRide, Long> {
     List<CompletedRide> findByDriverId(Long driverId);
     List<CompletedRide> findByDriverIdAndEndTimeAfter(Long driverId, LocalDateTime last24Hours);
+    List<CompletedRide> findByPayingPassengerId(Long passengerId);
 }

@@ -17,6 +17,7 @@ import rs.getgo.backend.model.entities.Driver;
 import rs.getgo.backend.repositories.DriverRepository;
 import rs.getgo.backend.services.EmailService;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -269,26 +270,13 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    /**
-     * Returns true if logout is allowed for the user with given username,
-     * or false if logout should be blocked (e.g. driver is active).
-     */
-    public boolean canLogout(String username) {
-        // try to find user by email/username; adjust repository method if different
-        User user = userRepository.findByEmail(username).orElse(null);
-        if (user == null) {
-            // no user found -> allow logout (client can clear tokens)
-            return true;
-        }
-        if (user instanceof Driver) {
-            Driver driver = (Driver) user;
-            // If driver is active, do not allow logout
-            Boolean active = driver.getActive(); // or driver.isActive() depending on your entity
-            if (active != null && active) {
-                return false;
-            }
-        }
-        // default: allow logout
-        return true;
+    public boolean canLogout(String email, String role) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) return true;
+
+        if (!role.contains("DRIVER")) return true;
+
+        Optional<Driver> driver = driverRepo.findById(user.getId());
+        return driver.map(value -> Boolean.FALSE.equals(value.getActive())).orElse(true);
     }
 }

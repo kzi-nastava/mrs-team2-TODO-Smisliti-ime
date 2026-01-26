@@ -1,7 +1,6 @@
 package rs.getgo.backend.services;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -407,6 +406,13 @@ public class DriverServiceImpl implements DriverService {
 
         driver.setActive(isActive);
         driverRepository.save(driver);
+    }
+
+    @Override
+    public boolean isDriverActive(String email) {
+        Driver driver = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found"));
+        return driver.getActive();
     }
 
     @Override

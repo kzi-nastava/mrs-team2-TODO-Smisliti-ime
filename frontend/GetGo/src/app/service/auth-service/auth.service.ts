@@ -20,23 +20,37 @@ export class AuthService {
   public userProfilePictureUrl = this.profilePictureSignal.asReadonly();
 
   constructor(private http: HttpClient, private router: Router) {
-  const token = this.getToken();
-  if (token) {
-    this.loadRoleFromToken(token);
-  } else {
-    this.roleSignal.set(UserRole.Guest);
-    this.fullNameSignal.set('');
-    this.profilePictureSignal.set('/assets/images/sussy_cat.jpg');
+    const token = this.getToken();
+    if (token) {
+      this.loadRoleFromToken(token);
+    } else {
+      this.roleSignal.set(UserRole.Guest);
+      this.fullNameSignal.set('');
+      this.profilePictureSignal.set('/assets/images/sussy_cat.jpg');
+    }
   }
-}
 
   setToken(token: string, persistent: boolean = false) {
-    if (persistent) {
+    let isDriver = false;
+    try {
+      const decoded: any = this.jwtHelper.decodeToken(token);
+      const roleFromToken = decoded?.role?.toLowerCase?.() || '';
+      isDriver = roleFromToken === 'driver';
+    } catch (e) {
+      console.error('setToken: failed to decode token when deciding storage location', e);
+    }
+
+    /*if (isDriver) {
       localStorage.setItem(this.TOKEN_KEY, token);
       sessionStorage.removeItem(this.TOKEN_KEY);
-    } else {
-      sessionStorage.setItem(this.TOKEN_KEY, token);
-      localStorage.removeItem(this.TOKEN_KEY);
+    } else {*/
+      if (!persistent) {
+        sessionStorage.setItem(this.TOKEN_KEY, token);
+        localStorage.removeItem(this.TOKEN_KEY);
+      } else {
+        localStorage.setItem(this.TOKEN_KEY, token);
+        sessionStorage.removeItem(this.TOKEN_KEY);
+      /*}*/
     }
 
     this.loadRoleFromToken(token);
@@ -44,16 +58,27 @@ export class AuthService {
 
   logout() {
     console.log('AuthService: logging out user');
-    this.clearSession();
 
-    this.http.post(`${environment.apiHost}/api/auth/logout`, {}).subscribe({
-      next: () => {
-        console.log('AuthService: logout successful');
-        this.router.navigate(['/home']);
+    this.http.post<boolean>(`${environment.apiHost}/api/auth/logout`, {}).subscribe({
+      next: (allowed) => {
+        if (allowed) {
+          console.log('AuthService: logout allowed by server, clearing session');
+          this.clearSession();
+          this.router.navigate(['/home']);
+        } else {
+          console.warn('AuthService: logout NOT allowed by server (e.g. active driver). Session kept.');
+        }
       },
       error: (err) => {
         console.error('AuthService: logout request failed', err);
-        this.router.navigate(['/home']);
+
+        if (err.status === 401) {
+          console.log('AuthService: server reports unauthorized, clearing local session');
+          this.clearSession();
+          this.router.navigate(['/home']);
+        } else {
+          this.router.navigate(['/home']);
+        }
       }
     });
   }
@@ -82,14 +107,12 @@ export class AuthService {
     try {
       const decoded: any = this.jwtHelper.decodeToken(token);
 
-      // ROLE
       const roleFromToken = decoded?.role;
       let mappedRole: UserRole = UserRole.Guest;
       if (roleFromToken?.toLowerCase() === 'admin') mappedRole = UserRole.Admin;
       else if (roleFromToken?.toLowerCase() === 'driver') mappedRole = UserRole.Driver;
       else if (roleFromToken?.toLowerCase() === 'passenger') mappedRole = UserRole.Passenger;
       this.roleSignal.set(mappedRole);
-
     } catch (err) {
       console.error('loadRoleFromToken: failed to decode token', err);
       this.roleSignal.set(UserRole.Guest);
@@ -125,7 +148,6 @@ export class AuthService {
     });
   }
 
-  // Get user ID from JWT
   getUserId(): number | null {
     const token = this.getToken();
     if (!token) return null;
@@ -139,7 +161,6 @@ export class AuthService {
     }
   }
 
-  // Get user email from JWT
   getUserEmail(): string | null {
     const token = this.getToken();
     if (!token) return null;

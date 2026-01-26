@@ -40,6 +40,7 @@ public class RideServiceImpl implements RideService {
     private final DriverService driverService;
     private final MapboxRoutingService routingService;
     private final WebSocketController webSocketController;
+    private final InconsistencyReportRepository reportRepository;
 
     @Value("${driver.default.latitude}")
     private Double defaultDriverLatitude;
@@ -61,7 +62,8 @@ public class RideServiceImpl implements RideService {
                            MapboxRoutingService mapboxRoutingService,
                            WebSocketController webSocketController,
                            CompletedRideRepository completedRideRepository,
-                           EmailService emailService) {
+                           EmailService emailService,
+                           InconsistencyReportRepository reportRepository) {
         this.cancellationRepository = cancellationRepository;
         this.panicRepository = panicRepository;
         this.activeRideRepository = activeRideRepository;
@@ -74,6 +76,7 @@ public class RideServiceImpl implements RideService {
         this.emailService = emailService;
         this.routingService = mapboxRoutingService;
         this.webSocketController = webSocketController;
+        this.reportRepository = reportRepository;
     }
 
     @Override
@@ -695,8 +698,23 @@ public class RideServiceImpl implements RideService {
         completedRide.setStoppedEarly(false);
         completedRide.setPanicPressed(false);
 
+
         // Save completed ride
         completedRide = completedRideRepository.save(completedRide);
+
+        List<Passenger> allPassengers = new ArrayList<>();
+        allPassengers.add(ride.getPayingPassenger());
+        if (ride.getLinkedPassengers() != null) {
+            allPassengers.addAll(ride.getLinkedPassengers());
+        }
+
+        for (Passenger p : allPassengers) {
+            List<InconsistencyReport> reports = reportRepository.findUnlinkedReportsByPassenger(p);
+            for (InconsistencyReport report : reports) {
+                report.setCompletedRide(completedRide);
+                reportRepository.save(report);
+            }
+        }
 
         // Release or prepare the driver
         Driver driver = ride.getDriver();
@@ -813,6 +831,21 @@ public class RideServiceImpl implements RideService {
         completedRide.setPanicPressed(false);
 
         completedRide = completedRideRepository.save(completedRide);
+
+        // Link all reports of this passenger without CompletedRide to this completed ride
+        List<Passenger> allPassengers = new ArrayList<>();
+        allPassengers.add(ride.getPayingPassenger());
+        if (ride.getLinkedPassengers() != null) {
+            allPassengers.addAll(ride.getLinkedPassengers());
+        }
+
+        for (Passenger p : allPassengers) {
+            List<InconsistencyReport> reports = reportRepository.findUnlinkedReportsByPassenger(p);
+            for (InconsistencyReport report : reports) {
+                report.setCompletedRide(completedRide);
+                reportRepository.save(report);
+            }
+        }
 
         // Release driver
         Driver driver = ride.getDriver();

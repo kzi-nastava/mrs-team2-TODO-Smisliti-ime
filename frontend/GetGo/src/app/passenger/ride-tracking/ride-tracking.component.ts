@@ -36,6 +36,10 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   activeRide: GetPassengerActiveRideDTO | null = null;
   driverLocation: { lat: number; lng: number } | null = null;
   rideCompletion: PassengerRideFinishedDTO | null = null;
+  private totalRouteDistance: number = 0;
+  private initialEstimatedMinutes: number = 0;
+
+
 
   isLoading = true;
   errorMessage: string | null = null;
@@ -88,6 +92,8 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
         if (ride) {
           console.log('Active ride found:', ride);
           this.activeRide = ride;
+          this.rideTrackingService.startTracking(ride.rideId, ride.status);
+          this.calculateTotalRouteDistance();
           this.updateStatusMessage(ride.status);
           this.initializeMapRoute(ride);
           this.subscribeToWebSocketUpdates(ride.rideId);
@@ -157,10 +163,19 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   }
 
   private initializeMapRoute(ride: GetPassengerActiveRideDTO) {
+    if (this.mapComponent?.nativeElement) {
+      this.mapComponent.nativeElement.addEventListener('route-estimated-time', (ev: Event) => {
+        const ce = ev as CustomEvent<{ estimatedTimeMinutes: number }>;
+        console.log('Received initial estimated time from map:', ce.detail.estimatedTimeMinutes);
+        this.initialEstimatedMinutes = ce.detail.estimatedTimeMinutes;
+      });
+    }
+
     if (!this.mapComponent?.nativeElement || !ride.latitudes || !ride.longitudes) {
       console.log('Cannot initialize map: missing data');
       return;
     }
+
 
     console.log('Initializing map route');
 
@@ -212,9 +227,35 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   }
 
   progressPercent(): number {
-    // TODO: give up on this or finish
-    return 42;
+    if (!this.driverLocation || !this.activeRide?.latitudes || !this.activeRide?.longitudes) return 0;
+
+    let distanceTravelled = 0;
+    const latitudes = this.activeRide.latitudes;
+    const longitudes = this.activeRide.longitudes;
+
+    for (let i = 0; i < latitudes.length - 1; i++) {
+      const segmentStart = { lat: latitudes[i], lng: longitudes[i] };
+      const segmentEnd = { lat: latitudes[i + 1], lng: longitudes[i + 1] };
+      const distToEnd = this.haversineDistance(
+        this.driverLocation.lat, this.driverLocation.lng,
+        segmentEnd.lat, segmentEnd.lng
+      );
+      const segmentLength = this.haversineDistance(
+        segmentStart.lat, segmentStart.lng,
+        segmentEnd.lat, segmentEnd.lng
+      );
+
+      if (distToEnd <= segmentLength) {
+        distanceTravelled += segmentLength - distToEnd;
+        break;
+      } else {
+        distanceTravelled += segmentLength;
+      }
+    }
+
+    return Math.round((distanceTravelled / this.totalRouteDistance) * 100);
   }
+
 
   submitReport() {
     if (!this.reportText.trim()) return;
@@ -299,4 +340,86 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     }
     return true;
   }
+
+  private haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const toRad = (x: number) => (x * Math.PI) / 180;
+    const R = 6371e3; // Earth, in meters
+
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const Δφ = toRad(lat2 - lat1);
+    const Δλ = toRad(lng2 - lng1);
+
+    const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // in meters
+  }
+
+  private calculateTotalRouteDistance(): void {
+    if (!this.activeRide?.latitudes || !this.activeRide?.longitudes) return;
+
+    let distance = 0;
+    const latitudes = this.activeRide.latitudes;
+    const longitudes = this.activeRide.longitudes;
+
+    for (let i = 0; i < latitudes.length - 1; i++) {
+      distance += this.haversineDistance(latitudes[i], longitudes[i], latitudes[i + 1], longitudes[i + 1]);
+    }
+    this.totalRouteDistance = distance;
+  }
+
+  get estimatedTimeMinutes(): number {
+    if (!this.driverLocation || !this.activeRide?.latitudes || !this.activeRide?.longitudes) return 0;
+
+    const averageSpeedMps = 10; // recimo 10 m/s (~36 km/h) ili preuzmi od vozača ako imaš
+    let distanceTravelled = 0;
+    const latitudes = this.activeRide.latitudes;
+    const longitudes = this.activeRide.longitudes;
+
+    for (let i = 0; i < latitudes.length - 1; i++) {
+      const segmentStart = { lat: latitudes[i], lng: longitudes[i] };
+      const segmentEnd = { lat: latitudes[i + 1], lng: longitudes[i + 1] };
+      const distToEnd = this.haversineDistance(
+        this.driverLocation.lat, this.driverLocation.lng,
+        segmentEnd.lat, segmentEnd.lng
+      );
+      const segmentLength = this.haversineDistance(
+        segmentStart.lat, segmentStart.lng,
+        segmentEnd.lat, segmentEnd.lng
+      );
+
+      if (distToEnd <= segmentLength) {
+        distanceTravelled += segmentLength - distToEnd;
+        break;
+      } else {
+        distanceTravelled += segmentLength;
+      }
+    }
+
+    const remainingDistance = this.totalRouteDistance - distanceTravelled;
+    const remainingTimeSec = remainingDistance / averageSpeedMps;
+    return Math.ceil(remainingTimeSec / 60);
+  }
+
+  get remainingTimeMinutes(): number {
+    // progressPercent() return 0-100%
+    const remainingPercent = 100 - this.progressPercent();
+    return Math.ceil(this.estimatedTimeMinutes * remainingPercent / 100);
+  }
+
+  get estimatedTimeToArrival(): number {
+    if (this.initialEstimatedMinutes <= 0) return 0;
+    const remainingPercent = 100 - this.progressPercent();
+    return Math.ceil(this.initialEstimatedMinutes * remainingPercent / 100);
+  }
+
+  get estimatedRideDuration(): number {
+
+    return this.initialEstimatedMinutes;
+  }
+
+
+
+
 }

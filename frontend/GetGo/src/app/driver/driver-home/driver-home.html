@@ -14,7 +14,8 @@
       <h2>Ride Completed!</h2>
       <div class="completion-info">
         <p><strong>Price:</strong> {{ rideCompletion.price | number:'1.2-2' }} RSD</p>
-        <p><strong>Duration:</strong> {{ rideCompletion.durationMinutes }} minutes</p>
+<!--        <p><strong>Duration:</strong> {{ rideCompletion.durationMinutes }} minutes</p>-->
+        <p><strong>Duration:</strong> {{ initialEstimatedMinutes  }} minutes</p>
       </div>
       <button
         type="button"
@@ -76,7 +77,7 @@
 
         <div class="info-row">
           <label>Estimated Time:</label>
-          <span>{{ activeRide.estimatedTimeMin | number:'1.0-0' }} min</span>
+          <span>{{ activeRide.estimatedTimeMin || 0 }} min</span>
         </div>
 
         <div class="info-row">
@@ -210,6 +211,6 @@
   </div>
 
   <div class="right">
-    <app-ride-tracking-map></app-ride-tracking-map>
+    <app-ride-tracking-map (estimatedTimeChange)="onEstimatedTimeChange($event)"></app-ride-tracking-map>
   </div>
 </div>

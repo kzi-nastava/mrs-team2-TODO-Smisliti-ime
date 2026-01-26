@@ -37,3 +37,10 @@ export interface GetRideDTO {
   price: number;
   panicActivated?: boolean;
 }
+
+export interface GetInconsistencyReportDTO {
+  id: number;
+  createdAt: string;
+  passengerEmail: string;
+  text: string;
+}

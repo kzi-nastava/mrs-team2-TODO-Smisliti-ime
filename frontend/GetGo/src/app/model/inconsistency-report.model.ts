@@ -8,3 +8,10 @@ export interface CreatedInconsistencyReportDTO {
   passengerId: number | null;
   text: string;
 }
+
+export interface GetInconsistencyReportDTO {
+  id: number;
+  createdAt: string;
+  passengerEmail: string;
+  text: string;
+}

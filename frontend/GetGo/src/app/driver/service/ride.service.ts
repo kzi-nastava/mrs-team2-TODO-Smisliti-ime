@@ -3,6 +3,7 @@ import { Ride, GetRideDTO } from '../model/ride.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../env/environment';
 import { Signal } from '@angular/core';
+import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.model';
 
 @Injectable({
   providedIn: 'root',
@@ -53,7 +54,7 @@ export class RideService {
       url += `?startDate=${dateStr}`;
     }
 
-    const token = localStorage.getItem('authToken');
+    const token = this.getAuthToken();
 
     this.http.get<GetRideDTO[]>(url, {
       headers: {
@@ -64,6 +65,15 @@ export class RideService {
       error: err => console.error('Error loading rides', err)
     });
   }
+
+  private getAuthToken(): string {
+    const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('No auth token found');
+    }
+    return token;
+  }
+
 
 
   addRide(ride: GetRideDTO) {
@@ -79,4 +89,8 @@ export class RideService {
 //      this.loadRides(driverId);
      this.loadRides();
    }
+
+  getInconsistencyReports(rideId: number) {
+    return this.http.get<GetInconsistencyReportDTO[]>(`${environment.apiHost}/api/completed-rides/${rideId}/inconsistencies`);
+  }
 }

@@ -25,6 +25,7 @@ export class InRideComponent implements OnInit, OnDestroy {
   driverLocation: { lat: number; lng: number } | null = null;
   rideCompletion: PassengerRideFinishedDTO | null = null;
 
+
   showReportForm = false;
   reportText = '';
 
@@ -216,4 +217,5 @@ export class InRideComponent implements OnInit, OnDestroy {
     this.activeRide = null;
     this.router.navigate(['/registered-home']);
   }
+
 }

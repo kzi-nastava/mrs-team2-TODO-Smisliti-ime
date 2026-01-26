@@ -65,4 +65,5 @@ public class CompletedRide {
     @ManyToOne
     @JoinColumn(name = "early_stop_location_id")
     private WayPoint earlyStopLocation;
+
 }

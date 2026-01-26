@@ -14,7 +14,7 @@ export class RideTrackingService {
   private readonly http = inject(HttpClient);
 
   private rideId = signal<number | null>(null);
-  // novi signal: status vožnje (iz glavnog ride DTO, ne iz RideTracking)
+  // novi signal: status voznje (iz glavnog ride DTO, ne iz RideTracking)
   private rideStatus = signal<string | null>(null);
 
   trackingResource = rxResource({
@@ -23,7 +23,7 @@ export class RideTrackingService {
       return id ? { id } : null;
     },
     stream: ({ params }) => {
-      const token = localStorage.getItem('authToken');
+      const token = this.getAuthToken();
       return this.http.get<RideTracking>(
         `${environment.apiHost}/api/rides/${params!.id}/tracking`,
         {
@@ -55,7 +55,7 @@ export class RideTrackingService {
 
     if (!rideId) throw new Error('No active ride ID set');
 
-    const token = localStorage.getItem('authToken');
+    const token = this.getAuthToken();
     return this.http.post<CreatedInconsistencyReportDTO>(`${environment.apiHost}/api/rides/${rideId}/inconsistencies`, dto,
       {
         headers: {
@@ -64,6 +64,15 @@ export class RideTrackingService {
       }
     ).pipe(tap(_ => this.reloadTracking()));
   }
+
+  private getAuthToken(): string {
+    const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('No auth token found');
+    }
+    return token;
+  }
+
 
   reloadTracking(): void {
     this.trackingResource.reload();

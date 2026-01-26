@@ -111,7 +111,7 @@ public class RideServiceImpl implements RideService {
         cancellationRepository.save(rc);
 
         List<Panic> ridePanics = panicRepository.findAll().stream()
-                .filter(p -> p.getRide() != null && p.getRide().getId().equals(ride.getId()))
+                .filter(p -> p.getRideId() != null && p.getRideId().equals(ride.getId()))
                 .collect(Collectors.toList());
         if (!ridePanics.isEmpty()) {
             panicRepository.deleteAll(ridePanics);
@@ -659,7 +659,7 @@ public class RideServiceImpl implements RideService {
                 .orElseThrow(() -> new EntityNotFoundException("Ride not found"));
 
         Panic panic = new Panic();
-        panic.setRide(ride);
+        panic.setRideId(ride.getId());
         panic.setTriggeredByUserId(userRepository.findIdByEmail(email));
         panic.setTriggeredAt(LocalDateTime.now());
 
@@ -785,7 +785,6 @@ public class RideServiceImpl implements RideService {
 
         activeRideRepository.delete(ride);
 
-        // Activate waiting ride (if exists)
         if (driver != null) {
             activateWaitingRideForDriver(driver);
         }
@@ -804,14 +803,9 @@ public class RideServiceImpl implements RideService {
 
         LocalDateTime endTime = LocalDateTime.now();
         LocalDateTime startTime = ride.getActualStartTime();
-
-        // Calculate actual duration
         long durationMinutes = java.time.Duration.between(startTime, endTime).toMinutes();
-
-        // Calculate actual price (proportional or full based on business logic)
         double actualPrice = calculateStoppedRidePrice(ride, durationMinutes);
 
-        // Create CompletedRide with stoppedEarly flag
         CompletedRide completedRide = new CompletedRide();
         completedRide.setRoute(ride.getRoute());
         completedRide.setScheduledTime(ride.getScheduledTime());
@@ -861,6 +855,13 @@ public class RideServiceImpl implements RideService {
 
         // Remove active ride
         activeRideRepository.delete(ride);
+
+        List<Panic> ridePanics = panicRepository.findAll().stream()
+                .filter(p -> p.getRideId() != null && p.getRideId().equals(ride.getId()))
+                .collect(Collectors.toList());
+        if (!ridePanics.isEmpty()) {
+            panicRepository.deleteAll(ridePanics);
+        }
 
         RideCompletionDTO response = new RideCompletionDTO();
         response.setRideId(completedRide.getId());

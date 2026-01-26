@@ -43,7 +43,7 @@ export class RideService {
 //     }
 
   loadRides(startDate?: Date) {
-    let url = `${environment.apiHost}/api/drivers/rides`;
+    let url = `${environment.apiHost}/api/passenger/rides`;
 
     if (startDate) {
       const day = startDate.getDate().toString().padStart(2,'0');
@@ -87,6 +87,17 @@ export class RideService {
 //      this.loadRides(driverId);
      this.loadRides();
    }
+
+  getRideById(id: number) {
+    return this.http.get<GetRideDTO>(
+      `${environment.apiHost}/api/passenger/rides/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${this.getAuthToken()}`
+        }
+      }
+    );
+  }
 
   getInconsistencyReports(rideId: number) {
     return this.http.get<GetInconsistencyReportDTO[]>(`${environment.apiHost}/api/completed-rides/${rideId}/inconsistencies`);

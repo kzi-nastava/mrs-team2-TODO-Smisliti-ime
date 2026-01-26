@@ -83,6 +83,16 @@
           <label>Estimated Price:</label>
           <span>{{ activeRide.estimatedPrice | number:'1.2-2' }} RSD</span>
         </div>
+
+        <div *ngIf="activeRide.status === 'DRIVER_READY'" class="info-row">
+          <label>Scheduled:</label>
+          <span>{{ isScheduledRide() ? 'Yes' : 'No' }}</span>
+        </div>
+
+        <div *ngIf="activeRide.status === 'DRIVER_READY'" class="info-row">
+          <label>Start Time:</label>
+          <span>{{ getStartTimeDisplay() }}</span>
+        </div>
       </div>
 
       <!-- Status Messages -->

@@ -86,6 +86,22 @@ export class DriverHome implements OnInit {
     }
   }
 
+  isScheduledRide(): boolean {
+    return !!this.activeRide?.scheduledTime;
+  }
+
+  getStartTimeDisplay(): string {
+    if (!this.activeRide?.scheduledTime) {
+      return 'Now';
+    }
+
+    const date = new Date(this.activeRide.scheduledTime);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
   ngOnDestroy() {
     if (this.rideSubscription) this.rideSubscription.unsubscribe();
     if (this.locationSubscription) this.locationSubscription.unsubscribe();

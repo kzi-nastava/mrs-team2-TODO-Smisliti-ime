@@ -310,6 +310,7 @@ public class RideServiceImpl implements RideService {
         dto.setPassengerName(ride.getPayingPassenger().getName() + " " + ride.getPayingPassenger().getSurname());
         dto.setPassengerCount(1 + (ride.getLinkedPassengers() != null ? ride.getLinkedPassengers().size() : 0));
         dto.setStatus(ride.getStatus().toString());
+        dto.setScheduledTime(ride.getScheduledTime());
 
         dto.setLatitudes(ride.getRoute().getWaypoints().stream()
                 .map(WayPoint::getLatitude)
@@ -502,54 +503,6 @@ public class RideServiceImpl implements RideService {
         }
     }
 
-    private void handleRideFinished(ActiveRide ride) {
-        // Force broadcast location update to ensure front gets last position before ride is finished
-        Driver driver = ride.getDriver();
-        WayPoint finalDestination = ride.getRoute().getWaypoints().getLast();
-        GetDriverLocationDTO finalLocation = new GetDriverLocationDTO(
-                driver.getId(),
-                ride.getId(),
-                finalDestination.getLatitude(),
-                finalDestination.getLongitude(),
-                RideStatus.ACTIVE.toString()
-        );
-        webSocketController.broadcastDriverLocation(driver.getEmail(), finalLocation);
-        webSocketController.broadcastDriverLocationToRide(ride.getId(), finalLocation);
-
-        // Delay to ensure message is sent
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        ride.setStatus(RideStatus.FINISHED);
-        ride.setMovementPathJson(null);
-        ride.setCurrentPathIndex(0);
-        activeRideRepository.save(ride);
-
-        // Notify driver
-        webSocketController.notifyDriverRideFinished(
-                ride.getDriver().getEmail(),
-                ride.getId(),
-                ride.getEstimatedPrice(),
-                ride.getActualStartTime(),
-                LocalDateTime.now()
-        );
-        // Notify passenger(s)
-        webSocketController.notifyPassengerRideFinished(
-                ride.getId(),
-                ride.getEstimatedPrice(),
-                ride.getActualStartTime(),
-                LocalDateTime.now()
-        );
-
-        // Activate any waiting ride for this driver
-        activateWaitingRideForDriver(ride.getDriver());
-
-        // TODO: Transform to CompletedRide and set 'actualEndTime', delete this active ride
-    }
-
     // Activates scheduled ride if driver has any
     private void activateWaitingRideForDriver(Driver driver) {
         ActiveRide waitingRide = activeRideRepository
@@ -688,17 +641,7 @@ public class RideServiceImpl implements RideService {
                 .orElse(null);
         if (ride == null) return null;
 
-        GetDriverActiveRideDTO dto = new GetDriverActiveRideDTO();
-        dto.setRideId(ride.getId());
-        dto.setStartingPoint(ride.getRoute().getStartingPoint());
-        dto.setEndingPoint(ride.getRoute().getEndingPoint());
-        dto.setEstimatedPrice(ride.getEstimatedPrice());
-        dto.setEstimatedTimeMin(ride.getRoute().getEstTimeMin());
-        dto.setPassengerName(ride.getPayingPassenger().getName() + " " + ride.getPayingPassenger().getSurname());
-        dto.setPassengerCount(1 + (ride.getLinkedPassengers() != null ? ride.getLinkedPassengers().size() : 0));
-        dto.setStatus(ride.getStatus().toString());
-
-        return dto;
+        return buildDriverActiveRideDTO(ride);
     }
 
     @Override

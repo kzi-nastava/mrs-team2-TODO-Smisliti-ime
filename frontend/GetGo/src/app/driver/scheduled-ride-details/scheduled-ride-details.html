@@ -1,0 +1,46 @@
+<app-driver-nav-bar></app-driver-nav-bar>
+<div *ngIf="ride(); else loading" class="ride-details">
+
+  <h1>Scheduled Ride Details</h1>
+
+  <p><b>Start location:</b> {{ ride()!.startingPoint }}</p>
+  <p><b>End location:</b> {{ ride()!.endingPoint }}</p>
+
+  <!-- Waypoints -->
+  <div *ngIf="ride()!.waypointAddresses && ride()!.waypointAddresses.length > 0">
+    <p><b>Stops:</b></p>
+    <ul class="waypoint-list">
+      <li *ngFor="let waypoint of ride()!.waypointAddresses">
+        {{ waypoint }}
+      </li>
+    </ul>
+  </div>
+
+  <p><b>Scheduled Date:</b> {{ ride()!.scheduledTime | date:'dd.MM.yyyy' }}</p>
+  <p><b>Scheduled Time:</b> {{ ride()!.scheduledTime | date:'HH:mm' }}</p>
+  <p><b>Vehicle Type:</b> {{ ride()!.vehicleType }}</p>
+  <p><b>Baby Seats Required:</b> {{ ride()!.needsBabySeats ? 'Yes' : 'No' }}</p>
+  <p><b>Pet Friendly Required:</b> {{ ride()!.needsPetFriendly ? 'Yes' : 'No' }}</p>
+  <p><b>Estimated Price:</b> ${{ ride()!.estimatedPrice | number:'1.2-2' }}</p>
+  <p><b>Estimated Duration:</b> {{ ride()!.estimatedDurationMin || 'N/A' }} </p>
+  <p><b>Total Passengers:</b> {{ getTotalPassengerCount() }}</p>
+
+  <div>
+    <p><b>Additional Passengers:</b></p>
+    <ul class="passenger-list" *ngIf="ride()!.linkedPassengerEmails && ride()!.linkedPassengerEmails.length > 0">
+      <li class="passenger-chip" *ngFor="let passenger of ride()!.linkedPassengerEmails">
+        {{ passenger }}
+      </li>
+    </ul>
+    <p *ngIf="!ride()!.linkedPassengerEmails || ride()!.linkedPassengerEmails.length === 0" class="no-passengers">
+      None
+    </p>
+  </div>
+
+</div>
+
+<ng-template #loading>
+  <div class="loading-page">
+    <p>Loading ride details...</p>
+  </div>
+</ng-template>

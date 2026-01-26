@@ -13,6 +13,8 @@ import { DriverHome } from './driver/driver-home/driver-home'
 import { DriverActivate } from './driver/driver-activate/driver-activate';
 import { DriverProfile } from './driver/driver-profile/driver-profile';
 import { DriverChangePassword } from './driver/driver-change-password/driver-change-password';
+import { DriverAllScheduledRides } from './driver/driver-all-scheduled-rides/driver-all-scheduled-rides';
+import { ScheduledRideDetails } from './driver/scheduled-ride-details/scheduled-ride-details';
 import { AdminHome } from './admin/admin-home/admin-home'
 import { AdminProfile } from './admin/admin-profile/admin-profile';
 import { AdminChangePassword } from './admin/admin-change-password/admin-change-password';
@@ -50,6 +52,8 @@ export const routes: Routes = [
   { path: 'driver/driver-home', component: DriverHome, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'driver/driver-profile', component: DriverProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'driver/change-password', component: DriverChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
+  { path: 'driver/all-scheduled', component: DriverAllScheduledRides, canActivate: [AuthGuard], data: { roles: [UserRole.Driver ] } },
+  { path: 'driver/scheduled-rides/:id', component: ScheduledRideDetails, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'admin/admin-home', component: AdminHome, canActivate: [AuthGuard], data: {roles: [UserRole.Admin] } },
   { path: 'admin/admin-profile', component: AdminProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/review-driver-requests', component: AdminReviewDriverRequests, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },

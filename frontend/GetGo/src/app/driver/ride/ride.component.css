@@ -3,6 +3,7 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   padding: 20px;
+  flex: 1;
 }
 
 .item {
@@ -23,8 +24,10 @@
 }
 
 .item h2 {
-  font-size: 20px;
-  margin: 0 0 8px 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
 }
 
 .item p {
@@ -78,6 +81,8 @@
 }
 
 .ride-history-page{
+  display: flex;
+  flex-direction: column;
   background-color: #8FABD4;
   padding-top: 5px;
   min-height: 100vh;
@@ -147,7 +152,6 @@
   background-color: #CBDCEB;
 }
 
-
 .filter-container {
   display: flex;
   flex-direction: column;
@@ -155,4 +159,10 @@
   gap: 10px;
 }
 
+#paginator {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  background-color: #8FABD4;
+}
 

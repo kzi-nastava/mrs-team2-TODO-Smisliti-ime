@@ -38,6 +38,7 @@ export interface GetDriverActiveRideDTO {
   latitudes?: number[];
   longitudes?: number[];
   addresses?: string[];
+  scheduledTime?: string; // Null if ride not scheduled
 }
 
 export interface UpdatedRideDTO {

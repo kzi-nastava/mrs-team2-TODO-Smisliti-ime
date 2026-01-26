@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @NoArgsConstructor
@@ -23,4 +24,5 @@ public class GetDriverActiveRideDTO {
     private List<Double> latitudes;
     private List<Double> longitudes;
     private List<String> addresses;
+    private LocalDateTime scheduledTime; // Null if not scheduled
 }

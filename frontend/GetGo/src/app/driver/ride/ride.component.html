@@ -19,7 +19,7 @@
 
   <div class="list">
   @for(ride of rides(); track ride.id){
-    <div class="item" [routerLink]="['/passenger/rides', ride.id]">
+    <div class="item" [routerLink]="['/driver/rides', ride.id]">
       <p class="card-date"> <b>{{ride.startingTime | date:'dd.MM.yyyy'}}</b></p>
       <h2> <img class="pin-icon" src="/map-pin.svg" alt="Pin icon"> {{ride.startPoint}}</h2>
       <h2 class="location"> <img class="flag-icon" src="/finish-flag.svg" alt="Destination flag"> <span class="location-text">{{ride.endPoint}}</span></h2>

@@ -158,4 +158,5 @@ export class RideService {
   cancelRideByPassenger(rideId: number, body: CancelRideRequestDTO): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/${rideId}/cancel/passenger`, body);
   }
+
 }

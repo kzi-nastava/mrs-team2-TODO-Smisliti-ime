@@ -3,6 +3,8 @@ import { ActivatedRoute } from '@angular/router';
 import { RideService } from '../service/ride.service';
 import { Ride, GetRideDTO } from '../model/ride.model';
 import { CommonModule } from '@angular/common';
+// import { RideService } from '../../service/ride/ride.service';
+import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.model';
 
 @Component({
   selector: 'app-ride-details',
@@ -15,6 +17,8 @@ export class RideDetailsComponent {
   rideId!: number;
 
   ride: Signal<GetRideDTO | undefined>;
+  reports: GetInconsistencyReportDTO[] = [];
+  loadingReports = true;
 
   constructor(private route: ActivatedRoute, private rideService: RideService) {
     this.rideId = Number(this.route.snapshot.paramMap.get('id'));
@@ -23,4 +27,17 @@ export class RideDetailsComponent {
       this.rideService.rides().find(r => r.id === this.rideId)
     );
   }
+
+  ngOnInit(){
+    this.rideService.getInconsistencyReports(this.rideId).subscribe({
+      next: (reports) => {
+        this.reports = reports;
+        this.loadingReports = false;
+      },
+      error: (err) => {
+        this.loadingReports = false;
+      }
+    })
+  }
+
 }

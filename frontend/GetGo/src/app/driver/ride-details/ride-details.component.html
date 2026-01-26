@@ -21,6 +21,27 @@
 
 </div>
 
+<h2>Reported inconsistencies</h2>
+
+<div *ngIf="loadingReports">
+  <p>Loading reports...</p>
+</div>
+
+<div *ngIf="!loadingReports && reports.length === 0">
+  <p>No reports for this ride </p>
+</div>
+
+<div *ngIf="reports.length > 0" class="report-list">
+  <div class="report-card" *ngFor="let report of reports">
+    <p class="report-text">“{{ report.text }}”</p>
+    <p class="report-meta">
+      Reported by <b>{{ report.passengerEmail }}</b>
+      • {{ report.createdAt | date:'dd.MM.yyyy HH:mm' }}
+    </p>
+  </div>
+</div>
+
+
 <ng-template #loading>
   <p>Loading ride details...</p>
 </ng-template>

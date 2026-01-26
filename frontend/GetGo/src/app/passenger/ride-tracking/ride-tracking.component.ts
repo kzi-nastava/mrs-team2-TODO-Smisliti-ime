@@ -92,6 +92,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
         if (ride) {
           console.log('Active ride found:', ride);
           this.activeRide = ride;
+          this.rideTrackingService.startTracking(ride.rideId, ride.status);
           this.calculateTotalRouteDistance();
           this.updateStatusMessage(ride.status);
           this.initializeMapRoute(ride);

@@ -1,0 +1,173 @@
+<app-nav-bar></app-nav-bar>
+
+<form [formGroup]="travelForm" (ngSubmit)="submit()">
+  <div class="home">
+    <div class="left">
+      <h1>Welcome, registered user</h1>
+
+      <!-- Favorite rides section -->
+      <div class="favorites-section">
+        <button
+          type="button"
+          class="favorites-toggle-btn"
+          (click)="toggleFavorites()"
+          [disabled]="loadingFavorites">
+          {{ showFavorites ? 'Hide' : 'Favorites' }}
+          <span *ngIf="favoriteRides.length > 0">({{ favoriteRides.length }})</span>
+        </button>
+
+        <div *ngIf="showFavorites" class="favorites-dropdown">
+          <div *ngIf="loadingFavorites" class="favorites-loading">
+            Loading favorites...
+          </div>
+
+          <div *ngIf="!loadingFavorites && favoriteRides.length === 0" class="favorites-empty">
+            No favorite rides yet. Complete a ride and favorite it from your ride history!
+          </div>
+
+          <div *ngIf="!loadingFavorites && favoriteRides.length > 0" class="favorites-list">
+            <div
+              *ngFor="let favorite of favoriteRides"
+              class="favorite-item"
+              (click)="loadFavoriteRide(favorite)">
+              <div class="favorite-route">
+                <span class="favorite-icon"> Start: </span>
+                <span class="favorite-text">{{ favorite.addresses[0] }}</span>
+              </div>
+              <div class="favorite-route">
+                <span class="favorite-icon"> Dest: </span>
+                <span class="favorite-text">{{ favorite.addresses[favorite.addresses.length - 1] }}</span>
+              </div>
+              <div class="favorite-details">
+                <span *ngIf="favorite.needsBabySeats" class="favorite-badge">BABY</span>
+                <span *ngIf="favorite.needsPetFriendly" class="favorite-badge">PETS</span>
+                <span *ngIf="favorite.vehicleType !== 'ANY'" class="favorite-badge">{{ favorite.vehicleType }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Destinations -->
+      <div class="destinations" formArrayName="destinations">
+        <div *ngFor="let dest of destinations.controls; let i = index" [formGroupName]="i" class="dest-row">
+          <input
+            type="text"
+            formControlName="name"
+            [placeholder]="i === 0 ? 'Starting point' : (i === destinations.length - 1 ? 'Destination' : 'Waypoint ' + i)"
+            (focus)="setActive(i)"
+          />
+
+          <button type="button" class="mini" (click)="addDestination(i)">+</button>
+          <button
+            type="button"
+            class="mini"
+            (click)="removeDestination(i)"
+            [disabled]="destinations.length <= 2"
+          >-</button>
+
+          <div class="error" *ngIf="dest.get('name')?.invalid && dest.get('name')?.touched">
+            {{ i === 0 ? 'Starting point' : (i === destinations.length - 1 ? 'Destination' : 'Waypoint') }} is required
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="activeInputIndex !== null" class="hint">
+        Click on the map to pick location for {{ activeInputIndex === 0 ? 'Starting point' : (activeInputIndex === destinations.length - 1 ? 'Destination' : 'Waypoint ' + activeInputIndex) }}.
+      </div>
+
+      <!-- Vehicle Type -->
+      <div class="form-group">
+        <label>Vehicle Type</label>
+        <select formControlName="vehicleType">
+          <option value="">Any</option>
+          <option value="SUV">SUV</option>
+          <option value="SEDAN">Sedan</option>
+          <option value="LUXURY">Luxury</option>
+        </select>
+      </div>
+
+      <!-- Checkboxes for Baby and Pets -->
+      <div class="checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="hasBaby" class="checkbox-input">
+          <span>I have a baby</span>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="hasPets" class="checkbox-input">
+          <span>I have pets</span>
+        </label>
+      </div>
+
+      <!-- Order Timing -->
+      <div class="form-group">
+        <label>Order Timing</label>
+        <select formControlName="orderTiming">
+          <option value="now">Order now</option>
+          <option value="later">Order later</option>
+        </select>
+      </div>
+
+      <!-- Scheduled Time (shown only if "Order later" is selected) -->
+      <div class="form-group" *ngIf="isOrderLater">
+        <label>Scheduled Time (within next 5 hours)</label>
+        <input
+          type="time"
+          formControlName="scheduledTime"
+          placeholder="Select time"
+        />
+        <div class="time-hint" *ngIf="travelForm.get('scheduledTime')?.value">
+          {{ getScheduledDateTimeDisplay() }}
+        </div>
+      </div>
+
+      <!-- Travel Option -->
+      <div class="form-group">
+        <label>Travel Option</label>
+        <select formControlName="travelOption">
+          <option value="alone">Alone</option>
+          <option value="friends">With friends</option>
+        </select>
+      </div>
+
+      <!-- Friend Emails (shown only if "With friends" is selected) -->
+      <div *ngIf="isWithFriends" class="friend-emails" formArrayName="friendEmails">
+        <div *ngFor="let email of friendEmails.controls; let i = index" [formGroupName]="i" class="dest-row">
+          <input
+            type="email"
+            formControlName="email"
+            placeholder="Friend's email address"
+          />
+
+          <button type="button" class="mini" (click)="removeFriendEmail(i)">-</button>
+
+          <div class="error" *ngIf="email.get('email')?.invalid && email.get('email')?.touched">
+            Valid email is required
+          </div>
+        </div>
+
+        <button type="button" class="add-friend-btn" (click)="addFriendEmail()">
+          + Add Friend Email
+        </button>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="submit" [disabled]="isLoading">Order Ride</button>
+        <button type="button" (click)="cancel()" [disabled]="isLoading">Cancel</button>
+      </div>
+
+      <div *ngIf="isLoading">Ordering ride...</div>
+      <div *ngIf="serverError" class="error">{{ serverError }}</div>
+      <div *ngIf="successMessage" class="success">{{ successMessage }}</div>
+
+      <div class="estimate" *ngIf="estimateMinutes !== null">
+        Estimated driving time: <strong>{{ estimateMinutes }} min</strong>
+      </div>
+    </div>
+
+    <div class="right">
+      <app-map #appMap></app-map>
+    </div>
+  </div>
+</form>

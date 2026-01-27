@@ -1,7 +1,8 @@
 package com.example.getgo.interfaces;
 
+import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.model.Ride;
 
 public interface OnRideClickListener {
-    void onRideClick(Ride ride);
+    void onRideClick(GetRideDTO ride);
 }

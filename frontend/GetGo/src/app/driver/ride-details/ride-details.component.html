@@ -2,24 +2,47 @@
 
   <h1>Ride Details</h1>
 
-  <p><b>Start location:</b> {{ ride()!.startLocation }}</p>
-  <p><b>End location:</b> {{ ride()!.endLocation }}</p>
+  <p><b>Start location:</b> {{ ride()!.startPoint }}</p>
+  <p><b>End location:</b> {{ ride()!.endPoint }}</p>
 
-  <p><b>Date:</b> {{ ride()!.startDate }}</p>
-  <p><b>Start time:</b> {{ ride()!.startTime }}</p>
-  <p><b>End time:</b> {{ ride()!.endTime }}</p>
+  <p><b>Date:</b> {{ ride()!.startingTime | date:'dd.MM.yyyy' }}</p>
+  <p><b>Start time:</b> {{ ride()!.startingTime | date:'HH:mm' }}</p>
+  <p><b>End time:</b> {{ ride()!.finishedTime | date:'HH:mm' }}</p>
   <p><b>Panic activated:</b> {{ ride()!.panicActivated ? 'Yes' : 'No' }}</p>
 
-  <h2>Price: ${{ ride()!.price }}</h2>
+  <h2>Price: {{ ride()!.price }}rsd</h2>
 
   <p><b>Passengers:</b></p>
   <ul class="passenger-list">
     <li class="passenger-chip" *ngFor="let passenger of ride()!.passengers">
-      {{ passenger }}
+      {{ passenger.username }}
     </li>
   </ul>
 
 </div>
+
+<div class="report-section">
+  <h2>Reported inconsistencies</h2>
+
+  <div *ngIf="loadingReports()">
+    <p>Loading reports...</p>
+  </div>
+
+  <div *ngIf="!loadingReports() && reports().length === 0">
+    <p>No reports for this ride </p>
+  </div>
+
+  <div *ngIf="reports().length > 0" class="report-list">
+    <div class="report-card" *ngFor="let report of reports()">
+      <p class="report-text">“{{ report.text }}”</p>
+      <p class="report-meta">
+        Reported by <b>{{ report.passengerEmail }}</b>
+        • {{ report.createdAt | date:'dd.MM.yyyy HH:mm' }}
+      </p>
+    </div>
+  </div>
+</div>
+
 
 <ng-template #loading>
   <p>Loading ride details...</p>

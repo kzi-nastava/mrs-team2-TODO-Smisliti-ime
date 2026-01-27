@@ -28,10 +28,8 @@ public class VehicleController {
     // 2.1.1 Display information
     @GetMapping(value = "/active", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetVehicleDTO>> getActiveVehicles(){
-        Collection<GetVehicleDTO> activeVehicles = new ArrayList<>();
+        Collection<GetVehicleDTO> activeVehicles = vehicleService.getActiveVehicles();
 
-        activeVehicles.add(new GetVehicleDTO(1L, "Toyota Corolla", "Sedan", 44.8176, 20.4569, true));
-        activeVehicles.add(new GetVehicleDTO(2L, "BMW X5", "SUV", 44.8200, 20.4600, true));
         return new ResponseEntity<Collection<GetVehicleDTO>>(activeVehicles, HttpStatus.OK);
     }
 

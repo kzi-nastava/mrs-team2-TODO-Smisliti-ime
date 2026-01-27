@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### OTHER ###
+src/main/resources/application.properties
+/uploads/

@@ -5,25 +5,26 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import rs.getgo.backend.model.enums.UserRole;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name="users")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
-public abstract class User {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String email;
-    private String username;
     private String password;
-    private String firstName;
-    private String lastName;
+    private String name;
+    private String surname;
     private String address;
-    private String phoneNumber;
+    private String phone;
+    private UserRole role;
 
     private boolean isBlocked; // quick check for whether user is blocked, for details check block note
 

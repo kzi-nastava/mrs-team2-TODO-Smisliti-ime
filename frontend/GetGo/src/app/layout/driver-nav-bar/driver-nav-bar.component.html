@@ -7,9 +7,17 @@
 
   <span [routerLink]="['/home']" class="app-title">GetGo</span>
   <span class="spacer"></span>
-<!--  <button mat-raised-button [routerLink]="['/ride']" >Ride</button>-->
-  <span>Driver123</span>
-  <img class="profile-icon" src="/Profile.svg" alt="Profile icon">
+
+  <!-- Driver active toggle -->
+  <mat-slide-toggle
+    class="white-toggle"
+    style="color: white;"
+    [checked]="initialChecked"
+    (change)="onToggleChange($event)">
+  </mat-slide-toggle>
+
+  <span>{{ fullName }}</span>
+  <img class="profile-icon" [src]="auth.userProfilePictureUrl() || '/assets/images/sussy_cat.png'" alt="Profile icon">
 </mat-toolbar>
 
 <mat-menu #menu="matMenu">
@@ -18,7 +26,7 @@
     <span>Home</span>
   </button>
 
-  <button mat-menu-item [routerLink]="['/ride']">
+  <button mat-menu-item [routerLink]="['/driver/ride-history']">
     <mat-icon>directions_car</mat-icon>
     <span>Ride history</span>
   </button>
@@ -28,11 +36,14 @@
     <span>Profile data</span>
   </button>
 
+  <button mat-menu-item [routerLink]="['/driver/all-scheduled']">
+    <mat-icon>edit</mat-icon>
+    <span>All scheduled rides</span>
+  </button>
+
   <button mat-menu-item (click)="logout()">
     <mat-icon>person</mat-icon>
     <span>Log out</span>
   </button>
 
 </mat-menu>
-
-

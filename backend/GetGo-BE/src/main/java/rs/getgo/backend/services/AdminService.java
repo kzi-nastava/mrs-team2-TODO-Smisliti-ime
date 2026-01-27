@@ -1,23 +1,53 @@
 package rs.getgo.backend.services;
 
-import org.springframework.stereotype.Service;
+import rs.getgo.backend.dtos.admin.*;
+import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
+import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
+import rs.getgo.backend.dtos.driver.CreateDriverDTO;
+import rs.getgo.backend.dtos.driver.CreatedDriverDTO;
+import rs.getgo.backend.dtos.request.*;
 
-@Service
-public class AdminService {
+import java.util.List;
 
-    public void blockUser() {
-        // TODO
-    }
+public interface AdminService {
 
-    public void unblockUser() {
-        // TODO
-    }
+    CreatedDriverDTO registerDriver(CreateDriverDTO createDriverDTO);
 
-    public void getReports() {
-        // TODO
-    }
+    GetAdminDTO getAdmin(String email);
 
-    public void createAdmin() {
-        // TODO
-    }
+    UpdatedAdminDTO updateProfile(String email, UpdateAdminDTO updateAdminDTO);
+
+    UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO);
+
+    List<GetPersonalDriverChangeRequestDTO> getPendingPersonalChangeRequests();
+
+    List<GetDriverVehicleChangeRequestDTO> getPendingVehicleChangeRequests();
+
+    List<GetDriverAvatarChangeRequestDTO> getPendingAvatarChangeRequests();
+
+    GetPersonalDriverChangeRequestDTO getPersonalChangeRequest(Long requestId);
+
+    GetDriverVehicleChangeRequestDTO getVehicleChangeRequest(Long requestId);
+
+    GetDriverAvatarChangeRequestDTO getAvatarChangeRequest(Long requestId);
+
+    AcceptDriverChangeRequestDTO approvePersonalChangeRequest(Long requestId, String email);
+
+    AcceptDriverChangeRequestDTO approveVehicleChangeRequest(Long requestId, String email);
+
+    AcceptDriverChangeRequestDTO approveAvatarChangeRequest(Long requestId, String email);
+
+    AcceptDriverChangeRequestDTO rejectPersonalChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO);
+
+    AcceptDriverChangeRequestDTO rejectVehicleChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO);
+
+    AcceptDriverChangeRequestDTO rejectAvatarChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO);
+
+    void blockUser();
+
+    void unblockUser();
+
+    void getReports();
+
+    CreatedAdminDTO createAdmin(CreateAdminDTO createAdminDTO);
 }

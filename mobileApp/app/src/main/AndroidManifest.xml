@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+
 
     <application
         android:allowBackup="true"
@@ -15,7 +17,17 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.GetGo">
+        android:theme="@style/Theme.GetGo"
+        android:usesCleartextTraffic="true">
+
+<!--        <meta-data-->
+<!--            android:name="com.mapbox.maps.accessToken"-->
+<!--            android:value="@string/mapbox_access_token"/>-->
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCBpfJRsfmQwttGjqAApSL8EjTaB4guK5c"/>
+
 
         <activity
             android:name=".RegisterActivity"
@@ -26,9 +38,13 @@
             </intent-filter>
         </activity>
 
-<<<<<<< Updated upstream
         <activity
             android:name=".LoginActivity"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -36,15 +52,7 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="false">
-        </activity>
-=======
-        <activity android:name=".LoginActivity" />
-        <activity android:name=".RegisterActivity" />
         <activity android:name=".ResetPasswordActivity"/>
->>>>>>> Stashed changes
 
     </application>
 

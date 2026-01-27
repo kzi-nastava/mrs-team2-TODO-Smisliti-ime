@@ -39,6 +39,9 @@ public class CompletedRide {
     private String vehicleModel;
     private String vehicleLicensePlate;
 
+    private boolean needsBabySeats;
+    private boolean needsPetFriendly;
+
     private Long driverId;
     private String driverName;
     private String driverEmail;
@@ -65,4 +68,5 @@ public class CompletedRide {
     @ManyToOne
     @JoinColumn(name = "early_stop_location_id")
     private WayPoint earlyStopLocation;
+
 }

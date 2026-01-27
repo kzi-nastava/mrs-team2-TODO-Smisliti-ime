@@ -1,8 +1,12 @@
-<app-nav-bar *ngIf="showNav()"></app-nav-bar>
-<div class="main-content">
-  <router-outlet></router-outlet>
-<!--  <app-map></app-map>-->
+<div class="app-container">
+    <ng-container *ngIf="isGuest(); else registeredNav">
+      <app-unregistered-nav-bar></app-unregistered-nav-bar>
+    </ng-container>
+    <ng-template #registeredNav>
+      <app-nav-bar></app-nav-bar>
+    </ng-template>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
 </div>
-
-
-

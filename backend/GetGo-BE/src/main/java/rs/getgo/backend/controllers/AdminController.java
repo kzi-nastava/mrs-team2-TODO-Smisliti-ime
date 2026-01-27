@@ -1,38 +1,52 @@
 package rs.getgo.backend.controllers;
 
-import rs.getgo.backend.dtos.admin.GetAdminDTO;
-import rs.getgo.backend.dtos.admin.UpdateAdminDTO;
-import rs.getgo.backend.dtos.admin.UpdatedAdminDTO;
+import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
+import rs.getgo.backend.dtos.admin.*;
+import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
+import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.*;
 import rs.getgo.backend.dtos.report.GetReportDTO;
+import rs.getgo.backend.dtos.request.*;
 import rs.getgo.backend.dtos.user.CreatedUserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rs.getgo.backend.services.AdminService;
+import rs.getgo.backend.utils.AuthUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
 
+    private final AdminService adminService;
+
+    public AdminController(AdminService adminService) {
+        this.adminService = adminService;
+    }
+
     // 2.9.3 – Block user
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/users/{id}/block")
     public ResponseEntity<CreatedUserDTO> blockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Blocked", "User");
+        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", true, null);
         return ResponseEntity.ok(response);
     }
 
     // 2.9.3 – Unblock user
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/users/{id}/unblock")
     public ResponseEntity<CreatedUserDTO> unblockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "unblocked@getgo.com", "Active", "User");
+        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", false, null);
         return ResponseEntity.ok(response);
     }
 
     // 2.9.3 – View reports
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/reports")
     public ResponseEntity<List<GetReportDTO>> getReports(
             @RequestParam(required = false) String from,
@@ -43,107 +57,191 @@ public class AdminController {
     }
 
     // 2.9.3 – Create admin profile
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")
-    public ResponseEntity<CreatedUserDTO> createAdmin() {
-        CreatedUserDTO response = new CreatedUserDTO(10L, "admin@getgo.com", "Admin", "User");
+    public ResponseEntity<CreatedAdminDTO> createAdmin(@Valid @RequestBody CreateAdminDTO createAdminDTO) {
+
+        CreatedAdminDTO response = adminService.createAdmin(createAdminDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 2.2.3 - Driver registration
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/drivers/register",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverDTO> registerDriver(
-            @RequestBody CreateDriverDTO request) {
+            @Valid @RequestBody CreateDriverDTO createDriverDTO) {
 
-        CreatedDriverDTO response = new CreatedDriverDTO();
-        response.setId(1L);
-        response.setEmail(request.getEmail());
-        response.setActivated(false);
-
+        CreatedDriverDTO response = adminService.registerDriver(createDriverDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 2.3 - User profile
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetAdminDTO> getProfile() {
-        GetAdminDTO response = new GetAdminDTO();
-        response.setId(3L);
-        response.setEmail("admin@example.com");
-        response.setName("Admin");
-
+        String email = AuthUtils.getCurrentUserEmail();
+        GetAdminDTO response = adminService.getAdmin(email);
         return ResponseEntity.ok(response);
     }
 
     // 2.3 - User profile
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/profile",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedAdminDTO> updateProfile(
-            @RequestBody UpdateAdminDTO request) {
-
-        UpdatedAdminDTO response = new UpdatedAdminDTO();
-        response.setId(3L);
-        response.setName(request.getName());
-
+            @Valid @RequestBody UpdateAdminDTO updateAdminDTO) {
+        String email = AuthUtils.getCurrentUserEmail();
+        UpdatedAdminDTO response = adminService.updateProfile(email, updateAdminDTO);
         return ResponseEntity.ok(response);
     }
 
-    // 2.3 - User profile (reviewing driver requests)
-    @GetMapping(value = "/driver-change-requests", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<GetDriverChangeRequestDTO>> getPendingChangeRequests() {
-
-        List<GetDriverChangeRequestDTO> response = new ArrayList<>();
-        GetDriverChangeRequestDTO request = new GetDriverChangeRequestDTO();
-        request.setRequestId(1L);
-        request.setDriverId(2L);
-        request.setStatus("PENDING");
-        response.add(request);
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 2.3 - User profile (reviewing driver requests)
-    @GetMapping(value = "/driver-change-requests/{requestId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GetDriverChangeRequestDTO> getChangeRequest(
-            @PathVariable Long requestId) {
-
-        GetDriverChangeRequestDTO response = new GetDriverChangeRequestDTO();
-        response.setRequestId(requestId);
-        response.setDriverId(2L);
-        response.setCurrentName("Jane");
-        response.setRequestedName("Janet");
-        response.setStatus("PENDING");
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 2.3 - User profile (reviewing driver requests)
-    @PutMapping(value = "/driver-change-requests/{requestId}/approve", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<UpdatedDriverChangeRequestDTO> approveChangeRequest(
-            @PathVariable Long requestId) {
-
-        UpdatedDriverChangeRequestDTO response = new UpdatedDriverChangeRequestDTO();
-        response.setRequestId(requestId);
-        response.setStatus("APPROVED");
-
-        return ResponseEntity.ok(response);
-    }
-
-    // 2.3 - Reject driver change request
-    @PutMapping(value = "/driver-change-requests/{requestId}/reject",
+    // 2.3 - User profile (Change admin password)
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping(value = "/profile/password",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<UpdatedDriverChangeRequestDTO> rejectChangeRequest(
-            @PathVariable Long requestId,
-            @RequestBody RejectChangeRequestDTO request) {
-
-        UpdatedDriverChangeRequestDTO response = new UpdatedDriverChangeRequestDTO();
-        response.setRequestId(requestId);
-        response.setStatus("REJECTED");
-        response.setRejectionReason(request.getReason());
-
+    public ResponseEntity<UpdatedPasswordDTO> updatePassword(
+            @Valid @RequestBody UpdatePasswordDTO updatePasswordDTO) {
+        String email = AuthUtils.getCurrentUserEmail();
+        UpdatedPasswordDTO response = adminService.updatePassword(email, updatePasswordDTO);
+        if (!response.getSuccess()) {
+            return ResponseEntity.badRequest().body(response);
+        }
         return ResponseEntity.ok(response);
     }
 
+    // 2.3 - Get all pending personal change requests
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "/driver-change-requests/personal",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<GetPersonalDriverChangeRequestDTO>> getPendingPersonalChangeRequests() {
+        List<GetPersonalDriverChangeRequestDTO> response = adminService.getPendingPersonalChangeRequests();
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Get all pending vehicle change requests
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "/driver-change-requests/vehicle",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<GetDriverVehicleChangeRequestDTO>> getPendingVehicleChangeRequests() {
+        List<GetDriverVehicleChangeRequestDTO> response = adminService.getPendingVehicleChangeRequests();
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Get all pending picture change requests
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "/driver-change-requests/picture",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<GetDriverAvatarChangeRequestDTO>> getPendingPictureChangeRequests() {
+        List<GetDriverAvatarChangeRequestDTO> response = adminService.getPendingAvatarChangeRequests();
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Get specific personal change request
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "/driver-change-requests/personal/{requestId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetPersonalDriverChangeRequestDTO> getPersonalChangeRequest(
+            @PathVariable Long requestId) {
+        GetPersonalDriverChangeRequestDTO response = adminService.getPersonalChangeRequest(requestId);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Get specific vehicle change request
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "/driver-change-requests/vehicle/{requestId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetDriverVehicleChangeRequestDTO> getVehicleChangeRequest(
+            @PathVariable Long requestId) {
+        GetDriverVehicleChangeRequestDTO response = adminService.getVehicleChangeRequest(requestId);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Get specific picture change request
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "/driver-change-requests/picture/{requestId}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetDriverAvatarChangeRequestDTO> getPictureChangeRequest(
+            @PathVariable Long requestId) {
+        GetDriverAvatarChangeRequestDTO response = adminService.getAvatarChangeRequest(requestId);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Approve personal change request
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping(value = "/driver-change-requests/personal/{requestId}/approve",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> approvePersonalChangeRequest(
+            @PathVariable Long requestId) {
+        String email = AuthUtils.getCurrentUserEmail();
+        AcceptDriverChangeRequestDTO response = adminService.approvePersonalChangeRequest(requestId, email);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Approve vehicle change request
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping(value = "/driver-change-requests/vehicle/{requestId}/approve",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> approveVehicleChangeRequest(
+            @PathVariable Long requestId) {
+        String email = AuthUtils.getCurrentUserEmail();
+        AcceptDriverChangeRequestDTO response = adminService.approveVehicleChangeRequest(requestId, email);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Approve picture change request
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping(value = "/driver-change-requests/picture/{requestId}/approve",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> approvePictureChangeRequest(
+            @PathVariable Long requestId) {
+        String email = AuthUtils.getCurrentUserEmail();
+        AcceptDriverChangeRequestDTO response = adminService.approveAvatarChangeRequest(requestId, email);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Reject personal change request
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping(value = "/driver-change-requests/personal/{requestId}/reject",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> rejectPersonalChangeRequest(
+            @PathVariable Long requestId,
+            @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
+        String email = AuthUtils.getCurrentUserEmail();
+        AcceptDriverChangeRequestDTO response = adminService.rejectPersonalChangeRequest(
+                requestId, email, rejectDriverChangeRequestDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Reject vehicle change request
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping(value = "/driver-change-requests/vehicle/{requestId}/reject",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> rejectVehicleChangeRequest(
+            @PathVariable Long requestId,
+            @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
+        String email = AuthUtils.getCurrentUserEmail();
+        AcceptDriverChangeRequestDTO response = adminService.rejectVehicleChangeRequest(
+                requestId, email, rejectDriverChangeRequestDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - Reject picture change request
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping(value = "/driver-change-requests/picture/{requestId}/reject",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AcceptDriverChangeRequestDTO> rejectPictureChangeRequest(
+            @PathVariable Long requestId,
+            @RequestBody RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO) {
+        String email = AuthUtils.getCurrentUserEmail();
+        AcceptDriverChangeRequestDTO response = adminService.rejectAvatarChangeRequest(
+                requestId, email, rejectDriverChangeRequestDTO);
+        return ResponseEntity.ok(response);
+    }
 }

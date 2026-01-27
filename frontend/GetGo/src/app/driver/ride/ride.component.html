@@ -20,15 +20,34 @@
   <div class="list">
   @for(ride of rides(); track ride.id){
     <div class="item" [routerLink]="['/driver/rides', ride.id]">
-      <p class="card-date"> <b>{{ride.startDate}}</b></p>
-      <h2> <img class="pin-icon" src="/map-pin.svg" alt="Pin icon"> {{ride.startLocation}}</h2>
-      <h2 class="location"> <img class="flag-icon" src="/finish-flag.svg" alt="Destination flag"> <span class="location-text">{{ride.endLocation}}</span></h2>
+      <p class="card-date"> <b>{{ride.startingTime | date:'dd.MM.yyyy'}}</b></p>
+      <h2>
+        <img class="pin-icon" src="/map-pin.svg" alt="Pin icon">
+        <span> {{ getRideSummary(ride.startPoint) }} </span>
+      </h2>
+      <h2>
+        <img class="flag-icon" src="/finish-flag.svg" alt="Destination flag">
+        <span class="location-text">{{ getRideSummary(ride.endPoint) }}</span>
+      </h2>
 
-      <p> <span class="card-time">Start time: </span> {{ride.startTime}}</p>
-      <p> <span class="card-time">End time: </span> {{ride.endTime}}</p>
-      <h1 class="card-price"><sup>$</sup>{{ride.price}}</h1>
+      <p> <span class="card-time">Start time: </span> {{ride.startingTime | date:'HH:mm'}}</p>
+      <p> <span class="card-time">End time: </span> {{ride.finishedTime | date:'HH:mm'}}</p>
+      <h1 class="card-price">{{ride.price}}rsd</h1>
 
     </div>
   }
 </div>
+
+  <mat-paginator id="paginator"
+    [length]="page().totalElements"
+    [pageSize]="page().pageSize"
+    [pageSizeOptions]="[5, 10, 20]"
+    (page)="onPageChange($event)">
+  </mat-paginator>
+
 </div>
+
+
+
+
+

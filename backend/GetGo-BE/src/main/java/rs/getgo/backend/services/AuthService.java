@@ -1,15 +1,17 @@
 package rs.getgo.backend.services;
 
-import org.springframework.stereotype.Service;
+import rs.getgo.backend.dtos.login.CreateLoginDTO;
+import rs.getgo.backend.dtos.login.CreatedLoginDTO;
+import rs.getgo.backend.dtos.user.CreateUserDTO;
+import rs.getgo.backend.dtos.user.CreatedUserDTO;
 
-@Service
-public class AuthService {
+public interface AuthService {
 
-    public void login() {
-        // TODO: business logic later
-    }
+    CreatedUserDTO register(CreateUserDTO registerPassengerDTO);
 
-    public void register() {
-        // TODO
-    }
+    CreatedLoginDTO login(CreateLoginDTO request);
+
+    void forgotPassword(String email);
+
+    Long verifyResetToken(String token);
 }

@@ -1,0 +1,45 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #8FABD4;
+  padding-top: 40px;
+}
+
+.home {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 24px;
+}
+
+.right {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 320px;
+}
+
+.right app-map {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 880px) {
+  .home {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .right {
+    width: 100%;
+  }
+
+  .right app-map {
+    max-width: 100%;
+  }
+}

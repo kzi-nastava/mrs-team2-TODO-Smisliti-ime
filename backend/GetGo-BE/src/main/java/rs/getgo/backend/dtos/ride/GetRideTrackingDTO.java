@@ -13,5 +13,7 @@ public class GetRideTrackingDTO {
     private Long rideId;
     private Double vehicleLatitude;
     private Double vehicleLongitude;
+    private String startAddress;
+    private String destinationAddress;
     private Double estimatedTime; // minutes
 }

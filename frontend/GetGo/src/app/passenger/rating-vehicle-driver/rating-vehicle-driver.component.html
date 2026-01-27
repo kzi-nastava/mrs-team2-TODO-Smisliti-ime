@@ -1,0 +1,77 @@
+<div class="main-container">
+  <form class="rating-form">
+    <div>
+      <div>Rate Vehicle</div>
+      <div class="stars">
+        <input type="radio" id="vehicle5" name="vehicle" [value]="5" [ngModel]="vehicleRating()" (ngModelChange)="vehicleRating.set($event)" required><label for="vehicle5">&#9733;</label>
+        <input type="radio" id="vehicle4" name="vehicle" [value]="4" [ngModel]="vehicleRating()" (ngModelChange)="vehicleRating.set($event)" required><label for="vehicle4">&#9733;</label>
+        <input type="radio" id="vehicle3" name="vehicle" [value]="3" [ngModel]="vehicleRating()" (ngModelChange)="vehicleRating.set($event)" required><label for="vehicle3">&#9733;</label>
+        <input type="radio" id="vehicle2" name="vehicle" [value]="2" [ngModel]="vehicleRating()" (ngModelChange)="vehicleRating.set($event)" required><label for="vehicle2">&#9733;</label>
+        <input type="radio" id="vehicle1" name="vehicle" [value]="1" [ngModel]="vehicleRating()" (ngModelChange)="vehicleRating.set($event)" required><label for="vehicle1">&#9733;</label>
+      </div>
+    </div>
+    <div>
+      <div>Rate Driver</div>
+      <div class="stars">
+        <input type="radio" id="driver5" name="driver" [value]="5" [ngModel]="driverRating()" (ngModelChange)="driverRating.set($event)" required><label for="driver5">&#9733;</label>
+        <input type="radio" id="driver4" name="driver" [value]="4" [ngModel]="driverRating()" (ngModelChange)="driverRating.set($event)" required><label for="driver4">&#9733;</label>
+        <input type="radio" id="driver3" name="driver" [value]="3" [ngModel]="driverRating()" (ngModelChange)="driverRating.set($event)" required><label for="driver3">&#9733;</label>
+        <input type="radio" id="driver2" name="driver" [value]="2" [ngModel]="driverRating()" (ngModelChange)="driverRating.set($event)" required><label for="driver2">&#9733;</label>
+        <input type="radio" id="driver1" name="driver" [value]="1" [ngModel]="driverRating()" (ngModelChange)="driverRating.set($event)" required><label for="driver1">&#9733;</label>
+      </div>
+    </div>
+    <div>
+      <label for="comment">Leave a comment</label>
+      <textarea id="comment" name="comment" [ngModel]="commentText()" (ngModelChange)="commentText.set($event)" placeholder="Write your comment here..." required></textarea>
+    </div>
+    <button type="button" (click)="submitRating()">Submit</button>
+  </form>
+
+  <div class="ratings-summary">
+    <div class="average-ratings">
+      <div class="avg-title">Vehicle Rating
+        <div class="stars-outer">
+          <div
+            class="stars-inner"
+            [style.width.%]="(avgVehicleRating() / 5) * 100">
+          </div>
+        </div>
+        <span class="avg-number">
+          {{ avgVehicleRating() | number:'1.1-1' }}
+        </span>
+      </div>
+      <div class="avg-title">Driver Rating
+        <div class="stars-outer">
+          <div
+            class="stars-inner"
+            [style.width.%]="(avgDriverRating() / 5) * 100">
+          </div>
+        </div>
+        <span class="avg-number">
+          {{ avgDriverRating() | number:'1.1-1' }}
+        </span>
+      </div>
+    </div>
+    <div class="comments-list">
+      <div class="comment-card" *ngFor="let rating of ratings()">
+        <div class="comment-title">
+          Vehicle Rating
+          <span class="comment-stars">
+          <ng-container *ngFor="let star of [1,2,3,4,5]">
+            <span [innerHTML]="star <= rating.vehicleRating ? '&#9733;' : '&#9734;'"></span>
+          </ng-container>
+          </span>
+        </div>
+        <div class="comment-title">
+          Driver Rating
+          <span class="comment-stars">
+          <ng-container *ngFor="let star of [1,2,3,4,5]">
+            <span [innerHTML]="star <= rating.driverRating ? '&#9733;' : '&#9734;'"></span>
+          </ng-container>
+          </span>
+        </div>
+        <div class="comment-text">{{ rating.comment }}</div>
+      </div>
+    </div>
+  </div>
+</div>

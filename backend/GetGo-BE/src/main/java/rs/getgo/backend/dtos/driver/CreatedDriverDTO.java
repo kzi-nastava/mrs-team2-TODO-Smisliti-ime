@@ -14,5 +14,5 @@ public class CreatedDriverDTO {
     private String email;
     private String name;
     private String surname;
-    private Boolean activated;
+    private String address;
 }

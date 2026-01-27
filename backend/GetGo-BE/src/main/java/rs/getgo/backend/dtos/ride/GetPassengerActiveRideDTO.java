@@ -1,0 +1,25 @@
+package rs.getgo.backend.dtos.ride;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.List;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+public class GetPassengerActiveRideDTO {
+    private Long rideId;
+    private String startingPoint;
+    private String endingPoint;
+    private Double estimatedPrice;
+    private Double estimatedTimeMin;
+    private String driverName;
+    private String status;
+    private List<Double> latitudes;
+    private List<Double> longitudes;
+    private List<String> addresses;
+}

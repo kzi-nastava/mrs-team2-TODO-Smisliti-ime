@@ -1,203 +1,112 @@
 import { Injectable, signal } from '@angular/core';
-import { Ride } from '../model/ride.model';
+import { Ride, GetRideDTO } from '../model/ride.model';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../env/environment';
+import { Signal } from '@angular/core';
+import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.model';
+import { Observable } from 'rxjs';
+
+export interface GetActiveRideDTO {
+  id: number;
+  startingPoint: string;
+  endingPoint: string;
+  waypointAddresses: string[];
+  driverEmail: string;
+  driverName: string;
+  payingPassengerEmail: string;
+  linkedPassengerEmails: string[];
+  estimatedPrice: number;
+  estimatedDurationMin: number;
+  scheduledTime: string;
+  actualStartTime: string;
+  status: string;
+  vehicleType: string;
+  needsBabySeats: boolean;
+  needsPetFriendly: boolean;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+}
+
 
 @Injectable({
   providedIn: 'root',
 })
 
 export class RideService {
-  private allRides: Ride[] =
-    [
-      {
-        id: 1,
-        rideId: 101,
-        startDate: '2025.12.10.',
-        startTime: '08:00',
-        endTime: '08:45',
-        startLocation: 'Belgrade, Serbia',
-        endLocation: 'Novi Sad, Serbia',
-        price: 25.50,
-        panicActivated: false,
-        canceledBy: undefined,
-        status: 'FINISHED',
-        passengers: ['Ana Petrović', 'Marko Jovanović']
-      },
-      {
-        id: 2,
-        rideId: 102,
-        startDate: '2025.12.11.',
-        startTime: '09:30',
-        endTime: '10:15',
-        startLocation: 'Belgrade, Serbia',
-        endLocation: 'Smederevo, Serbia',
-        price: 18.75,
-        panicActivated: false,
-        canceledBy: undefined,
-        status: 'FINISHED',
-        passengers: ['Jelena Ilić']
-      },
-      {
-        id: 3,
-        rideId: 103,
-        startDate: '2025.12.11.',
-        startTime: '11:00',
-        endTime: '11:45',
-        startLocation: 'Novi Sad, Serbia',
-        endLocation: 'Subotica, Serbia',
-        price: 40.00,
-        panicActivated: true,
-        canceledBy: undefined,
-        status: 'FINISHED',
-        passengers: ['Ivan Kovačević', 'Sara Đorđević']
-      },
-      {
-        id: 4,
-        rideId: 104,
-        startDate: '2025.12.12.',
-        startTime: '14:00',
-        endTime: '16:00',
-        startLocation: 'Belgrade, Serbia',
-        endLocation: 'Zemun, Serbia',
-        price: 12.00,
-        panicActivated: false,
-        canceledBy: undefined,
-        status: 'IN_PROGRESS',
-        passengers: ['Petar Lukić']
-      },
-      {
-        id: 5,
-        rideId: 105,
-        startDate: '2025.12.12.',
-        startTime: '15:30',
-        endTime: '16:15',
-        startLocation: 'Novi Sad, Serbia',
-        endLocation: 'Belgrade, Serbia',
-        price: 30.00,
-        panicActivated: false,
-        canceledBy: 'PASSENGER',
-        status: 'CANCELED',
-        passengers: ['Milan Stojanović']
-      },
-      {
-        id: 6,
-        rideId: 106,
-        startDate: '2025.12.13.',
-        startTime: '08:15',
-        endTime: '09:00',
-        startLocation: 'Belgrade, Serbia',
-        endLocation: 'Novi Sad, Serbia',
-        price: 26.50,
-        panicActivated: false,
-        canceledBy: undefined,
-        status: 'FINISHED',
-        passengers: ['Ana Petrović']
-      },
-      {
-        id: 7,
-        rideId: 107,
-        startDate: '2025.12.13.',
-        startTime: '10:30',
-        endTime: '11:10',
-        startLocation: 'Smederevo, Serbia',
-        endLocation: 'Belgrade, Serbia',
-        price: 19.00,
-        panicActivated: true,
-        canceledBy: undefined,
-        status: 'FINISHED',
-        passengers: ['Marko Jovanović', 'Jelena Ilić']
-      },
-      {
-        id: 8,
-        rideId: 108,
-        startDate: '2025.12.14.',
-        startTime: '12:00',
-        endTime: '13:20',
-        startLocation: 'Belgrade, Serbia',
-        endLocation: 'Zemun, Serbia',
-        price: 12.00,
-        panicActivated: false,
-        canceledBy: undefined,
-        status: 'IN_PROGRESS',
-        passengers: ['Ivan Kovačević']
-      },
-      {
-        id: 9,
-        rideId: 109,
-        startDate: '2025.12.14.',
-        startTime: '13:15',
-        endTime: '14:00',
-        startLocation: 'Novi Sad, Serbia',
-        endLocation: 'Subotica, Serbia',
-        price: 42.00,
-        panicActivated: false,
-        canceledBy: 'DRIVER',
-        status: 'CANCELED',
-        passengers: ['Sara Đorđević', 'Petar Lukić']
-      },
-      {
-        id: 10,
-        rideId: 110,
-        startDate: '2025.12.15.',
-        startTime: '09:00',
-        endTime: '09:45',
-        startLocation: 'Belgrade, Serbia',
-        endLocation: 'Novi Sad, Serbia',
-        price: 27.50,
-        panicActivated: false,
-        canceledBy: undefined,
-        status: 'FINISHED',
-        passengers: ['Milan Stojanović']
-      },
-      {
-        id: 11,
-        rideId: 111,
-        startDate: '2025.12.15.',
-        startTime: '11:30',
-        endTime: '12:15',
-        startLocation: 'Belgrade, Serbia',
-        endLocation: 'Smederevo, Serbia',
-        price: 20.00,
-        panicActivated: true,
-        canceledBy: undefined,
-        status: 'IN_PROGRESS',
-        passengers: ['Ana Petrović', 'Jelena Ilić']
-      },
-      {
-        id: 12,
-        rideId: 112,
-        startDate: '2025.12.16.',
-        startTime: '08:45',
-        endTime: '09:30',
-        startLocation: 'Novi Sad, Serbia',
-        endLocation: 'Belgrade, Serbia',
-        price: 28.00,
-        panicActivated: false,
-        canceledBy: undefined,
-        status: 'FINISHED',
-        passengers: ['Marko Jovanović', 'Ivan Kovačević']
-      },
-    ];
-
-  private _rides = signal<Ride[]>(this.allRides);
+  private apiUrl = `${environment.apiHost}/api/rides`
+  private _rides = signal<GetRideDTO[]>([]);
+  private _scheduledRides = signal<GetActiveRideDTO[]>([]);
 
   rides = this._rides.asReadonly()
+  scheduledRides = this._scheduledRides.asReadonly();
 
-  addRide(ride: Ride) {
+  constructor(private http: HttpClient) {}
+
+  getAllScheduledRides(): Observable<GetActiveRideDTO[]> {
+    return this.http.get<GetActiveRideDTO[]>(`${this.apiUrl}/driver/all-scheduled`);
+  }
+
+  loadScheduledRides(): void {
+    const token = localStorage.getItem('authToken');
+    this.http.get<GetActiveRideDTO[]>(`${this.apiUrl}/driver/all-scheduled`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    }).subscribe({
+      next: rides => this._scheduledRides.set(rides),
+      error: err => console.error('Error loading scheduled rides', err)
+    });
+  }
+
+  loadRides(page: number = 0, size: number = 5, startDate?: Date): Observable<PageResponse<GetRideDTO>> {
+//     let url = `${environment.apiHost}/api/drivers/rides`;
+    let params: any = {page, size};
+
+    if (startDate) {
+      const day = startDate.getDate().toString().padStart(2,'0');
+      const month = (startDate.getMonth() + 1).toString().padStart(2,'0');
+      const year = startDate.getFullYear();
+      params.startDate = `${day}-${month}-${year}`;
+
+//       const dateStr = `${day}-${month}-${year}`;
+//       url += `?startDate=${dateStr}`;
+    }
+
+    const token = this.getAuthToken();
+
+    return this.http.get<PageResponse<GetRideDTO>>(
+      `${environment.apiHost}/api/drivers/rides`,
+      {
+        params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      }
+    );
+  }
+
+  setRides(rides: GetRideDTO[]) {
+    this._rides.set(rides);
+  }
+
+  private getAuthToken(): string {
+    const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('No auth token found');
+    }
+    return token;
+  }
+
+  addRide(ride: GetRideDTO) {
     this._rides.update((rides) => [...rides, ride])
   }
 
-  searchRidesByDate(day: number, month: number, year: number){
-    const dateStr = `${year.toString().padStart(4, '0')}.`+
-                           `${month.toString().padStart(2, '0')}.`+
-                           `${day.toString().padStart(2, '0')}.`;
-
-    const filteredRides = this.allRides.filter(ride => ride.startDate === dateStr);
-    this._rides.set(filteredRides);
+  getInconsistencyReports(rideId: number) {
+    return this.http.get<GetInconsistencyReportDTO[]>(`${environment.apiHost}/api/completed-rides/${rideId}/inconsistencies`);
   }
-
-  resetFilter(){
-    this._rides.set(this.allRides);
-  }
-
-
 }

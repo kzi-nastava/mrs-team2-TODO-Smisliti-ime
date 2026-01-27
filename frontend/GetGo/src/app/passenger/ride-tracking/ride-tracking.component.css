@@ -1,0 +1,277 @@
+:host{
+  display: block;
+  background-color: #8FABD4;
+  min-height: 100vh;
+}
+
+.main-container {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 0;
+}
+
+.ride-status {
+  background: #CBDCEB;
+  border-radius: 12px;
+  padding: 24px;
+  width: 350px;
+  box-shadow: 0 2px 8px #0001;
+  border: 2px solid #133E87;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  min-height: 300px;
+  position: relative;
+}
+
+.ride-status h2 {
+  font-size: 2em;
+  font-weight: bold;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.ride-info-box {
+  background: #F6F7E9;
+  border-radius: 10px;
+  border: 1.5px solid #133E87;
+  padding: 16px;
+  width: 90%;
+  margin-bottom: 10px;
+}
+
+.ride-address {
+  font-size: 1.1em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon {
+  font-size: 1.2em;
+}
+
+.ride-progress {
+  margin-top: 12px;
+  display: block;
+  align-items: center;
+  flex-wrap: wrap;
+
+}
+
+.progress-label {
+  font-size: 0.95em;
+  color: #133E87;
+  font-weight: 500;
+}
+
+.progress-value {
+  font-size: 0.95em;
+  color: #0072C3;
+  margin-left: 0px;
+  font-weight: bold;
+}
+
+.progress-bar-bg {
+  background: #d3d3d3;
+  border-radius: 6px;
+  width: 100%;
+  height: 8px;
+  margin: 0 0px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.progress-bar-fg {
+  background: #133E87;
+  height: 100%;
+  border-radius: 6px;
+}
+
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: -5px;
+}
+
+.start-icon {
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: middle;
+}
+
+.finish-icon {
+  width: 2em;
+  height: 1.2em;
+  vertical-align: middle;
+  margin: 0 -6px;
+}
+
+.ride-time {
+  font-size: 0.95em;
+  color: #133E87;
+  margin-left: 8px;
+}
+
+.report-route-btn {
+  background: #133E87;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 0;
+  font-size: 1.1em;
+  width: 90%;
+  margin: 10px 0;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.panic-btn {
+  background: #133E87;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 36px;
+  font-size: 1.3em;
+  font-weight: bold;
+  left: 0;
+  position: absolute;
+  bottom: -70px;
+}
+
+.report-form {
+  background: #fff;
+  border: 1px solid #133E87;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-form textarea {
+  width: 95%;
+  min-height: 60px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  padding: 6px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.report-form button {
+  background: #133E87;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 0;
+  font-size: 1em;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.cancel-btn {
+  background: #bbb;
+  color: #222;
+  margin-top: 0;
+}
+
+.map-container {
+  background: #CBDCEB;
+  border-radius: 12px;
+  border: 2px solid #133E87;
+  box-shadow: 0 2px 8px #0001;
+  padding: 0;
+  width: 1000px;
+  height: 550px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cancel-ride-btn {
+  width: 90%;
+  padding: 10px 0;
+  margin-top: 8px;
+  background-color: #ff6b6b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.cancel-ride-btn:hover {
+  background-color: #ff4b4b;
+}
+
+.cancel-form {
+  margin-top: 10px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #133E87;
+  padding: 10px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cancel-form textarea {
+  width: 95%;
+  min-height: 60px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  padding: 6px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.driver-info {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #133E87;
+}
+
+.driver-info p {
+  margin: 4px 0;
+  font-size: 1em;
+}
+
+.estimated-info {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #133E87;
+}
+
+.estimated-info p {
+  margin: 4px 0;
+  font-size: 0.95em;
+}
+
+.completion-modal {
+  text-align: center;
+}
+
+.completion-modal h2 {
+  margin-bottom: 16px;
+}
+
+.completion-modal .ride-info-box {
+  margin-bottom: 16px;
+}
+
+.completion-modal p {
+  margin: 8px 0;
+  font-size: 1em;
+}

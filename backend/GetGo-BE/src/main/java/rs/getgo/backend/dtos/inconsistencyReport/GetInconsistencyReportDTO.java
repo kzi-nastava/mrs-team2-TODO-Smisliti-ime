@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 public class GetInconsistencyReportDTO {
     private Long id;
-    private Long rideId;
-    private Long passengerId;
+    private String createdAt;
+    private String passengerEmail;
     private String text;
 }

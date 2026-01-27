@@ -1,0 +1,97 @@
+<app-admin-nav-bar></app-admin-nav-bar>
+<div class="page-container">
+  <div class="content-wrapper">
+    <p class="main-title">Driver Change Requests</p>
+
+    @if (isLoading) {
+    <p class="pagination-info">Loading requests...</p>
+    } @else if (allRequests.length === 0) {
+    <p class="pagination-info">No pending requests</p>
+    } @else {
+    <p class="pagination-info">Showing {{ startIndex + 1 }}-{{ endIndex }} of {{ totalRequests }} request{{totalRequests !== 1 ? 's' : ''}}</p>
+
+    <div class="navigation-buttons">
+      <button
+        class="btn-nav btn-previous"
+        [disabled]="currentPage === 1"
+        (click)="previousPage()">
+        Previous
+      </button>
+      <button
+        class="btn-nav btn-next"
+        [disabled]="currentPage === totalPages"
+        (click)="nextPage()">
+        Next
+      </button>
+    </div>
+
+    <!-- Requests List -->
+    <div class="requests-container">
+      @for (request of paginatedRequests; track request.id) {
+      <div class="request-card">
+        <div class="request-header">
+          <div class="request-type-badge">{{ request.type }}</div>
+          <div class="request-date">{{ request.date }}</div>
+        </div>
+
+        <div class="driver-info">
+          <div class="driver-name">{{ request.driverName }}</div>
+          <div class="driver-email">{{ request.driverEmail }}</div>
+        </div>
+
+        @if (request.type !== 'Profile Picture' && request.changes) {
+        <div class="changes-section">
+          <div class="section-title">Requested Changes:</div>
+          @for (change of request.changes; track change.label) {
+          <div class="change-item">
+            <span class="change-label">{{ change.label }}:</span>
+            <span class="change-old">{{ change.oldValue }}</span>
+            <span class="arrow">→</span>
+            <span class="change-new">{{ change.newValue }}</span>
+          </div>
+          }
+        </div>
+        }
+
+        @if (request.type === 'Profile Picture') {
+        <div class="changes-section">
+          <div class="section-title">Requested Profile Picture:</div>
+          <div class="picture-comparison">
+            <div class="picture-box">
+              <div class="picture-label">Current</div>
+              <img [src]="request.currentPicture" alt="Current" class="profile-preview">
+            </div>
+            <span class="arrow-large">→</span>
+            <div class="picture-box">
+              <div class="picture-label">New</div>
+              <img [src]="request.newPicture" alt="New" class="profile-preview">
+            </div>
+          </div>
+        </div>
+        }
+
+        <div class="action-buttons">
+          <button class="btn-approve" (click)="onApprove(request)">Approve</button>
+          <button class="btn-reject" (click)="onReject(request)">Reject</button>
+        </div>
+      </div>
+      }
+    </div>
+
+    <div class="navigation-buttons">
+      <button
+        class="btn-nav btn-previous"
+        [disabled]="currentPage === 1"
+        (click)="previousPage()">
+        Previous
+      </button>
+      <button
+        class="btn-nav btn-next"
+        [disabled]="currentPage === totalPages"
+        (click)="nextPage()">
+        Next
+      </button>
+    </div>
+    }
+  </div>
+</div>

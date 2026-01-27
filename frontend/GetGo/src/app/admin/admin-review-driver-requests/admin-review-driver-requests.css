@@ -1,0 +1,232 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #CBDCEB;
+}
+
+.content-wrapper {
+  width: 50vw;
+  min-height: 100vh;
+  background-color: #8FABD4;
+  margin: 0 auto;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.main-title {
+  text-align: center;
+  font-size: 3.5em;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 20px;
+  color: #000000;
+}
+
+.pagination-info {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #133E87;
+  margin-bottom: 30px;
+  margin-top: 30px;
+  font-weight: 500;
+}
+
+/* Requests Container */
+.requests-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+/* Request Card */
+.request-card {
+  background-color: #CBDCEB;
+  border: 3px solid #133E87;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.request-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.request-type-badge {
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: white;
+  background-color: #133E87;
+}
+
+.request-date {
+  color: #133E87;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Driver Info */
+.driver-info {
+  background-color: #8FABD4;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.driver-name {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #133E87;
+  margin-bottom: 5px;
+}
+
+.driver-email {
+  color: #1E4A7F;
+  font-size: 1rem;
+}
+
+/* Changes Section */
+.changes-section {
+  margin-bottom: 25px;
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #133E87;
+  margin-bottom: 15px;
+}
+
+.change-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.change-label {
+  font-weight: 600;
+  color: #133E87;
+  min-width: 120px;
+}
+
+.change-old {
+  color: #c62828;
+  text-decoration: line-through;
+  font-style: italic;
+}
+
+.arrow {
+  color: #133E87;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.change-new {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+/* Picture Comparison */
+.picture-comparison {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  padding: 20px;
+  background-color: #FFFFFF;
+  border-radius: 10px;
+}
+
+.picture-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.picture-label {
+  font-weight: 600;
+  color: #133E87;
+  font-size: 1rem;
+}
+
+.profile-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #133E87;
+}
+
+.arrow-large {
+  color: #133E87;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+}
+
+.btn-approve,
+.btn-reject {
+  padding: 12px 40px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background-color: #133E87;
+  color: white;
+}
+
+.btn-approve:hover,
+.btn-reject:hover {
+  background-color: #0d3170;
+}
+
+/* Navigation Buttons */
+.navigation-buttons {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.btn-nav {
+  padding: 12px 40px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background-color: #133E87;
+  color: white;
+  margin-bottom: 30px;
+}
+
+.btn-nav:hover {
+  background-color: #0d3170;
+}
+
+.btn-next {
+  order: 2; /* Positions Next button on the right */
+}
+
+.btn-previous {
+  order: 1; /* Positions Previous button on the left */
+}

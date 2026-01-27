@@ -1,17 +1,18 @@
 export interface User {
   email: string;
   username: string;
-  firstName: string;
-  lastName: string;
+  name: string;
+  surname: string;
   password: string;
   address: string;
-  phoneNumber: string;
+  phone: string;
+  profilePictureUrl: string;
   role: UserRole;
 }
 
 export enum UserRole {
-  Admin = "admin",
-  Passenger = "passenger",
-  Driver = "driver",
-  Guest = "guest",
+  Admin = "ADMIN",
+  Passenger = "PASSENGER",
+  Driver = "DRIVER",
+  Guest = "GUEST",
 }

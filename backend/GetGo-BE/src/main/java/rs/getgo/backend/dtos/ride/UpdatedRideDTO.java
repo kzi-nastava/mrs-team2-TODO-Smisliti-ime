@@ -14,5 +14,6 @@ import lombok.Setter;
 public class UpdatedRideDTO {
     private Long id;
     private String status;
-    private LocalDateTime finishedTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 }

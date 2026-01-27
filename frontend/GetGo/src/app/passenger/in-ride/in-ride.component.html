@@ -1,0 +1,70 @@
+<div class="main-container">
+
+  <div class="ride-status">
+    <div *ngIf="isLoading" class="loading-message">
+      <p>Loading ride information...</p>
+    </div>
+
+    <div *ngIf="errorMessage && !isLoading" class="error-message">
+      <p>{{ errorMessage }}</p>
+      <button (click)="loadActiveRide()" class="retry-btn">Retry</button>
+    </div>
+
+    <div *ngIf="activeRide && !isLoading && !rideCompletion">
+      <h2>{{ statusMessage }}</h2>
+
+      <div class="ride-info-box">
+        <div class="ride-address">
+          <img src="assets/images/location.png" alt="Start location" class="start-icon" />
+          {{ activeRide.startingPoint }}
+        </div>
+
+        <div class="ride-address">
+          <img src="assets/images/finish.png" alt="Finish" class="finish-icon" />
+          {{ activeRide.endingPoint }}
+        </div>
+
+        <div *ngIf="activeRide.driverName" class="driver-info">
+          <p><strong>Driver:</strong> {{ activeRide.driverName }}</p>
+        </div>
+
+        <div *ngIf="activeRide.status !== 'FINISHED'" class="estimated-info">
+          <p><strong>Estimated Time:</strong> {{ activeRide.estimatedTimeMin | number:'1.0-0' }} min</p>
+          <p><strong>Estimated Price:</strong> {{ activeRide.estimatedPrice | number:'1.2-2' }} RSD</p>
+        </div>
+      </div>
+
+      <button class="report-route-btn" (click)="showReportForm = true">
+        Report route
+      </button>
+
+      <div *ngIf="showReportForm" class="report-form">
+        <label for="reportText">Describe the issue:</label>
+        <textarea
+          id="reportText"
+          [(ngModel)]="reportText"
+          placeholder="Enter your note...">
+        </textarea>
+        <button (click)="submitReport()">Submit</button>
+        <button class="cancel-btn" (click)="showReportForm = false">Cancel</button>
+      </div>
+
+      <button class="panic-btn">PANIC</button>
+    </div>
+
+    <div *ngIf="rideCompletion" class="completion-modal">
+      <h2>Ride Completed!</h2>
+      <div class="completion-info">
+        <p><strong>Total Price:</strong> {{ rideCompletion.price | number:'1.2-2' }} RSD</p>
+        <p><strong>Duration:</strong> {{ rideCompletion.durationMinutes }} minutes</p>
+        <p><strong>Start Time:</strong> {{ rideCompletion.startTime | date:'short' }}</p>
+        <p><strong>End Time:</strong> {{ rideCompletion.endTime | date:'short' }}</p>
+      </div>
+      <button class="ok-btn" (click)="acknowledgeCompletion()">OK</button>
+    </div>
+  </div>
+
+  <div class="map-container">
+    <app-ride-tracking-map></app-ride-tracking-map>
+  </div>
+</div>

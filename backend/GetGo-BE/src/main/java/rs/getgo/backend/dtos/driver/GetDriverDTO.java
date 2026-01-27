@@ -18,7 +18,7 @@ public class GetDriverDTO {
     private String phone;
     private String address;
     private String profilePictureUrl;
-    private Integer recentHoursWorked;
+    private Double recentHoursWorked;
     // Vehicle info
     private String vehicleModel;
     private String vehicleType;

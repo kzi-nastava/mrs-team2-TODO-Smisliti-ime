@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
@@ -43,7 +44,7 @@ public class PassengerController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPassengerDTO> updateProfile(
-            @RequestBody UpdatePassengerDTO updatePassengerDTO) {
+            @Valid @RequestBody UpdatePassengerDTO updatePassengerDTO) {
         String email = AuthUtils.getCurrentUserEmail();
         UpdatedPassengerDTO response = passengerService.updateProfile(email, updatePassengerDTO);
         return ResponseEntity.ok(response);
@@ -55,7 +56,7 @@ public class PassengerController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
-            @RequestBody UpdatePasswordDTO updatePasswordDTO) {
+            @Valid @RequestBody UpdatePasswordDTO updatePasswordDTO) {
         String email = AuthUtils.getCurrentUserEmail();
         UpdatedPasswordDTO response = passengerService.updatePassword(email, updatePasswordDTO);
         if (!response.getSuccess()) {

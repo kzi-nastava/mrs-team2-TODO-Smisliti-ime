@@ -7,10 +7,12 @@ export const homeGuard: CanActivateFn = (): boolean | UrlTree => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  const role = auth.role();
-  console.log('HomeGuard: current role', role);
+  if (auth.logoutInProgress) {
+    console.log('HomeGuard: logout in progress, staying on current page');
+    return false;
+  }
 
-  if (role === UserRole.Guest) {
+  if (!auth.isLoggedIn()) {
     console.log('HomeGuard: guest user, redirecting to unregistered-home');
     return router.createUrlTree(['/unregistered-home']);
   } else {

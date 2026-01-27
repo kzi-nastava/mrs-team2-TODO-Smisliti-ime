@@ -6,10 +6,9 @@ import { Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.model';
 
-export interface CreatedFavoriteDTO {
-  userId: number;
-  rideId: number;
-  createdAt: string;
+export interface CreatedFavoriteRideDTO {
+  favoriteRideId: number;
+  success: boolean;
 }
 
 @Injectable({
@@ -63,9 +62,9 @@ export class RideService {
     this.loadRides(date);
   }
 
-   resetFilter() {
-     this.loadRides();
-   }
+  resetFilter() {
+    this.loadRides();
+  }
 
   getRideById(id: number) {
     return this.http.get<GetRideDTO>(
@@ -79,13 +78,26 @@ export class RideService {
   }
 
   getInconsistencyReports(rideId: number) {
-    return this.http.get<GetInconsistencyReportDTO[]>(`${environment.apiHost}/api/completed-rides/${rideId}/inconsistencies`);
+    return this.http.get<GetInconsistencyReportDTO[]>(
+      `${environment.apiHost}/api/completed-rides/${rideId}/inconsistencies`
+    );
   }
 
-  favoriteRide(rideId: number): Observable<CreatedFavoriteDTO> {
-    return this.http.post<CreatedFavoriteDTO>(
+  favoriteRide(rideId: number): Observable<CreatedFavoriteRideDTO> {
+    return this.http.post<CreatedFavoriteRideDTO>(
       `${environment.apiHost}/api/rides/${rideId}/favorite`,
       {},
+      {
+        headers: {
+          Authorization: `Bearer ${this.getAuthToken()}`,
+        }
+      }
+    );
+  }
+
+  unfavoriteRide(rideId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${environment.apiHost}/api/rides/${rideId}/favorite`,
       {
         headers: {
           Authorization: `Bearer ${this.getAuthToken()}`,

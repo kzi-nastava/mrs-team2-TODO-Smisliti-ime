@@ -70,7 +70,7 @@ public class RideController {
     }
 
     // 2.6.2 – Track ride
-//    @PreAuthorize("hasRole('PASSENGER') or hasRole('DRIVER')")
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('DRIVER')")
     @GetMapping(value = "/{id}/tracking", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetRideTrackingDTO> getRideTracking(@PathVariable("id") Long id) {
         GetRideTrackingDTO ride = rideTrackingService.getRideTracking(id);
@@ -79,7 +79,7 @@ public class RideController {
     }
 
     // 2.6.2 – Create inconsistency report
-//    @PreAuthorize("hasRole('PASSENGER') or hasRole('DRIVER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('DRIVER') or hasRole('ADMIN')")
     @PostMapping(value = "/{rideId}/inconsistencies", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedInconsistencyReportDTO> createInconsistencyReport(@RequestBody CreateInconsistencyReportDTO report, @PathVariable Long rideId) throws Exception {
 //        CreatedInconsistencyReportDTO savedInconsistencyReport = new CreatedInconsistencyReportDTO(1L, rideId, 501L, report.getText());

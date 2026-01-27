@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
 import rs.getgo.backend.dtos.authentication.UpdateDriverPasswordDTO;
@@ -36,13 +37,19 @@ public class DriverController {
     // 2.9.2 - Get driver rides
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/rides", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Collection<GetRideDTO>> getDriverRides(
-            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
-
+    public ResponseEntity<Page<GetRideDTO>> getDriverRides(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate
+    ) {
         String email = AuthUtils.getCurrentUserEmail();
-        List<GetRideDTO> rides = driverService.getDriverRides(email, startDate);
+
+        Page<GetRideDTO> rides =
+                driverService.getDriverRides(email, startDate, page, size);
+
         return ResponseEntity.ok(rides);
     }
+
 
     // 2.2.3 - Driver registration (validate activation token)
     @GetMapping(value = "/activate/{token}", produces = MediaType.APPLICATION_JSON_VALUE)

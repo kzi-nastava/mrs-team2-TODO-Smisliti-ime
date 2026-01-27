@@ -25,6 +25,14 @@ export interface GetActiveRideDTO {
   needsPetFriendly: boolean;
 }
 
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+}
+
+
 @Injectable({
   providedIn: 'root',
 })
@@ -33,9 +41,13 @@ export class RideService {
   private apiUrl = `${environment.apiHost}/api/rides`
   private _rides = signal<GetRideDTO[]>([]);
   private _scheduledRides = signal<GetActiveRideDTO[]>([]);
+  private _totalElements = signal(0);
 
   rides = this._rides.asReadonly()
   scheduledRides = this._scheduledRides.asReadonly();
+  totalElements = this._totalElements.asReadonly();
+
+
 
   constructor(private http: HttpClient) {}
 
@@ -81,26 +93,35 @@ export class RideService {
     });
   }
 
-  loadRides(startDate?: Date) {
-    let url = `${environment.apiHost}/api/drivers/rides`;
+  loadRides(page: number = 0, size: number = 5, startDate?: Date) {
+//     let url = `${environment.apiHost}/api/drivers/rides`;
+    let params: any = {page, size};
 
     if (startDate) {
       const day = startDate.getDate().toString().padStart(2,'0');
       const month = (startDate.getMonth() + 1).toString().padStart(2,'0');
       const year = startDate.getFullYear();
+      params.startDate = `${day}-${month}-${year}`;
 
-      const dateStr = `${day}-${month}-${year}`;
-      url += `?startDate=${dateStr}`;
+//       const dateStr = `${day}-${month}-${year}`;
+//       url += `?startDate=${dateStr}`;
     }
 
     const token = this.getAuthToken();
 
-    this.http.get<GetRideDTO[]>(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    this.http.get<PageResponse<GetRideDTO>>(
+      `${environment.apiHost}/api/drivers/rides`,
+      {
+        params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
       }
-    }).subscribe({
-      next: rides => this._rides.set(rides),
+    ).subscribe({
+      next: page => {
+        this._rides.set(page.content);
+        this._totalElements.set(page.totalElements);
+      },
       error: err => console.error('Error loading rides', err)
     });
   }
@@ -115,11 +136,6 @@ export class RideService {
 
   addRide(ride: GetRideDTO) {
     this._rides.update((rides) => [...rides, ride])
-  }
-
-  searchRidesByDate(date: Date) {
-//     this.loadRides(driverId, date);
-    this.loadRides(date);
   }
 
    resetFilter() {

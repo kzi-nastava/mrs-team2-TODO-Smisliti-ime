@@ -1,5 +1,6 @@
 package rs.getgo.backend.services;
 
+import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
 import rs.getgo.backend.dtos.authentication.UpdateDriverPasswordDTO;
@@ -16,7 +17,7 @@ import java.util.List;
 
 public interface DriverService {
     List<GetActiveDriverLocationDTO> getActiveDriverLocations();
-    List<GetRideDTO> getDriverRides(String email, LocalDate startDate);
+    Page<GetRideDTO> getDriverRides(String email, LocalDate startDate, int page, int size);
     GetActivationTokenDTO validateActivationToken(String token);
     UpdatedPasswordDTO setDriverPassword(UpdateDriverPasswordDTO passwordDTO);
     GetDriverDTO getDriver(String email);

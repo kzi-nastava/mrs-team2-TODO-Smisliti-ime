@@ -27,10 +27,11 @@ public class CreateAdminDTO {
     private String surname;
 
     @NotBlank(message = "Phone number is required")
-    @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone number must be between 10 and 15 digits")
+    @Pattern(
+            regexp = "^(\\+3816[0-9]|06[0-9])[0-9]{6,7}$",
+            message = "Phone number must be a valid Serbian number (e.g., +381612345678 or 0612345678)")
     private String phoneNumber;
 
     @NotBlank(message = "Address is required")
-    @Size(min = 5, max = 200, message = "Address must be between 5 and 200 characters")
     private String address;
 }

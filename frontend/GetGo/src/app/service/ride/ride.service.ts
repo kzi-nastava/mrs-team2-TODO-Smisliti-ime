@@ -112,6 +112,17 @@ export interface CancelRideRequestDTO {
   reason: string; // driver must provide reason; passenger sends empty string
 }
 
+export interface GetFavoriteRideDTO {
+  id: number;
+  addresses: string[];
+  latitudes: number[];
+  longitudes: number[];
+  vehicleType: string;
+  needsBabySeats: boolean;
+  needsPetFriendly: boolean;
+  linkedPassengerEmails: string[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -162,5 +173,9 @@ export class RideService {
 
   createPanic(rideId: number): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/${rideId}/panic`, {});
+  }
+
+  getFavoriteRides(): Observable<GetFavoriteRideDTO[]> {
+    return this.http.get<GetFavoriteRideDTO[]>(`${this.apiUrl}/favorites`);
   }
 }

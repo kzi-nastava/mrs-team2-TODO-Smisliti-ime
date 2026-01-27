@@ -5,6 +5,49 @@
     <div class="left">
       <h1>Welcome, registered user</h1>
 
+      <!-- Favorite rides section -->
+      <div class="favorites-section">
+        <button
+          type="button"
+          class="favorites-toggle-btn"
+          (click)="toggleFavorites()"
+          [disabled]="loadingFavorites">
+          {{ showFavorites ? 'Hide' : 'Favorites' }}
+          <span *ngIf="favoriteRides.length > 0">({{ favoriteRides.length }})</span>
+        </button>
+
+        <div *ngIf="showFavorites" class="favorites-dropdown">
+          <div *ngIf="loadingFavorites" class="favorites-loading">
+            Loading favorites...
+          </div>
+
+          <div *ngIf="!loadingFavorites && favoriteRides.length === 0" class="favorites-empty">
+            No favorite rides yet. Complete a ride and favorite it from your ride history!
+          </div>
+
+          <div *ngIf="!loadingFavorites && favoriteRides.length > 0" class="favorites-list">
+            <div
+              *ngFor="let favorite of favoriteRides"
+              class="favorite-item"
+              (click)="loadFavoriteRide(favorite)">
+              <div class="favorite-route">
+                <span class="favorite-icon"> Start: </span>
+                <span class="favorite-text">{{ favorite.addresses[0] }}</span>
+              </div>
+              <div class="favorite-route">
+                <span class="favorite-icon"> Dest: </span>
+                <span class="favorite-text">{{ favorite.addresses[favorite.addresses.length - 1] }}</span>
+              </div>
+              <div class="favorite-details">
+                <span *ngIf="favorite.needsBabySeats" class="favorite-badge">BABY</span>
+                <span *ngIf="favorite.needsPetFriendly" class="favorite-badge">PETS</span>
+                <span *ngIf="favorite.vehicleType !== 'ANY'" class="favorite-badge">{{ favorite.vehicleType }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Destinations -->
       <div class="destinations" formArrayName="destinations">
         <div *ngFor="let dest of destinations.controls; let i = index" [formGroupName]="i" class="dest-row">

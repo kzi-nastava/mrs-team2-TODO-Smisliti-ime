@@ -9,10 +9,10 @@ import lombok.Setter;
 @Setter
 public class ForgotPasswordDTO {
 
-    /*@NotBlank(message = "Email is required")
+    @NotBlank(message = "Email is required")
     @Pattern(
             regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
             message = "Email format is invalid"
-    )*/
+    )
     private String email;
 }

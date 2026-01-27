@@ -687,6 +687,8 @@ public class RideServiceImpl implements RideService {
         completedRide.setEndTime(LocalDateTime.now());
         completedRide.setEstimatedPrice(ride.getEstimatedPrice());
         completedRide.setVehicleType(ride.getVehicleType());
+        completedRide.setNeedsBabySeats(ride.isNeedsBabySeats());
+        completedRide.setNeedsPetFriendly(ride.isNeedsPetFriendly());
         completedRide.setDriverId(ride.getDriver() != null ? ride.getDriver().getId() : null);
         completedRide.setDriverName(ride.getDriver() != null ? ride.getDriver().getName() : null);
         completedRide.setDriverEmail(ride.getDriver() != null ? ride.getDriver().getEmail() : null);
@@ -813,6 +815,8 @@ public class RideServiceImpl implements RideService {
         completedRide.setEndTime(endTime);
         completedRide.setEstimatedPrice(ride.getEstimatedPrice());
         completedRide.setVehicleType(ride.getVehicleType());
+        completedRide.setNeedsBabySeats(ride.isNeedsBabySeats());
+        completedRide.setNeedsPetFriendly(ride.isNeedsPetFriendly());
         completedRide.setDriverId(ride.getDriver() != null ? ride.getDriver().getId() : null);
         completedRide.setDriverName(ride.getDriver() != null ? ride.getDriver().getName() : null);
         completedRide.setDriverEmail(ride.getDriver() != null ? ride.getDriver().getEmail() : null);

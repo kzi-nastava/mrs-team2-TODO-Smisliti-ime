@@ -1,4 +1,4 @@
-import { Component, Signal, computed, signal } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { RideService } from '../service/passenger-ride.service';
 import { GetRideDTO } from '../model/ride.model';
@@ -12,7 +12,7 @@ import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.mode
   templateUrl: './ride-details.component.html',
   styleUrl: './ride-details.component.css'
 })
-export class PassengerRideDetailsComponent {
+export class PassengerRideDetailsComponent implements OnInit {
 
   rideId!: number;
 
@@ -20,6 +20,12 @@ export class PassengerRideDetailsComponent {
   loadingRide = signal(true);
   reports = signal<GetInconsistencyReportDTO[]>([]);
   loadingReports = signal(true);
+
+  isFavoriting = signal(false);
+  isUnfavoriting = signal(false);
+  favoriteSuccess = signal(false);
+  unfavoriteSuccess = signal(false);
+  favoriteError = signal<string | null>(null);
 
   constructor(
     private route: ActivatedRoute,
@@ -46,6 +52,66 @@ export class PassengerRideDetailsComponent {
       },
       error: () => {
         this.loadingReports.set(false);
+      }
+    });
+  }
+
+  onFavoriteRide(): void {
+    this.isFavoriting.set(true);
+    this.favoriteSuccess.set(false);
+    this.unfavoriteSuccess.set(false);
+    this.favoriteError.set(null);
+
+    this.rideService.favoriteRide(this.rideId).subscribe({
+      next: (response) => {
+        console.log('Ride favorited successfully:', response);
+        this.favoriteSuccess.set(true);
+        this.isFavoriting.set(false);
+
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          this.favoriteSuccess.set(false);
+        }, 3000);
+      },
+      error: (error) => {
+        console.error('Error favoriting ride:', error);
+        this.favoriteError.set(error.error?.message || 'Failed to favorite ride. Please try again.');
+        this.isFavoriting.set(false);
+
+        // Hide error message after 5 seconds
+        setTimeout(() => {
+          this.favoriteError.set(null);
+        }, 5000);
+      }
+    });
+  }
+
+  onUnfavoriteRide(): void {
+    this.isUnfavoriting.set(true);
+    this.favoriteSuccess.set(false);
+    this.unfavoriteSuccess.set(false);
+    this.favoriteError.set(null);
+
+    this.rideService.unfavoriteRide(this.rideId).subscribe({
+      next: () => {
+        console.log('Ride unfavorited successfully');
+        this.unfavoriteSuccess.set(true);
+        this.isUnfavoriting.set(false);
+
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          this.unfavoriteSuccess.set(false);
+        }, 3000);
+      },
+      error: (error) => {
+        console.error('Error unfavoriting ride:', error);
+        this.favoriteError.set(error.error?.message || 'Failed to unfavorite ride. Please try again.');
+        this.isUnfavoriting.set(false);
+
+        // Hide error message after 5 seconds
+        setTimeout(() => {
+          this.favoriteError.set(null);
+        }, 5000);
       }
     });
   }

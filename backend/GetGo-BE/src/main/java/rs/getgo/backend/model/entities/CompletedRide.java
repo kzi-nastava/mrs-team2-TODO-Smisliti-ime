@@ -39,6 +39,9 @@ public class CompletedRide {
     private String vehicleModel;
     private String vehicleLicensePlate;
 
+    private boolean needsBabySeats;
+    private boolean needsPetFriendly;
+
     private Long driverId;
     private String driverName;
     private String driverEmail;

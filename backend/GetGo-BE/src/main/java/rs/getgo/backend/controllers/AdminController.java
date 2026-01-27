@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.admin.*;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
@@ -58,7 +59,7 @@ public class AdminController {
     // 2.9.3 – Create admin profile
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")
-    public ResponseEntity<CreatedAdminDTO> createAdmin(@RequestBody CreateAdminDTO createAdminDTO) {
+    public ResponseEntity<CreatedAdminDTO> createAdmin(@Valid @RequestBody CreateAdminDTO createAdminDTO) {
 
         CreatedAdminDTO response = adminService.createAdmin(createAdminDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -70,7 +71,7 @@ public class AdminController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverDTO> registerDriver(
-            @RequestBody CreateDriverDTO createDriverDTO) {
+            @Valid @RequestBody CreateDriverDTO createDriverDTO) {
 
         CreatedDriverDTO response = adminService.registerDriver(createDriverDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -91,7 +92,7 @@ public class AdminController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedAdminDTO> updateProfile(
-            @RequestBody UpdateAdminDTO updateAdminDTO) {
+            @Valid @RequestBody UpdateAdminDTO updateAdminDTO) {
         String email = AuthUtils.getCurrentUserEmail();
         UpdatedAdminDTO response = adminService.updateProfile(email, updateAdminDTO);
         return ResponseEntity.ok(response);
@@ -103,7 +104,7 @@ public class AdminController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
-            @RequestBody UpdatePasswordDTO updatePasswordDTO) {
+            @Valid @RequestBody UpdatePasswordDTO updatePasswordDTO) {
         String email = AuthUtils.getCurrentUserEmail();
         UpdatedPasswordDTO response = adminService.updatePassword(email, updatePasswordDTO);
         if (!response.getSuccess()) {

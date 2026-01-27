@@ -660,12 +660,19 @@ public class RideServiceImpl implements RideService {
 
         Panic panic = new Panic();
         panic.setRideId(ride.getId());
-        panic.setTriggeredByUserId(userRepository.findIdByEmail(email));
-        panic.setTriggeredAt(LocalDateTime.now());
+        Long userId = userRepository.findIdByEmail(email);
+        panic.setTriggeredByUserId(userId);
+        LocalDateTime triggeredAt = LocalDateTime.now();
+        panic.setTriggeredAt(triggeredAt);
 
         panicRepository.save(panic);
 
-        // TODO: notificationService.notifyAdminsAboutPanic(panic);
+        webSocketController.notifyAdminsPanicTriggered(
+                ride.getId(),
+                userId,
+                email,
+                triggeredAt
+        );
     }
 
     @Override
@@ -703,6 +710,7 @@ public class RideServiceImpl implements RideService {
         completedRide.setCompletedNormally(true);
         completedRide.setCancelled(false);
         completedRide.setStoppedEarly(false);
+
         completedRide.setPanicPressed(false);
 
 
@@ -785,6 +793,14 @@ public class RideServiceImpl implements RideService {
         response.setStatus("FINISHED");
         response.setEndTime(completedRide.getEndTime());
 
+        // When active ride is completed, panic gets completed rideId
+        List<Optional<Panic>> panics = panicRepository.findByRideId(rideId);
+        for (Optional<Panic> panic : panics) {
+            if (panic.isPresent()) {
+                panic.get().setRideId(completedRide.getId());
+            }
+        }
+
         activeRideRepository.delete(ride);
 
         if (driver != null) {
@@ -866,6 +882,14 @@ public class RideServiceImpl implements RideService {
         if (!ridePanics.isEmpty()) {
             panicRepository.deleteAll(ridePanics);
         }
+
+        // NEW: WS notification to passenger
+        webSocketController.notifyPassengerRideStoppedEarly(
+                ride.getId(),
+                actualPrice,
+                startTime,
+                endTime
+        );
 
         RideCompletionDTO response = new RideCompletionDTO();
         response.setRideId(completedRide.getId());

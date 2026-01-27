@@ -131,4 +131,13 @@ export class WebSocketService {
   get connectionStatus(): boolean {
     return this.connected$.value;
   }
+
+  subscribeToAdminPanic(): Observable<any> {
+    return this.createSubscription('/socket-publisher/admin/panic-alerts');
+  }
+
+  subscribeToPassengerRideStopped(rideId: number): Observable<any> {
+    return this.createSubscription(`/socket-publisher/ride/${rideId}/ride-stopped`);
+  }
+
 }

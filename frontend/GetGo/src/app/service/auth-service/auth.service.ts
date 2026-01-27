@@ -9,6 +9,7 @@ import {Router} from '@angular/router';
 export class AuthService {
   private jwtHelper = new JwtHelperService();
   private TOKEN_KEY = 'authToken';
+  public logoutInProgress = false;
 
   private roleSignal = signal<UserRole>(UserRole.Guest);
   public role = this.roleSignal.asReadonly();
@@ -57,10 +58,18 @@ export class AuthService {
   }
 
   logout() {
+    if (this.logoutInProgress) {
+      console.log('AuthService: logout already in progress, ignoring');
+      return;
+    }
+
     console.log('AuthService: logging out user');
+    this.logoutInProgress = true;
 
     this.http.post<boolean>(`${environment.apiHost}/api/auth/logout`, {}).subscribe({
       next: (allowed) => {
+        this.logoutInProgress = false;
+
         if (allowed) {
           console.log('AuthService: logout allowed by server, clearing session');
           this.clearSession();
@@ -70,6 +79,8 @@ export class AuthService {
         }
       },
       error: (err) => {
+        this.logoutInProgress = false;
+
         console.error('AuthService: logout request failed', err);
 
         if (err.status === 401) {

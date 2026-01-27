@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import rs.getgo.backend.model.enums.VehicleType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -23,12 +24,17 @@ public class FavoriteRide {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "route_id")
-    private Route route;
+    @Column(name = "source_completed_ride_id", nullable = false)
+    private Long completedRideId; // Completed ride the favorite binds to
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "favorite_ride_id")
+    @OrderColumn(name = "waypoint_order")
+    private List<FavoriteWaypoint> waypoints = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     private VehicleType vehicleType;
+
     private boolean needsBabySeats;
     private boolean needsPetFriendly;
 

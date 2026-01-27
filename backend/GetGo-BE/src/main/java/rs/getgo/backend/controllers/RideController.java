@@ -1,17 +1,13 @@
 package rs.getgo.backend.controllers;
 
-import org.apache.coyote.Response;
 import org.springframework.security.access.prepost.PreAuthorize;
-import rs.getgo.backend.dtos.completedRide.CompletedRideDTO;
-import rs.getgo.backend.dtos.favorite.CreatedFavoriteDTO;
+import rs.getgo.backend.dtos.favorite.CreatedFavoriteRideDTO;
+import rs.getgo.backend.dtos.favorite.GetFavoriteRideDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
-import rs.getgo.backend.dtos.inconsistencyReport.GetInconsistencyReportDTO;
 import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
 import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
-import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
-import rs.getgo.backend.model.entities.CompletedRide;
 import rs.getgo.backend.services.CompletedRideService;
 import rs.getgo.backend.services.RideEstimateService;
 import rs.getgo.backend.services.RideService;
@@ -19,12 +15,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rs.getgo.backend.services.impl.rides.FavoriteRideService;
 import rs.getgo.backend.services.impl.rides.RideTrackingService;
 import rs.getgo.backend.services.impl.rides.ScheduledRideService;
 import rs.getgo.backend.utils.AuthUtils;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -37,18 +32,21 @@ public class RideController {
     private final RideTrackingService rideTrackingService;
     private final ScheduledRideService scheduledRideService;
     private final CompletedRideService completedRideService;
+    private final FavoriteRideService favoriteRideService;
 
 
     public RideController(RideEstimateService rideEstimateService,
                           RideService rideService,
                           RideTrackingService rideTrackingService,
                           ScheduledRideService scheduledRideService,
-                          CompletedRideService completedRideService) {
+                          CompletedRideService completedRideService,
+                          FavoriteRideService favoriteRideService) {
         this.rideEstimateService = rideEstimateService;
         this.rideService = rideService;
         this.rideTrackingService = rideTrackingService;
         this.scheduledRideService = scheduledRideService;
         this.completedRideService = completedRideService;
+        this.favoriteRideService = favoriteRideService;
     }
 
     @PreAuthorize("hasRole('PASSENGER')")
@@ -195,25 +193,27 @@ public class RideController {
     // 2.4.3 - Calling favorite ride
     @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/favorites", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<GetRideDTO>> getFavoriteRides() {
-        List<GetRideDTO> response = new ArrayList<>();
+    public ResponseEntity<List<GetFavoriteRideDTO>> getFavoriteRides() {
+        String email = AuthUtils.getCurrentUserEmail();
+        List<GetFavoriteRideDTO> response = favoriteRideService.getFavoriteUserRides(email);
         return ResponseEntity.ok(response);
     }
 
     // 2.4.3 - Calling favorite ride
     @PreAuthorize("hasRole('PASSENGER')")
-    @PostMapping(value = "/{rideId}/favorite", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedFavoriteDTO> favoriteRide(@PathVariable Long rideId) {
-        CreatedFavoriteDTO response = new CreatedFavoriteDTO();
-        response.setRideId(rideId);
-        response.setCreatedAt(LocalDateTime.now());
+    @PostMapping(value = "/{completedRideId}/favorite", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CreatedFavoriteRideDTO> favoriteRide(@PathVariable Long completedRideId) {
+        String email = AuthUtils.getCurrentUserEmail();
+        CreatedFavoriteRideDTO response = favoriteRideService.favoriteRide(email, completedRideId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 2.4.3 - Calling favorite ride
     @PreAuthorize("hasRole('PASSENGER')")
-    @DeleteMapping("/{rideId}/favorite")
-    public ResponseEntity<Void> unfavoriteRide(@PathVariable Long rideId) {
+    @DeleteMapping("/{completedRideId}/favorite")
+    public ResponseEntity<Void> unfavoriteRide(@PathVariable Long completedRideId) {
+        String email = AuthUtils.getCurrentUserEmail();
+        favoriteRideService.unfavoriteRide(completedRideId, email);
         return ResponseEntity.noContent().build();
     }
 }

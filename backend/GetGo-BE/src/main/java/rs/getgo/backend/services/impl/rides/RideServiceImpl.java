@@ -187,7 +187,6 @@ public class RideServiceImpl implements RideService {
 
     @Override
     public CreatedRideResponseDTO orderRide(CreateRideRequestDTO createRideRequestDTO, String userEmail) {
-        // TODO: DO WITH VALIDATORS
         // Validate request
         if (createRideRequestDTO.getLatitudes().size() < 2 ||
                 createRideRequestDTO.getLatitudes().size() != createRideRequestDTO.getLongitudes().size() ||
@@ -367,10 +366,24 @@ public class RideServiceImpl implements RideService {
         }
         route.setWaypoints(waypoints);
 
-        // TODO: Call Maps API to get distance, time, and polyline OR get from front based on implementation
-        route.setEstDistanceKm(10.0);
-        route.setEstTimeMin(20.0);
-        route.setEncodedPolyline("");
+        double totalDistance = 0.0;
+        double totalTime = 0.0;
+        for (int i = 0; i < waypoints.size() - 1; i++) {
+            WayPoint from = waypoints.get(i);
+            WayPoint to = waypoints.get(i + 1);
+
+            MapboxRoutingService.RouteResponse segment = routingService.getRoute(
+                    from.getLatitude(), from.getLongitude(),
+                    to.getLatitude(), to.getLongitude()
+            );
+
+            totalDistance += segment.distanceKm();
+            totalTime += segment.realDurationSeconds() / 60.0;
+        }
+
+        route.setEstDistanceKm(totalDistance); // Distance from start to end point
+        route.setEstTimeMin(totalTime); // Duration from start to end point
+        route.setEncodedPolyline(""); // TODO: remove field or use this instead of movementPathJson in ActiveRide
 
         return route;
     }
@@ -434,6 +447,33 @@ public class RideServiceImpl implements RideService {
         response.setStartTime(null);
 
         return response;
+    }
+
+    private void initializeDriverToPickupMovement(ActiveRide ride) {
+        Driver driver = ride.getDriver();
+        WayPoint pickupPoint = ride.getRoute().getWaypoints().getFirst();
+        Double driverLat = driver.getCurrentLatitude();
+        Double driverLng = driver.getCurrentLongitude();
+
+        if (driverLat == null || driverLng == null) {
+            driverLat = defaultDriverLatitude;
+            driverLng = defaultDriverLongitude;
+            driver.setCurrentLatitude(driverLat);
+            driver.setCurrentLongitude(driverLng);
+            driver.setLastLocationUpdate(LocalDateTime.now());
+            driverRepository.save(driver);
+        }
+
+        MapboxRoutingService.RouteResponse route = routingService.getRoute(
+                driverLat, driverLng,
+                pickupPoint.getLatitude(), pickupPoint.getLongitude()
+        );
+
+        String pathJson = convertCoordinatesToJson(route.coordinates());
+
+        ride.setMovementPathJson(pathJson); // Set movement to: driver location -> start point
+        ride.setCurrentPathIndex(0);
+        ride.setTargetWaypointIndex(0);
     }
 
     @Override
@@ -569,38 +609,6 @@ public class RideServiceImpl implements RideService {
         return response;
     }
 
-    private void initializeDriverToPickupMovement(ActiveRide ride) {
-        Driver driver = ride.getDriver();
-        WayPoint pickupPoint = ride.getRoute().getWaypoints().getFirst();
-        Double driverLat = driver.getCurrentLatitude();
-        Double driverLng = driver.getCurrentLongitude();
-
-        if (driverLat == null || driverLng == null) {
-            driverLat = defaultDriverLatitude;
-            driverLng = defaultDriverLongitude;
-            driver.setCurrentLatitude(driverLat);
-            driver.setCurrentLongitude(driverLng);
-            driver.setLastLocationUpdate(LocalDateTime.now());
-            driverRepository.save(driver);
-        }
-
-        MapboxRoutingService.RouteResponse route = routingService.getRoute(
-                driverLat, driverLng,
-                pickupPoint.getLatitude(), pickupPoint.getLongitude()
-        );
-
-        String pathJson = convertCoordinatesToJson(route.coordinates());
-
-        ride.setMovementPathJson(pathJson);
-        ride.setCurrentPathIndex(0);
-        ride.setEstimatedDurationMin(route.realDurationSeconds() / 60.0);
-        ride.setTargetWaypointIndex(0);
-
-        Route rideRoute = ride.getRoute();
-        rideRoute.setEstDistanceKm(route.distanceKm());
-        rideRoute.setEstTimeMin(route.realDurationSeconds() / 60.0);
-    }
-
     private void generateNextSegmentPath(ActiveRide ride) {
         List<WayPoint> waypoints = ride.getRoute().getWaypoints();
         Integer currentTarget = ride.getTargetWaypointIndex();
@@ -614,6 +622,7 @@ public class RideServiceImpl implements RideService {
                 to.getLatitude(), to.getLongitude()
         );
 
+        // Set movement of active ride to waypoint(i) -> waypoint(j) where waypoint(0) is start point and (n-1) is dest.
         String pathJson = convertCoordinatesToJson(route.coordinates());
         ride.setMovementPathJson(pathJson);
         ride.setCurrentPathIndex(0);

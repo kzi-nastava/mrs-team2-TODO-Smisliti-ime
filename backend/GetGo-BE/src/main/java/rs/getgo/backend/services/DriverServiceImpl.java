@@ -1,7 +1,6 @@
 package rs.getgo.backend.services;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -249,8 +248,7 @@ public class DriverServiceImpl implements DriverService {
 
         dto.setProfilePictureUrl(driver.getProfilePictureUrl());
 
-        // TODO: Calculate recent hours worked in last 24h
-        dto.setRecentHoursWorked(0);
+        dto.setRecentHoursWorked(calculateRecentHoursWorked(email));
 
         return dto;
     }
@@ -469,45 +467,17 @@ public class DriverServiceImpl implements DriverService {
         return driver.getVehicle().getType() == ride.getVehicleType();
     }
 
-    private boolean hasExceededWorkingHours(Driver driver) {
-        List<CompletedRide> recentRides = completedRideRepository
-                .findByDriverIdAndEndTimeAfter(driver.getId(), LocalDateTime.now().minusHours(24));
-
-        // Calculate total working hours
-        double totalMinutes = 0;
-        for (CompletedRide completedRide : recentRides) {
-            if (completedRide.getStartTime() != null && completedRide.getEndTime() != null) {
-                long minutes = java.time.Duration.between(
-                        completedRide.getStartTime(),
-                        completedRide.getEndTime()
-                ).toMinutes();
-                totalMinutes += minutes;
-            }
-        }
-
-        // Factor in current driving time
-        ActiveRide currentRide = activeRideRepository
-                .findByDriverAndStatus(driver, RideStatus.ACTIVE)
-                .orElse(null);
-        if (currentRide != null && currentRide.getActualStartTime() != null) {
-            long currentRideMinutes = java.time.Duration.between(
-                    currentRide.getActualStartTime(),
-                    LocalDateTime.now()
-            ).toMinutes();
-            totalMinutes += currentRideMinutes;
-        }
-
-        return (totalMinutes / 60.0) >= 8.0;
-    }
-
     private boolean isFree(Driver driver) {
         return !activeRideRepository
                 .existsByDriverAndStatusIn(
                         driver,
                         List.of(
-                                RideStatus.ACTIVE,
+                                RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE,
+                                RideStatus.DRIVER_READY,
                                 RideStatus.DRIVER_INCOMING,
-                                RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE
+                                RideStatus.DRIVER_ARRIVED,
+                                RideStatus.ACTIVE,
+                                RideStatus.DRIVER_ARRIVED_AT_DESTINATION
                         )
                 );
     }
@@ -590,5 +560,33 @@ public class DriverServiceImpl implements DriverService {
         }
 
         return closest;
+    }
+
+    public double calculateRecentHoursWorked(String email) {
+        Driver driver = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
+
+        LocalDateTime twentyFourHoursAgo = LocalDateTime.now().minusHours(24);
+
+        List<CompletedRide> recentRides = completedRideRepository
+                .findByDriverIdAndEndTimeAfter(driver.getId(), twentyFourHoursAgo);
+
+        double totalMinutes = 0.0;
+
+        for (CompletedRide ride : recentRides) {
+            if (ride.getStartTime() != null && ride.getEndTime() != null) {
+                long minutes = java.time.Duration.between(
+                        ride.getStartTime(),
+                        ride.getEndTime()
+                ).toMinutes();
+                totalMinutes += minutes;
+            }
+        }
+
+        return Math.round((totalMinutes / 60.0) * 100.0) / 100.0;
+    }
+
+    public boolean hasExceededWorkingHours(Driver driver) {
+        return calculateRecentHoursWorked(driver.getEmail()) >= 8.0;
     }
 }

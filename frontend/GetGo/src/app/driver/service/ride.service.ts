@@ -41,45 +41,15 @@ export class RideService {
   private apiUrl = `${environment.apiHost}/api/rides`
   private _rides = signal<GetRideDTO[]>([]);
   private _scheduledRides = signal<GetActiveRideDTO[]>([]);
-  private _totalElements = signal(0);
 
   rides = this._rides.asReadonly()
   scheduledRides = this._scheduledRides.asReadonly();
-  totalElements = this._totalElements.asReadonly();
-
-
 
   constructor(private http: HttpClient) {}
 
   getAllScheduledRides(): Observable<GetActiveRideDTO[]> {
     return this.http.get<GetActiveRideDTO[]>(`${this.apiUrl}/driver/all-scheduled`);
   }
-
-//   loadRides(driverId: number, startDate?: Date) {
-//       let url = `${environment.apiHost}/api/drivers/${driverId}/rides`;
-//       if (startDate) {
-//         const dateStr = `${startDate.getFullYear()}-${(startDate.getMonth()+1).toString().padStart(2,'0')}-${startDate.getDate().toString().padStart(2,'0')}`;
-//         url += `?startDate=${dateStr}`;
-//       }
-//
-//       const token = localStorage.getItem('authToken');
-//       this.http.get<GetRideDTO[]>(url,
-//         {
-//           headers: {
-//             Authorization: `Bearer ${token}`,
-//           }
-//         })
-//         .subscribe({
-//           next: (rides) => {
-//             console.log('Rides from API:', rides);
-// //             const mappedRides = rides.map(r => ({...r,panicActivated: false  // default value
-// //             }));
-//             this._rides.set(rides);
-// //             this._rides.set(mappedRides);
-//           },
-//           error: (err) => console.error("Error loading rides", err)
-//         });
-//     }
 
   loadScheduledRides(): void {
     const token = localStorage.getItem('authToken');
@@ -93,7 +63,7 @@ export class RideService {
     });
   }
 
-  loadRides(page: number = 0, size: number = 5, startDate?: Date) {
+  loadRides(page: number = 0, size: number = 5, startDate?: Date): Observable<PageResponse<GetRideDTO>> {
 //     let url = `${environment.apiHost}/api/drivers/rides`;
     let params: any = {page, size};
 
@@ -109,7 +79,7 @@ export class RideService {
 
     const token = this.getAuthToken();
 
-    this.http.get<PageResponse<GetRideDTO>>(
+    return this.http.get<PageResponse<GetRideDTO>>(
       `${environment.apiHost}/api/drivers/rides`,
       {
         params,
@@ -117,13 +87,11 @@ export class RideService {
           Authorization: `Bearer ${token}`,
         }
       }
-    ).subscribe({
-      next: page => {
-        this._rides.set(page.content);
-        this._totalElements.set(page.totalElements);
-      },
-      error: err => console.error('Error loading rides', err)
-    });
+    );
+  }
+
+  setRides(rides: GetRideDTO[]) {
+    this._rides.set(rides);
   }
 
   private getAuthToken(): string {
@@ -137,11 +105,6 @@ export class RideService {
   addRide(ride: GetRideDTO) {
     this._rides.update((rides) => [...rides, ride])
   }
-
-   resetFilter() {
-//      this.loadRides(driverId);
-     this.loadRides();
-   }
 
   getInconsistencyReports(rideId: number) {
     return this.http.get<GetInconsistencyReportDTO[]>(`${environment.apiHost}/api/completed-rides/${rideId}/inconsistencies`);

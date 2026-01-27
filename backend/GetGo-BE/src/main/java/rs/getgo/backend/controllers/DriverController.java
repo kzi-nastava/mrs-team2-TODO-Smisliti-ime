@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
@@ -63,7 +64,7 @@ public class DriverController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> setDriverPassword(
-            @RequestBody UpdateDriverPasswordDTO updateDriverPasswordDTO) {
+            @Valid @RequestBody UpdateDriverPasswordDTO updateDriverPasswordDTO) {
 
         UpdatedPasswordDTO response = driverService.setDriverPassword(updateDriverPasswordDTO);
         return ResponseEntity.ok(response);
@@ -84,7 +85,7 @@ public class DriverController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverChangeRequestDTO> requestPersonalInfoChange(
-            @RequestBody UpdateDriverPersonalDTO updateDriverPersonalDTO) {
+            @Valid @RequestBody UpdateDriverPersonalDTO updateDriverPersonalDTO) {
 
         String email = AuthUtils.getCurrentUserEmail();
         CreatedDriverChangeRequestDTO response = driverService.requestPersonalInfoChange(email, updateDriverPersonalDTO);
@@ -97,7 +98,7 @@ public class DriverController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverChangeRequestDTO> requestVehicleInfoChange(
-            @RequestBody UpdateDriverVehicleDTO updateDriverVehicleDTO) {
+            @Valid @RequestBody UpdateDriverVehicleDTO updateDriverVehicleDTO) {
 
         String email = AuthUtils.getCurrentUserEmail();
         CreatedDriverChangeRequestDTO response = driverService.requestVehicleInfoChange(email, updateDriverVehicleDTO);
@@ -123,7 +124,7 @@ public class DriverController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
-            @RequestBody UpdatePasswordDTO updatePasswordDTO) {
+            @Valid @RequestBody UpdatePasswordDTO updatePasswordDTO) {
 
         String email = AuthUtils.getCurrentUserEmail();
         UpdatedPasswordDTO response = driverService.updatePassword(email, updatePasswordDTO);

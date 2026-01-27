@@ -38,8 +38,6 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   private totalRouteDistance: number = 0;
   private initialEstimatedMinutes: number = 0;
 
-
-
   isLoading = true;
   errorMessage: string | null = null;
   statusMessage: string = '';
@@ -48,6 +46,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   private locationSubscription?: Subscription;
   private statusSubscription?: Subscription;
   private completionSubscription?: Subscription;
+  private stopSubscription?: Subscription;
 
   @ViewChild(RideTrackingMapComponent, { read: ElementRef, static: false })
   private mapComponent?: ElementRef<HTMLElement>;
@@ -77,6 +76,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     if (this.locationSubscription) this.locationSubscription.unsubscribe();
     if (this.statusSubscription) this.statusSubscription.unsubscribe();
     if (this.completionSubscription) this.completionSubscription.unsubscribe();
+    if (this.stopSubscription) this.stopSubscription.unsubscribe();
 
     this.webSocketService.disconnect();
   }
@@ -159,6 +159,20 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
         },
         error: (err) => console.error('Error receiving completion:', err)
       });
+
+    this.stopSubscription = this.webSocketService
+      .subscribeToPassengerRideStopped(rideId)
+      .subscribe({
+        next: (data: any) => {
+          console.log('⏸️ Ride stopped:', data);
+          if (this.activeRide) {
+            this.activeRide.status = 'STOPPED';
+            this.statusMessage = 'Ride has been stopped.';
+          }
+          this.cdr.detectChanges();
+        },
+        error: (err) => console.error('Error receiving ride stopped:', err)
+      });
   }
 
   private initializeMapRoute(ride: GetPassengerActiveRideDTO) {
@@ -216,6 +230,9 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
         break;
       case 'ACTIVE':
         this.statusMessage = 'Ride in progress!';
+        break;
+      case 'STOPPED':
+        this.statusMessage = 'Ride has been temporarily stopped.';
         break;
       case 'FINISHED':
         this.statusMessage = 'Ride completed!';
@@ -289,11 +306,9 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     this.rideTrackingService.createPanicAlert().subscribe({
       next: () => {
         console.log('PANIC alert sent');
-        alert('Emergency alert sent! Help is on the way.');
       },
       error: (err) => {
         console.error('Failed to send PANIC', err);
-        alert('Failed to send emergency alert. Please call emergency services.');
       }
     });
   }
@@ -337,7 +352,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     const status = (this.activeRide.status || '').toUpperCase();
 
     // passenger can cancel only before ride starts (not ACTIVE, not FINISHED)
-    if (status === 'ACTIVE' || status === 'FINISHED') {
+    if (status === 'ACTIVE' || status === 'FINISHED' || status === 'CANCELLED' || status === 'STOPPED_EARLY') {
       return false;
     }
     return true;
@@ -420,8 +435,4 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
 
     return this.initialEstimatedMinutes;
   }
-
-
-
-
 }

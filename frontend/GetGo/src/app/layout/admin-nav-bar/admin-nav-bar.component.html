@@ -5,14 +5,14 @@
     <mat-icon class="hamburger">menu</mat-icon>
   </button>
 
-  <span [routerLink]="['/home']" class="app-title">GetGo</span>
+  <span [routerLink]="['/admin/admin-home']" class="app-title">GetGo</span>
   <span class="spacer"></span>
 <!--  <button mat-raised-button [routerLink]="['/ride']" >Ride</button>-->
   <span>{{ fullName }}</span>
 </mat-toolbar>
 
 <mat-menu #menu="matMenu">
-  <button mat-menu-item [routerLink]="['/home']">
+  <button mat-menu-item [routerLink]="['/admin/admin-home']">
     <mat-icon>home</mat-icon>
     <span>Home</span>
   </button>

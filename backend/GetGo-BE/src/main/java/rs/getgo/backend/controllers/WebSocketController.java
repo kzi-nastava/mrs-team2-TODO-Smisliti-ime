@@ -109,4 +109,43 @@ public class WebSocketController {
         );
     }
 
+    // === notify passengers when ride is stopped early ===
+    public void notifyPassengerRideStoppedEarly(Long rideId,
+                                                Double price,
+                                                LocalDateTime startTime,
+                                                LocalDateTime endTime) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("rideId", rideId);
+        payload.put("status", "STOPPED_EARLY");
+        payload.put("price", price);
+        payload.put("startTime", startTime);
+        payload.put("endTime", endTime);
+        payload.put("durationMinutes",
+                java.time.Duration.between(startTime, endTime).toMinutes());
+        payload.put("message", "Ride was stopped early at passenger request.");
+        payload.put("timestamp", LocalDateTime.now());
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/ride/" + rideId + "/ride-stopped",
+                payload
+        );
+    }
+
+    // === notify admins when PANIC is triggered ===
+    public void notifyAdminsPanicTriggered(Long rideId,
+                                           Long userId,
+                                           String userEmail,
+                                           LocalDateTime triggeredAt) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("rideId", rideId);
+        payload.put("userId", userId);
+        payload.put("userEmail", userEmail);
+        payload.put("triggeredAt", triggeredAt);
+        payload.put("message", "Panic button pressed for ride " + rideId);
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/admin/panic-alerts",
+                payload
+        );
+    }
 }

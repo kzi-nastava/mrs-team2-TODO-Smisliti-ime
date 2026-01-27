@@ -32,7 +32,7 @@
 
       <p> <span class="card-time">Start time: </span> {{ride.startingTime | date:'HH:mm'}}</p>
       <p> <span class="card-time">End time: </span> {{ride.finishedTime | date:'HH:mm'}}</p>
-      <h1 class="card-price">{{ride.price}}rsd</h1>
+      <h1 class="card-price">{{ride.price | number:'1.0-0'}}rsd</h1>
 
     </div>
   }

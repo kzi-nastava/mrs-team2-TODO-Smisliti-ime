@@ -39,8 +39,8 @@
 </div>
 
   <mat-paginator id="paginator"
-    [length]="totalElements()"
-    [pageSize]="pageSize"
+    [length]="page().totalElements"
+    [pageSize]="page().pageSize"
     [pageSizeOptions]="[5, 10, 20]"
     (page)="onPageChange($event)">
   </mat-paginator>

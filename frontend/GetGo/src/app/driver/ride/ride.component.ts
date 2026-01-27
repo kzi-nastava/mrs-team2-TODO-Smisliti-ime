@@ -1,4 +1,4 @@
-import {Component, Signal} from '@angular/core';
+import {Component, Signal, signal, computed } from '@angular/core';
 import { Ride, GetRideDTO } from '../model/ride.model';
 import { RideService } from '../service/ride.service';
 import { FormsModule } from '@angular/forms';
@@ -26,44 +26,56 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 export class RideComponent {
   protected rides:  Signal<GetRideDTO[]>;
 
-  pageIndex = 0;
-  pageSize = 5;
+  private pagePropertiesSignal = signal({
+    page: 0,
+    pageSize: 5,
+    totalElements: 0
+  });
+
+  page = computed(() => this.pagePropertiesSignal());
 
   searchRideForm = new FormGroup({
-    date: new FormControl<Date | null>(null, [Validators.required])
+    date: new FormControl<Date | null>(null)
   });
 
   constructor(private service: RideService) {
     this.rides = this.service.rides;
-//     this.service.loadRides(this.driverId);
-    this.service.loadRides(this.pageIndex, this.pageSize);
+    this.getPagedEntities();
   }
 
   searchRides() {
-    this.pageIndex = 0;
-    this.service.loadRides(this.pageIndex, this.pageSize, this.searchRideForm.value.date!);
+    this.pagePropertiesSignal.update(props => ({...props, page: 0}));
+    this.getPagedEntities();
   }
 
   resetFilter(){
     this.searchRideForm.reset();
-    this.pageIndex = 0;
-    this.service.loadRides(this.pageIndex, this.pageSize);
+    this.pagePropertiesSignal.update(props => ({...props, page: 0}));
+     this.getPagedEntities();
   }
 
-  onPageChange(event: PageEvent) {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
+  onPageChange(pageEvent: PageEvent) {
 
-    this.service.loadRides(
-      this.pageIndex,
-      this.pageSize,
-      this.searchRideForm.value.date ?? undefined
-    );
+    this.pagePropertiesSignal.update(props => ({
+      ...props,
+      page: pageEvent.pageIndex,
+      pageSize: pageEvent.pageSize
+    }));
+
+    this.getPagedEntities();
   }
 
-  get totalElements() {
-    return this.service.totalElements;
-  }
+  private getPagedEntities() {
+    const props = this.pagePropertiesSignal();
+    this.service.loadRides(props.page, props.pageSize, this.searchRideForm.value.date ?? undefined)
+      .subscribe(res => {
+        this.service.setRides(res.content);
+        this.pagePropertiesSignal.update(p => ({
+          ...p,
+          totalElements: res.totalElements
+        }));
+      });
+    }
 
   getRideSummary(address: string): string {
     if (!address) return '';

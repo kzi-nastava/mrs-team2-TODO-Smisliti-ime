@@ -187,7 +187,6 @@ public class RideServiceImpl implements RideService {
 
     @Override
     public CreatedRideResponseDTO orderRide(CreateRideRequestDTO createRideRequestDTO, String userEmail) {
-        // TODO: DO WITH VALIDATORS
         // Validate request
         if (createRideRequestDTO.getLatitudes().size() < 2 ||
                 createRideRequestDTO.getLatitudes().size() != createRideRequestDTO.getLongitudes().size() ||

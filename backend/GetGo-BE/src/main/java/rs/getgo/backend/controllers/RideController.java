@@ -1,5 +1,7 @@
 package rs.getgo.backend.controllers;
 
+import jakarta.validation.Valid;
+import org.apache.coyote.Response;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.favorite.CreatedFavoriteRideDTO;
 import rs.getgo.backend.dtos.favorite.GetFavoriteRideDTO;
@@ -79,7 +81,7 @@ public class RideController {
     // 2.6.2 – Create inconsistency report
     @PreAuthorize("hasRole('PASSENGER') or hasRole('DRIVER') or hasRole('ADMIN')")
     @PostMapping(value = "/{rideId}/inconsistencies", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedInconsistencyReportDTO> createInconsistencyReport(@RequestBody CreateInconsistencyReportDTO report, @PathVariable Long rideId) throws Exception {
+    public ResponseEntity<CreatedInconsistencyReportDTO> createInconsistencyReport(@Valid @RequestBody CreateInconsistencyReportDTO report, @PathVariable Long rideId) throws Exception {
 //        CreatedInconsistencyReportDTO savedInconsistencyReport = new CreatedInconsistencyReportDTO(1L, rideId, 501L, report.getText());
 
         CreatedInconsistencyReportDTO savedReportDTO = rideTrackingService.saveInconsistencyReport(rideId, report);
@@ -92,7 +94,7 @@ public class RideController {
     // 2.7 – Finish ride
     @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/{id}/finish", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<UpdatedRideDTO> finishRide(@RequestBody UpdateRideDTO ride, @PathVariable Long id)
+    public ResponseEntity<UpdatedRideDTO> finishRide(@Valid @RequestBody UpdateRideDTO ride, @PathVariable Long id)
             throws Exception {
         UpdatedRideDTO updatedRide = rideService.finishRide(id, ride);
 

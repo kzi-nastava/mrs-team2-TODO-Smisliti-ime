@@ -26,10 +26,20 @@
       <p class="report-text">“{{ report.text }}”</p>
       <p class="report-meta">
         Reported by <b>{{ report.passengerEmail }}</b>
-        • {{ report.createdAt | date:'dd.MM.yyyy HH:mm' }}
+        - {{ report.createdAt | date:'dd.MM.yyyy HH:mm' }}
       </p>
     </div>
   </div>
+
+  <button
+    class="favorite-button"
+    (click)="onFavoriteRide()"
+    [disabled]="isFavoriting()">
+    {{ isFavoriting() ? 'Saving...' : 'Favorite This Ride' }}
+  </button>
+
+  <p *ngIf="favoriteSuccess" class="success-message">Ride added to favorites!</p>
+  <p *ngIf="favoriteError" class="error-message">{{ favoriteError() }}</p>
 
 </div>
 

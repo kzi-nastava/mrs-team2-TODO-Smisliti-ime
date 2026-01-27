@@ -21,6 +21,10 @@ export class PassengerRideDetailsComponent {
   reports = signal<GetInconsistencyReportDTO[]>([]);
   loadingReports = signal(true);
 
+  isFavoriting = signal(false);
+  favoriteSuccess = signal(false);
+  favoriteError = signal<string | null>(null);
+
   constructor(
     private route: ActivatedRoute,
     private rideService: RideService
@@ -46,6 +50,35 @@ export class PassengerRideDetailsComponent {
       },
       error: () => {
         this.loadingReports.set(false);
+      }
+    });
+  }
+
+  onFavoriteRide(): void {
+    this.isFavoriting.set(true);
+    this.favoriteSuccess.set(false);
+    this.favoriteError.set(null);
+
+    this.rideService.favoriteRide(this.rideId).subscribe({
+      next: (response) => {
+        console.log('Ride favorited successfully:', response);
+        this.favoriteSuccess.set(true);
+        this.isFavoriting.set(false);
+
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          this.favoriteSuccess.set(false);
+        }, 3000);
+      },
+      error: (error) => {
+        console.error('Error favoriting ride:', error);
+        this.favoriteError.set(error.error?.message || 'Failed to favorite ride. Please try again.');
+        this.isFavoriting.set(false);
+
+        // Hide error message after 5 seconds
+        setTimeout(() => {
+          this.favoriteError.set(null);
+        }, 5000);
       }
     });
   }

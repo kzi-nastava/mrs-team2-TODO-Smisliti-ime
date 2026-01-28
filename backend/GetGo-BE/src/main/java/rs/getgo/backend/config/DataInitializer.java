@@ -79,12 +79,12 @@ public class DataInitializer {
 
     private Administrator createAdmin() {
         Administrator admin = new Administrator();
-        admin.setEmail("a");
-        admin.setPassword(passwordEncoder.encode("a"));
-        admin.setName("Admin");
+        admin.setEmail("a@gmail.com");
+        admin.setPassword(passwordEncoder.encode("aaaaaaaa"));
+        admin.setName("Admin Only");
         admin.setSurname("Administrator");
         admin.setAddress("Admin Address 2324");
-        admin.setPhone("86786876788");
+        admin.setPhone("0603849872");
         admin.setRole(UserRole.ADMIN);
         admin.setBlocked(false);
         return admin;
@@ -92,12 +92,12 @@ public class DataInitializer {
 
     private Driver createDriver1() {
         Driver driver = new Driver();
-        driver.setEmail("d1");
-        driver.setPassword(passwordEncoder.encode("d1"));
-        driver.setName("Driver1");
+        driver.setEmail("d@gmail.com");
+        driver.setPassword(passwordEncoder.encode("dddddddd"));
+        driver.setName("Driver One");
         driver.setSurname("Drivone");
         driver.setAddress("Driver1 Address 6546");
-        driver.setPhone("+381642345677");
+        driver.setPhone("0654829461");
         driver.setRole(UserRole.DRIVER);
         driver.setBlocked(false);
         driver.setActive(false);
@@ -111,12 +111,12 @@ public class DataInitializer {
 
     private Driver createDriver2() {
         Driver driver = new Driver();
-        driver.setEmail("d2");
-        driver.setPassword(passwordEncoder.encode("d2"));
-        driver.setName("Driver2");
+        driver.setEmail("f@gmail.com");
+        driver.setPassword(passwordEncoder.encode("ffffffff"));
+        driver.setName("Driver Two");
         driver.setSurname("Drivtwo");
         driver.setAddress("Driver2 Address 298");
-        driver.setPhone("+381642345678");
+        driver.setPhone("0654342365");
         driver.setRole(UserRole.DRIVER);
         driver.setBlocked(false);
         driver.setActive(false);
@@ -154,12 +154,12 @@ public class DataInitializer {
 
     private Passenger createPassenger1() {
         Passenger passenger = new Passenger();
-        passenger.setEmail("p1");
-        passenger.setPassword(passwordEncoder.encode("p1"));
-        passenger.setName("Passenger1");
+        passenger.setEmail("p@gmail.com");
+        passenger.setPassword(passwordEncoder.encode("pppppppp"));
+        passenger.setName("Passenger Pass");
         passenger.setSurname("Passone");
         passenger.setAddress("Street 598");
-        passenger.setPhone("+381642345676");
+        passenger.setPhone("0658473923");
         passenger.setRole(UserRole.PASSENGER);
         passenger.setBlocked(false);
         passenger.setCanAccessSystem(true);
@@ -169,12 +169,12 @@ public class DataInitializer {
 
     private Passenger createPassenger2() {
         Passenger passenger = new Passenger();
-        passenger.setEmail("p2");
-        passenger.setPassword(passwordEncoder.encode("p2"));
-        passenger.setName("Passenger2");
+        passenger.setEmail("o@gmail.com");
+        passenger.setPassword(passwordEncoder.encode("oooooooo"));
+        passenger.setName("Passenger Yes");
         passenger.setSurname("Passtwo");
         passenger.setAddress("Street 123");
-        passenger.setPhone("+381642345675");
+        passenger.setPhone("0653452348");
         passenger.setRole(UserRole.PASSENGER);
         passenger.setBlocked(false);
         passenger.setCanAccessSystem(true);

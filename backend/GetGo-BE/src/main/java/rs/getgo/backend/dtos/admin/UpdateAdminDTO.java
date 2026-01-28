@@ -21,8 +21,10 @@ public class UpdateAdminDTO {
     @Size(min = 2, max = 50, message = "Surname must be between 2 and 50 characters")
     private String surname;
 
-    @NotBlank(message = "Phone is required")
-    @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone number must be between 10 and 15 digits")
+    @NotBlank(message = "Phone number is required")
+    @Pattern(
+            regexp = "^(\\+3816[0-9]|06[0-9])[0-9]{6,7}$",
+            message = "Phone number must be a valid Serbian number (e.g., +381612345678 or 0612345678)")
     private String phone;
 
     @NotBlank(message = "Address is required")

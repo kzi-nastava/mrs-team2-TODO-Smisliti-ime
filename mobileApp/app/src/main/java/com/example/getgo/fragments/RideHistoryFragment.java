@@ -223,22 +223,18 @@ public class RideHistoryFragment extends Fragment {
                     List<GetRideDTO> ridesFromServer = pageResponse.getContent();
                     totalElements = pageResponse.getTotalElements();
 
-                    Log.d("RideHistory", "Broj vožnji preuzetih sa servera: " + ridesFromServer.size());
 
-                    for (GetRideDTO ride : ridesFromServer) {
-                        Log.d("RideHistory", "Ride: " + ride.getStartPoint() + " -> " + ride.getEndPoint());
-                    }
                     fullHistoryList = new ArrayList<>(ridesFromServer);
                     adapter.setRides(ridesFromServer);
                 } else {
-                    Log.d("RideHistory", "Response nije uspešan: " + response.code());
+                    Log.d("RideHistory", "Response failed: " + response.code());
                 }
             }
 
             @Override
             public void onFailure(Call<PageResponse<GetRideDTO>> call, Throwable t) {
                 t.printStackTrace();
-                Log.d("RideHistory", "Greška pri preuzimanju vožnji: " + t.getMessage());
+                Log.d("RideHistory", "Failed to load rides: " + t.getMessage());
 
             }
         });

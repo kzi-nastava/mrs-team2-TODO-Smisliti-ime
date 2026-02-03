@@ -1,0 +1,96 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #8FABD4;
+  padding-top: 40px;
+}
+
+.ride-details {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px 30px;
+  background-color: #CBDCEB;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-family: Arial, sans-serif;
+}
+
+.ride-details h1 {
+  font-size: 26px;
+  color: #133E87;
+  margin-bottom: 15px;
+}
+
+.ride-details p {
+  font-size: 16px;
+  margin: 8px 0;
+  color: #555;
+}
+
+.ride-details b {
+  color: #133E87;
+}
+
+.waypoint-list {
+  margin: 8px 0 16px 0;
+  padding-left: 20px;
+  list-style-type: none;
+}
+
+.waypoint-list li {
+  padding: 4px 0;
+  margin: 2px 0;
+  color: #555;
+  font-size: 16px;
+}
+
+.waypoint-list li:before {
+  content: "• ";
+  color: #133E87;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.passenger-list {
+  margin-top: 8px;
+  padding-left: 0;
+  list-style-type: none;
+}
+
+.passenger-chip {
+  background-color: #133E87;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin: 6px 4px;
+  display: inline-block;
+}
+
+.no-passengers {
+  color: #555;
+  font-size: 16px;
+  margin: 4px 0;
+  font-style: italic;
+}
+
+.loading-page {
+  text-align: center;
+  padding: 60px 20px;
+  font-style: italic;
+  color: #133E87;
+  font-size: 18px;
+  margin-top: 50px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ride-details {
+    margin: 20px;
+    padding: 16px 20px;
+  }
+
+  .ride-details h1 {
+    font-size: 22px;
+  }
+}

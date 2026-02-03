@@ -7,13 +7,9 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Getter
-@Setter
-
-public class CreatedFavoriteDTO {
-    private Long userId;
-    private Long rideId;
-    private LocalDateTime createdAt;
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+public class CreatedFavoriteRideDTO {
+    private Long favoriteRideId;
+    private boolean success;
 }

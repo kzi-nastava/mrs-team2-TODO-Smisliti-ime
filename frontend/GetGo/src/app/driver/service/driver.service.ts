@@ -109,4 +109,13 @@ export class DriverService {
     return this.http.put<UpdatedPasswordDTO>(`${this.apiUrl}/profile/password`, passwordData);
   }
 
+  getDriverActive(): Observable<boolean> {
+    return this.http.get<boolean>(`${this.apiUrl}/status`);
+  }
+
+  setDriverActive(active: boolean): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/status`, null, {
+      params: { isActive: active }
+    });
+  }
 }

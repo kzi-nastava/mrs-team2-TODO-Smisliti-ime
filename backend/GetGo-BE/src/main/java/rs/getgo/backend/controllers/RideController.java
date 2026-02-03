@@ -1,24 +1,27 @@
 package rs.getgo.backend.controllers;
 
+import jakarta.validation.Valid;
+import org.apache.coyote.Response;
 import org.springframework.security.access.prepost.PreAuthorize;
-import rs.getgo.backend.dtos.favorite.CreatedFavoriteDTO;
+import rs.getgo.backend.dtos.favorite.CreatedFavoriteRideDTO;
+import rs.getgo.backend.dtos.favorite.GetFavoriteRideDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
 import rs.getgo.backend.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
 import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
 import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
-import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
+import rs.getgo.backend.services.CompletedRideService;
 import rs.getgo.backend.services.RideEstimateService;
 import rs.getgo.backend.services.RideService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rs.getgo.backend.services.impl.rides.FavoriteRideService;
 import rs.getgo.backend.services.impl.rides.RideTrackingService;
+import rs.getgo.backend.services.impl.rides.ScheduledRideService;
 import rs.getgo.backend.utils.AuthUtils;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -29,11 +32,23 @@ public class RideController {
     private final RideEstimateService rideEstimateService;
     private final RideService rideService;
     private final RideTrackingService rideTrackingService;
+    private final ScheduledRideService scheduledRideService;
+    private final CompletedRideService completedRideService;
+    private final FavoriteRideService favoriteRideService;
 
-    public RideController(RideEstimateService rideEstimateService, RideService rideService, RideTrackingService rideTrackingService) {
+
+    public RideController(RideEstimateService rideEstimateService,
+                          RideService rideService,
+                          RideTrackingService rideTrackingService,
+                          ScheduledRideService scheduledRideService,
+                          CompletedRideService completedRideService,
+                          FavoriteRideService favoriteRideService) {
         this.rideEstimateService = rideEstimateService;
         this.rideService = rideService;
         this.rideTrackingService = rideTrackingService;
+        this.scheduledRideService = scheduledRideService;
+        this.completedRideService = completedRideService;
+        this.favoriteRideService = favoriteRideService;
     }
 
     @PreAuthorize("hasRole('PASSENGER')")
@@ -47,8 +62,15 @@ public class RideController {
         return ResponseEntity.ok(ride);
     }
 
+    @PreAuthorize("hasRole('DRIVER')")
+    @GetMapping(value = "driver/all-scheduled", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<GetActiveRideDTO>> getAllScheduledRides() {
+        List<GetActiveRideDTO> rides = scheduledRideService.getScheduledRides();
+        return ResponseEntity.ok(rides);
+    }
+
     // 2.6.2 – Track ride
-//    @PreAuthorize("hasRole('PASSENGER') or hasRole('DRIVER')")
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('DRIVER')")
     @GetMapping(value = "/{id}/tracking", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetRideTrackingDTO> getRideTracking(@PathVariable("id") Long id) {
         GetRideTrackingDTO ride = rideTrackingService.getRideTracking(id);
@@ -57,9 +79,9 @@ public class RideController {
     }
 
     // 2.6.2 – Create inconsistency report
-//    @PreAuthorize("hasRole('PASSENGER') or hasRole('DRIVER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('DRIVER') or hasRole('ADMIN')")
     @PostMapping(value = "/{rideId}/inconsistencies", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedInconsistencyReportDTO> createInconsistencyReport(@RequestBody CreateInconsistencyReportDTO report, @PathVariable Long rideId) throws Exception {
+    public ResponseEntity<CreatedInconsistencyReportDTO> createInconsistencyReport(@Valid @RequestBody CreateInconsistencyReportDTO report, @PathVariable Long rideId) throws Exception {
 //        CreatedInconsistencyReportDTO savedInconsistencyReport = new CreatedInconsistencyReportDTO(1L, rideId, 501L, report.getText());
 
         CreatedInconsistencyReportDTO savedReportDTO = rideTrackingService.saveInconsistencyReport(rideId, report);
@@ -72,7 +94,7 @@ public class RideController {
     // 2.7 – Finish ride
     @PreAuthorize("hasRole('DRIVER')")
     @PutMapping(value = "/{id}/finish", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<UpdatedRideDTO> finishRide(@RequestBody UpdateRideDTO ride, @PathVariable Long id)
+    public ResponseEntity<UpdatedRideDTO> finishRide(@Valid @RequestBody UpdateRideDTO ride, @PathVariable Long id)
             throws Exception {
         UpdatedRideDTO updatedRide = rideService.finishRide(id, ride);
 
@@ -89,37 +111,50 @@ public class RideController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // 2.5 – Cancel ride
-    @PreAuthorize("hasRole('PASSENGER')")
-    @PutMapping("/{rideId}/cancel")
-    public ResponseEntity<CreatedRideStatusDTO> cancelRide(@PathVariable Long rideId,
-                                                           @RequestBody CancelRideDTO cancelRequest) {
+    // Driver cancels assigned ride before passengers enter
+    @PreAuthorize("hasRole('DRIVER')")
+    @PostMapping("/{rideId}/cancel/driver")
+    public ResponseEntity<Void> cancelRideByDriver(@PathVariable Long rideId,
+                                                   @RequestBody CancelRideRequestDTO body) {
         try {
-            CreatedRideStatusDTO response = rideService.cancelRide(rideId, cancelRequest);
-            return ResponseEntity.ok(response);
+            rideService.cancelRideByDriver(rideId, body.getReason());
+            return ResponseEntity.ok().build();
         } catch (IllegalStateException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // 2.6.5 – Stop ride
+    // Passenger cancels ride at least 10 minutes before start
+    @PreAuthorize("hasRole('PASSENGER')")
+    @PostMapping("/{rideId}/cancel/passenger")
+    public ResponseEntity<Void> cancelRideByPassenger(@PathVariable Long rideId,
+                                                      @RequestBody CancelRideRequestDTO body) {
+        try {
+            rideService.cancelRideByPassenger(rideId, body.getReason());
+            return ResponseEntity.ok().build();
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // 2.6.5 – Stop ride while in progress
     @PreAuthorize("hasRole('DRIVER')")
-    @PutMapping("/{rideId}/stop")
-    public ResponseEntity<CreatedRideStatusDTO> stopRide(@PathVariable Long rideId) {
-        CreatedRideStatusDTO response = new CreatedRideStatusDTO(rideId, "FINISHED");
-        return ResponseEntity.ok(response);
+    @PostMapping(value = "/{rideId}/stop", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RideCompletionDTO> stopRidePost(@PathVariable Long rideId, @RequestBody StopRideDTO stopRideDTO) throws Exception {
+        RideCompletionDTO completion = rideService.stopRide(rideId, stopRideDTO);
+        return ResponseEntity.ok(completion);
     }
 
     // 2.6.3 - PANIC button
     @PreAuthorize("hasRole('DRIVER') or hasRole('PASSENGER')")
     @PostMapping("/{rideId}/panic")
-    public ResponseEntity<Void> createPanic(
-            @PathVariable Long rideId,
-            @PathVariable String email
-    ) {
-        rideService.triggerPanic(1L, email);
+    public ResponseEntity<Void> createPanic(@PathVariable Long rideId) {
+        String email = AuthUtils.getCurrentUserEmail();
+        rideService.triggerPanic(rideId, email);
         return ResponseEntity.ok().build();
     }
 
@@ -160,28 +195,27 @@ public class RideController {
     // 2.4.3 - Calling favorite ride
     @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/favorites", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<GetRideDTO>> getFavoriteRides() {
-        List<GetRideDTO> response = new ArrayList<>();
+    public ResponseEntity<List<GetFavoriteRideDTO>> getFavoriteRides() {
+        String email = AuthUtils.getCurrentUserEmail();
+        List<GetFavoriteRideDTO> response = favoriteRideService.getFavoriteUserRides(email);
         return ResponseEntity.ok(response);
     }
 
     // 2.4.3 - Calling favorite ride
     @PreAuthorize("hasRole('PASSENGER')")
-    @PostMapping(value = "/{rideId}/favorite", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedFavoriteDTO> favoriteRide(@PathVariable Long rideId) {
-        CreatedFavoriteDTO response = new CreatedFavoriteDTO();
-        response.setRideId(rideId);
-        response.setCreatedAt(LocalDateTime.now());
+    @PostMapping(value = "/{completedRideId}/favorite", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CreatedFavoriteRideDTO> favoriteRide(@PathVariable Long completedRideId) {
+        String email = AuthUtils.getCurrentUserEmail();
+        CreatedFavoriteRideDTO response = favoriteRideService.favoriteRide(email, completedRideId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 2.4.3 - Calling favorite ride
     @PreAuthorize("hasRole('PASSENGER')")
-    @DeleteMapping("/{rideId}/favorite")
-    public ResponseEntity<Void> unfavoriteRide(@PathVariable Long rideId) {
+    @DeleteMapping("/{completedRideId}/favorite")
+    public ResponseEntity<Void> unfavoriteRide(@PathVariable Long completedRideId) {
+        String email = AuthUtils.getCurrentUserEmail();
+        favoriteRideService.unfavoriteRide(completedRideId, email);
         return ResponseEntity.noContent().build();
     }
-
-
-
 }

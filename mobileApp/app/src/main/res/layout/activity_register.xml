@@ -6,6 +6,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <include
+        android:id="@+id/guest_toolbar"
+        layout="@layout/guest_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardRegister"
         android:layout_width="0dp"
@@ -270,8 +279,8 @@
                         android:text="Login"
                         android:textColor="#FFFFFF"
                         android:textStyle="bold"
-                        android:onClick="openLogin"
-                        android:clickable="true"/>
+                        android:clickable="true"
+                        android:focusable="true"/>
                 </LinearLayout>
             </LinearLayout>
 

@@ -1,0 +1,39 @@
+<app-driver-nav-bar></app-driver-nav-bar>
+<div class="scheduled-rides-page">
+  <div class="page-header">
+    <h1>Scheduled Rides</h1>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-container">
+    <p>Loading scheduled rides...</p>
+  </div>
+
+  <!-- No Rides -->
+  <div *ngIf="!isLoading() && scheduledRides().length === 0" class="no-rides">
+    <p>No scheduled rides at the moment.</p>
+  </div>
+
+  <!-- Rides List -->
+  <div class="list">
+    @for(ride of scheduledRides(); track ride.id){
+    <div class="item" [routerLink]="['/driver/scheduled-rides', ride.id]">
+
+      <h2 class="location-start">
+        <img class="pin-icon" src="/map-pin.svg" alt="Pin icon">
+        {{ ride.startingPoint }}
+      </h2>
+
+      <h2 class="location-end">
+        <img class="flag-icon" src="/finish-flag.svg" alt="Destination flag">
+        {{ ride.endingPoint }}
+      </h2>
+
+      <p class="scheduled-time">
+        <span class="scheduled-label">Scheduled:</span>
+        {{ ride.scheduledTime | date:'dd.MM.yyyy, HH:mm' }}
+      </p>
+    </div>
+    }
+  </div>
+</div>

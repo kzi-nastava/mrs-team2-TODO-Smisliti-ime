@@ -35,6 +35,8 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   activeRide: GetPassengerActiveRideDTO | null = null;
   driverLocation: { lat: number; lng: number } | null = null;
   rideCompletion: PassengerRideFinishedDTO | null = null;
+  private totalRouteDistance: number = 0;
+  private initialEstimatedMinutes: number = 0;
 
   isLoading = true;
   errorMessage: string | null = null;
@@ -44,6 +46,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   private locationSubscription?: Subscription;
   private statusSubscription?: Subscription;
   private completionSubscription?: Subscription;
+  private stopSubscription?: Subscription;
 
   @ViewChild(RideTrackingMapComponent, { read: ElementRef, static: false })
   private mapComponent?: ElementRef<HTMLElement>;
@@ -73,6 +76,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     if (this.locationSubscription) this.locationSubscription.unsubscribe();
     if (this.statusSubscription) this.statusSubscription.unsubscribe();
     if (this.completionSubscription) this.completionSubscription.unsubscribe();
+    if (this.stopSubscription) this.stopSubscription.unsubscribe();
 
     this.webSocketService.disconnect();
   }
@@ -87,6 +91,8 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
         if (ride) {
           console.log('Active ride found:', ride);
           this.activeRide = ride;
+          this.rideTrackingService.startTracking(ride.rideId, ride.status);
+          this.calculateTotalRouteDistance();
           this.updateStatusMessage(ride.status);
           this.initializeMapRoute(ride);
           this.subscribeToWebSocketUpdates(ride.rideId);
@@ -112,7 +118,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       .subscribeToRideDriverLocation(rideId)
       .subscribe({
         next: (location: DriverLocationDTO) => {
-          console.log('Driver location update:', location);
+          /*console.log('Driver location update:', location);*/
           this.driverLocation = {
             lat: location.latitude,
             lng: location.longitude
@@ -153,13 +159,36 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
         },
         error: (err) => console.error('Error receiving completion:', err)
       });
+
+    this.stopSubscription = this.webSocketService
+      .subscribeToPassengerRideStopped(rideId)
+      .subscribe({
+        next: (data: any) => {
+          console.log('⏸️ Ride stopped:', data);
+          if (this.activeRide) {
+            this.activeRide.status = 'STOPPED';
+            this.statusMessage = 'Ride has been stopped.';
+          }
+          this.cdr.detectChanges();
+        },
+        error: (err) => console.error('Error receiving ride stopped:', err)
+      });
   }
 
   private initializeMapRoute(ride: GetPassengerActiveRideDTO) {
+    if (this.mapComponent?.nativeElement) {
+      this.mapComponent.nativeElement.addEventListener('route-estimated-time', (ev: Event) => {
+        const ce = ev as CustomEvent<{ estimatedTimeMinutes: number }>;
+        console.log('Received initial estimated time from map:', ce.detail.estimatedTimeMinutes);
+        this.initialEstimatedMinutes = ce.detail.estimatedTimeMinutes;
+      });
+    }
+
     if (!this.mapComponent?.nativeElement || !ride.latitudes || !ride.longitudes) {
       console.log('Cannot initialize map: missing data');
       return;
     }
+
 
     console.log('Initializing map route');
 
@@ -202,6 +231,9 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       case 'ACTIVE':
         this.statusMessage = 'Ride in progress!';
         break;
+      case 'STOPPED':
+        this.statusMessage = 'Ride has been temporarily stopped.';
+        break;
       case 'FINISHED':
         this.statusMessage = 'Ride completed!';
         break;
@@ -211,9 +243,35 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   }
 
   progressPercent(): number {
-    // TODO: give up on this or finish
-    return 42;
+    if (!this.driverLocation || !this.activeRide?.latitudes || !this.activeRide?.longitudes) return 0;
+
+    let distanceTravelled = 0;
+    const latitudes = this.activeRide.latitudes;
+    const longitudes = this.activeRide.longitudes;
+
+    for (let i = 0; i < latitudes.length - 1; i++) {
+      const segmentStart = { lat: latitudes[i], lng: longitudes[i] };
+      const segmentEnd = { lat: latitudes[i + 1], lng: longitudes[i + 1] };
+      const distToEnd = this.haversineDistance(
+        this.driverLocation.lat, this.driverLocation.lng,
+        segmentEnd.lat, segmentEnd.lng
+      );
+      const segmentLength = this.haversineDistance(
+        segmentStart.lat, segmentStart.lng,
+        segmentEnd.lat, segmentEnd.lng
+      );
+
+      if (distToEnd <= segmentLength) {
+        distanceTravelled += segmentLength - distToEnd;
+        break;
+      } else {
+        distanceTravelled += segmentLength;
+      }
+    }
+
+    return Math.round((distanceTravelled / this.totalRouteDistance) * 100);
   }
+
 
   submitReport() {
     if (!this.reportText.trim()) return;
@@ -244,14 +302,13 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // RideTrackingService now only needs rideId, no token decoding / email body
     this.rideTrackingService.createPanicAlert().subscribe({
       next: () => {
         console.log('PANIC alert sent');
-        alert('Emergency alert sent! Help is on the way.');
       },
       error: (err) => {
         console.error('Failed to send PANIC', err);
-        alert('Failed to send emergency alert. Please call emergency services.');
       }
     });
   }
@@ -261,5 +318,121 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     this.rideCompletion = null;
     this.activeRide = null;
     this.router.navigate(['/registered-home']);
+  }
+
+  submitCancel(): void {
+    if (!this.activeRide) {
+      console.error('No active ride to cancel');
+      return;
+    }
+
+    console.log('Cancelling ride as passenger (no explicit reason sent to backend)');
+
+    this.rideService
+      .cancelRideByPassenger(this.activeRide.rideId, { reason: '' })
+      .subscribe({
+        next: () => {
+          console.log('Ride cancelled successfully');
+          this.activeRide = null;
+          this.rideCompletion = null;
+          this.statusMessage = 'Ride has been cancelled.';
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error cancelling ride', error);
+          this.statusMessage = 'Ride cannot be cancelled at this time.';
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  canShowCancelRide(): boolean {
+    if (!this.activeRide) return false;
+
+    const status = (this.activeRide.status || '').toUpperCase();
+
+    // passenger can cancel only before ride starts (not ACTIVE, not FINISHED)
+    if (status === 'ACTIVE' || status === 'FINISHED' || status === 'CANCELLED' || status === 'STOPPED_EARLY') {
+      return false;
+    }
+    return true;
+  }
+
+  private haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const toRad = (x: number) => (x * Math.PI) / 180;
+    const R = 6371e3; // Earth, in meters
+
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const Δφ = toRad(lat2 - lat1);
+    const Δλ = toRad(lng2 - lng1);
+
+    const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // in meters
+  }
+
+  private calculateTotalRouteDistance(): void {
+    if (!this.activeRide?.latitudes || !this.activeRide?.longitudes) return;
+
+    let distance = 0;
+    const latitudes = this.activeRide.latitudes;
+    const longitudes = this.activeRide.longitudes;
+
+    for (let i = 0; i < latitudes.length - 1; i++) {
+      distance += this.haversineDistance(latitudes[i], longitudes[i], latitudes[i + 1], longitudes[i + 1]);
+    }
+    this.totalRouteDistance = distance;
+  }
+
+  get estimatedTimeMinutes(): number {
+    if (!this.driverLocation || !this.activeRide?.latitudes || !this.activeRide?.longitudes) return 0;
+
+    const averageSpeedMps = 10; // recimo 10 m/s (~36 km/h) ili preuzmi od vozača ako imaš
+    let distanceTravelled = 0;
+    const latitudes = this.activeRide.latitudes;
+    const longitudes = this.activeRide.longitudes;
+
+    for (let i = 0; i < latitudes.length - 1; i++) {
+      const segmentStart = { lat: latitudes[i], lng: longitudes[i] };
+      const segmentEnd = { lat: latitudes[i + 1], lng: longitudes[i + 1] };
+      const distToEnd = this.haversineDistance(
+        this.driverLocation.lat, this.driverLocation.lng,
+        segmentEnd.lat, segmentEnd.lng
+      );
+      const segmentLength = this.haversineDistance(
+        segmentStart.lat, segmentStart.lng,
+        segmentEnd.lat, segmentEnd.lng
+      );
+
+      if (distToEnd <= segmentLength) {
+        distanceTravelled += segmentLength - distToEnd;
+        break;
+      } else {
+        distanceTravelled += segmentLength;
+      }
+    }
+
+    const remainingDistance = this.totalRouteDistance - distanceTravelled;
+    const remainingTimeSec = remainingDistance / averageSpeedMps;
+    return Math.ceil(remainingTimeSec / 60);
+  }
+
+  get remainingTimeMinutes(): number {
+    // progressPercent() return 0-100%
+    const remainingPercent = 100 - this.progressPercent();
+    return Math.ceil(this.estimatedTimeMinutes * remainingPercent / 100);
+  }
+
+  get estimatedTimeToArrival(): number {
+    if (this.initialEstimatedMinutes <= 0) return 0;
+    const remainingPercent = 100 - this.progressPercent();
+    return Math.ceil(this.initialEstimatedMinutes * remainingPercent / 100);
+  }
+
+  get estimatedRideDuration(): number {
+
+    return this.initialEstimatedMinutes;
   }
 }

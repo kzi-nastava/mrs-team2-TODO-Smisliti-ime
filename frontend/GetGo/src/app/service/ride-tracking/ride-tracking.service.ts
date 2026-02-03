@@ -3,9 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { environment } from '../../../env/environment';
 import { RideTracking } from '../../model/ride-tracking.model';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, throwError } from 'rxjs';
 import { CreateInconsistencyReportDTO, CreatedInconsistencyReportDTO } from '../../model/inconsistency-report.model';
-import {User} from '../../model/user.model';
+import { catchError } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root',
@@ -13,32 +13,36 @@ import {User} from '../../model/user.model';
 export class RideTrackingService {
   private readonly http = inject(HttpClient);
 
-  private rideId = signal<number | null> (null);
+  private rideId = signal<number | null>(null);
+  private rideStatus = signal<string | null>(null);
 
-  // resource koji se automatski refetchuje kad se rideId promeni
   trackingResource = rxResource({
     params: () => {
       const id = this.rideId();
-       return id ? { id } : null;
+      return id ? { id } : null;
     },
     stream: ({ params }) => {
-      const token = localStorage.getItem('authToken');
-      return this.http.get<RideTracking>(`${environment.apiHost}/api/rides/${params!.id}/tracking`,
+      const token = this.getAuthToken();
+      return this.http.get<RideTracking>(
+        `${environment.apiHost}/api/rides/${params!.id}/tracking`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           }
         }
-        );
+      );
     },
   });
 
   tracking = computed(() => this.trackingResource.value() ?? null);
-  // loading signal (spinner)
   loading = computed(() => this.trackingResource.isLoading());
 
-  startTracking(id: number): void {
+
+  startTracking(id: number, status?: string): void {
     this.rideId.set(id);
+    if (status) {
+      this.rideStatus.set(status);
+    }
   }
 
   createInconsistencyReport(dto: CreateInconsistencyReportDTO): Observable<CreatedInconsistencyReportDTO> {
@@ -46,7 +50,7 @@ export class RideTrackingService {
 
     if (!rideId) throw new Error('No active ride ID set');
 
-    const token = localStorage.getItem('authToken');
+    const token = this.getAuthToken();
     return this.http.post<CreatedInconsistencyReportDTO>(`${environment.apiHost}/api/rides/${rideId}/inconsistencies`, dto,
       {
         headers: {
@@ -56,23 +60,18 @@ export class RideTrackingService {
     ).pipe(tap(_ => this.reloadTracking()));
   }
 
+  private getAuthToken(): string {
+    const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('No auth token found');
+    }
+    return token;
+  }
+
+
   reloadTracking(): void {
     this.trackingResource.reload();
   };
-
-  private getUserIdFromToken(): string {
-    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    if (!token) throw new Error('No auth token found');
-
-    try {
-      const email:string = JSON.parse(atob(token.split('.')[1])).email;
-      if (!email) throw new Error('userId not found in token');
-      return email;
-    } catch (e) {
-      console.error('Failed to decode token:', e);
-      throw new Error('Invalid token');
-    }
-  }
 
   createPanicAlert(): Observable<void> {
     const rideId = this.rideId();
@@ -80,12 +79,11 @@ export class RideTrackingService {
       throw new Error('No active ride ID set');
     }
 
-    const email = this.getUserIdFromToken();
-    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    const token = this.getAuthToken();
 
     return this.http.post<void>(
       `${environment.apiHost}/api/rides/${rideId}/panic`,
-      { rideId, email },
+      {},
       {
         headers: {
           Authorization: `Bearer ${token}`,

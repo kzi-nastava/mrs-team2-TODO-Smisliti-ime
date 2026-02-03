@@ -13,11 +13,12 @@ import {
 import { WebSocketService } from '../../service/websocket/websocket.service';
 import { AuthService } from '../../service/auth-service/auth.service';
 import { Subscription } from 'rxjs';
+import {FormsModule} from '@angular/forms';
 
 @Component({
   selector: 'app-driver-home',
   standalone: true,
-  imports: [CommonModule, NavBarComponent, RideTrackingMapComponent],
+  imports: [CommonModule, NavBarComponent, RideTrackingMapComponent, FormsModule],
   templateUrl: './driver-home.html',
   styleUrl: './driver-home.css',
 })
@@ -25,13 +26,21 @@ export class DriverHome implements OnInit {
   activeRide: GetDriverActiveRideDTO | null = null;
   driverLocation: { lat: number; lng: number } | null = null;
   rideCompletion: RideCompletionDTO | null = null;
+  initialEstimatedMinutes: number = 0;
 
   isLoading = true;
   isStarting = false;
   isAccepting = false;
+  isStopping = false;
+  isEnding = false;
 
   errorMessage: string | null = null;
   successMessage: string | null = null;
+
+  // Cancel ride UI state
+  isCancelling = false;
+  showCancelForm = false;
+  cancelReason = '';
 
   private rideSubscription?: Subscription;
   private locationSubscription?: Subscription;
@@ -77,6 +86,22 @@ export class DriverHome implements OnInit {
     }
   }
 
+  isScheduledRide(): boolean {
+    return !!this.activeRide?.scheduledTime;
+  }
+
+  getStartTimeDisplay(): string {
+    if (!this.activeRide?.scheduledTime) {
+      return 'Now';
+    }
+
+    const date = new Date(this.activeRide.scheduledTime);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
   ngOnDestroy() {
     if (this.rideSubscription) this.rideSubscription.unsubscribe();
     if (this.locationSubscription) this.locationSubscription.unsubscribe();
@@ -117,7 +142,7 @@ export class DriverHome implements OnInit {
       .subscribeToDriverLocation(driverEmail)
       .subscribe({
         next: (location: DriverLocationDTO) => {
-          console.log('Driver location update:', location);
+          /*console.log('Driver location update:', location);*/
           this.driverLocation = {
             lat: location.latitude,
             lng: location.longitude
@@ -157,7 +182,8 @@ export class DriverHome implements OnInit {
           if (this.activeRide) {
             this.activeRide.status = 'FINISHED';
           }
-          this.successMessage = null;
+          this.isEnding = false;
+          this.successMessage = 'Ride completed! Click "End Ride" to finalize.';
           this.cdr.detectChanges();
         },
         error: (err) => console.error('Error receiving completion:', err)
@@ -285,12 +311,154 @@ export class DriverHome implements OnInit {
     });
   }
 
+  stopRide() {
+    if (!this.activeRide || !this.driverLocation) return;
+
+    this.isStopping = true;
+    this.errorMessage = null;
+
+    const payload = {
+      latitude: this.driverLocation.lat,
+      longitude: this.driverLocation.lng,
+      stoppedAt: new Date().toISOString()
+    };
+
+    this.rideService.stopRide(this.activeRide.rideId, payload).subscribe({
+      next: (completion) => {
+        this.rideCompletion = completion;
+        this.activeRide!.status = 'FINISHED';
+        this.successMessage = 'Ride stopped at passenger request.';
+        this.isStopping = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to stop ride.';
+        this.isStopping = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // PANIC for driver while ride is ACTIVE
+  submitDriverPanic(): void {
+    if (!this.activeRide) {
+      console.warn('No active ride to trigger panic for');
+      return;
+    }
+
+    this.rideService.createPanic(this.activeRide.rideId).subscribe({
+      next: () => {
+        console.log('Driver PANIC alert sent');
+        this.successMessage = 'Emergency alert sent!';
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to send driver PANIC', err);
+        this.errorMessage = 'Failed to send emergency alert.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  canShowCancelButton(): boolean {
+    if (!this.activeRide) return false;
+
+    const status = (this.activeRide.status || '').toUpperCase();
+
+    if (status === 'ACTIVE' || status === 'FINISHED') {
+      return false;
+    }
+
+    return status === 'DRIVER_INCOMING' || status === 'DRIVER_ARRIVED' || status === 'DRIVER_READY';
+  }
+
+  openCancelForm(): void {
+    this.errorMessage = null;
+    this.successMessage = null;
+
+    if (!this.activeRide) {
+      return;
+    }
+
+    const status = (this.activeRide.status || '').toUpperCase();
+
+    if (status === 'DRIVER_READY') {
+      if (this.isCancelling) return;
+
+      this.isCancelling = true;
+      this.rideService
+        .cancelRideByDriver(this.activeRide.rideId, { reason: '' })
+        .subscribe({
+          next: () => {
+            this.successMessage = 'Ride successfully cancelled.';
+            this.activeRide = null;
+            this.isCancelling = false;
+            this.resetMap();
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.errorMessage = err.error?.message || 'Failed to cancel ride.';
+            this.isCancelling = false;
+            this.cdr.detectChanges();
+          }
+        });
+
+      return;
+    }
+
+    this.cancelReason = '';
+    this.showCancelForm = true;
+  }
+
+  closeCancelForm(): void {
+    if (this.isCancelling) return;
+    this.showCancelForm = false;
+    this.cancelReason = '';
+  }
+
+  confirmCancelRide(): void {
+    if (!this.activeRide) {
+      return;
+    }
+
+    const status = (this.activeRide.status || '').toUpperCase();
+
+    if (status === 'DRIVER_INCOMING' || status === 'DRIVER_ARRIVED') {
+      if (!this.cancelReason.trim()) {
+        this.errorMessage = 'Cancellation reason is required.';
+        this.cdr.detectChanges();
+        return;
+      }
+    }
+
+    this.isCancelling = true;
+    this.errorMessage = null;
+
+    this.rideService
+      .cancelRideByDriver(this.activeRide.rideId, { reason: this.cancelReason.trim() || '' })
+      .subscribe({
+        next: () => {
+          this.successMessage = 'Ride successfully cancelled.';
+          this.activeRide = null;
+          this.showCancelForm = false;
+          this.isCancelling = false;
+          this.resetMap();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.errorMessage = err.error?.message || 'Failed to cancel ride.';
+          this.isCancelling = false;
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
   acknowledgeCompletion() {
     console.log('Acknowledging ride completion');
     this.rideCompletion = null;
     this.activeRide = null;
     this.resetMap();
-    this.loadActiveRide(); // Check for next ride
+//     this.loadActiveRide(); // Check for next ride
   }
 
   private resetMap(): void {
@@ -306,4 +474,43 @@ export class DriverHome implements OnInit {
     });
     this.mapComponent.nativeElement.dispatchEvent(event);
   }
+
+  finishRide() {
+    if (!this.activeRide) return;
+
+    this.isEnding = true;
+    this.errorMessage = null;
+
+    const rideId = this.activeRide.rideId;
+//     this.activeRide = null;
+
+    this.rideService.endRide(rideId).subscribe({
+      next: () => {
+        this.isEnding = false;
+        this.successMessage = 'Ride ended successfully!';
+        this.activeRide = null;
+        this.resetMap();
+        this.cdr.detectChanges();
+
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to end ride';
+        this.isEnding = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onEstimatedTimeChange(minutes: number) {
+    this.initialEstimatedMinutes = minutes;
+    if (this.activeRide) {
+      this.activeRide.estimatedTimeMin = minutes;
+    }
+    this.cdr.detectChanges();
+  }
+
+//   onEstimatedTimeChange(minutes: number) {
+//     this.initialEstimatedMinutes = minutes;
+//     this.cdr.detectChanges();
+//   }
 }

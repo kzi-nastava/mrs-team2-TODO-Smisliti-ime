@@ -55,7 +55,8 @@ public class DriverLocationBroadcaster {
                                 RideStatus.DRIVER_READY,
                                 RideStatus.DRIVER_INCOMING,
                                 RideStatus.DRIVER_ARRIVED,
-                                RideStatus.ACTIVE
+                                RideStatus.ACTIVE,
+                                RideStatus.DRIVER_ARRIVED_AT_DESTINATION
                         )
                 )
                 .stream()

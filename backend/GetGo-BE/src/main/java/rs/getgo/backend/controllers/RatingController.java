@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.rating.CreateRatingDTO;
 import rs.getgo.backend.dtos.rating.CreatedRatingDTO;
@@ -60,7 +61,7 @@ public class RatingController {
     // 2.8 Vehicle and driver rating
     @PreAuthorize("hasRole('PASSENGER')")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreatedRatingDTO> createRating(@RequestBody CreateRatingDTO dto, @RequestParam Long rideId, Authentication auth) throws Exception {
+    public ResponseEntity<CreatedRatingDTO> createRating(@Valid @RequestBody CreateRatingDTO dto, @RequestParam Long rideId, Authentication auth) throws Exception {
 
         CompletedRide ride = rideRepository.findById(rideId)
                 .orElseThrow(() -> new Exception("Ride not found with id: " + rideId));

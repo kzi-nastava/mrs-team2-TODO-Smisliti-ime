@@ -38,6 +38,7 @@ export interface GetDriverActiveRideDTO {
   latitudes?: number[];
   longitudes?: number[];
   addresses?: string[];
+  scheduledTime?: string; // Null if ride not scheduled
 }
 
 export interface UpdatedRideDTO {
@@ -70,6 +71,12 @@ export interface RideCompletionDTO {
   durationMinutes: number;
 }
 
+export interface StopRideDTO {
+  latitude: number;
+  longitude: number;
+  stoppedAt: string;
+}
+
 export interface GetPassengerActiveRideDTO {
   rideId: number;
   startingPoint: string;
@@ -99,6 +106,21 @@ export interface PassengerRideFinishedDTO {
   durationMinutes: number;
   message: string;
   timestamp: string;
+}
+
+export interface CancelRideRequestDTO {
+  reason: string; // driver must provide reason; passenger sends empty string
+}
+
+export interface GetFavoriteRideDTO {
+  id: number;
+  addresses: string[];
+  latitudes: number[];
+  longitudes: number[];
+  vehicleType: string;
+  needsBabySeats: boolean;
+  needsPetFriendly: boolean;
+  linkedPassengerEmails: string[];
 }
 
 @Injectable({
@@ -135,5 +157,25 @@ export class RideService {
 
   getPassengerActiveRide(): Observable<GetPassengerActiveRideDTO | null> {
     return this.http.get<GetPassengerActiveRideDTO>(`${this.apiUrl}/passenger/active`);
+  }
+
+  stopRide(rideId: number, payload: StopRideDTO) {
+    return this.http.post<RideCompletionDTO>(`${this.apiUrl}/${rideId}/stop`, payload);
+  }
+
+  cancelRideByDriver(rideId: number, body: CancelRideRequestDTO): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${rideId}/cancel/driver`, body);
+  }
+
+  cancelRideByPassenger(rideId: number, body: CancelRideRequestDTO): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${rideId}/cancel/passenger`, body);
+  }
+
+  createPanic(rideId: number): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${rideId}/panic`, {});
+  }
+
+  getFavoriteRides(): Observable<GetFavoriteRideDTO[]> {
+    return this.http.get<GetFavoriteRideDTO[]>(`${this.apiUrl}/favorites`);
   }
 }

@@ -1,9 +1,9 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MapComponent } from '../../layout/map/map.component';
 import { NavBarComponent } from '../../layout/nav-bar/nav-bar.component';
-import { RideService, CreateRideRequestDTO, CreatedRideResponseDTO } from '../../service/ride/ride.service';
+import { RideService, CreateRideRequestDTO, CreatedRideResponseDTO, GetFavoriteRideDTO } from '../../service/ride/ride.service';
 
 @Component({
   selector: 'app-passenger-home',
@@ -12,13 +12,17 @@ import { RideService, CreateRideRequestDTO, CreatedRideResponseDTO } from '../..
   templateUrl: './passenger-home.html',
   styleUrls: ['./passenger-home.css']
 })
-export class PassengerHome implements AfterViewInit, OnDestroy {
+export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
   travelForm: FormGroup;
   isLoading = false;
   estimateMinutes: number | null = null;
   serverError: string | null = null;
   successMessage: string | null = null;
   activeInputIndex: number | null = null;
+
+  favoriteRides: GetFavoriteRideDTO[] = [];
+  loadingFavorites = false;
+  showFavorites = false;
 
   // Store coordinates per destination
   private destinationCoords: Array<{ lat: number; lng: number } | null> = [null, null];
@@ -45,6 +49,10 @@ export class PassengerHome implements AfterViewInit, OnDestroy {
       hasPets: [false],
       vehicleType: ['']
     });
+  }
+
+  ngOnInit(): void {
+    this.loadFavoriteRides();
   }
 
   get destinations(): FormArray {
@@ -91,6 +99,76 @@ export class PassengerHome implements AfterViewInit, OnDestroy {
         this.activeInputIndex--;
       }
     }
+  }
+
+  loadFavoriteRides(): void {
+    this.loadingFavorites = true;
+
+    this.rideService.getFavoriteRides().subscribe({
+      next: (favorites) => {
+        this.favoriteRides = favorites;
+        this.loadingFavorites = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading favorite rides:', err);
+        this.loadingFavorites = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  toggleFavorites(): void {
+    this.showFavorites = !this.showFavorites;
+  }
+
+  loadFavoriteRide(favorite: GetFavoriteRideDTO): void {
+    // Clear existing destinations
+    this.destinations.clear();
+    this.destinationCoords = [];
+
+    // Add destinations
+    favorite.addresses.forEach((address, index) => {
+      this.destinations.push(this.fb.group({
+        name: [address, Validators.required]
+      }));
+      this.destinationCoords.push({
+        lat: favorite.latitudes[index],
+        lng: favorite.longitudes[index]
+      });
+    });
+
+    // Set vehicle type
+    this.travelForm.patchValue({
+      vehicleType: favorite.vehicleType === 'ANY' ? '' : favorite.vehicleType,
+      hasBaby: favorite.needsBabySeats,
+      hasPets: favorite.needsPetFriendly
+    });
+
+    // Set friend emails
+    this.friendEmails.clear();
+    if (favorite.linkedPassengerEmails && favorite.linkedPassengerEmails.length > 0) {
+      this.travelForm.patchValue({ travelOption: 'friends' });
+      favorite.linkedPassengerEmails.forEach(email => {
+        this.friendEmails.push(this.fb.group({
+          email: [email, [Validators.required, Validators.email]]
+        }));
+      });
+    } else {
+      this.travelForm.patchValue({ travelOption: 'alone' });
+    }
+
+    // Update map with route
+    this.updateMapRoute();
+
+    // Close dropdown
+    this.showFavorites = false;
+
+    this.successMessage = 'Favorite ride loaded successfully!';
+    setTimeout(() => {
+      this.successMessage = null;
+      this.cdr.detectChanges();
+    }, 2000);
   }
 
   getScheduledDateTimeDisplay(): string {

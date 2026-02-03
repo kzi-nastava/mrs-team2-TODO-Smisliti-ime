@@ -1,5 +1,7 @@
 package rs.getgo.backend.controllers;
 
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.authentication.GetActivationTokenDTO;
 import rs.getgo.backend.dtos.authentication.UpdateDriverPasswordDTO;
@@ -36,13 +38,19 @@ public class DriverController {
     // 2.9.2 - Get driver rides
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/rides", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Collection<GetRideDTO>> getDriverRides(
-            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
-
+    public ResponseEntity<Page<GetRideDTO>> getDriverRides(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate
+    ) {
         String email = AuthUtils.getCurrentUserEmail();
-        List<GetRideDTO> rides = driverService.getDriverRides(email, startDate);
+
+        Page<GetRideDTO> rides =
+                driverService.getDriverRides(email, startDate, page, size);
+
         return ResponseEntity.ok(rides);
     }
+
 
     // 2.2.3 - Driver registration (validate activation token)
     @GetMapping(value = "/activate/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -56,7 +64,7 @@ public class DriverController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> setDriverPassword(
-            @RequestBody UpdateDriverPasswordDTO updateDriverPasswordDTO) {
+            @Valid @RequestBody UpdateDriverPasswordDTO updateDriverPasswordDTO) {
 
         UpdatedPasswordDTO response = driverService.setDriverPassword(updateDriverPasswordDTO);
         return ResponseEntity.ok(response);
@@ -77,7 +85,7 @@ public class DriverController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverChangeRequestDTO> requestPersonalInfoChange(
-            @RequestBody UpdateDriverPersonalDTO updateDriverPersonalDTO) {
+            @Valid @RequestBody UpdateDriverPersonalDTO updateDriverPersonalDTO) {
 
         String email = AuthUtils.getCurrentUserEmail();
         CreatedDriverChangeRequestDTO response = driverService.requestPersonalInfoChange(email, updateDriverPersonalDTO);
@@ -90,7 +98,7 @@ public class DriverController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedDriverChangeRequestDTO> requestVehicleInfoChange(
-            @RequestBody UpdateDriverVehicleDTO updateDriverVehicleDTO) {
+            @Valid @RequestBody UpdateDriverVehicleDTO updateDriverVehicleDTO) {
 
         String email = AuthUtils.getCurrentUserEmail();
         CreatedDriverChangeRequestDTO response = driverService.requestVehicleInfoChange(email, updateDriverVehicleDTO);
@@ -116,7 +124,7 @@ public class DriverController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UpdatedPasswordDTO> updatePassword(
-            @RequestBody UpdatePasswordDTO updatePasswordDTO) {
+            @Valid @RequestBody UpdatePasswordDTO updatePasswordDTO) {
 
         String email = AuthUtils.getCurrentUserEmail();
         UpdatedPasswordDTO response = driverService.updatePassword(email, updatePasswordDTO);
@@ -150,6 +158,15 @@ public class DriverController {
         String email = AuthUtils.getCurrentUserEmail();
         UpdateDriverLocationDTO location = driverService.getLocation(email);
         return ResponseEntity.ok(location);
+    }
+
+    // Get driver active/inactive status
+    @PreAuthorize("hasRole('DRIVER')")
+    @GetMapping("/status")
+    public ResponseEntity<Boolean> getStatus() {
+        String email = AuthUtils.getCurrentUserEmail();
+        boolean isActive = driverService.isDriverActive(email);
+        return ResponseEntity.ok(isActive);
     }
 
     // Set driver active/inactive

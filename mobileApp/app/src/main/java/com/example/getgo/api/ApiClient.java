@@ -15,31 +15,55 @@ import java.util.concurrent.TimeUnit;
 public class ApiClient {
 
     private static Retrofit retrofit;
+    private static String currentBaseUrl;
+
+    // Default: ngrok tunnel URL (update when ngrok restarts with new subdomain)
+    private static final String DEFAULT_BASE_URL = "https://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
 
     public static Retrofit getClient() {
-        if (retrofit == null) {
+        return getClient(DEFAULT_BASE_URL);
+    }
+
+    // New: allow creating/returning a client for a custom backend URL (useful for physical device)
+    public static synchronized Retrofit getClient(String baseUrl) {
+        if (baseUrl == null || baseUrl.isEmpty()) baseUrl = DEFAULT_BASE_URL;
+        // ensure baseUrl ends with '/'
+        if (!baseUrl.endsWith("/")) baseUrl = baseUrl + "/";
+
+        if (retrofit == null || currentBaseUrl == null || !currentBaseUrl.equals(baseUrl)) {
 
             HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
             interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
             OkHttpClient client = new OkHttpClient.Builder()
                     .addInterceptor(interceptor)
-                    .connectTimeout(15, TimeUnit.SECONDS)
-                    .readTimeout(15, TimeUnit.SECONDS)
+                    .connectTimeout(25, TimeUnit.SECONDS)
+                    .readTimeout(25, TimeUnit.SECONDS)
+                    .writeTimeout(25, TimeUnit.SECONDS)
                     .build();
 
             Gson gson = new GsonBuilder()
                     .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer())
                     .create();
 
-
             retrofit = new Retrofit.Builder()
-                    .baseUrl("http://10.0.2.2:8080/") // localhost for emulator
+                    .baseUrl(baseUrl) // use provided baseUrl
                     .client(client)
                     .addConverterFactory(GsonConverterFactory.create(gson))
                     .build();
+
+            currentBaseUrl = baseUrl;
         }
 
         return retrofit;
+    }
+
+    // New: allow overriding base URL at runtime (call before making network calls)
+    public static synchronized void setDefaultBaseUrl(String baseUrl) {
+        if (baseUrl == null || baseUrl.trim().isEmpty()) return;
+        if (!baseUrl.endsWith("/")) baseUrl = baseUrl + "/";
+        // force rebuild of Retrofit on next getClient() call
+        currentBaseUrl = baseUrl;
+        retrofit = null;
     }
 }

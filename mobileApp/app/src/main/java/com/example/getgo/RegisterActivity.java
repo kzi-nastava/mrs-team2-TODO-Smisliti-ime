@@ -1,8 +1,10 @@
 package com.example.getgo;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,22 +18,38 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.graphics.Insets;
 
 import com.example.getgo.auth.AuthRepository;
+import com.example.getgo.api.ApiClient;
 
 public class RegisterActivity extends AppCompatActivity {
 
+    private static final String TAG = "RegisterActivity";
     private Button btnRegister;
     private TextView tvLoginLink;
     private EditText etEmail, etPassword, etPasswordConfirm, etFirstName, etLastName, etAddress, etPhone;
     private ImageView avatar;
     private Uri selectedAvatarUri = null;
 
+    private static final String PREFS_NAME = "getgo_prefs";
+    private static final String PREF_BACKEND_URL = "backend_url";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_register);
+        setupGuestToolbar();
 
         findViewById(android.R.id.content).setBackgroundResource(R.drawable.background);
+
+        // Apply stored backend URL if present
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String backend = prefs.getString(PREF_BACKEND_URL, null);
+        if (backend != null && !backend.isEmpty()) {
+            ApiClient.setDefaultBaseUrl(backend);
+            Log.d(TAG, "Using stored backend: " + backend);
+        } else {
+            Log.d(TAG, "Using default backend (ngrok)");
+        }
 
         initializeViews();
         setupWindowInsets();
@@ -98,10 +116,9 @@ public class RegisterActivity extends AppCompatActivity {
 
         String avatarUriString = selectedAvatarUri != null ? selectedAvatarUri.toString() : null;
 
-        // Perform network registration off the UI thread
         btnRegister.setEnabled(false);
+        Log.d(TAG, "Starting registration for: " + email);
         new Thread(() -> {
-            // registerUser now returns null on success, or error message
             String error = AuthRepository.getInstance(this)
                     .registerUser(email, pass, firstName, lastName, address, phone, "PASSENGER", avatarUriString);
 
@@ -109,17 +126,18 @@ public class RegisterActivity extends AppCompatActivity {
                 btnRegister.setEnabled(true);
                 if (error == null) {
                     Toast.makeText(this, "Registration created. Check email to activate account", Toast.LENGTH_LONG).show();
-                    finish(); // return to login
+                    Log.d(TAG, "Registration successful for: " + email);
+                    finish();
                 } else {
-                    // show server error returned by backend for debugging
                     Toast.makeText(this, "Registration failed: " + error, Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "Registration failed: " + error);
                 }
             });
         }).start();
     }
 
     private void navigateToLogin() {
-        finish(); // Close RegisterActivity to return to LoginActivity
+        finish();
     }
 
     @Override
@@ -129,5 +147,62 @@ public class RegisterActivity extends AppCompatActivity {
             avatar.setImageURI(selectedAvatarUri);
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+
+    private void setupGuestToolbar() {
+        View includeRoot = findViewById(R.id.guest_toolbar);
+        androidx.appcompat.widget.Toolbar toolbar = null;
+        if (includeRoot instanceof androidx.appcompat.widget.Toolbar) {
+            toolbar = (androidx.appcompat.widget.Toolbar) includeRoot;
+        } else if (includeRoot != null) {
+            toolbar = includeRoot.findViewById(R.id.toolbar);
+        }
+        if (toolbar == null) {
+            Log.w(TAG, "Toolbar not found in setupGuestToolbar");
+            return;
+        }
+
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            getSupportActionBar().setTitle("");
+        }
+
+        // Wire logo
+        TextView logo = toolbar.findViewById(R.id.tvAppLogo);
+        if (logo != null) {
+            logo.setOnClickListener(v -> {
+                Intent i = new Intent(this, MainActivity.class);
+                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(i);
+            });
+        }
+
+        // Hide Register button (we're on register page)
+        View btnRegister = toolbar.findViewById(R.id.btnRegisterToolbar);
+        if (btnRegister != null) {
+            btnRegister.setVisibility(View.GONE);
+        }
+
+        // Wire Login button
+        View btnLogin = toolbar.findViewById(R.id.btnLoginToolbar);
+        if (btnLogin != null) {
+            btnLogin.setOnClickListener(v -> startActivity(new Intent(this, LoginActivity.class)));
+        }
+
+        // Adjust toolbar padding for system bars
+        View root = findViewById(android.R.id.content);
+        final androidx.appcompat.widget.Toolbar finalToolbar = toolbar;
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            finalToolbar.setPadding(
+                finalToolbar.getPaddingLeft(),
+                bars.top,
+                finalToolbar.getPaddingRight(),
+                finalToolbar.getPaddingBottom()
+            );
+            return insets;
+        });
     }
 }

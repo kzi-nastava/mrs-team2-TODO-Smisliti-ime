@@ -104,7 +104,7 @@ export class WebSocketService {
       const subscription = this.stompClient.subscribe(topic, (message) => {
         try {
           const payload = JSON.parse(message.body);
-          console.log(`Received message from ${topic}:`, payload);
+          /*console.log(`Received message from ${topic}:`, payload);*/
           observer.next(payload);
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
@@ -131,4 +131,13 @@ export class WebSocketService {
   get connectionStatus(): boolean {
     return this.connected$.value;
   }
+
+  subscribeToAdminPanic(): Observable<any> {
+    return this.createSubscription('/socket-publisher/admin/panic-alerts');
+  }
+
+  subscribeToPassengerRideStopped(rideId: number): Observable<any> {
+    return this.createSubscription(`/socket-publisher/ride/${rideId}/ride-stopped`);
+  }
+
 }

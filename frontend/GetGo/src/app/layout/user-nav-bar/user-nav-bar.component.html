@@ -7,9 +7,7 @@
 
   <span [routerLink]="['/home']" class="app-title">GetGo</span>
   <span class="spacer"></span>
-<!--  <button mat-raised-button [routerLink]="['/ride']" >Ride</button>-->
   <span class="username">{{ fullName }}</span>
-<!--  <h2><img class="account-icon" src="/finish-flag.svg" alt="Destination flag"></h2>-->
   <img class="profile-icon" [src]="auth.userProfilePictureUrl() || '/assets/images/sussy_cat.png'" alt="Profile icon">
 </mat-toolbar>
 
@@ -19,7 +17,7 @@
     <span>Home</span>
   </button>
 
-  <button mat-menu-item [routerLink]="['/ride']">
+  <button mat-menu-item [routerLink]="['/passenger/passenger-ride-history']">
     <mat-icon>directions_car</mat-icon>
     <span>Ride history</span>
   </button>

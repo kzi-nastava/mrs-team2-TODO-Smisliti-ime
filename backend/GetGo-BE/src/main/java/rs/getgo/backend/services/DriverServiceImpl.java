@@ -1,7 +1,10 @@
 package rs.getgo.backend.services;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -80,7 +83,8 @@ public class DriverServiceImpl implements DriverService {
                     boolean isBusy = activeRideRepository.existsByDriverAndStatusIn(
                             driver,
                             List.of(RideStatus.DRIVER_READY, RideStatus.DRIVER_INCOMING,
-                                    RideStatus.DRIVER_ARRIVED, RideStatus.ACTIVE)
+                                    RideStatus.DRIVER_ARRIVED, RideStatus.ACTIVE, RideStatus.DRIVER_ARRIVED_AT_DESTINATION
+                            )
                     );
                     dto.setIsAvailable(!isBusy);
 
@@ -90,59 +94,82 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public List<GetRideDTO> getDriverRides(String email, LocalDate startDate) {
+    public Page<GetRideDTO> getDriverRides(String email, LocalDate startDate, int page, int size) {
         Driver driver = driverRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 
-        List<CompletedRide> rides = completedRideRepository.findByDriverId(driver.getId());
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("startTime").descending()
+        );
 
-        List<GetRideDTO> dtoList = new ArrayList<>();
+        Page<CompletedRide> ridesPage;
 
-        for (CompletedRide r : rides) {
+        if (startDate == null) {
+            ridesPage = completedRideRepository
+                    .findByDriverId(driver.getId(), pageable);
+        } else {
+            LocalDateTime start = startDate.atStartOfDay();
+            LocalDateTime end = startDate.atTime(23, 59, 59);
 
-            // filtering by startDate
-            if (startDate != null) {
-                if (r.getStartTime() == null) {
-                    continue;
-                }
-                if (!r.getStartTime().toLocalDate().isEqual(startDate)) {
-                    continue;
-                }
-            }
-
-
-            // mapping passengers
-            List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
-            if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
-                List<Passenger> passengers = passengerRepository.findAllById(r.getLinkedPassengerIds());
-
-                for (Passenger p : passengers) {
-                    passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getEmail()));
-                }
-            }
-
-            GetRideDTO dto = new GetRideDTO(
-                    r.getId(),
-                    r.getDriverId(),
-                    passengerDTOs,
-                    r.getRoute() != null ? r.getRoute().getStartingPoint() : "Unknown",
-                    r.getRoute() != null ? r.getRoute().getEndingPoint() : "Unknown",
-                    r.getStartTime(),
-                    r.getEndTime(),
-                    r.getStartTime() != null && r.getEndTime() != null ?
-                            (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
-                    r.isCancelled(),
-                    false,
-                    r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
-                    r.getActualPrice(),
-                    r.isPanicPressed()
+            ridesPage = completedRideRepository.findByDriverIdAndStartTimeBetween(
+                    driver.getId(),
+                    start,
+                    end,
+                    pageable
             );
-
-            dtoList.add(dto);
         }
 
-        return dtoList;
+        return ridesPage.map(this::mapToDTO);
     }
+
+    private GetRideDTO mapToDTO(CompletedRide r) {
+
+        List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
+
+        if (r.getPayingPassengerId() != null) {
+            passengerDTOs.add(
+                    new GetRidePassengerDTO(
+                            r.getPayingPassengerId(),
+                            r.getPayingPassengerEmail()
+                    )
+            );
+        }
+
+        if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
+            List<Passenger> passengers =
+                    passengerRepository.findAllById(r.getLinkedPassengerIds());
+
+            passengers.forEach(p ->
+                    passengerDTOs.add(
+                            new GetRidePassengerDTO(p.getId(), p.getEmail())
+                    )
+            );
+        }
+
+        return new GetRideDTO(
+                r.getId(),
+                r.getDriverId(),
+                passengerDTOs,
+                r.getRoute() != null ? r.getRoute().getStartingPoint() : "Unknown",
+                r.getRoute() != null ? r.getRoute().getEndingPoint() : "Unknown",
+                r.getStartTime(),
+                r.getEndTime(),
+                r.getStartTime() != null && r.getEndTime() != null
+                        ? (int) java.time.Duration
+                        .between(r.getStartTime(), r.getEndTime())
+                        .toMinutes()
+                        : 0,
+                r.isCancelled(),
+                false,
+                r.isCompletedNormally() ? "FINISHED" :
+                        (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
+                r.getEstimatedPrice(),
+                r.isPanicPressed()
+        );
+    }
+
 
     @Override
     public GetActivationTokenDTO validateActivationToken(String token) {
@@ -221,8 +248,7 @@ public class DriverServiceImpl implements DriverService {
 
         dto.setProfilePictureUrl(driver.getProfilePictureUrl());
 
-        // TODO: Calculate recent hours worked in last 24h
-        dto.setRecentHoursWorked(0);
+        dto.setRecentHoursWorked(calculateRecentHoursWorked(email));
 
         return dto;
     }
@@ -400,6 +426,13 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
+    public boolean isDriverActive(String email) {
+        Driver driver = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found"));
+        return driver.getActive();
+    }
+
+    @Override
     public Driver findAvailableDriver(ActiveRide ride) {
         WayPoint startPoint = ride.getRoute().getWaypoints().getFirst();
         double lat = startPoint.getLatitude();
@@ -434,45 +467,17 @@ public class DriverServiceImpl implements DriverService {
         return driver.getVehicle().getType() == ride.getVehicleType();
     }
 
-    private boolean hasExceededWorkingHours(Driver driver) {
-        List<CompletedRide> recentRides = completedRideRepository
-                .findByDriverIdAndEndTimeAfter(driver.getId(), LocalDateTime.now().minusHours(24));
-
-        // Calculate total working hours
-        double totalMinutes = 0;
-        for (CompletedRide completedRide : recentRides) {
-            if (completedRide.getStartTime() != null && completedRide.getEndTime() != null) {
-                long minutes = java.time.Duration.between(
-                        completedRide.getStartTime(),
-                        completedRide.getEndTime()
-                ).toMinutes();
-                totalMinutes += minutes;
-            }
-        }
-
-        // Factor in current driving time
-        ActiveRide currentRide = activeRideRepository
-                .findByDriverAndStatus(driver, RideStatus.ACTIVE)
-                .orElse(null);
-        if (currentRide != null && currentRide.getActualStartTime() != null) {
-            long currentRideMinutes = java.time.Duration.between(
-                    currentRide.getActualStartTime(),
-                    LocalDateTime.now()
-            ).toMinutes();
-            totalMinutes += currentRideMinutes;
-        }
-
-        return (totalMinutes / 60.0) >= 8.0;
-    }
-
     private boolean isFree(Driver driver) {
         return !activeRideRepository
                 .existsByDriverAndStatusIn(
                         driver,
                         List.of(
-                                RideStatus.ACTIVE,
+                                RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE,
+                                RideStatus.DRIVER_READY,
                                 RideStatus.DRIVER_INCOMING,
-                                RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE
+                                RideStatus.DRIVER_ARRIVED,
+                                RideStatus.ACTIVE,
+                                RideStatus.DRIVER_ARRIVED_AT_DESTINATION
                         )
                 );
     }
@@ -555,5 +560,33 @@ public class DriverServiceImpl implements DriverService {
         }
 
         return closest;
+    }
+
+    public double calculateRecentHoursWorked(String email) {
+        Driver driver = driverRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
+
+        LocalDateTime twentyFourHoursAgo = LocalDateTime.now().minusHours(24);
+
+        List<CompletedRide> recentRides = completedRideRepository
+                .findByDriverIdAndEndTimeAfter(driver.getId(), twentyFourHoursAgo);
+
+        double totalMinutes = 0.0;
+
+        for (CompletedRide ride : recentRides) {
+            if (ride.getStartTime() != null && ride.getEndTime() != null) {
+                long minutes = java.time.Duration.between(
+                        ride.getStartTime(),
+                        ride.getEndTime()
+                ).toMinutes();
+                totalMinutes += minutes;
+            }
+        }
+
+        return Math.round((totalMinutes / 60.0) * 100.0) / 100.0;
+    }
+
+    public boolean hasExceededWorkingHours(Driver driver) {
+        return calculateRecentHoursWorked(driver.getEmail()) >= 8.0;
     }
 }

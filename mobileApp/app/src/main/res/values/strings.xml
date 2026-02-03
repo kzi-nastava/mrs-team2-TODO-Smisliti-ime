@@ -93,6 +93,23 @@
     <string name="ride_tracking">Ride tracking</string>
     <string name="panic">PANIC</string>
 
+    <!-- Order ride -->
+    <string name="order_ride">Order Ride</string>
+    <string name="cancel_ride">Cancel</string>
+    <string name="ride_start_point">Starting point</string>
+    <string name="ride_destination">Destination</string>
+    <string name="remove_waypoint">Remove Waypoint</string>
+    <string name="add_waypoint">Add Waypoint</string>
+    <string name="vehicle_type">Vehicle Type</string>
+    <string name="pick_order_time">Order Timing</string>
+    <string name="passenger_pets">I have pets</string>
+    <string name="passenger_baby">I have a baby</string>
+    <string name="scheduled_order_time">Scheduled Time</string>
+    <string name="remove_friend">Remove Friend</string>
+    <string name="add_friend">Add Friend</string>
+    <string name="waypoint_hint">Waypoint</string>
+    <string name="friend_email_hint">Friend email</string>
+
 
     <!-- Maps -->
     <string name="mapbox_access_token">pk.eyJ1IjoibWVyaXMxMCIsImEiOiJjbWpxandnNmIwd2piM2dzYzVlc3N6NXExIn0.-OX2bzr7c8eGfjaUX-gwZw</string>

@@ -83,7 +83,7 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
 
-        LatLng noviSad = new LatLng(44.8176, 20.4569);
+        LatLng noviSad = new LatLng(45.2519, 19.8370);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
         // Primer marker-a

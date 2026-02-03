@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#8FABD4">
+
+    <!-- Map -->
+    <FrameLayout
+        android:id="@+id/map_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2">
+
+        <fragment
+            android:id="@+id/map_fragment"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </FrameLayout>
+
+    <!-- Ride ordering -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="3"
+        android:fillViewport="true"
+        android:background="#CBDCEB">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:id="@+id/tvOrderRideTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/order_ride"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#133E87"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Starting Point -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:hint="@string/ride_start_point"
+                app:boxBackgroundColor="@android:color/white">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etStartPoint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:textColor="#133E87"
+                    android:textSize="14sp"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutWaypoints"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+
+            <!-- Destination -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:hint="@string/ride_destination"
+                app:boxBackgroundColor="@android:color/white">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etDestination"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:textColor="#133E87"
+                    android:textSize="14sp"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Add/Remove waypoints -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddWaypoint"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/add_waypoint"
+                    android:textColor="@android:color/white"
+                    android:backgroundTint="#133E87"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRemoveWaypoint"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/remove_waypoint"
+                    android:textColor="@android:color/white"
+                    android:backgroundTint="#133E87"
+                    android:enabled="false"/>
+            </LinearLayout>
+
+            <!-- Vehicle type -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/vehicle_type"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#133E87"
+                android:layout_marginBottom="8dp"/>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                style="@style/Widget.Material3.TextInputLayout.FilledBox.ExposedDropdownMenu"
+                app:boxBackgroundColor="@android:color/white">
+                <AutoCompleteTextView
+                    android:id="@+id/actvVehicleType"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    android:textColor="#133E87"
+                    android:textSize="14sp"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Baby/pets -->
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/cbHasBaby"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/passenger_baby"
+                android:textColor="#133E87"
+                android:layout_marginBottom="8dp"
+                app:buttonTint="#133E87"/>
+
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/cbHasPets"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/passenger_pets"
+                android:textColor="#133E87"
+                android:layout_marginBottom="16dp"
+                app:buttonTint="#133E87"/>
+
+            <!-- Order now/scheduled -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/pick_order_time"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#133E87"
+                android:layout_marginBottom="8dp"/>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                style="@style/Widget.Material3.TextInputLayout.FilledBox.ExposedDropdownMenu"
+                app:boxBackgroundColor="@android:color/white">
+                <AutoCompleteTextView
+                    android:id="@+id/actvOrderTiming"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    android:textColor="#133E87"
+                    android:textSize="14sp"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutScheduledTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/scheduled_order_time"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#133E87"
+                    android:layout_marginBottom="8dp"/>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:boxBackgroundColor="@android:color/white">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etScheduledTime"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        android:focusable="false"
+                        android:clickable="true"
+                        android:textColor="#133E87"
+                        android:textSize="14sp"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+
+            <!-- Alone/with friends -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Travel Option"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#133E87"
+                android:layout_marginBottom="8dp"/>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                style="@style/Widget.Material3.TextInputLayout.FilledBox.ExposedDropdownMenu"
+                app:boxBackgroundColor="@android:color/white">
+                <AutoCompleteTextView
+                    android:id="@+id/actvTravelOption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    android:textColor="#133E87"
+                    android:textSize="14sp"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Friend emails -->
+            <LinearLayout
+                android:id="@+id/layoutFriendEmails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/layoutFriendEmailsList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"/>
+
+                <!-- Add/Remove email buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginBottom="16dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAddFriendEmail"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="@string/add_friend"
+                        android:textColor="@android:color/white"
+                        android:backgroundTint="#133E87"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRemoveFriendEmail"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/remove_friend"
+                        android:textColor="@android:color/white"
+                        android:backgroundTint="#133E87"
+                        android:enabled="false"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Order/Cancel ride buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnOrderRide"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/order_ride"
+                    android:textColor="@android:color/white"
+                    android:backgroundTint="#133E87"
+                    android:paddingVertical="12dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCancel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/cancel_ride"
+                    android:textColor="@android:color/white"
+                    android:backgroundTint="#133E87"
+                    android:paddingVertical="12dp"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

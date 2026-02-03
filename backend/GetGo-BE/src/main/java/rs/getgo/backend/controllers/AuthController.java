@@ -112,27 +112,6 @@ public class AuthController {
         }
     }
 
-    // Keep JSON for mobile app / API clients
-    @GetMapping(value = "/activate-mobile", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> activateAccountMobileJson(@RequestParam("token") String token) {
-        boolean activated = authService.activateAccount(token);
-        if (activated) {
-            return ResponseEntity.ok(
-                    Map.of(
-                            "activated", true,
-                            "message", "Account activated successfully"
-                    )
-            );
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(
-                        Map.of(
-                                "activated", false,
-                                "message", "Invalid or expired activation token"
-                        )
-                );
-    }
-
     // Add a browser-friendly HTML response (so the link “leads somewhere”)
     @GetMapping(value = "/activate-mobile", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> activateAccountMobileHtml(@RequestParam("token") String token) {

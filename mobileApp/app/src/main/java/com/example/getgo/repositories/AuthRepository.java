@@ -1,9 +1,6 @@
 package com.example.getgo.repositories;
 
-import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.util.Log;
 
@@ -13,7 +10,6 @@ import com.example.getgo.api.services.AuthApiService;
 import com.example.getgo.dtos.user.CreateLoginDTO;
 import com.example.getgo.dtos.user.ForgotPasswordDTO;
 import com.example.getgo.dtos.user.ResetPasswordDTO;
-import com.example.getgo.model.UserRole;
 
 import org.json.JSONObject;
 
@@ -31,12 +27,10 @@ import java.util.Map;
 public class AuthRepository {
     private static final String TAG = "AuthRepository";
     private static AuthRepository instance;
-    private final AuthDatabaseHelper dbHelper;
     private final Context appContext;
 
     private AuthRepository(Context ctx) {
         this.appContext = ctx.getApplicationContext();
-        dbHelper = new AuthDatabaseHelper(appContext);
     }
 
     public static synchronized AuthRepository getInstance(Context ctx) {
@@ -44,37 +38,6 @@ public class AuthRepository {
         return instance;
     }
 
-    // returns role if authenticated and active, otherwise null
-    public UserRole authenticateUser(String email, String password) {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor c = db.rawQuery("SELECT role, active, password FROM users WHERE email = ?", new String[]{email});
-        try {
-            if (c.moveToFirst()) {
-                String dbPass = c.getString(2);
-                int active = c.getInt(1);
-                String role = c.getString(0);
-                if (dbPass != null && dbPass.equals(password) && active == 1) {
-                    try {
-                        return UserRole.valueOf(role);
-                    } catch (Exception ex) {
-                        return UserRole.PASSENGER;
-                    }
-                }
-            }
-        } finally {
-            c.close();
-        }
-        return null;
-    }
-
-    // helper to activate account (could be called by link handler)
-    public boolean activateAccount(String email) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues cv = new ContentValues();
-        cv.put("active", 1);
-        int updated = db.update("users", cv, "email = ?", new String[]{email});
-        return updated > 0;
-    }
 
     /**
      * Register user via backend /api/auth/register endpoint using AuthApiService interface.

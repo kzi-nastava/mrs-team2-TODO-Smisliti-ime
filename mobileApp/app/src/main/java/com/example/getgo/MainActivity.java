@@ -9,7 +9,6 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.ActionBar;
@@ -17,6 +16,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
+import androidx.core.view.WindowCompat;
 
 import com.example.getgo.helpers.NavigationHelper;
 import com.example.getgo.model.UserRole;
@@ -31,115 +31,79 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_main);
 
-        // Get user role from login
+        initUserRole();
+        setupGuestRestrictions();
+        setupToolbarAndNavigation();
+
+        openFragment(navigationHelper.getStartFragment());
+    }
+
+    private void initUserRole() {
         String roleString = getIntent().getStringExtra("USER_ROLE");
-        if (roleString != null) {
-            currentUserRole = UserRole.valueOf(roleString);
-        } else {
-            // No role provided - redirect to login
-//            redirectToLogin();
-            currentUserRole = UserRole.GUEST;
-//            return;
-        }
+        currentUserRole = roleString != null
+                ? UserRole.valueOf(roleString)
+                : UserRole.GUEST;
 
-        boolean isGuest = currentUserRole == UserRole.GUEST;
+        navigationHelper = new NavigationHelper(currentUserRole);
+    }
 
-        if (isGuest) {
-            // hide bottom navigation
-            findViewById(R.id.bottom_nav).setVisibility(View.GONE);
+    private void setupGuestRestrictions() {
+        if (currentUserRole != UserRole.GUEST) return;
 
-            // hide drawer (hamburger)
-            drawer = findViewById(R.id.drawer_layout);
+        View bottom = findViewById(R.id.bottom_nav);
+        if (bottom != null) bottom.setVisibility(View.GONE);
+
+        drawer = findViewById(R.id.drawer_layout);
+        if (drawer != null) {
             drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
         }
+    }
 
-        // Initialize navigation helper
-        navigationHelper = new NavigationHelper(currentUserRole);
-
+    private void setupToolbarAndNavigation() {
         FrameLayout toolbarContainer = findViewById(R.id.toolbar_container);
+        toolbarContainer.removeAllViews();
 
         if (currentUserRole == UserRole.GUEST) {
-            getLayoutInflater().inflate(R.layout.guest_toolbar, toolbarContainer, true);
 
-            Button btnLogin = toolbarContainer.findViewById(R.id.btnLoginToolbar);
-            Button btnRegister = toolbarContainer.findViewById(R.id.btnRegisterToolbar);
+            View toolbarView = getLayoutInflater()
+                    .inflate(R.layout.guest_toolbar, toolbarContainer, true);
 
-            btnLogin.setOnClickListener(v -> startActivity(new Intent(this, LoginActivity.class)));
-            btnRegister.setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
+            Button btnLogin = toolbarView.findViewById(R.id.btnLoginToolbar);
+            Button btnRegister = toolbarView.findViewById(R.id.btnRegisterToolbar);
+
+            btnLogin.setOnClickListener(v ->
+                    startActivity(new Intent(this, LoginActivity.class)));
+
+            btnRegister.setOnClickListener(v ->
+                    startActivity(new Intent(this, RegisterActivity.class)));
+
         } else {
-            getLayoutInflater().inflate(R.layout.standard_toolbar, toolbarContainer, true);
 
-            Toolbar toolbar = toolbarContainer.findViewById(R.id.toolbar);
+            View toolbarView = getLayoutInflater()
+                    .inflate(R.layout.standard_toolbar, toolbarContainer, true);
+
+            Toolbar toolbar = toolbarView.findViewById(R.id.toolbar);
             setSupportActionBar(toolbar);
 
             drawer = findViewById(R.id.drawer_layout);
 
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                    this,
-                    drawer,
-                    toolbar,
-                    R.string.drawer_open,
-                    R.string.drawer_close
+                    this, drawer, toolbar,
+                    R.string.drawer_open, R.string.drawer_close
             );
+
             drawer.addDrawerListener(toggle);
             toggle.syncState();
-
-            toggle.getDrawerArrowDrawable().setColor(getColor(android.R.color.white));
+            toggle.getDrawerArrowDrawable()
+                    .setColor(getColor(android.R.color.white));
 
             setupBottomNavigation();
             setupDrawerNavigation();
-
-        }
-
-
-        // Load default fragment for the user's role
-        openFragment(navigationHelper.getStartFragment());
-    }
-
-    private void setupToolbar() {
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        if (currentUserRole == UserRole.GUEST) {
-            Button btnLogin = toolbar.findViewById(R.id.btnLoginToolbar);
-            Button btnRegister = toolbar.findViewById(R.id.btnRegisterToolbar);
-
-            btnLogin.setOnClickListener(v -> {
-                Intent intent = new Intent(this, LoginActivity.class);
-                startActivity(intent);
-            });
-
-            btnRegister.setOnClickListener(v -> {
-                Intent intent = new Intent(this, RegisterActivity.class);
-                startActivity(intent);
-            });
-        }
-
-
-        toolbar.setTitleTextColor(getColor(R.color.white));
-
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar == null) return;
-
-        actionBar.setTitle(R.string.app_name);
-
-        if (currentUserRole != UserRole.GUEST) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_hamburger);
-
-            drawer = findViewById(R.id.drawer_layout);
-            ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                    this, drawer, toolbar,
-                    R.string.drawer_open, R.string.drawer_close);
-            drawer.addDrawerListener(toggle);
-            toggle.syncState();
-            toggle.getDrawerArrowDrawable().setColor(getColor(android.R.color.white));
         }
     }
-
 
     private void setupBottomNavigation() {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);

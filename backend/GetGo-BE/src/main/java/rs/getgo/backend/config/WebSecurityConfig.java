@@ -88,7 +88,9 @@ public class WebSecurityConfig {
                     .requestMatchers(new AntPathRequestMatcher("/api/drivers/activate/**")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/forgot-password")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/reset-password")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/auth/reset-password-mobile")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/activate")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/auth/activate-mobile")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/uploads/*")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/ratings/**")).permitAll() // TODO: Remove later?
                     .requestMatchers(new AntPathRequestMatcher("/api/drivers/**")).permitAll() // TODO: Remove later?
@@ -108,14 +110,17 @@ public class WebSecurityConfig {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring()
                 .requestMatchers(HttpMethod.GET, "/", "/webjars/*", "/*.html", "favicon.ico",
-                        "/*/*.html", "/*/*.css", "/*/*.js", "/uploads/**")
+                        "/*/*.html", "/*/*.css", "/*/*.js", "/uploads/**",
+                        "/api/auth/reset-password-mobile",
+                        "/api/auth/activate-mobile")
                 .requestMatchers(new AntPathRequestMatcher("/socket/**"));
     }
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:4200"));
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:4200",
+                "https://nonpossibly-nonderivable-teddy.ngrok-free.dev"));
         configuration.setAllowedMethods(List.of("*"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

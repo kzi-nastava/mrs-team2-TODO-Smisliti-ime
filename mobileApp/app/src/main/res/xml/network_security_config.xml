@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+
+    <!-- For dev: allow cleartext if you ever hit http://... (ngrok uses https so this doesn't matter) -->
+    <base-config cleartextTrafficPermitted="true" />
+
+</network-security-config>

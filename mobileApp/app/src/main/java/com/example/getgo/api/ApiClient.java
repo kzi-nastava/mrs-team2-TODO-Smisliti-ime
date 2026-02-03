@@ -1,7 +1,7 @@
 package com.example.getgo.api;
 
-import com.example.getgo.interfaces.AuthApiService;
-import com.example.getgo.helpers.LocalDateTimeDeserializer;
+import com.example.getgo.api.services.AuthApiService;
+import com.example.getgo.utils.LocalDateTimeDeserializer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 

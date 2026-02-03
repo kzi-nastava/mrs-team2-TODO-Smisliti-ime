@@ -31,6 +31,7 @@ import {ResetPasswordComponent} from './pages/authentication/reset-password/rese
 import {ActivateComponent} from './pages/authentication/activate/activate';
 import {PassengerRidesComponent} from './passenger/passenger-ride-history/passenger-rides.component';
 import {PassengerRideDetailsComponent} from './passenger/passenger-ride-details/ride-details.component';
+import { SupportChatComponent } from './layout/support-chat/support-chat.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -50,7 +51,6 @@ export const routes: Routes = [
   { path: 'rides/:rideId/rate', component: RatingVehicleDriverComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'passenger/rides/:id', component: PassengerRideDetailsComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger]}},
   { path: 'passenger/passenger-ride-history', component: PassengerRidesComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
-//   { path: 'passenger/in-ride', component: InRideComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'passenger/ride-tracking', component: RideTrackingComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'driver/activate/:token', component: DriverActivate },
   { path: 'driver/driver-home', component: DriverHome, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
@@ -64,5 +64,6 @@ export const routes: Routes = [
   { path: 'admin/change-password', component: AdminChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/driver-registration', component: DriverRegistration, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'favorite-rides', component: FavoriteRides, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
+  { path: 'support-chat', component: SupportChatComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger, UserRole.Driver, UserRole.Admin] } },
   { path: '**', component: NotFoundComponent }
 ];

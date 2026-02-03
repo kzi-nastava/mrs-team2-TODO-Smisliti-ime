@@ -5,7 +5,6 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.example.getgo.api.ApiClient;
-import com.example.getgo.utils.AuthDatabaseHelper;
 import com.example.getgo.api.services.AuthApiService;
 import com.example.getgo.dtos.user.CreateLoginDTO;
 import com.example.getgo.dtos.user.ForgotPasswordDTO;

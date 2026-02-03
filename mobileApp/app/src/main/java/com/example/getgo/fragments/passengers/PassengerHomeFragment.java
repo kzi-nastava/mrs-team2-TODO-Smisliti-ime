@@ -4,6 +4,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,7 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.example.getgo.R;
+import com.example.getgo.utils.MapManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -31,6 +33,7 @@ import java.util.List;
 public class PassengerHomeFragment extends Fragment implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private MapManager mapManager;
 
     private TextInputEditText etStartPoint, etDestination;
     private LinearLayout layoutWaypoints, layoutFriendEmailsList, layoutScheduledTime, layoutFriendEmails;
@@ -121,6 +124,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         etStartPoint.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) activeInputIndex = -1;
         });
+
         etDestination.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) activeInputIndex = -2;
         });
@@ -166,37 +170,83 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
+        mapManager = new MapManager(requireContext(), mMap);
 
         LatLng noviSad = new LatLng(45.2519, 19.8370);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
-        mMap.addMarker(new MarkerOptions()
-                .position(noviSad)
-                .title("Novi Sad"));
+        mMap.setOnMapClickListener(this::handleMapClick);
+    }
 
-        mMap.setOnMapClickListener(latLng -> {
-            if (activeInputIndex == null) return;
+    private void handleMapClick(LatLng latLng) {
+        if (activeInputIndex == null) return;
 
-            String displayValue = String.format("%.5f, %.5f", latLng.latitude, latLng.longitude);
-
-            if (activeInputIndex == -1) {
-                startPointCoord = latLng;
-                etStartPoint.setText(displayValue);
-                etStartPoint.clearFocus();
-            } else if (activeInputIndex == -2) {
-                destinationCoord = latLng;
-                etDestination.setText(displayValue);
-                etDestination.clearFocus();
-            } else if (activeInputIndex >= 0 && activeInputIndex < waypointInputs.size()) {
-                waypointCoords.set(activeInputIndex, latLng);
-                waypointInputs.get(activeInputIndex).setText(displayValue);
-                waypointInputs.get(activeInputIndex).clearFocus();
+        mapManager.getAddressFromLocation(latLng, new MapManager.AddressCallback() {
+            @Override
+            public void onAddressFound(String address, LatLng coordinates) {
+                setLocationForActiveInput(coordinates, address);
+                drawRouteIfReady();
+                activeInputIndex = null;
             }
 
-            Toast.makeText(requireContext(),
-                    "Location set: " + displayValue,
-                    Toast.LENGTH_SHORT).show();
+            @Override
+            public void onError(String error) {
+                String displayValue = String.format("%.5f, %.5f", latLng.latitude, latLng.longitude);
+                setLocationForActiveInput(latLng, displayValue);
+                activeInputIndex = null;
+                Toast.makeText(requireContext(), "Location set (geocoding failed)", Toast.LENGTH_SHORT).show();
+            }
         });
+    }
+
+    private void setLocationForActiveInput(LatLng coordinates, String displayText) {
+        if (activeInputIndex == -1) {
+            startPointCoord = coordinates;
+            etStartPoint.setText(displayText);
+            etStartPoint.clearFocus();
+            mapManager.addWaypointMarker(coordinates, 0, "Start Point");
+
+        } else if (activeInputIndex == -2) {
+            destinationCoord = coordinates;
+            etDestination.setText(displayText);
+            etDestination.clearFocus();
+            mapManager.addWaypointMarker(coordinates, 100, "Destination");
+
+        } else if (activeInputIndex >= 0 && activeInputIndex < waypointInputs.size()) {
+            waypointCoords.set(activeInputIndex, coordinates);
+            waypointInputs.get(activeInputIndex).setText(displayText);
+            waypointInputs.get(activeInputIndex).clearFocus();
+            mapManager.addWaypointMarker(coordinates, activeInputIndex + 1, "Waypoint " + (activeInputIndex + 1)); // CHANGED: +1 to avoid overlap with start
+        }
+    }
+
+    private void drawRouteIfReady() {
+        List<LatLng> allPoints = new ArrayList<>();
+
+        if (startPointCoord != null) {
+            allPoints.add(startPointCoord);
+            Log.d("PassengerHome", "Added start point: " + startPointCoord);
+        }
+        for (LatLng waypoint : waypointCoords) {
+            if (waypoint != null) {
+                allPoints.add(waypoint);
+                Log.d("PassengerHome", "Added waypoint: " + waypoint);
+            }
+        }
+        if (destinationCoord != null) {
+            allPoints.add(destinationCoord);
+            Log.d("PassengerHome", "Added destination: " + destinationCoord);
+        }
+
+        Log.d("PassengerHome", "Total points for route: " + allPoints.size());
+
+        if (allPoints.size() < 2) {
+            Log.d("PassengerHome", "Not enough points to draw route");
+            return;
+        }
+
+        Log.d("PassengerHome", "Calling mapManager.drawRoute()");
+        mapManager.drawRoute(allPoints, null);
     }
 
     private void addWaypoint() {
@@ -208,7 +258,9 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
         int waypointIndex = waypointInputs.size();
         etWaypoint.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) activeInputIndex = waypointIndex;
+            if (hasFocus) {
+                activeInputIndex = waypointIndex;
+            }
         });
 
         waypointInputs.add(etWaypoint);
@@ -229,6 +281,8 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
             if (waypointInputs.isEmpty()) {
                 btnRemoveWaypoint.setEnabled(false);
             }
+
+            drawRouteIfReady();
         }
     }
 

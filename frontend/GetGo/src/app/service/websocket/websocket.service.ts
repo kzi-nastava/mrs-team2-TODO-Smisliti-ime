@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { Client, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { Message } from '../../model/support-chat.model';
+
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +12,7 @@ export class WebSocketService {
   private stompClient: Client | null = null;
   private connected$ = new BehaviorSubject<boolean>(false);
   private subscriptions = new Map<string, StompSubscription>();
+  private chatMessages = new Map<number, Subject<Message>>();
 
   constructor() {}
 
@@ -140,4 +143,15 @@ export class WebSocketService {
     return this.createSubscription(`/socket-publisher/ride/${rideId}/ride-stopped`);
   }
 
+  subscribeToChat(chatId: number): Observable<Message> {
+    if (!this.chatMessages.has(chatId)) {
+      const subject = new Subject<Message>();
+      this.chatMessages.set(chatId, subject);
+
+      this.createSubscription(`/socket-publisher/chat/${chatId}`)
+        .subscribe(msg => subject.next(msg));
+    }
+
+    return this.chatMessages.get(chatId)!.asObservable();
+  }
 }

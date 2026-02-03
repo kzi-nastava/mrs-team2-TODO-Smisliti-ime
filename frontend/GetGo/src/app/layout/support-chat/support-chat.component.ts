@@ -10,19 +10,35 @@ import { CommonModule } from '@angular/common';
   styleUrl: './support-chat.component.css',
 })
 export class SupportChatComponent  {
-  chat = inject(SupportChatService);
+  chatService = inject(SupportChatService);
 
+  messages = signal<Message[]>([]);
   newMessage = signal('');
+  chatId!: number;
+
+  ngOnInit() {
+    this.chatService.getMyChat().subscribe(chat => {
+      this.chatId = chat.id;
+
+      this.chatService.getMyMessages()
+        .subscribe(msgs => this.messages.set(msgs));
+
+      this.chatService.subscribe(chat.id, msg => {
+        this.messages.update(m => [...m, msg]);
+      });
+    });
+  }
 
   send() {
     const text = this.newMessage().trim();
     if (!text) return;
 
-    this.chat.sendMessage(text);
-    this.newMessage.set('');
+    this.chatService.sendMessage(text).subscribe(() => {
+      this.newMessage.set('');
+    });
   }
 
-  isMine(msg: any) {
+  isMine(msg: Message) {
     return msg.senderType === 'USER';
   }
 }

@@ -1,5 +1,6 @@
 package com.example.getgo.api;
 
+import com.example.getgo.interfaces.AuthApiService;
 import com.example.getgo.helpers.LocalDateTimeDeserializer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -65,5 +66,19 @@ public class ApiClient {
         // force rebuild of Retrofit on next getClient() call
         currentBaseUrl = baseUrl;
         retrofit = null;
+    }
+
+    // New: provide the AuthApiService instance from the interfaces folder
+    private static AuthApiService authApiService;
+
+    /**
+     * Returns the AuthApiService instance for making auth-related API calls.
+     * All auth endpoints are defined in the AuthApiService interface.
+     */
+    public static AuthApiService getAuthApiService() {
+        if (authApiService == null) {
+            authApiService = getClient().create(AuthApiService.class);
+        }
+        return authApiService;
     }
 }

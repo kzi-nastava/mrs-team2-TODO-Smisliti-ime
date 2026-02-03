@@ -13,6 +13,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.getgo.api.ApiClient;
+import com.example.getgo.utils.ValidationUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -46,6 +47,10 @@ public class ForgotPasswordRequestActivity extends AppCompatActivity {
             String email = etEmailRequest.getText() != null ? etEmailRequest.getText().toString().trim() : "";
             if (email.isEmpty()) {
                 Toast.makeText(this, "Please enter your email", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!ValidationUtils.isValidEmail(email)) {
+                Toast.makeText(this, "Invalid email format", Toast.LENGTH_SHORT).show();
                 return;
             }
 

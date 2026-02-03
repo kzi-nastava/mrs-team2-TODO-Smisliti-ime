@@ -14,6 +14,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.getgo.api.ApiClient;
+import com.example.getgo.utils.ValidationUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -102,11 +103,15 @@ public class ResetPasswordActivity extends AppCompatActivity {
                 String newPassword = etNewPassword.getText() != null ? etNewPassword.getText().toString().trim() : "";
                 String confirmPassword = etConfirmPassword.getText() != null ? etConfirmPassword.getText().toString().trim() : "";
 
+                // Client-side validation
                 if (newPassword.isEmpty() || confirmPassword.isEmpty()) {
                     Toast.makeText(ResetPasswordActivity.this, "Please fill in both fields", Toast.LENGTH_SHORT).show();
                     return;
                 }
-
+                if (!ValidationUtils.isValidPassword(newPassword)) {
+                    Toast.makeText(ResetPasswordActivity.this, "Password must be at least 8 characters", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 if (!newPassword.equals(confirmPassword)) {
                     Toast.makeText(ResetPasswordActivity.this, "Passwords do not match", Toast.LENGTH_SHORT).show();
                     return;

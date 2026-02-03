@@ -19,6 +19,7 @@ import androidx.core.graphics.Insets;
 
 import com.example.getgo.auth.AuthRepository;
 import com.example.getgo.api.ApiClient;
+import com.example.getgo.utils.ValidationUtils;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -99,20 +100,44 @@ public class RegisterActivity extends AppCompatActivity {
         String email = etEmail != null ? etEmail.getText().toString().trim() : "";
         String pass = etPassword != null ? etPassword.getText().toString() : "";
         String pass2 = etPasswordConfirm != null ? etPasswordConfirm.getText().toString() : "";
+        String firstName = etFirstName != null ? etFirstName.getText().toString().trim() : "";
+        String lastName = etLastName != null ? etLastName.getText().toString().trim() : "";
+        String address = etAddress != null ? etAddress.getText().toString().trim() : "";
+        String phone = etPhone != null ? etPhone.getText().toString().trim() : "";
 
+        // Client-side validation
         if (email.isEmpty() || pass.isEmpty() || pass2.isEmpty()) {
             Toast.makeText(this, "Please fill email and both password fields", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!ValidationUtils.isValidEmail(email)) {
+            Toast.makeText(this, "Invalid email format", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!ValidationUtils.isValidPassword(pass)) {
+            Toast.makeText(this, "Password must be at least 8 characters", Toast.LENGTH_SHORT).show();
             return;
         }
         if (!pass.equals(pass2)) {
             Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
             return;
         }
-
-        String firstName = etFirstName != null ? etFirstName.getText().toString().trim() : "";
-        String lastName = etLastName != null ? etLastName.getText().toString().trim() : "";
-        String address = etAddress != null ? etAddress.getText().toString().trim() : "";
-        String phone = etPhone != null ? etPhone.getText().toString().trim() : "";
+        if (!ValidationUtils.isValidName(firstName)) {
+            Toast.makeText(this, "First name must be 2-50 characters", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!ValidationUtils.isValidName(lastName)) {
+            Toast.makeText(this, "Last name must be 2-50 characters", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (address.isEmpty()) {
+            Toast.makeText(this, "Address is required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!ValidationUtils.isValidPhone(phone)) {
+            Toast.makeText(this, "Phone must be valid Serbian number (e.g. +381612345678 or 0612345678)", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         String avatarUriString = selectedAvatarUri != null ? selectedAvatarUri.toString() : null;
 

@@ -17,7 +17,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.getgo.api.ApiClient;
 import com.example.getgo.auth.AuthRepository;
-import com.example.getgo.model.UserRole;
+import com.example.getgo.utils.ValidationUtils;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -72,8 +72,17 @@ public class LoginActivity extends AppCompatActivity {
         final String username = etEmail.getText().toString().trim();
         final String password = etPassword.getText().toString().trim();
 
+        // Client-side validation
         if (username.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Please enter email and password", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!ValidationUtils.isValidEmail(username)) {
+            Toast.makeText(this, "Invalid email format", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!ValidationUtils.isValidPassword(password)) {
+            Toast.makeText(this, "Password must be at least 8 characters", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -86,7 +95,7 @@ public class LoginActivity extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 btnLogin.setEnabled(true);
-                if (res.success) {
+                if (res.error == null) {
                     // save jwt token for later requests
                     if (res.token != null) {
                         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);

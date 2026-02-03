@@ -1,5 +1,7 @@
 package rs.getgo.backend.controllers;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,7 @@ import rs.getgo.backend.model.enums.UserRole;
 import rs.getgo.backend.services.AuthService;
 import rs.getgo.backend.services.SupportChatService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -23,10 +26,12 @@ public class SupportChatController {
 
     private final SupportChatService service;
     private final AuthService authService;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public SupportChatController(SupportChatService service, AuthService authService) {
+    public SupportChatController(SupportChatService service, AuthService authService, SimpMessagingTemplate messagingTemplate) {
         this.service = service;
         this.authService = authService;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @GetMapping("/messages")
@@ -79,9 +84,35 @@ public class SupportChatController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/messages/{chatId}")
-    public void sendMessageAdmin(@PathVariable Long chatId, @RequestBody CreateMessageDTO dto) {
+    public void sendMessageAdmin(@PathVariable Long chatId,
+                                 @RequestBody CreateMessageDTO dto) {
+
         service.sendMessageAdmin(chatId, dto.getText());
+
+        GetMessageDTO message = new GetMessageDTO();
+        message.setText(dto.getText());
+        message.setSenderType(SenderType.ADMIN);
+        message.setTimestamp(LocalDateTime.now());
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/chat/" + chatId,
+                message
+        );
     }
+
+    @GetMapping("/chat/my")
+    public List<GetMessageDTO> getMyChat(Authentication auth) {
+        User user = authService.getUserFromAuth(auth);
+
+        return service.getMessages(user).stream()
+                .map(m -> new GetMessageDTO(
+                        m.getText(),
+                        m.getSenderType(),
+                        m.getTimestamp()
+                ))
+                .toList();
+    }
+
 
 
 }

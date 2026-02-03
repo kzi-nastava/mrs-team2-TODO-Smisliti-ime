@@ -37,7 +37,7 @@ public class SupportChatServiceImpl implements SupportChatService {
         return messageRepository.findByChatOrderByTimestampAsc(chat);
     }
 
-    public void sendMessage(User user, String text) {
+    public Message sendMessage(User user, String text) {
         Chat chat = getOrCreateChat(user);
 
         SenderType senderType = switch (user.getRole()) {
@@ -53,7 +53,7 @@ public class SupportChatServiceImpl implements SupportChatService {
         msg.setType(MessageType.TEXT);
         msg.setTimestamp(LocalDateTime.now());
 
-        messageRepository.save(msg);
+        return messageRepository.save(msg);
     }
 
     public List<Chat> getAllChats() {
@@ -68,7 +68,7 @@ public class SupportChatServiceImpl implements SupportChatService {
         return messageRepository.findByChatOrderByTimestampAsc(chat);
     }
 
-    public void sendMessageAdmin(Long chatId, String text) {
+    public Message sendMessageAdmin(Long chatId, String text) {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new IllegalArgumentException("Chat not found with id: " + chatId));
 
@@ -78,7 +78,7 @@ public class SupportChatServiceImpl implements SupportChatService {
         message.setText(text);
         message.setTimestamp(LocalDateTime.now());
 
-        messageRepository.save(message);
+        return messageRepository.save(message);
     }
 
 

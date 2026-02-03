@@ -20,6 +20,7 @@ import rs.getgo.backend.services.SupportChatService;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/support")
 public class SupportChatController {
@@ -53,8 +54,18 @@ public class SupportChatController {
 
         User user = authService.getUserFromAuth(auth);
 
-        service.sendMessage(user, dto.getText());
+        Message savedMessage = service.sendMessage(user, dto.getText());
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/chat/" + savedMessage.getChat().getId(),
+                new GetMessageDTO(
+                        savedMessage.getText(),
+                        savedMessage.getSenderType(),
+                        savedMessage.getTimestamp()
+                )
+        );
     }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/chats")
@@ -87,18 +98,18 @@ public class SupportChatController {
     public void sendMessageAdmin(@PathVariable Long chatId,
                                  @RequestBody CreateMessageDTO dto) {
 
-        service.sendMessageAdmin(chatId, dto.getText());
-
-        GetMessageDTO message = new GetMessageDTO();
-        message.setText(dto.getText());
-        message.setSenderType(SenderType.ADMIN);
-        message.setTimestamp(LocalDateTime.now());
+        Message savedMessage = service.sendMessageAdmin(chatId, dto.getText());
 
         messagingTemplate.convertAndSend(
                 "/socket-publisher/chat/" + chatId,
-                message
+                new GetMessageDTO(
+                        savedMessage.getText(),
+                        savedMessage.getSenderType(),
+                        savedMessage.getTimestamp()
+                )
         );
     }
+
 
     @GetMapping("/chat/my")
     public List<GetMessageDTO> getMyChat(Authentication auth) {

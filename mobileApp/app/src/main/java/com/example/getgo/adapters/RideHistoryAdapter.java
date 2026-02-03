@@ -5,7 +5,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 
@@ -18,8 +17,7 @@ import java.util.Locale;
 
 import com.example.getgo.R;
 import com.example.getgo.dtos.ride.GetRideDTO;
-import com.example.getgo.interfaces.OnRideClickListener;
-import com.example.getgo.model.Ride;
+import com.example.getgo.callbacks.OnRideClickListener;
 
 public class RideHistoryAdapter extends ArrayAdapter<GetRideDTO> {
 

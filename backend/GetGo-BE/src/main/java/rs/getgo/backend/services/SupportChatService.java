@@ -13,4 +13,5 @@ public interface SupportChatService {
     void sendMessage(User user, String text);
     List<Chat> getAllChats();
     List<Message> getMessagesByChatId(Long chatId);
+    void sendMessageAdmin(Long chatId, String text);
 }

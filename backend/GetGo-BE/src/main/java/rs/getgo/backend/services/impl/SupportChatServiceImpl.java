@@ -68,6 +68,19 @@ public class SupportChatServiceImpl implements SupportChatService {
         return messageRepository.findByChatOrderByTimestampAsc(chat);
     }
 
+    public void sendMessageAdmin(Long chatId, String text) {
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new IllegalArgumentException("Chat not found with id: " + chatId));
+
+        Message message = new Message();
+        message.setChat(chat);
+        message.setSenderType(SenderType.ADMIN);
+        message.setText(text);
+        message.setTimestamp(LocalDateTime.now());
+
+        messageRepository.save(message);
+    }
+
 
 
 }

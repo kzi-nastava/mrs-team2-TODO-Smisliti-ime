@@ -3,6 +3,8 @@ package rs.getgo.backend.controllers;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import rs.getgo.backend.dtos.chat.GetChatDTO;
+import rs.getgo.backend.dtos.chat.GetUserChatDTO;
 import rs.getgo.backend.dtos.message.CreateMessageDTO;
 import rs.getgo.backend.dtos.message.GetMessageDTO;
 import rs.getgo.backend.model.entities.Chat;
@@ -51,18 +53,35 @@ public class SupportChatController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/chats")
-    public List<Chat> getAllChats() {
-        return service.getAllChats();
+    public List<GetChatDTO> getAllChats() {
+        return service.getAllChats().stream()
+                .map(chat -> new GetChatDTO(
+                        chat.getId(),
+                        new GetUserChatDTO(
+                                chat.getUser().getId(),
+                                chat.getUser().getName()
+                        )
+                ))
+                .toList();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/messages/{chatId}")
-    public List<Message> getChatMessages(@PathVariable Long chatId) {
-        return service.getMessagesByChatId(chatId);
+    public List<GetMessageDTO> getChatMessages(@PathVariable Long chatId) {
+        return service.getMessagesByChatId(chatId).stream()
+                .map(m -> new GetMessageDTO(
+                        m.getText(),
+                        m.getSenderType(),
+                        m.getTimestamp()
+                ))
+                .toList();
     }
 
-
-
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/admin/messages/{chatId}")
+    public void sendMessageAdmin(@PathVariable Long chatId, @RequestBody CreateMessageDTO dto) {
+        service.sendMessageAdmin(chatId, dto.getText());
+    }
 
 
 }

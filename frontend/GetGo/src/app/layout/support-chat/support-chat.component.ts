@@ -33,10 +33,11 @@ export class SupportChatComponent  {
     const text = this.newMessage().trim();
     if (!text) return;
 
-    this.chatService.sendMessage(text).subscribe(() => {
+    this.chatService.sendMessage(this.chatId, text).subscribe(() => {
       this.newMessage.set('');
     });
   }
+
 
   isMine(msg: Message) {
     return msg.senderType === 'USER';

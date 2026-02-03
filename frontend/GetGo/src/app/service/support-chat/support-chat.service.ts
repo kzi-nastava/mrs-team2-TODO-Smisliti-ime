@@ -6,6 +6,8 @@ import { environment } from '../../../env/environment';
 import { of } from 'rxjs';
 import { WebSocketService } from '../../service/websocket/websocket.service';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+
 
 
 @Injectable({
@@ -19,9 +21,19 @@ export class SupportChatService {
   // trigger za reload
   private reloadTrigger = signal(0);
 
-  sendMessage(text: string) {
-    return this.http.post(`${environment.apiHost}/api/support/messages`, { text } );
+  sendMessage(chatId: number, text: string) {
+    return this.http.post(`${environment.apiHost}/api/support/messages`, { text }).pipe(
+      tap(() => {
+        const msg: Message = {
+          text,
+          senderType: 'USER',
+          timestamp: new Date().toISOString(),
+        };
+        this.ws.pushLocalMessage(chatId, msg);
+      })
+    );
   }
+
 
 
   getAllChats() {
@@ -53,8 +65,5 @@ export class SupportChatService {
       this.ws.subscribeToChat(chatId).subscribe(callback);
     }
   }
-
-
-
 
 }

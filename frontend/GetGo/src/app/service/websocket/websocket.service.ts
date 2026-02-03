@@ -173,4 +173,13 @@ export class WebSocketService {
     return this.chatMessages.get(chatId)!.asObservable();
   }
 
+  public pushLocalMessage(chatId: number, msg: Message) {
+    if (!this.chatMessages.has(chatId)) {
+      const subject = new Subject<Message>();
+      this.chatMessages.set(chatId, subject);
+    }
+    this.chatMessages.get(chatId)!.next(msg);
+  }
+
+
 }

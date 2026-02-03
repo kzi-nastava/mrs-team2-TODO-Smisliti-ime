@@ -1,21 +1,40 @@
-<div class="messages">
-  <div
-    *ngFor="let msg of chat.messages() ?? []"
-    class="message"
-    [class.user]="msg.senderType !== 'ADMIN'"
-    [class.admin]="msg.senderType === 'ADMIN'"
-  >
-    {{ msg.text }}
-    <div class="time">{{ msg.timestamp | date:'shortTime' }}</div>
-  </div>
-</div>
+<div class="chat-container">
 
-<div class="input-area">
-  <input
-    type="text"
-    [value]="newMessage()"
-    (input)="newMessage.set($any($event.target).value)"
-    placeholder="Type a message..."
-  />
-  <button (click)="send()">Send</button>
+  <!-- HEADER -->
+  <div class="chat-header">
+    <div class="admin-info">
+      <div class="avatar">A</div>
+      <div>
+        <div class="title">Support Chat</div>
+        <div class="subtitle">Admin • online</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="messages">
+    <div
+      *ngFor="let msg of chat.messages() ?? []"
+      class="message"
+      [class.user]="msg.senderType !== 'ADMIN'"
+      [class.admin]="msg.senderType === 'ADMIN'"
+    >
+      <div class="bubble">
+        <span class="text">{{ msg.text }}</span>
+        <span class="time">{{ msg.timestamp | date:'shortTime' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="input-area">
+    <input
+      type="text"
+      [value]="newMessage()"
+      (input)="newMessage.set($any($event.target).value)"
+      placeholder="Type a message..."
+    />
+    <button (click)="send()">Send</button>
+  </div>
+
 </div>

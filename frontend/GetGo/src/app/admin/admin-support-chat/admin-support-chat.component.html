@@ -1,0 +1,34 @@
+<div class="chat-container">
+  <div class="chat-list">
+    <div
+      *ngFor="let c of chats()"
+      (click)="selectChat(c)"
+      [class.selected]="selectedChat() === c"
+      class="chat-item"
+    >
+      {{ c.user.name }}
+    </div>
+  </div>
+
+  <!-- Prozor chata -->
+  <div class="chat-window" *ngIf="selectedChat()">
+    <div class="messages">
+      <div
+        *ngFor="let msg of messages()"
+        [class.admin]="msg.senderType === 'ADMIN'"
+        [class.message]="true"
+      >
+        {{ msg.text }}
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <textarea
+        [value]="newMessage()"
+        (input)="newMessage.set($any($event.target).value)"
+        placeholder="Type your message..."
+      ></textarea>
+      <button (click)="sendMessage()">Send</button>
+    </div>
+  </div>
+</div>

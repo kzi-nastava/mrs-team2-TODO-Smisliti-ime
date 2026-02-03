@@ -32,6 +32,7 @@ import {ActivateComponent} from './pages/authentication/activate/activate';
 import {PassengerRidesComponent} from './passenger/passenger-ride-history/passenger-rides.component';
 import {PassengerRideDetailsComponent} from './passenger/passenger-ride-details/ride-details.component';
 import { SupportChatComponent } from './layout/support-chat/support-chat.component';
+import { AdminSupportChatComponent } from './admin/admin-support-chat/admin-support-chat.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -65,5 +66,6 @@ export const routes: Routes = [
   { path: 'admin/driver-registration', component: DriverRegistration, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'favorite-rides', component: FavoriteRides, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'support-chat', component: SupportChatComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger, UserRole.Driver, UserRole.Admin] } },
+  { path: 'admin/support-chat', component: AdminSupportChatComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: '**', component: NotFoundComponent }
 ];

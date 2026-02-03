@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Message } from '../../model/support-chat.model';
+import { Message, Chat } from '../../model/support-chat.model';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { environment } from '../../../env/environment';
 import { of } from 'rxjs';
@@ -34,4 +34,17 @@ export class SupportChatService {
       this.reloadTrigger.update(v => v + 1);
     });
   }
+
+  getAllChats() {
+    return this.http.get<Chat[]>(`${environment.apiHost}/api/support/admin/chats`);
+  }
+
+  getMessages(chatId: number) {
+    return this.http.get<Message[]>(`${environment.apiHost}/api/support/admin/messages/${chatId}`);
+  }
+
+  sendMessageAdmin(chatId: number, text: string) {
+    return this.http.post(`${environment.apiHost}/api/support/admin/messages/${chatId}`, { text });
+  }
+
 }

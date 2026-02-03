@@ -3,6 +3,7 @@ package rs.getgo.backend.controllers;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import rs.getgo.backend.dtos.driver.GetDriverLocationDTO;
+import rs.getgo.backend.dtos.message.GetMessageDTO;
 import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
 import rs.getgo.backend.model.enums.RideStatus;
 
@@ -146,6 +147,14 @@ public class WebSocketController {
         messagingTemplate.convertAndSend(
                 "/socket-publisher/admin/panic-alerts",
                 payload
+        );
+    }
+
+
+    public void broadcastChatMessage(Long chatId, GetMessageDTO messageDto) {
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/chat/" + chatId,
+                messageDto
         );
     }
 }

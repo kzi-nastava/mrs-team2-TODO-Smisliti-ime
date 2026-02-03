@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { Client, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { Message } from '../../model/support-chat.model';
+
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +12,7 @@ export class WebSocketService {
   private stompClient: Client | null = null;
   private connected$ = new BehaviorSubject<boolean>(false);
   private subscriptions = new Map<string, StompSubscription>();
+  private chatMessages = new Map<number, Subject<Message>>();
 
   constructor() {}
 
@@ -139,5 +142,44 @@ export class WebSocketService {
   subscribeToPassengerRideStopped(rideId: number): Observable<any> {
     return this.createSubscription(`/socket-publisher/ride/${rideId}/ride-stopped`);
   }
+
+  subscribeToChat(chatId: number): Observable<Message> {
+    if (!this.chatMessages.has(chatId)) {
+      const subject = new Subject<Message>();
+      this.chatMessages.set(chatId, subject);
+
+      // wait for connection if not connected
+      const connect$ = new Observable<void>(observer => {
+        if (this.connected$.value) {
+          observer.next();
+          observer.complete();
+        } else {
+          const sub = this.connected$.subscribe(connected => {
+            if (connected) {
+              observer.next();
+              observer.complete();
+              sub.unsubscribe();
+            }
+          });
+        }
+      });
+
+      connect$.subscribe(() => {
+        this.createSubscription(`/socket-publisher/chat/${chatId}`)
+          .subscribe(msg => subject.next(msg));
+      });
+    }
+
+    return this.chatMessages.get(chatId)!.asObservable();
+  }
+
+  public pushLocalMessage(chatId: number, msg: Message) {
+    if (!this.chatMessages.has(chatId)) {
+      const subject = new Subject<Message>();
+      this.chatMessages.set(chatId, subject);
+    }
+    this.chatMessages.get(chatId)!.next(msg);
+  }
+
 
 }

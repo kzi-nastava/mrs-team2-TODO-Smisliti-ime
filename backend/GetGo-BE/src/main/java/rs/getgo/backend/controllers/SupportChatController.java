@@ -64,6 +64,14 @@ public class SupportChatController {
                         savedMessage.getTimestamp()
                 )
         );
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/admin/chat-updates",
+                new GetMessageDTO(
+                        savedMessage.getText(),
+                        savedMessage.getSenderType(),
+                        savedMessage.getTimestamp()
+                )
+        );
     }
 
 

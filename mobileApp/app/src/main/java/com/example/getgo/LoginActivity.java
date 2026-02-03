@@ -149,6 +149,7 @@ public class LoginActivity extends AppCompatActivity {
         // Wire logo
         TextView logo = toolbar.findViewById(R.id.tvAppLogo);
         if (logo != null) {
+            logo.setClickable(true);
             logo.setOnClickListener(v -> {
                 Intent i = new Intent(this, MainActivity.class);
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -159,6 +160,7 @@ public class LoginActivity extends AppCompatActivity {
         // Wire toolbar Register button
         View btnRegister = toolbar.findViewById(R.id.btnRegisterToolbar);
         if (btnRegister != null) {
+            btnRegister.setClickable(true);
             btnRegister.setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
         }
 

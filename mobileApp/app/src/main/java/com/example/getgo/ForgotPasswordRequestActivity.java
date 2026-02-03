@@ -1,7 +1,6 @@
 package com.example.getgo;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -12,26 +11,16 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.example.getgo.api.ApiClient;
+import com.example.getgo.auth.AuthRepository;
 import com.example.getgo.utils.ValidationUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
-
-import org.json.JSONObject;
-
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 public class ForgotPasswordRequestActivity extends AppCompatActivity {
 
     private TextInputEditText etEmailRequest;
     private MaterialButton btnSendRequest;
     private MaterialButton btnBackToLogin;
-
-    private static final String PREFS_NAME = "getgo_prefs";
-    private static final String PREF_BACKEND_URL = "backend_url";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,29 +45,18 @@ public class ForgotPasswordRequestActivity extends AppCompatActivity {
 
             btnSendRequest.setEnabled(false);
 
+            // Use AuthRepository instead of manual HTTP
             new Thread(() -> {
-                String backend = getBackendBaseUrl();
-                String endpoint = backend + "api/auth/forgot-password";
-                String error = null;
-                try {
-                    JSONObject body = new JSONObject();
-                    body.put("email", email);
-                    postJson(endpoint, body.toString());
-                } catch (Exception e) {
-                    error = e.getMessage();
-                }
+                String error = AuthRepository.getInstance(this).forgotPassword(email);
 
-                String finalError = error;
                 runOnUiThread(() -> {
                     btnSendRequest.setEnabled(true);
-                    if (finalError == null) {
-                        // Do not reveal whether email exists; show generic message
+                    if (error == null) {
                         Toast.makeText(this, "If the email exists, a reset link has been sent.", Toast.LENGTH_LONG).show();
-                        // return to login
                         startActivity(new Intent(this, LoginActivity.class));
                         finish();
                     } else {
-                        Toast.makeText(this, "Failed to send reset link: " + finalError, Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, "Failed to send reset link: " + error, Toast.LENGTH_LONG).show();
                     }
                 });
             }).start();
@@ -88,44 +66,6 @@ public class ForgotPasswordRequestActivity extends AppCompatActivity {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
         });
-    }
-
-    private String getBackendBaseUrl() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String backend = prefs.getString(PREF_BACKEND_URL, null);
-        if (backend == null || backend.isEmpty()) {
-            backend = String.valueOf(ApiClient.getClient().baseUrl());
-        }
-        if (!backend.endsWith("/")) backend = backend + "/";
-        return backend;
-    }
-
-    private String postJson(String endpoint, String json) throws Exception {
-        URL url = new URL(endpoint);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        try {
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(10000);
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-            conn.setDoOutput(true);
-
-            byte[] out = json.getBytes("UTF-8");
-            conn.setFixedLengthStreamingMode(out.length);
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(out);
-            }
-
-            int code = conn.getResponseCode();
-            InputStream is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
-            if (is == null) throw new Exception("No response from server (code " + code + ")");
-            java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
-            String resp = s.hasNext() ? s.next() : "";
-            if (code >= 200 && code < 300) return resp;
-            throw new Exception("Server returned " + code + ": " + resp);
-        } finally {
-            conn.disconnect();
-        }
     }
 
     private void setupGuestToolbar() {
@@ -144,7 +84,6 @@ public class ForgotPasswordRequestActivity extends AppCompatActivity {
             getSupportActionBar().setTitle("");
         }
 
-        // Wire logo
         TextView logo = toolbar.findViewById(R.id.tvAppLogo);
         if (logo != null) {
             logo.setOnClickListener(v -> {
@@ -154,7 +93,6 @@ public class ForgotPasswordRequestActivity extends AppCompatActivity {
             });
         }
 
-        // Wire toolbar buttons
         View btnRegister = toolbar.findViewById(R.id.btnRegisterToolbar);
         if (btnRegister != null) {
             btnRegister.setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
@@ -165,7 +103,6 @@ public class ForgotPasswordRequestActivity extends AppCompatActivity {
             btnLogin.setOnClickListener(v -> startActivity(new Intent(this, LoginActivity.class)));
         }
 
-        // Adjust toolbar padding for system bars
         View root = findViewById(android.R.id.content);
         final androidx.appcompat.widget.Toolbar finalToolbar = toolbar;
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {

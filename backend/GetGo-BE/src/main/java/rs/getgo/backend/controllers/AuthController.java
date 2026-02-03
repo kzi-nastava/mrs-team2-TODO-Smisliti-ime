@@ -132,7 +132,7 @@ public class AuthController {
                         )
                 );
     }
-/*
+
     // Add a browser-friendly HTML response (so the link “leads somewhere”)
     @GetMapping(value = "/activate-mobile", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> activateAccountMobileHtml(@RequestParam("token") String token) {
@@ -156,7 +156,7 @@ public class AuthController {
                 .status(activated ? HttpStatus.OK : HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.TEXT_HTML)
                 .body(html);
-    }*/
+    }
 
     // Mobile/browser entry point for password reset (email link)
     // - Browser: shows simple HTML + deep link into app

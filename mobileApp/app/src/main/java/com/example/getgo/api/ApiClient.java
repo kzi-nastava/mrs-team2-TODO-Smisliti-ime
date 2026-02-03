@@ -18,7 +18,7 @@ public class ApiClient {
     private static Retrofit retrofit;
     private static String currentBaseUrl;
 
-    // Default: ngrok tunnel URL (update when ngrok restarts with new subdomain)
+    /*private static final String DEFAULT_BASE_URL = "http://10.0.2.2:8000/";*/
     private static final String DEFAULT_BASE_URL = "https://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
 
     public static Retrofit getClient() {

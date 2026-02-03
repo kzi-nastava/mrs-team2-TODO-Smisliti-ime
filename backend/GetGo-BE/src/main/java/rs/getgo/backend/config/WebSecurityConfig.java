@@ -111,7 +111,8 @@ public class WebSecurityConfig {
         return (web) -> web.ignoring()
                 .requestMatchers(HttpMethod.GET, "/", "/webjars/*", "/*.html", "favicon.ico",
                         "/*/*.html", "/*/*.css", "/*/*.js", "/uploads/**",
-                        "/api/auth/reset-password-mobile")
+                        "/api/auth/reset-password-mobile",
+                        "/api/auth/activate-mobile")
                 .requestMatchers(new AntPathRequestMatcher("/socket/**"));
     }
 

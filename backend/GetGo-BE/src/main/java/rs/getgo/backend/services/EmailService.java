@@ -14,12 +14,28 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-
     @Value("${spring.mail.from}")
     private String fromEmail;
 
+    @Value("${app.backend.base-url:http://localhost:8080}")
+    private String backendBaseUrl;
+
+    @Value("${app.web.base-url:http://localhost:4200}")
+    private String webBaseUrl;
+
+    @Value("${app.mobile.scheme:getgo}")
+    private String mobileScheme;
+
     public void sendActivationEmail(String toEmail, String activationToken) {
-        String activationLink = "http://localhost:4200/activate?token=" + activationToken;
+
+        // Deep link (works only if the mobile app registers it)
+        String mobileDeepLink = mobileScheme + "://activate/?token=" + activationToken;
+
+        // HTTP fallback (must be reachable from the phone; configure app.backend.base-url accordingly)
+        String mobileHttpLink = backendBaseUrl + "/api/auth/activate-mobile?token=" + activationToken;
+
+        // Web fallback (if you still want it)
+        String webLink = webBaseUrl + "/activate?token=" + activationToken;
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
@@ -27,16 +43,21 @@ public class EmailService {
         message.setSubject("Activate Your GetGo Account");
         message.setText(
                 "Your account has been created.\n\n" +
-                        "Click the link below to activate your account (valid 24 hours):\n" +
-                        activationLink + "\n\n" +
-                        "If you didn't request this, ignore this email.\n\n"
+                "Activate your account:\n\n" +
+                "1) Mobile app (if installed):\n" +
+                mobileDeepLink + "\n\n" +
+                "2) Browser fallback (works on phone):\n" +
+                mobileHttpLink + "\n\n" +
+                "3) Web app:\n" +
+                webLink + "\n\n" +
+                "This activation link is valid for 24 hours.\n"
         );
 
         mailSender.send(message);
     }
 
     public void sendDriverActivationEmail(String toEmail, String activationToken) {
-        String activationLink = "http://localhost:4200/driver/activate/" + activationToken;
+        String activationLink = webBaseUrl + "/driver/activate/" + activationToken;
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
@@ -53,14 +74,38 @@ public class EmailService {
     }
 
     public void sendResetEmail(String toEmail, String resetUrl) {
+
+        String mobileDeepLink = mobileScheme + "://reset-password/?token=" + resetUrl; // NOTE: resetUrl may be full URL today
+
+        // If caller passes a full URL, try to extract token from it (best-effort) to build correct links.
+        String token = null;
+        int idx = resetUrl != null ? resetUrl.indexOf("token=") : -1;
+        if (idx >= 0) {
+            token = resetUrl.substring(idx + "token=".length());
+        }
+
+        String mobileHttpLink = token == null
+                ? (backendBaseUrl + "/api/auth/reset-password-mobile")
+                : (backendBaseUrl + "/api/auth/reset-password-mobile?token=" + token);
+
+        String webLink = resetUrl;
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
         message.setTo(toEmail);
         message.setSubject("GetGo - Password reset");
         message.setText(
-                "Hello,\n\nTo reset your password click the link below (valid for 15 minutes):\n\n"
-                        + resetUrl + "\n\nIf you didn't request this, ignore this email.\n\nRegards,\nGetGo Team"
+                "Hello,\n\n" +
+                "To reset your password (valid for 15 minutes), use one of the links below:\n\n" +
+                "1) Mobile app (if installed):\n" +
+                (token == null ? "(missing token in reset URL)\n" : (mobileScheme + "://reset-password/?token=" + token + "\n")) +
+                "\n2) Phone browser fallback:\n" +
+                mobileHttpLink + "\n\n" +
+                "3) Web app:\n" +
+                webLink + "\n\n" +
+                "If you didn't request this, ignore this email.\n\nRegards,\nGetGo Team"
         );
+
         mailSender.send(message);
     }
 
@@ -71,7 +116,7 @@ public class EmailService {
             Long passengerId
     ) {
 
-        String ratingLink = "http://localhost:4200/rides/" + rideId + "/rate";
+        String ratingLink = webBaseUrl + "/rides/" + rideId + "/rate";
 
 
         SimpleMailMessage message = new SimpleMailMessage();

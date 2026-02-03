@@ -2,6 +2,7 @@ package com.example.getgo.interfaces;
 
 import com.example.getgo.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
 import com.example.getgo.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
+import com.example.getgo.dtos.inconsistencyReport.GetInconsistencyReportDTO;
 import com.example.getgo.dtos.rating.CreateRatingDTO;
 import com.example.getgo.dtos.rating.CreatedRatingDTO;
 import com.example.getgo.dtos.rating.GetRatingDTO;
@@ -23,5 +24,8 @@ public interface RideApi {
 
     @POST("api/rides/{rideId}/inconsistencies")
     Call<CreatedInconsistencyReportDTO> createInconsistencyReport(@Path("rideId") Long rideId, @Body CreateInconsistencyReportDTO report);
+
+    @GET("api/completed-rides/{rideId}/inconsistencies")
+    Call<List<GetInconsistencyReportDTO>> getInconsistencyReports(@Path("rideId") Long rideId);
 
 }

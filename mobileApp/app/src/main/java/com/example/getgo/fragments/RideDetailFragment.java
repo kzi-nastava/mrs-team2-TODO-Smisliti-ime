@@ -4,20 +4,31 @@ import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.getgo.R;
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.dtos.inconsistencyReport.GetInconsistencyReportDTO;
 import com.example.getgo.dtos.passenger.GetRidePassengerDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
+import com.example.getgo.interfaces.RideApi;
 import com.example.getgo.model.Ride;
 import android.text.Html;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.time.format.DateTimeFormatter;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 public class RideDetailFragment extends Fragment {
@@ -94,6 +105,74 @@ public class RideDetailFragment extends Fragment {
             } else {
                 setStyledText(tvPassengers, "Passengers:", "None");
             }
+
+
+            TextView tvReportsLoading = view.findViewById(R.id.tvReportsLoading);
+            TextView tvNoReports = view.findViewById(R.id.tvNoReports);
+            LinearLayout reportsContainer = view.findViewById(R.id.reportsContainer);
+
+            tvReportsLoading.setVisibility(View.VISIBLE);
+
+            RideApi rideApi = ApiClient.getClient().create(RideApi.class);
+
+            rideApi.getInconsistencyReports(ride.getId()).enqueue(new Callback<List<GetInconsistencyReportDTO>>() {
+                @Override
+                public void onResponse(Call<List<GetInconsistencyReportDTO>> call,
+                                       Response<List<GetInconsistencyReportDTO>> response) {
+
+                    tvReportsLoading.setVisibility(View.GONE);
+                    Log.d("RIDE_DETAIL", "Retrofit response code = " + response.code());
+                    Log.d("RIDE_DETAIL", "Retrofit response body = " + response.body());
+
+                    if (response.isSuccessful() && response.body() != null) {
+
+                        List<GetInconsistencyReportDTO> reports = response.body();
+
+                        System.out.println("Retrofit: reports size = " + reports.size());
+                        for (GetInconsistencyReportDTO r : reports) {
+                            System.out.println("Report: text=" + r.getText() + ", email=" + r.getPassengerEmail() + ", createdAt=" + r.getCreatedAt());
+                        }
+
+                        if (reports.isEmpty()) {
+                            tvNoReports.setVisibility(View.VISIBLE);
+                            return;
+                        }
+
+                        for (GetInconsistencyReportDTO report : reports) {
+                            View reportView = inflater.inflate(R.layout.item_report, reportsContainer, false);
+
+                            TextView tvText = reportView.findViewById(R.id.tvReportText);
+                            TextView tvMeta = reportView.findViewById(R.id.tvReportMeta);
+
+                            tvText.setText("“" + report.getText() + "”");
+
+                            String createdAtString = report.getCreatedAt();
+                            DateTimeFormatter inputFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+                            DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy. HH:mm");
+
+                            LocalDateTime createdAtDateTime = LocalDateTime.parse(createdAtString, inputFormatter);
+                            String formattedDate = createdAtDateTime.format(outputFormatter);
+
+                            String meta = "Reported by <b>" + report.getPassengerEmail() + "</b> • " + formattedDate;
+                            tvMeta.setText(Html.fromHtml(meta, Html.FROM_HTML_MODE_LEGACY));
+
+
+
+                            reportsContainer.addView(reportView);
+                        }
+                    }else {
+                        Log.e("RIDE_DETAIL", "Server error: code=" + response.code() + ", message=" + response.message());
+                        tvNoReports.setVisibility(View.VISIBLE);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<List<GetInconsistencyReportDTO>> call, Throwable t) {
+                    tvReportsLoading.setVisibility(View.GONE);
+                    tvNoReports.setVisibility(View.VISIBLE);
+                }
+            });
+
 
         }
             return view;

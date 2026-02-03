@@ -96,6 +96,7 @@ public class WebSecurityConfig {
                     .requestMatchers(new AntPathRequestMatcher("/api/drivers/**")).permitAll() // TODO: Remove later?
                     .requestMatchers(new AntPathRequestMatcher("/api/rides/**")).permitAll() // TODO: Remove later?
                     .requestMatchers(new AntPathRequestMatcher("/api/vehicles/**")).permitAll() // TODO: Remove later?
+                    .requestMatchers(new AntPathRequestMatcher("/api/completed-rides/**")).permitAll() // TODO: Remove later?
                     .requestMatchers(new AntPathRequestMatcher("/socket/**")).permitAll()
                     .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated();

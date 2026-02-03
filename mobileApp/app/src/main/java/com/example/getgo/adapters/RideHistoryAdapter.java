@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import com.example.getgo.R;
 import com.example.getgo.dtos.ride.GetRideDTO;
@@ -79,19 +80,17 @@ public class RideHistoryAdapter extends ArrayAdapter<GetRideDTO> {
 
 
         if (ride != null){
-//            rideDate.setText(ride.getStartDate());
-//            rideStartLocation.setText(ride.getStartLocation());
-//            rideEndLocation.setText(ride.getEndLocation());
-//            rideStartTime.setText("Start time: " + ride.getStartTime());
-//            rideEndTime.setText("End time: " + ride.getEndTime());
-//            ridePrice.setText("$"+ride.getPrice());
-
             rideDate.setText(ride.getStartingTime() != null ? ride.getStartingTime().toLocalDate().toString() : "");
-            rideStartLocation.setText(ride.getStartPoint());
-            rideEndLocation.setText(ride.getEndPoint());
+            rideStartLocation.setText(getRideSummary(ride.getStartPoint()));
+            rideEndLocation.setText(getRideSummary(ride.getEndPoint()));
             rideStartTime.setText(ride.getStartingTime() != null ? "Start: " + ride.getStartingTime().toLocalTime().toString() : "");
             rideEndTime.setText(ride.getFinishedTime() != null ? "End: " + ride.getFinishedTime().toLocalTime().toString() : "");
-            ridePrice.setText(ride.getPrice() != null ? "$" + ride.getPrice() : "$0");
+            if (ride.getPrice() != null) {
+                ridePrice.setText(String.format(Locale.getDefault(), "%.0f RSD", ride.getPrice()));
+            } else {
+                ridePrice.setText("0 RSD");
+            }
+
 
             convertView.setOnClickListener(v -> {
                 if (listener != null) {
@@ -101,6 +100,31 @@ public class RideHistoryAdapter extends ArrayAdapter<GetRideDTO> {
 
         }
         return convertView;
+    }
+
+    private String getRideSummary(String address) {
+        if (address == null || address.isEmpty()) return "";
+
+        String[] parts = address.split(",");
+        String firstPart = parts.length > 0 ? parts[0].trim() : "";
+        String secondPart = parts.length > 1 ? parts[1].trim() : "";
+
+        String cityOrMunicipality = null;
+        for (String part : parts) {
+            if (part.trim().startsWith("Град ")) {
+                cityOrMunicipality = part.trim().replace("Град ", "");
+                break;
+            } else if (part.trim().startsWith("Општина ")) {
+                cityOrMunicipality = part.trim().replace("Општина ", "");
+                break;
+            }
+        }
+
+        if (cityOrMunicipality != null && !cityOrMunicipality.isEmpty()) {
+            return firstPart + ", " + secondPart + ", " + cityOrMunicipality;
+        } else {
+            return firstPart + ", " + secondPart;
+        }
     }
 
 

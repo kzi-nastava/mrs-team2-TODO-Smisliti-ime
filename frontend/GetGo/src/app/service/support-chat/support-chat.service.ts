@@ -29,7 +29,9 @@ export class SupportChatService {
           senderType: 'USER',
           timestamp: new Date().toISOString(),
         };
-        this.ws.pushLocalMessage(chatId, msg);
+        if (this.ws.connectionStatus) {
+          this.ws.pushLocalMessage(chatId, msg);
+        }
       })
     );
   }

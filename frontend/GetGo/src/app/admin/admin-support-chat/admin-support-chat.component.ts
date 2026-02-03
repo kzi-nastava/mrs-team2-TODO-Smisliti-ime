@@ -1,5 +1,4 @@
-import { Component } from '@angular/core';
-import { signal } from '@angular/core';
+import { Component, signal, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { SupportChatService } from '../../service/support-chat/support-chat.service';
 import { Chat, Message } from '../../model/support-chat.model';
 import { FormsModule } from '@angular/forms';
@@ -12,15 +11,26 @@ import { WebSocketService } from '../../service/websocket/websocket.service';
   templateUrl: './admin-support-chat.component.html',
   styleUrl: './admin-support-chat.component.css',
 })
-export class AdminSupportChatComponent {
+export class AdminSupportChatComponent implements AfterViewChecked {
+  @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
+
   chats = signal<Chat[]>([]);
   selectedChat = signal<Chat | null>(null);
   messages = signal<Message[]>([]);
   newMessage = signal('');
   private subscribedChats = new Set<number>();
 
-
   constructor(private chatService: SupportChatService, private wsService: WebSocketService) {}
+
+  ngAfterViewChecked() {
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom() {
+    try {
+      this.messagesContainer.nativeElement.scrollTop = this.messagesContainer.nativeElement.scrollHeight;
+    } catch (err) {}
+  }
 
   ngOnInit() {
     this.chatService.getAllChats().subscribe(chats => {
@@ -30,8 +40,10 @@ export class AdminSupportChatComponent {
         messages: [],
       }));
       this.chats.set(flatChats);
+
     });
   }
+
 
   selectChat(chat: Chat) {
     this.selectedChat.set(chat);

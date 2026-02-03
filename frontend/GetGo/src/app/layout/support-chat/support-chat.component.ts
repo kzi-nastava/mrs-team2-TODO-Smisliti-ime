@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { SupportChatService } from '../../service/support-chat/support-chat.service';
 import { Message } from '../../model/support-chat.model';
 import { CommonModule } from '@angular/common';
@@ -9,7 +9,9 @@ import { CommonModule } from '@angular/common';
   templateUrl: './support-chat.component.html',
   styleUrl: './support-chat.component.css',
 })
-export class SupportChatComponent  {
+export class SupportChatComponent implements AfterViewChecked {
+  @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
+
   chatService = inject(SupportChatService);
 
   messages = signal<Message[]>([]);
@@ -28,6 +30,17 @@ export class SupportChatComponent  {
       });
     });
   }
+
+  ngAfterViewChecked() {
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom() {
+    try {
+      this.messagesContainer.nativeElement.scrollTop = this.messagesContainer.nativeElement.scrollHeight;
+    } catch (err) {}
+  }
+
 
   send() {
     const text = this.newMessage().trim();

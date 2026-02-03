@@ -77,10 +77,11 @@ public class GuestHomeFragment extends Fragment
     }
 
     @Override
-    public void onMapReady(@NonNull GoogleMap map) {
-        this.googleMap = map;
-        UiSettings s = googleMap.getUiSettings();
-        s.setZoomControlsEnabled(false); // using custom buttons
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        mMap = googleMap;
+
+        LatLng noviSad = new LatLng(45.2519, 19.8370);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
         LatLng defaultPos = new LatLng(45.248, 19.842);
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultPos, 12f));

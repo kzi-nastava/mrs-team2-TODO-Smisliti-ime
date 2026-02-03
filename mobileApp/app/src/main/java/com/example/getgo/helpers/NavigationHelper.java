@@ -12,6 +12,7 @@ import com.example.getgo.fragments.GuestHomeFragment;
 import com.example.getgo.fragments.PassengerProfileInfoFragment;
 import com.example.getgo.fragments.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.RideHistoryFragment;
+import com.example.getgo.fragments.passengers.PassengerHomeFragment;
 import com.example.getgo.model.UserRole;
 import com.example.getgo.fragments.PassengerRideTrackingFragment;
 
@@ -67,7 +68,7 @@ public class NavigationHelper {
             case GUEST:
                 return new GuestHomeFragment();
             case PASSENGER:
-                return new DriverHomeFragment(); // TODO: Create PassengerHomeFragment
+                return new PassengerHomeFragment();
             case ADMIN:
                 return new DriverHomeFragment(); // TODO: Create AdminDashboardFragment
             default:
@@ -89,7 +90,7 @@ public class NavigationHelper {
 
     private Fragment getPassengerFragment(int itemId) {
         if (itemId == R.id.nav_bottom_home) {
-            return new DriverHomeFragment(); // TODO: Create PassengerHomeFragment
+            return PassengerHomeFragment.newInstance();
         } else if (itemId == R.id.nav_bottom_profile) {
             return PassengerProfileInfoFragment.newInstance();
         } else if (itemId == R.id.nav_bottom_rate_ride) {

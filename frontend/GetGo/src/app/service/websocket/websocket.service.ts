@@ -148,10 +148,29 @@ export class WebSocketService {
       const subject = new Subject<Message>();
       this.chatMessages.set(chatId, subject);
 
-      this.createSubscription(`/socket-publisher/chat/${chatId}`)
-        .subscribe(msg => subject.next(msg));
+      // wait for connection if not connected
+      const connect$ = new Observable<void>(observer => {
+        if (this.connected$.value) {
+          observer.next();
+          observer.complete();
+        } else {
+          const sub = this.connected$.subscribe(connected => {
+            if (connected) {
+              observer.next();
+              observer.complete();
+              sub.unsubscribe();
+            }
+          });
+        }
+      });
+
+      connect$.subscribe(() => {
+        this.createSubscription(`/socket-publisher/chat/${chatId}`)
+          .subscribe(msg => subject.next(msg));
+      });
     }
 
     return this.chatMessages.get(chatId)!.asObservable();
   }
+
 }

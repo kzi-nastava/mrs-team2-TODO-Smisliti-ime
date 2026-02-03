@@ -59,6 +59,7 @@ export class AdminSupportChatComponent {
   }
 
 
+
   subscribeToChat(chatId: number) {
     if (this.subscribedChats.has(chatId)) return;
 
@@ -66,6 +67,7 @@ export class AdminSupportChatComponent {
 
     this.wsService.subscribeToChat(chatId)
       .subscribe((msg: Message) => {
+        console.log('WS message received:', msg);
         this.messages.update(m => [...m, msg]);
       });
   }

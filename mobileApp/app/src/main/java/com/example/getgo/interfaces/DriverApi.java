@@ -2,14 +2,20 @@ package com.example.getgo.interfaces;
 
 import com.example.getgo.dtos.rating.GetRatingDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
+import com.example.getgo.dtos.ride.PageResponse;
 
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 public interface DriverApi {
-    @GET("/api/drivers/{id}/rides")
-    Call<List<GetRideDTO>> getDriverRides(@Path("id") Long driverId);
+    @GET("/api/drivers/rides")
+    Call<PageResponse<GetRideDTO>> getDriverRides(
+            @Query("page") int page,
+            @Query("size") int size,
+            @Query("startDate") String startDate
+    );
 }

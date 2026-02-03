@@ -16,7 +16,6 @@ import com.example.getgo.fragments.passengers.PassengerHomeFragment;
 import com.example.getgo.model.UserRole;
 import com.example.getgo.fragments.PassengerRideTrackingFragment;
 
-
 public class NavigationHelper {
     private final UserRole userRole;
 

@@ -821,6 +821,8 @@ public class RideServiceImpl implements RideService {
         for (Optional<Panic> panic : panics) {
             if (panic.isPresent()) {
                 panic.get().setRideId(completedRide.getId());
+                completedRide.setPanicPressed(true);
+                completedRideRepository.save(completedRide);
             }
         }
 

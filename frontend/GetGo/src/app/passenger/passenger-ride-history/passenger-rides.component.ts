@@ -1,6 +1,6 @@
-import { Component, Signal } from '@angular/core';
+import { Component, Signal, signal, computed } from '@angular/core';
 import { GetRideDTO } from '../model/ride.model';
-import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
@@ -9,7 +9,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
-import {RideService} from '../service/passenger-ride.service';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { RideService } from '../service/passenger-ride.service';
 
 @Component({
   selector: 'app-passenger-rides',
@@ -23,32 +24,93 @@ import {RideService} from '../service/passenger-ride.service';
     MatInputModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatButtonModule
+    MatButtonModule,
+    MatPaginatorModule
   ],
   templateUrl: './passenger-rides.component.html',
   styleUrl: './passenger-rides.component.css'
 })
 export class PassengerRidesComponent {
 
-  rides: Signal<GetRideDTO[]>;
+  protected rides: Signal<GetRideDTO[]>;
+
+  private pagePropertiesSignal = signal({
+    page: 0,
+    pageSize: 5,
+    totalElements: 0
+  });
+
+  page = computed(() => this.pagePropertiesSignal());
 
   searchRideForm = new FormGroup({
-    date: new FormControl<Date | null>(null, Validators.required)
+    date: new FormControl<Date | null>(null)
   });
 
   constructor(private rideService: RideService) {
     this.rides = this.rideService.rides;
-    this.rideService.loadRides();
+    this.getPagedEntities();
   }
 
   searchRides() {
-    const date = this.searchRideForm.value.date;
-    if (!date) return;
-    this.rideService.searchRidesByDate(date);
+    this.pagePropertiesSignal.update(props => ({...props, page: 0}));
+    this.getPagedEntities();
   }
 
   resetFilter() {
     this.searchRideForm.reset();
-    this.rideService.resetFilter();
+    this.pagePropertiesSignal.update(props => ({...props, page: 0}));
+    this.getPagedEntities();
+  }
+
+  onPageChange(pageEvent: PageEvent) {
+    this.pagePropertiesSignal.update(props => ({
+      ...props,
+      page: pageEvent.pageIndex,
+      pageSize: pageEvent.pageSize
+    }));
+
+    this.getPagedEntities();
+  }
+
+  private getPagedEntities() {
+    const props = this.pagePropertiesSignal();
+    const dateValue = this.searchRideForm.value.date ?? undefined;
+
+    this.rideService.loadRides(props.page, props.pageSize, dateValue)
+      .subscribe({
+        next: res => {
+          this.rideService.setRides(res.content || []);
+
+          this.pagePropertiesSignal.update(p => ({
+            ...p,
+            totalElements: res.totalElements || 0
+          }));
+        },
+        error: err => {
+          console.error('Error loading rides:', err);
+          this.rideService.setRides([]);
+        }
+      });
+  }
+
+  getRideSummary(address: string): string {
+    if (!address) return '';
+
+    const parts = address.split(',').map(p => p.trim());
+
+    const firstPart = parts[0] || '';
+    const secondPart = parts[1] || '';
+
+    let cityOrMunicipality = parts.find(p => p.startsWith('Град '));
+
+    if (!cityOrMunicipality) {
+      cityOrMunicipality = parts.find(p => p.startsWith('Општина '));
+    }
+
+    const name = cityOrMunicipality
+      ? cityOrMunicipality.replace(/^Град |^Општина /, '')
+      : '';
+
+    return `${firstPart}, ${secondPart}${name ? ', ' + name : ''}`;
   }
 }

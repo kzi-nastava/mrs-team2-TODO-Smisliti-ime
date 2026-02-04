@@ -109,11 +109,14 @@ p.loading {
   display: flex;
   gap: 10px;
   margin-top: 20px;
+  flex-wrap: wrap;
 }
 
 .favorite-button,
-.unfavorite-button {
+.unfavorite-button,
+.rebook-button {
   flex: 1;
+  min-width: 120px;
   padding: 12px 16px;
   border: none;
   border-radius: 10px;
@@ -155,6 +158,17 @@ p.loading {
   background-color: #A0B3C8;
   cursor: not-allowed;
   transform: none;
+}
+
+.rebook-button {
+  background-color: #48bb78;
+  color: white;
+}
+
+.rebook-button:hover {
+  background-color: #38a169;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
 }
 
 .success-message {

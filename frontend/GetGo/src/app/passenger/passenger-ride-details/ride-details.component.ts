@@ -1,5 +1,5 @@
 import { Component, signal, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { RideService } from '../service/passenger-ride.service';
 import { GetRideDTO } from '../model/ride.model';
 import { CommonModule } from '@angular/common';
@@ -16,7 +16,7 @@ export class PassengerRideDetailsComponent implements OnInit {
 
   rideId!: number;
 
-  ride = signal<GetRideDTO | null>(null);
+  ride = signal<GetRideDTO | undefined>(undefined);
   loadingRide = signal(true);
   reports = signal<GetInconsistencyReportDTO[]>([]);
   loadingReports = signal(true);
@@ -29,28 +29,33 @@ export class PassengerRideDetailsComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private rideService: RideService
   ) {
     this.rideId = Number(this.route.snapshot.paramMap.get('id'));
   }
 
   ngOnInit() {
+    // Fetch ride details directly from backend
     this.rideService.getRideById(this.rideId).subscribe({
-      next: ride => {
+      next: (ride) => {
         this.ride.set(ride);
         this.loadingRide.set(false);
       },
-      error: () => {
+      error: (err) => {
+        console.error('Error loading ride details:', err);
         this.loadingRide.set(false);
       }
     });
 
+    // Fetch inconsistency reports
     this.rideService.getInconsistencyReports(this.rideId).subscribe({
-      next: data => {
+      next: (data) => {
         this.reports.set(data);
         this.loadingReports.set(false);
       },
-      error: () => {
+      error: (err) => {
+        console.error('Error loading reports:', err);
         this.loadingReports.set(false);
       }
     });
@@ -68,7 +73,6 @@ export class PassengerRideDetailsComponent implements OnInit {
         this.favoriteSuccess.set(true);
         this.isFavoriting.set(false);
 
-        // Hide success message after 3 seconds
         setTimeout(() => {
           this.favoriteSuccess.set(false);
         }, 3000);
@@ -78,7 +82,6 @@ export class PassengerRideDetailsComponent implements OnInit {
         this.favoriteError.set(error.error?.message || 'Failed to favorite ride. Please try again.');
         this.isFavoriting.set(false);
 
-        // Hide error message after 5 seconds
         setTimeout(() => {
           this.favoriteError.set(null);
         }, 5000);
@@ -98,7 +101,6 @@ export class PassengerRideDetailsComponent implements OnInit {
         this.unfavoriteSuccess.set(true);
         this.isUnfavoriting.set(false);
 
-        // Hide success message after 3 seconds
         setTimeout(() => {
           this.unfavoriteSuccess.set(false);
         }, 3000);
@@ -108,10 +110,21 @@ export class PassengerRideDetailsComponent implements OnInit {
         this.favoriteError.set(error.error?.message || 'Failed to unfavorite ride. Please try again.');
         this.isUnfavoriting.set(false);
 
-        // Hide error message after 5 seconds
         setTimeout(() => {
           this.favoriteError.set(null);
         }, 5000);
+      }
+    });
+  }
+
+  onRebookRide(): void {
+    const currentRide = this.ride();
+    if (!currentRide) return;
+
+    this.router.navigate(['/registered-home'], {
+      queryParams: {
+        from: currentRide.startPoint,
+        to: currentRide.endPoint
       }
     });
   }

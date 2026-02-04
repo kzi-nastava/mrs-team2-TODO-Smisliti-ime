@@ -14,5 +14,7 @@ public interface CompletedRideRepository extends JpaRepository<CompletedRide, Lo
     Page<CompletedRide> findByDriverId(Long driverId, Pageable pageable);
     List<CompletedRide> findByDriverIdAndEndTimeAfter(Long driverId, LocalDateTime last24Hours);
     Page<CompletedRide> findByDriverIdAndStartTimeBetween(Long driverId, LocalDateTime start, LocalDateTime end, Pageable pageable);
-    List<CompletedRide> findByPayingPassengerId(Long passengerId);
+    Page<CompletedRide> findByPayingPassengerId(Long passengerId, Pageable pageable);
+    Page<CompletedRide> findByPayingPassengerIdAndStartTimeAfter(Long id, LocalDateTime localDateTime, Pageable pageable);
+    Page<CompletedRide> findByDriverIdAndStartTimeAfter(Long id, LocalDateTime localDateTime, Pageable pageable);
 }

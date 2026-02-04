@@ -1,6 +1,8 @@
 package rs.getgo.backend.controllers;
 
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.admin.*;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
@@ -8,6 +10,7 @@ import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.*;
 import rs.getgo.backend.dtos.report.GetReportDTO;
 import rs.getgo.backend.dtos.request.*;
+import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.dtos.user.CreatedUserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -16,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.services.AdminService;
 import rs.getgo.backend.utils.AuthUtils;
 
+import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 @PreAuthorize("hasRole('ADMIN')")
@@ -243,5 +248,51 @@ public class AdminController {
         AcceptDriverChangeRequestDTO response = adminService.rejectAvatarChangeRequest(
                 requestId, email, rejectDriverChangeRequestDTO);
         return ResponseEntity.ok(response);
+    }
+
+    // 2.9.1 - Get passenger rides
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "/rides/passenger", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Page<GetRideDTO>> getPassengerRides(
+            @RequestParam String email,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<GetRideDTO> rides = adminService.getPassengerRides(email, startDate, page, size);
+        return ResponseEntity.ok(rides);
+    }
+
+    // 2.9.2 - Get single passenger ride by id
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "/rides/passenger/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetRideDTO> getPassengerRideById(
+            @RequestParam String email,
+            @PathVariable Long id) {
+        GetRideDTO ride = adminService.getPassengerRideById(email, id);
+        return ResponseEntity.ok(ride);
+    }
+
+    // Get driver rides
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "/rides/driver", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Page<GetRideDTO>> getDriverRides(
+            @RequestParam String email,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<GetRideDTO> rides = adminService.getDriverRides(email, startDate, page, size);
+        return ResponseEntity.ok(rides);
+    }
+
+    // Get single driver ride by id
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(value = "/rides/driver/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetRideDTO> getDriverRideById(
+            @RequestParam String email,
+            @PathVariable Long id) {
+        GetRideDTO ride = adminService.getDriverRideById(email, id);
+        return ResponseEntity.ok(ride);
     }
 }

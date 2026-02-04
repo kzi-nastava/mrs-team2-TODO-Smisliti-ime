@@ -16,6 +16,9 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.example.getgo.R;
+import com.example.getgo.dtos.ride.CreateRideRequestDTO;
+import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
+import com.example.getgo.repositories.RideRepository;
 import com.example.getgo.utils.MapManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -361,11 +364,80 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
             }
         }
 
-        // TODO: Build request and call backend API
-        // Build arrays: [start, waypoint1, waypoint2, ..., destination]
+        List<Double> lats = new ArrayList<>();
+        List<Double> lngs = new ArrayList<>();
+        List<String> addrs = new ArrayList<>();
 
-        Toast.makeText(requireContext(), "Ordering ride...", Toast.LENGTH_SHORT).show();
-        Toast.makeText(requireContext(), "Ride ordered successfully!", Toast.LENGTH_LONG).show();
+        lats.add(startPointCoord.latitude);
+        lngs.add(startPointCoord.longitude);
+        addrs.add(etStartPoint.getText().toString());
+
+        for (int i = 0; i < waypointCoords.size(); i++) {
+            LatLng coord = waypointCoords.get(i);
+            if (coord != null) {
+                lats.add(coord.latitude);
+                lngs.add(coord.longitude);
+                addrs.add(waypointInputs.get(i).getText().toString());
+            }
+        }
+
+        lats.add(destinationCoord.latitude);
+        lngs.add(destinationCoord.longitude);
+        addrs.add(etDestination.getText().toString());
+
+        CreateRideRequestDTO request = new CreateRideRequestDTO(
+                lats,
+                lngs,
+                addrs,
+                isOrderLater() ? etScheduledTime.getText().toString() : null,
+                isWithFriends() ? getFriendEmails() : null,
+                cbHasBaby.isChecked(),
+                cbHasPets.isChecked(),
+                actvVehicleType.getText().toString()
+        );
+
+        btnOrderRide.setEnabled(false);
+
+        new Thread(() -> {
+            try {
+                RideRepository repo = RideRepository.getInstance();
+                CreatedRideResponseDTO response = repo.orderRide(request);
+
+                requireActivity().runOnUiThread(() -> {
+                    btnOrderRide.setEnabled(true);
+                    Toast.makeText(requireContext(),
+                            "Ride ordered successfully! ID: " + response.getRideId(),
+                            Toast.LENGTH_LONG).show();
+                    resetForm();
+                });
+            } catch (Exception e) {
+                requireActivity().runOnUiThread(() -> {
+                    btnOrderRide.setEnabled(true);
+                    Toast.makeText(requireContext(),
+                            "Failed to order ride: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
+    }
+
+    private boolean isOrderLater() {
+        return actvOrderTiming.getText().toString().equals("Order later");
+    }
+
+    private boolean isWithFriends() {
+        return actvTravelOption.getText().toString().equals("With friends");
+    }
+
+    private List<String> getFriendEmails() {
+        List<String> emails = new ArrayList<>();
+        for (TextInputEditText input : friendEmailInputs) {
+            String email = input.getText().toString().trim();
+            if (!email.isEmpty()) {
+                emails.add(email);
+            }
+        }
+        return emails;
     }
 
 

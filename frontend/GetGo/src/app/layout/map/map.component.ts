@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef} from '@angular/core'
+import {AfterViewInit, Component, ElementRef, OnInit} from '@angular/core'
 import * as L from 'leaflet';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
@@ -10,20 +10,30 @@ import { DriverService, GetActiveDriverLocationDTO } from '../../service/driver/
   templateUrl: './map.component.html',
   styleUrl: './map.component.css',
 })
-export class MapComponent implements AfterViewInit{
+export class MapComponent implements OnInit, AfterViewInit{
   private map: any;
-  private activeInput: string | null = null; // for unregistered (origin/destination)
-  private activeInputIndex: number | null = null; // for registered (index-based)
+  private activeInput: string | null = null;
+  private activeInputIndex: number | null = null;
   private originMarker: L.Marker | null = null;
   private destinationMarker: L.Marker | null = null;
-  private waypointMarkers: L.Marker[] = []; // for registered home waypoints
-  private routeControl: any = null; // Store the current route control
+  private waypointMarkers: L.Marker[] = [];
+  private routeControl: any = null;
+  private panicMarkers: L.Marker[] = [];
+
+  // Track car markers per ride ID - car will have embedded panic badge
+  private rideCarMarkers = new Map<number, L.Marker>();
+  // Track static driver markers by driver ID
+  private driverMarkers = new Map<number, L.Marker>();
 
   constructor(
     private http: HttpClient,
     private driverService: DriverService,
     private elementRef: ElementRef<HTMLElement>
   ) {}
+
+  ngOnInit(): void {
+    // Map will initialize in ngAfterViewInit
+  }
 
   ngAfterViewInit(): void {
     // Set default marker icon
@@ -239,6 +249,14 @@ export class MapComponent implements AfterViewInit{
       this.routeControl = null;
     }
 
+    // Clear ride tracking markers
+    this.rideCarMarkers.forEach(marker => this.map.removeLayer(marker));
+    this.rideCarMarkers.clear();
+
+    // Clear driver markers
+    this.driverMarkers.forEach(marker => this.map.removeLayer(marker));
+    this.driverMarkers.clear();
+
     // Reload drivers
     this.loadDrivers();
   }
@@ -251,7 +269,7 @@ export class MapComponent implements AfterViewInit{
         if (!drivers || drivers.length === 0) return;
 
         // Create a feature group to hold all drivers markers
-        const markers = drivers.map(drivers => this.addDriverMarker(drivers));
+        const markers = drivers.map(driver => this.addDriverMarker(driver));
         const group = L.featureGroup(markers).addTo(this.map);
 
         // Automatically adjust map view to fit all markers with padding
@@ -280,6 +298,171 @@ export class MapComponent implements AfterViewInit{
     const marker = L.marker([lat, lng], { icon })
       .bindPopup(`${driver.vehicleType} - ${driver.isAvailable ? 'Free' : 'Busy'}`);
 
+    // Store driver marker by driver ID
+    this.driverMarkers.set(driver.driverId, marker);
+
     return marker;
+  }
+
+  // Updated: car marker moves, with panic badge embedded in icon
+  public updateCarMarker(rideId: number, lat: number, lng: number): void {
+    if (!this.map) return;
+
+    const existingMarker = this.rideCarMarkers.get(rideId);
+
+    if (existingMarker) {
+      // Just move existing marker (icon already has panic badge if needed)
+      existingMarker.setLatLng([lat, lng]);
+    } else {
+      // When creating new tracking marker, remove any static driver marker at similar location
+      // (we don't have direct rideId->driverId mapping here, so remove nearby markers)
+      this.driverMarkers.forEach((driverMarker, driverId) => {
+        const driverLatLng = driverMarker.getLatLng();
+        const distance = this.map.distance(driverLatLng, [lat, lng]);
+
+        // If driver marker is within 50 meters of new ride marker, remove it
+        if (distance < 50) {
+          this.map.removeLayer(driverMarker);
+          this.driverMarkers.delete(driverId);
+        }
+      });
+
+      // Create new car marker
+      const icon = L.icon({
+        iconUrl: 'assets/images/red_car.svg',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16]
+      });
+
+      const marker = L.marker([lat, lng], { icon })
+        .bindPopup(`Ride #${rideId}`)
+        .addTo(this.map);
+
+      this.rideCarMarkers.set(rideId, marker);
+    }
+  }
+
+  // Updated: now creates a composite icon (car + panic badge overlay)
+  public updatePanicMarker(rideId: number, lat: number, lng: number, passengerCount: number, driverCount: number): void {
+    if (!this.map) return;
+
+    const hasPanic = (passengerCount > 0) || (driverCount > 0);
+    const existingMarker = this.rideCarMarkers.get(rideId);
+
+    if (!hasPanic) {
+      // No panic - use regular red car icon
+      if (existingMarker) {
+        const icon = L.icon({
+          iconUrl: 'assets/images/red_car.svg',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16]
+        });
+        existingMarker.setIcon(icon);
+        existingMarker.setLatLng([lat, lng]);
+      }
+      return;
+    }
+
+    // Determine panic type (prioritize passenger)
+    const type: 'passenger' | 'driver' = passengerCount > 0 ? 'passenger' : 'driver';
+    const count = passengerCount > 0 ? passengerCount : driverCount;
+
+    // Create composite icon: car + panic badge
+    const icon = this.createCarWithPanicBadge(type, count);
+
+    if (existingMarker) {
+      existingMarker.setIcon(icon);
+      existingMarker.setLatLng([lat, lng]);
+    } else {
+      const marker = L.marker([lat, lng], { icon })
+        .bindPopup(`<strong>🚨 PANIC ALERT</strong><br>Ride #${rideId}<br>Type: ${type}`)
+        .addTo(this.map);
+
+      this.rideCarMarkers.set(rideId, marker);
+    }
+  }
+
+  // Updated: remove panic by switching back to regular car icon
+  public removePanicMarker(rideId: number): void {
+    const marker = this.rideCarMarkers.get(rideId);
+    if (marker && this.map) {
+      // Switch back to normal red car icon
+      const icon = L.icon({
+        iconUrl: 'assets/images/red_car.svg',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16]
+      });
+      marker.setIcon(icon);
+      // Keep marker on map - just remove panic state
+    }
+  }
+
+  // Clear all panic markers (remove cars from map)
+  public clearAllPanicMarkers(): void {
+    this.rideCarMarkers.forEach(marker => {
+      if (this.map) this.map.removeLayer(marker);
+    });
+    this.rideCarMarkers.clear();
+  }
+
+  /** @deprecated Use updatePanicMarker() instead */
+  public updatePanicMarkers(markers: any[]): void {
+    console.log('updatePanicMarkers (deprecated) called with:', markers);
+  }
+
+  // New: create composite icon - car SVG with panic badge overlay
+  private createCarWithPanicBadge(type: 'passenger' | 'driver', count: number): L.DivIcon {
+    const letter = type === 'passenger' ? 'P' : 'D';
+
+    // Composite HTML: car image + panic badge positioned on top-right corner
+    const html = `
+      <div style="position: relative; width: 32px; height: 32px;">
+        <img src="assets/images/red_car.svg" style="width: 32px; height: 32px;" />
+        <div style="position: absolute; top: -8px; right: -8px;">
+          <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="11" fill="#DC2626" stroke="white" stroke-width="2"/>
+            <text x="12" y="16" font-size="12" font-weight="bold" fill="white" text-anchor="middle">${letter}</text>
+            ${count > 1 ? `
+              <circle cx="20" cy="6" r="6" fill="#FF6B00" stroke="white" stroke-width="1"/>
+              <text x="20" y="9" font-size="8" font-weight="bold" fill="white" text-anchor="middle">${count}</text>
+            ` : ''}
+          </svg>
+        </div>
+      </div>
+    `;
+
+    return L.divIcon({
+      className: 'car-panic-marker',
+      html: html,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -16]
+    });
+  }
+
+  // Keep old panic icon method for reference (not used anymore)
+  private createPanicIcon(type: 'passenger' | 'driver', count: number): L.DivIcon {
+    const letter = type === 'passenger' ? 'P' : 'D';
+    const svg = `
+      <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="18" fill="#DC2626" stroke="white" stroke-width="2"/>
+        <text x="20" y="26" font-size="18" font-weight="bold" fill="white" text-anchor="middle">${letter}</text>
+        ${count > 1 ? `
+          <circle cx="32" cy="10" r="8" fill="#FF6B00" stroke="white" stroke-width="1.5"/>
+          <text x="32" y="14" font-size="11" font-weight="bold" fill="white" text-anchor="middle">${count}</text>
+        ` : ''}
+      </svg>
+    `;
+
+    return L.divIcon({
+      className: 'panic-marker-icon',
+      html: svg,
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+      popupAnchor: [0, -20]
+    });
   }
 }

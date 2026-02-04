@@ -13,6 +13,7 @@ import {
 } from '../../service/ride/ride.service';
 import { WebSocketService } from '../../service/websocket/websocket.service';
 import { Subscription } from 'rxjs';
+import { SnackBarService } from '../../service/snackBar/snackBar.service';
 
 @Component({
   selector: 'app-ride-tracking',
@@ -27,6 +28,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   private webSocketService = inject(WebSocketService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private snackBarService = inject(SnackBarService);
 
   showReportForm = false;
   reportText = '';
@@ -54,6 +56,8 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   // Keep for backward compatibility with template
   readonly tracking = this.rideTrackingService.tracking;
   readonly loading = this.rideTrackingService.loading;
+
+  private panicAlreadySent = false;
 
   async ngOnInit() {
     try {
@@ -302,13 +306,22 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // RideTrackingService now only needs rideId, no token decoding / email body
+    if (this.panicAlreadySent) {
+      this.snackBarService.show('Panic alert already sent for this ride');
+      return;
+    }
+
     this.rideTrackingService.createPanicAlert().subscribe({
       next: () => {
         console.log('PANIC alert sent');
+        this.panicAlreadySent = true;
+        this.snackBarService.show('Emergency alert sent successfully!');
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to send PANIC', err);
+        this.snackBarService.show('Failed to send emergency alert');
+        this.cdr.detectChanges();
       }
     });
   }
@@ -317,6 +330,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     console.log('Acknowledging ride completion');
     this.rideCompletion = null;
     this.activeRide = null;
+    this.panicAlreadySent = false;
     this.router.navigate(['/registered-home']);
   }
 

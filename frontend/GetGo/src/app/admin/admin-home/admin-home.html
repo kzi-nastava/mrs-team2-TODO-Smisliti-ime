@@ -1,6 +1,47 @@
 <app-admin-nav-bar></app-admin-nav-bar>
 
 <div class="home">
+  <button class="panic-toggle" (click)="togglePanel()" [class.has-unread]="unreadCount > 0">
+    <span class="arrow">{{ isPanelOpen ? '◀' : '▶' }}</span>
+    <span *ngIf="unreadCount > 0" class="badge">{{ unreadCount }}</span>
+  </button>
+
+  <div class="panic-panel" [class.open]="isPanelOpen">
+    <div class="panel-header">
+      <h3>Panic Alerts</h3>
+      <button
+        class="mark-all-btn"
+        (click)="markAllAsRead()"
+        [disabled]="unreadCount === 0">
+        Mark All Read
+      </button>
+    </div>
+
+    <div class="panel-content">
+      <div *ngIf="allPanicAlerts.length === 0" class="empty-state">
+        No panic alerts
+      </div>
+
+      <div
+        *ngFor="let alert of allPanicAlerts"
+        class="panic-card"
+        [class.unread]="!alert.status"
+        [class.read]="alert.status"
+        (click)="markAsRead(alert, $event)">
+        <div class="card-header">
+          <span class="ride-id">Ride #{{ alert.rideId }}</span>
+          <span *ngIf="!alert.status" class="unread-indicator">●</span>
+          <span *ngIf="alert.status" class="read-indicator">✓</span>
+        </div>
+        <div class="card-body">
+          <p><strong>User ID:</strong> {{ alert.triggeredByUserId }}</p>
+          <p><strong>Time:</strong> {{ formatTime(alert.triggeredAt) }}</p>
+          <p *ngIf="alert.status" class="status-read">Read</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="right">
     <app-map #adminMap></app-map>
   </div>

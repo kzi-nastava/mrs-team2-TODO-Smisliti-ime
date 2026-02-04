@@ -28,4 +28,7 @@ public class Panic {
 
     @Column(name = "triggered_at", nullable = false)
     private LocalDateTime triggeredAt;
+
+    @Column(name = "is_read", nullable = false)
+    private Boolean read = false;
 }

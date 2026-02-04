@@ -1,44 +1,48 @@
 <div class="ride-history-page">
 
-  <form [formGroup]="searchRideForm"
-        (ngSubmit)="searchRides()"
-        class="filter-form">
+  <div class="filter-container">
+    <form [formGroup]="searchRideForm" (ngSubmit)="searchRides()" class="filter-form">
+      <mat-form-field appearance="fill" class="date-picker-field">
+        <mat-label>Filter by date</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="date">
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
 
-    <mat-form-field appearance="fill" class="date-picker-field">
-      <mat-label>Filter by date</mat-label>
-      <input matInput [matDatepicker]="picker" formControlName="date">
-      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-datepicker #picker></mat-datepicker>
-    </mat-form-field>
-
-    <div class="buttons">
-      <button mat-raised-button color="warn" type="button" (click)="resetFilter()">Reset</button>
-      <button mat-raised-button color="primary" type="submit">Apply</button>
-    </div>
-  </form>
+      <div class="buttons">
+        <button mat-raised-button color="warn" type="button" (click)="resetFilter()">Reset</button>
+        <button mat-raised-button color="primary" type="submit">Apply</button>
+      </div>
+    </form>
+  </div>
 
   <div class="list">
-    @for (ride of rides(); track ride.id) {
-      <div class="item" [routerLink]="['/passenger/rides', ride.id]">
+    <div *ngFor="let ride of rides() || []" class="item" [routerLink]="['/passenger/rides', ride.id]">
+      <p class="card-date"><b>{{ride.startingTime | date:'dd.MM.yyyy'}}</b></p>
+      <h2>
+        <img class="pin-icon" src="/map-pin.svg" alt="Pin icon">
+        <span>{{ getRideSummary(ride.startPoint) }}</span>
+      </h2>
+      <h2>
+        <img class="flag-icon" src="/finish-flag.svg" alt="Destination flag">
+        <span class="location-text">{{ getRideSummary(ride.endPoint) }}</span>
+      </h2>
 
-        <p class="card-date"><b>{{ ride.startingTime | date:'dd.MM.yyyy' }}</b></p>
+      <p><span class="card-time">Start time: </span>{{ride.startingTime | date:'HH:mm'}}</p>
+      <p><span class="card-time">End time: </span>{{ride.finishedTime | date:'HH:mm'}}</p>
+      <h1 class="card-price">{{ride.price | number:'1.0-0'}}rsd</h1>
+    </div>
 
-        <h2>
-          <img class="pin-icon" src="/map-pin.svg">
-          {{ ride.startPoint }}
-        </h2>
-
-        <h2 class="location">
-          <img class="flag-icon" src="/finish-flag.svg">
-          <span class="location-text">{{ ride.endPoint }}</span>
-        </h2>
-
-        <p>Start time: {{ ride.startingTime | date:'HH:mm' }}</p>
-        <p>End time: {{ ride.finishedTime | date:'HH:mm' }}</p>
-
-        <h1 class="card-price"><sup>$</sup>{{ ride.price }}</h1>
-
-      </div>
-    }
+    <div *ngIf="!rides() || rides()?.length === 0" style="text-align: center; padding: 40px; color: #555;">
+      No rides found. Start booking to see your ride history!
+    </div>
   </div>
+
+  <mat-paginator id="paginator"
+    [length]="page().totalElements"
+    [pageSize]="page().pageSize"
+    [pageSizeOptions]="[5, 10, 20]"
+    (page)="onPageChange($event)">
+  </mat-paginator>
+
 </div>

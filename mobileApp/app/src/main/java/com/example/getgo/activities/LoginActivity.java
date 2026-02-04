@@ -73,7 +73,6 @@ public class LoginActivity extends AppCompatActivity {
         final String username = etEmail.getText().toString().trim();
         final String password = etPassword.getText().toString().trim();
 
-        // Client-side validation
         if (username.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Please enter email and password", Toast.LENGTH_SHORT).show();
             return;
@@ -87,7 +86,6 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // disable button while network call runs
         btnLogin.setEnabled(false);
 
         new Thread(() -> {
@@ -97,12 +95,11 @@ public class LoginActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 btnLogin.setEnabled(true);
                 if (res.error == null) {
-                    // save jwt token for later requests
                     if (res.token != null) {
                         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
                         prefs.edit().putString(PREF_JWT, res.token).apply();
                     }
-                    // pass role to MainActivity
+
                     Intent intent = new Intent(this, MainActivity.class);
                     intent.putExtra("USER_ROLE", res.role != null ? res.role : "PASSENGER");
                     startActivity(intent);

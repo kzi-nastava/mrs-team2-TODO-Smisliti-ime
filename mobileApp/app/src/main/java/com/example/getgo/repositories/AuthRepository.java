@@ -106,7 +106,7 @@ public class AuthRepository {
                 String json = response.body().string();
                 JSONObject obj = new JSONObject(json);
                 String role = obj.optString("role", "PASSENGER");
-                String token = obj.optString("jwt", "");
+                String token = obj.optString("token", "");
                 Long userId = obj.optLong("id", -1L);
 
                 Log.d(TAG, "Login successful: " + email + " role=" + role);

@@ -15,15 +15,25 @@ export interface GetActiveRideAdminDTO {
 
 export interface GetActiveRideAdminDetailsDTO {
   id: number;
+
+  driverId: number;
   driverName: string;
   driverEmail: string;
-  status: string;
+
   actualStartTime: string;
-  estimatedDurationMin: number;
+  scheduledTime: string;
+
+  status: string;
   vehicleType: string;
+
   needsBabySeats: boolean;
   needsPetFriendly: boolean;
-  payingPassengerEmail: string;
-  linkedPassengerEmails: string[];
-  currentLocationAddress: string;
+
+  estimatedPrice: number;
+  estimatedDurationMin: number;
+
+  payingPassenger: string;
+  linkedPassengers: string[];
+
+  currentAddress: string;
 }

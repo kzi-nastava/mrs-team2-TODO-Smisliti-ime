@@ -1,9 +1,6 @@
 package rs.getgo.backend.controllers;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.dtos.activeRide.GetActiveRideAdminDTO;
 import rs.getgo.backend.dtos.activeRide.GetActiveRideAdminDetailsDTO;
 import rs.getgo.backend.services.ActiveRideService;
@@ -12,6 +9,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/active-rides")
+@CrossOrigin(origins = "http://localhost:4200")
 public class ActiveRideController {
     private final ActiveRideService activeRideService;
 

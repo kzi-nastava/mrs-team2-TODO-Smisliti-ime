@@ -44,11 +44,15 @@ public class MapManager {
     private final Geocoder geocoder;
     private final OkHttpClient httpClient;
 
+    // ===== MARKERS =====
     private final List<Marker> waypointMarkers;
-    private final List<Marker> driverMarkers = new ArrayList<>();
+    private final List<Marker> activeDriverMarkers = new ArrayList<>();
+    private Marker driverPositionMarker; // Driver's own position
 
+    // ===== ROUTE =====
     private Polyline routePolyline;
 
+    // ===== INTERFACES =====
     public interface AddressCallback {
         void onAddressFound(String address, LatLng latLng);
         void onError(String error);
@@ -59,6 +63,7 @@ public class MapManager {
         void onError(String error);
     }
 
+    // ===== CONSTRUCTOR =====
     public MapManager(Context context, GoogleMap map) {
         this.context = context;
         this.map = map;
@@ -67,34 +72,7 @@ public class MapManager {
         this.waypointMarkers = new ArrayList<>();
     }
 
-    public void updateDriverLocations(List<GetActiveDriverLocationDTO> drivers) {
-        for (Marker marker : driverMarkers) {
-            if (marker != null) {
-                marker.remove();
-            }
-        }
-        driverMarkers.clear();
-
-        for (GetActiveDriverLocationDTO driver : drivers) {
-            if (driver.getLatitude() != null && driver.getLongitude() != null) {
-                LatLng position = new LatLng(driver.getLatitude(), driver.getLongitude());
-
-                int iconRes = driver.getIsAvailable() ? R.drawable.ic_car_green : R.drawable.ic_car_red;
-                BitmapDescriptor icon = ImageUtils.getBitmapDescriptorFromDrawable(context, iconRes);
-
-                String title = driver.getVehicleType() + " - " + (driver.getIsAvailable() ? "Available" : "Busy");
-
-                MarkerOptions markerOptions = new MarkerOptions()
-                        .position(position)
-                        .title(title)
-                        .icon(icon);
-
-                Marker marker = map.addMarker(markerOptions);
-                driverMarkers.add(marker);
-            }
-        }
-    }
-
+    // ===== GEOCODING =====
     public void getAddressFromLocation(LatLng latLng, AddressCallback callback) {
         new Thread(() -> {
             try {
@@ -140,6 +118,7 @@ public class MapManager {
         return fullAddress;
     }
 
+    // ===== WAYPOINT MARKERS (for ride ordering) =====
     public Marker addWaypointMarker(LatLng position, int index, String title) {
         // Remove existing marker at this index if any
         if (index < waypointMarkers.size() && waypointMarkers.get(index) != null) {
@@ -167,19 +146,97 @@ public class MapManager {
         return marker;
     }
 
+    public void clearWaypoints() {
+        for (Marker marker : waypointMarkers) {
+            if (marker != null) {
+                marker.remove();
+            }
+        }
+        waypointMarkers.clear();
+    }
+
+    // ===== ACTIVE DRIVER MARKERS (for passengers viewing available drivers) =====
+    public void updateDriverLocations(List<GetActiveDriverLocationDTO> drivers) {
+        // Clear old markers
+        for (Marker marker : activeDriverMarkers) {
+            if (marker != null) {
+                marker.remove();
+            }
+        }
+        activeDriverMarkers.clear();
+
+        // Add new markers
+        for (GetActiveDriverLocationDTO driver : drivers) {
+            if (driver.getLatitude() != null && driver.getLongitude() != null) {
+                LatLng position = new LatLng(driver.getLatitude(), driver.getLongitude());
+
+                int iconRes = driver.getIsAvailable() ? R.drawable.ic_car_green : R.drawable.ic_car_red;
+                BitmapDescriptor icon = ImageUtils.getBitmapDescriptorFromDrawable(context, iconRes);
+
+                String title = driver.getVehicleType() + " - " + (driver.getIsAvailable() ? "Available" : "Busy");
+
+                MarkerOptions markerOptions = new MarkerOptions()
+                        .position(position)
+                        .title(title)
+                        .icon(icon);
+
+                Marker marker = map.addMarker(markerOptions);
+                activeDriverMarkers.add(marker);
+            }
+        }
+    }
+
+    public void clearActiveDrivers() {
+        for (Marker marker : activeDriverMarkers) {
+            if (marker != null) {
+                marker.remove();
+            }
+        }
+        activeDriverMarkers.clear();
+    }
+
+    // ===== DRIVER POSITION (for driver's own location) =====
+    public void updateDriverPosition(LatLng location) {
+        // Remove old marker
+        if (driverPositionMarker != null) {
+            driverPositionMarker.remove();
+        }
+
+        // Add new driver marker
+        BitmapDescriptor icon = ImageUtils.getBitmapDescriptorFromDrawable(
+                context,
+                R.drawable.ic_car_green
+        );
+
+        MarkerOptions options = new MarkerOptions()
+                .position(location)
+                .title("You")
+                .icon(icon);
+
+        driverPositionMarker = map.addMarker(options);
+    }
+
+    public void clearDriverPosition() {
+        if (driverPositionMarker != null) {
+            driverPositionMarker.remove();
+            driverPositionMarker = null;
+        }
+    }
+
+    // ===== ROUTING =====
     public void drawRoute(List<LatLng> waypoints, RouteCallback callback) {
-        Log.d("MapManager", "drawRoute called with " + waypoints.size() + " waypoints");
+        Log.d(TAG, "drawRoute called with " + waypoints.size() + " waypoints");
 
         if (waypoints == null || waypoints.size() < 2) {
             if (callback != null) callback.onError("Need at least 2 waypoints");
-            Log.d("MapManager", "Not enough waypoints, returning");
+            Log.d(TAG, "Not enough waypoints, returning");
             return;
         }
 
         clearRoute();
 
         String url = buildDirectionsUrl(waypoints);
-        Log.d("MapManager", "Directions API URL: " + url);
+        Log.d(TAG, "Directions API URL: " + url);
 
         Request request = new Request.Builder().url(url).build();
         httpClient.newCall(request).enqueue(new Callback() {
@@ -195,6 +252,22 @@ public class MapManager {
         });
     }
 
+    public void clearRoute() {
+        if (routePolyline != null) {
+            routePolyline.remove();
+            routePolyline = null;
+        }
+    }
+
+    // ===== CLEANUP =====
+    public void reset() {
+        clearWaypoints();
+        clearRoute();
+        clearActiveDrivers();
+        clearDriverPosition();
+    }
+
+    // ===== PRIVATE HELPERS - ROUTING =====
     private String buildDirectionsUrl(List<LatLng> waypoints) {
         StringBuilder url = new StringBuilder("https://maps.googleapis.com/maps/api/directions/json?");
 
@@ -286,53 +359,6 @@ public class MapManager {
         }
     }
 
-    public void clearWaypoints() {
-        for (Marker marker : waypointMarkers) {
-            if (marker != null) {
-                marker.remove();
-            }
-        }
-        waypointMarkers.clear();
-    }
-
-    public void clearRoute() {
-        if (routePolyline != null) {
-            routePolyline.remove();
-            routePolyline = null;
-        }
-    }
-
-    public void reset() {
-        clearWaypoints();
-        clearRoute();
-        for (Marker marker : driverMarkers) {
-            if (marker != null) {
-                marker.remove();
-            }
-        }
-        driverMarkers.clear();
-    }
-
-    private BitmapDescriptor getColoredMarkerIcon(int color) {
-        int size = 40;
-        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-
-        android.graphics.Paint paint = new android.graphics.Paint();
-        paint.setColor(color);
-        paint.setStyle(android.graphics.Paint.Style.FILL);
-        paint.setAntiAlias(true);
-
-        canvas.drawCircle(size / 2f, size / 2f, size / 2f - 2, paint);
-
-        paint.setColor(Color.WHITE);
-        paint.setStyle(android.graphics.Paint.Style.STROKE);
-        paint.setStrokeWidth(4);
-        canvas.drawCircle(size / 2f, size / 2f, size / 2f - 2, paint);
-
-        return BitmapDescriptorFactory.fromBitmap(bitmap);
-    }
-
     private List<LatLng> decodePolyline(String encoded) {
         List<LatLng> poly = new ArrayList<>();
         int index = 0, len = encoded.length();
@@ -363,5 +389,26 @@ public class MapManager {
         }
 
         return poly;
+    }
+
+    // ===== PRIVATE HELPERS - MARKERS =====
+    private BitmapDescriptor getColoredMarkerIcon(int color) {
+        int size = 40;
+        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        android.graphics.Paint paint = new android.graphics.Paint();
+        paint.setColor(color);
+        paint.setStyle(android.graphics.Paint.Style.FILL);
+        paint.setAntiAlias(true);
+
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f - 2, paint);
+
+        paint.setColor(Color.WHITE);
+        paint.setStyle(android.graphics.Paint.Style.STROKE);
+        paint.setStrokeWidth(4);
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f - 2, paint);
+
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 }

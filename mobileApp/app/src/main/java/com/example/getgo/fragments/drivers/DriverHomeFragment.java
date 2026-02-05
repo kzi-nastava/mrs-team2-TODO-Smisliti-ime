@@ -156,6 +156,15 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         webSocketManager.subscribeToRideFinished(driverEmail, finished -> {
             requireActivity().runOnUiThread(() -> showRideCompleted(finished));
         });
+
+        webSocketManager.subscribeToDriverLocation(driverEmail, location -> {
+            requireActivity().runOnUiThread(() -> {
+                if (mapManager != null && location.getLatitude() != null && location.getLongitude() != null) {
+                    LatLng position = new LatLng(location.getLatitude(), location.getLongitude());
+                    mapManager.updateDriverPosition(position);
+                }
+            });
+        });
     }
 
     private void loadActiveRide() {

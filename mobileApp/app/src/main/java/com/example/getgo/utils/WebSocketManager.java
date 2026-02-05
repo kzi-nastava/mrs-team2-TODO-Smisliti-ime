@@ -135,10 +135,15 @@ public class WebSocketManager {
         compositeDisposable.add(disposable);
     }
 
-    public void subscribeToDriverLocation(Long rideId, DriverLocationListener listener) {
-        if (stompClient == null) return;
+    public void subscribeToDriverLocation(String driverEmail, DriverLocationListener listener) {
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
 
-        String topic = "/socket-publisher/ride/" + rideId + "/driver-location";
+        String topic = "/socket-publisher/driver/" + driverEmail + "/location";
+        Log.d(TAG, "Subscribing to: " + topic);
+
         Disposable disposable = stompClient.topic(topic)
                 .subscribe(topicMessage -> {
                     Log.d(TAG, "Driver location: " + topicMessage.getPayload());

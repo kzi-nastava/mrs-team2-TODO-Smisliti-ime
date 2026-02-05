@@ -14,17 +14,17 @@ import java.time.LocalDateTime;
 
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import okhttp3.OkHttpClient;
 import ua.naiksoftware.stomp.Stomp;
 import ua.naiksoftware.stomp.StompClient;
 
 public class WebSocketManager {
     private static final String TAG = "WebSocketManager";
-    private static final String WS_URL = "ws://10.0.2.2:8080/socket";
+    private static final String WS_URL = "http://10.0.2.2:8080/socket/websocket";
 
     private StompClient stompClient;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private final Gson gson;
-    private final Context context;
 
     public interface RideAssignedListener {
         void onRideAssigned(GetDriverActiveRideDTO ride);
@@ -42,14 +42,13 @@ public class WebSocketManager {
         void onLocationUpdate(GetDriverLocationDTO location);
     }
 
-    public WebSocketManager(Context context) {
-        this.context = context;
+    public WebSocketManager() {
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer())
                 .create();
     }
 
-    public void connect(String userEmail) {
+    public void connect() {
         if (stompClient != null && stompClient.isConnected()) {
             Log.d(TAG, "Already connected");
             return;
@@ -57,7 +56,8 @@ public class WebSocketManager {
 
         stompClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, WS_URL);
 
-        // Add connection lifecycle logging
+        stompClient.withClientHeartbeat(10000).withServerHeartbeat(10000);
+
         Disposable lifecycleDisposable = stompClient.lifecycle()
                 .subscribe(lifecycleEvent -> {
                     switch (lifecycleEvent.getType()) {
@@ -70,17 +70,27 @@ public class WebSocketManager {
                         case ERROR:
                             Log.e(TAG, "WebSocket error", lifecycleEvent.getException());
                             break;
+                        case FAILED_SERVER_HEARTBEAT:
+                            Log.w(TAG, "Server heartbeat failed");
+                            break;
                     }
                 });
 
         compositeDisposable.add(lifecycleDisposable);
+
+        Log.d(TAG, "Connecting to WebSocket at: " + WS_URL);
         stompClient.connect();
     }
 
     public void subscribeToRideAssigned(String driverEmail, RideAssignedListener listener) {
-        if (stompClient == null) return;
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
 
         String topic = "/socket-publisher/driver/" + driverEmail + "/ride-assigned";
+        Log.d(TAG, "Subscribing to: " + topic);
+
         Disposable disposable = stompClient.topic(topic)
                 .subscribe(topicMessage -> {
                     Log.d(TAG, "Ride assigned: " + topicMessage.getPayload());

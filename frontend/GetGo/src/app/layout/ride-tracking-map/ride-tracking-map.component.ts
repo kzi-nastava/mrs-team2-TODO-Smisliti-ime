@@ -61,7 +61,7 @@ export class RideTrackingMapComponent implements AfterViewInit {
 
 
   ngOnChanges(): void {
-    // Kad se Input promeni, update-uj mapu
+
     if (!this.mapInitialized) return;
     if (this.driverPosition) this.updateDriverMarker(this.driverPosition.lat, this.driverPosition.lng);
     if (this.waypoints.length > 1) this.drawRoute(this.waypoints);

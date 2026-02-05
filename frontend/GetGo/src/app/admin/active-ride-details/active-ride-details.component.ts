@@ -56,7 +56,7 @@ export class ActiveRideDetailsComponent implements OnInit, OnDestroy {
                   if (this.mapComponent?.nativeElement) {
                     console.log('Dispatching update-driver-position event');
                     const event = new CustomEvent('update-driver-position', {
-                      detail: { latitude: pos.latitude, longitude: pos.longitude },
+                      detail: { lat: pos.latitude, lng: pos.longitude },
                       bubbles: true
                     });
                     this.mapComponent.nativeElement.dispatchEvent(event);
@@ -73,7 +73,6 @@ export class ActiveRideDetailsComponent implements OnInit, OnDestroy {
   loadRideDetails() {
     this.rideService.getActiveRideDetails(this.rideId).subscribe({
       next: (data: GetActiveRideAdminDetailsDTO) => {
-        // inicijalizujemo currentLat i currentLng ako ne postoje
         this.ride.set({
           ...data,
           currentLat: data.currentLat ?? data.latitudes?.[0] ?? 0,

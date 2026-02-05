@@ -2,6 +2,10 @@ package rs.getgo.backend.services.impl;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import rs.getgo.backend.dtos.admin.*;
@@ -9,17 +13,19 @@ import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.CreateDriverDTO;
 import rs.getgo.backend.dtos.driver.CreatedDriverDTO;
+import rs.getgo.backend.dtos.passenger.GetRidePassengerDTO;
 import rs.getgo.backend.dtos.request.*;
+import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
 import rs.getgo.backend.model.enums.UserRole;
 import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.*;
-import rs.getgo.backend.services.AdminService;
-import rs.getgo.backend.services.EmailService;
-import rs.getgo.backend.services.FileStorageService;
+import rs.getgo.backend.services.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -37,21 +43,31 @@ public class AdminServiceImpl implements AdminService {
     private final EmailService emailService;
     private final ModelMapper modelMapper;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final PassengerService passengerService;
+    private final DriverService driverService;
+    private final CompletedRideRepository completedRideRepo;
+    private final PassengerRepository passengerRepo;
 
     public AdminServiceImpl(
             AdministratorRepository adminRepo,
             DriverRepository driverRepo,
+            PassengerRepository passengerRepo,
+            CompletedRideRepository completedRideRepo,
             PersonalChangeRequestRepository personalChangeRequestRepo,
             VehicleChangeRequestRepository vehicleChangeRequestRepo,
             AvatarChangeRequestRepository avatarChangeRequestRepo,
             DriverActivationTokenRepository driverActivationTokenRepo,
             FileStorageService fileStorageService,
             EmailService emailService,
+            PassengerServiceImpl passengerService,
+            DriverServiceImpl driverService,
             ModelMapper modelMapper,
             BCryptPasswordEncoder passwordEncoder
     ) {
         this.adminRepo = adminRepo;
         this.driverRepo = driverRepo;
+        this.passengerRepo = passengerRepo;
+        this.completedRideRepo = completedRideRepo;
         this.personalChangeRequestRepo = personalChangeRequestRepo;
         this.vehicleChangeRequestRepo = vehicleChangeRequestRepo;
         this.avatarChangeRequestRepo = avatarChangeRequestRepo;
@@ -60,6 +76,8 @@ public class AdminServiceImpl implements AdminService {
         this.emailService = emailService;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
+        this.passengerService = passengerService;
+        this.driverService = driverService;
     }
 
     @Override
@@ -570,5 +588,108 @@ public class AdminServiceImpl implements AdminService {
     public void getReports() {
         // TODO
     }
-}
 
+    @Override
+    public Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size) {
+        Passenger passenger = passengerRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
+
+        Page<CompletedRide> ridesPage;
+        if (startDate != null) {
+            ridesPage = completedRideRepo.findByPayingPassengerIdAndStartTimeAfter(
+                    passenger.getId(), startDate.atStartOfDay(), pageable);
+        } else {
+            ridesPage = completedRideRepo.findByPayingPassengerId(passenger.getId(), pageable);
+        }
+
+        return ridesPage.map(this::mapCompletedRideToDTO);
+    }
+
+    @Override
+    public GetRideDTO getPassengerRideById(String email, Long rideId) {
+        Passenger passenger = passengerRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
+
+        CompletedRide ride = completedRideRepo.findById(rideId)
+                .orElseThrow(() -> new RuntimeException("Ride not found with id: " + rideId));
+
+        boolean isPaying = ride.getPayingPassengerId() != null && ride.getPayingPassengerId().equals(passenger.getId());
+        boolean isLinked = ride.getLinkedPassengerIds() != null && ride.getLinkedPassengerIds().contains(passenger.getId());
+
+        if (!isPaying && !isLinked) {
+            throw new RuntimeException("Passenger is not allowed to view this ride");
+        }
+
+        return mapCompletedRideToDTO(ride);
+    }
+
+    @Override
+    public Page<GetRideDTO> getDriverRides(String email, LocalDate startDate, int page, int size) {
+        Driver driver = driverRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
+
+        Page<CompletedRide> ridesPage;
+        if (startDate != null) {
+            ridesPage = completedRideRepo.findByDriverIdAndStartTimeAfter(
+                    driver.getId(), startDate.atStartOfDay(), pageable);
+        } else {
+            ridesPage = completedRideRepo.findByDriverId(driver.getId(), pageable);
+        }
+
+        return ridesPage.map(this::mapCompletedRideToDTO);
+    }
+
+    @Override
+    public GetRideDTO getDriverRideById(String email, Long rideId) {
+        Driver driver = driverRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
+
+        CompletedRide ride = completedRideRepo.findById(rideId)
+                .orElseThrow(() -> new RuntimeException("Ride not found with id: " + rideId));
+
+        if (!ride.getDriverId().equals(driver.getId())) {
+            throw new RuntimeException("Driver is not allowed to view this ride");
+        }
+
+        return mapCompletedRideToDTO(ride);
+    }
+
+    private GetRideDTO mapCompletedRideToDTO(CompletedRide r) {
+        List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
+
+        if (r.getPayingPassengerId() != null) {
+            passengerDTOs.add(new GetRidePassengerDTO(
+                    r.getPayingPassengerId(),
+                    r.getPayingPassengerEmail()
+            ));
+        }
+
+        if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
+            List<Passenger> passengers = passengerRepo.findAllById(r.getLinkedPassengerIds());
+            for (Passenger p : passengers) {
+                passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getEmail()));
+            }
+        }
+
+        return new GetRideDTO(
+                r.getId(),
+                r.getDriverId(),
+                passengerDTOs,
+                r.getRoute() != null ? r.getRoute().getStartingPoint() : "Unknown",
+                r.getRoute() != null ? r.getRoute().getEndingPoint() : "Unknown",
+                r.getStartTime(),
+                r.getEndTime(),
+                r.getStartTime() != null && r.getEndTime() != null ?
+                        (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
+                r.isCancelled(),
+                false,
+                r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
+                r.getEstimatedPrice(),
+                r.isPanicPressed()
+        );
+    }
+}

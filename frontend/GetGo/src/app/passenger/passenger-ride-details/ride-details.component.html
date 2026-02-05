@@ -11,7 +11,7 @@
 
   <p><b>Panic activated:</b> {{ ride()!.panicActivated ? 'Yes' : 'No' }}</p>
 
-  <h2>Price: ${{ ride()!.price }}</h2>
+  <h2>Price: {{ ride()!.price | number:'1.0-0' }}rsd</h2>
 
   <h2>Reported inconsistencies</h2>
 
@@ -45,6 +45,12 @@
       [disabled]="isUnfavoriting()">
       {{ isUnfavoriting() ? 'Removing...' : 'Unfavorite' }}
     </button>
+
+    <button
+      class="rebook-button"
+      (click)="onRebookRide()">
+      Book Again
+    </button>
   </div>
 
   <p *ngIf="favoriteSuccess()" class="success-message">✓ Ride added to favorites!</p>
@@ -54,5 +60,5 @@
 </div>
 
 <ng-template #loading>
-  <p>Loading ride details...</p>
+  <p class="loading">Loading ride details...</p>
 </ng-template>

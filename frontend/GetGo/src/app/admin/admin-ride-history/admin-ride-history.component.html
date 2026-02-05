@@ -1,0 +1,66 @@
+<div class="ride-history-page">
+
+  <div class="filter-container">
+    <form [formGroup]="searchRideForm" (ngSubmit)="searchRides()" class="filter-form">
+
+      <mat-form-field appearance="fill" class="email-field">
+        <mat-label>User Email</mat-label>
+        <input matInput type="email" formControlName="email" placeholder="user@example.com">
+        <mat-error *ngIf="searchRideForm.get('email')?.hasError('required')">Email is required</mat-error>
+        <mat-error *ngIf="searchRideForm.get('email')?.hasError('email')">Invalid email format</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="user-type-field">
+        <mat-label>User Type</mat-label>
+        <mat-select formControlName="userType">
+          <mat-option value="passenger">Passenger</mat-option>
+          <mat-option value="driver">Driver</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="date-picker-field">
+        <mat-label>Filter by date</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="date">
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      <div class="buttons">
+        <button mat-raised-button color="warn" type="button" (click)="resetFilter()">Reset</button>
+        <button mat-raised-button color="primary" type="submit">Search</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="list">
+    <div *ngFor="let ride of rides() || []" class="item" [routerLink]="['/admin/rides',  this.currentUserType, ride.id]" [queryParams]="{email: searchRideForm.value.email}">
+      <p class="card-date"><b>{{ride.startingTime | date:'dd.MM.yyyy'}}</b></p>
+      <h2>
+        <img class="pin-icon" src="/map-pin.svg" alt="Pin icon">
+        <span>{{ getRideSummary(ride.startPoint) }}</span>
+      </h2>
+      <h2>
+        <img class="flag-icon" src="/finish-flag.svg" alt="Destination flag">
+        <span class="location-text">{{ getRideSummary(ride.endPoint) }}</span>
+      </h2>
+
+      <p><span class="card-time">Start time: </span>{{ride.startingTime | date:'HH:mm'}}</p>
+      <p><span class="card-time">End time: </span>{{ride.finishedTime | date:'HH:mm'}}</p>
+      <h1 class="card-price">{{ride.price | number:'1.0-0'}}rsd</h1>
+    </div>
+
+    <div *ngIf="!rides() || rides()?.length === 0" style="text-align: center; padding: 40px; color: #555;">
+      {{ searchRideForm.value.email ? 'No rides found for this user.' : 'Enter email and search to view rides.' }}
+    </div>
+  </div>
+
+  <mat-paginator id="paginator"
+    *ngIf="rides() && rides()!.length > 0"
+    [length]="page().totalElements"
+    [pageSize]="page().pageSize"
+    [pageSizeOptions]="[5, 10, 20]"
+    (page)="onPageChange($event)">
+  </mat-paginator>
+
+</div>
+

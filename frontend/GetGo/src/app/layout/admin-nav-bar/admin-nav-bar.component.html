@@ -17,7 +17,7 @@
     <span>Home</span>
   </button>
 
-  <button mat-menu-item [routerLink]="['/ride']">
+  <button mat-menu-item [routerLink]="['/admin/admin-ride-history']">
     <mat-icon>directions_car</mat-icon>
     <span>Ride history</span>
   </button>
@@ -35,6 +35,11 @@
   <button mat-menu-item [routerLink]="['/admin/review-driver-requests']">
     <mat-icon>edit</mat-icon>
     <span>Review Driver Requests</span>
+  </button>
+
+  <button mat-menu-item [routerLink]="['/admin/support-chat']">
+    <mat-icon>chat</mat-icon>
+    <span>Support Chat</span>
   </button>
 
   <button mat-menu-item (click)="logout()">

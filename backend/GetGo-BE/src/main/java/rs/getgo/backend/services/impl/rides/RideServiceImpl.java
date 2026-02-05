@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import rs.getgo.backend.controllers.WebSocketController;
-import rs.getgo.backend.dtos.driver.GetDriverLocationDTO;
+import rs.getgo.backend.dtos.panic.PanicAlertDTO;
 import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
 import rs.getgo.backend.model.entities.*;
@@ -15,6 +15,7 @@ import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.DriverService;
 import rs.getgo.backend.services.EmailService;
+import rs.getgo.backend.services.PanicNotifierService;
 import rs.getgo.backend.services.RideService;
 import rs.getgo.backend.utils.AuthUtils;
 
@@ -42,6 +43,7 @@ public class RideServiceImpl implements RideService {
     private final MapboxRoutingService routingService;
     private final WebSocketController webSocketController;
     private final InconsistencyReportRepository reportRepository;
+    private final PanicNotifierService panicNotifierService;
 
     @Value("${driver.default.latitude}")
     private Double defaultDriverLatitude;
@@ -64,7 +66,8 @@ public class RideServiceImpl implements RideService {
                            WebSocketController webSocketController,
                            CompletedRideRepository completedRideRepository,
                            EmailService emailService,
-                           InconsistencyReportRepository reportRepository) {
+                           InconsistencyReportRepository reportRepository,
+                           PanicNotifierService panicNotifierService) {
         this.cancellationRepository = cancellationRepository;
         this.panicRepository = panicRepository;
         this.activeRideRepository = activeRideRepository;
@@ -78,6 +81,7 @@ public class RideServiceImpl implements RideService {
         this.routingService = mapboxRoutingService;
         this.webSocketController = webSocketController;
         this.reportRepository = reportRepository;
+        this.panicNotifierService = panicNotifierService;
     }
 
     @Override
@@ -676,12 +680,22 @@ public class RideServiceImpl implements RideService {
 
         panicRepository.save(panic);
 
+        // Existing WS notification
         webSocketController.notifyAdminsPanicTriggered(
                 ride.getId(),
                 userId,
                 email,
                 triggeredAt
         );
+
+        // New unified notifier for admin chat stream
+        PanicAlertDTO dto = new PanicAlertDTO();
+        dto.setPanicId(panic.getId());
+        dto.setRideId(ride.getId());
+        dto.setTriggeredByUserId(userId);
+        dto.setTriggeredAt(triggeredAt);
+        dto.setStatus(false);
+        panicNotifierService.notifyAdmins(dto);
     }
 
     @Override
@@ -807,6 +821,8 @@ public class RideServiceImpl implements RideService {
         for (Optional<Panic> panic : panics) {
             if (panic.isPresent()) {
                 panic.get().setRideId(completedRide.getId());
+                completedRide.setPanicPressed(true);
+                completedRideRepository.save(completedRide);
             }
         }
 

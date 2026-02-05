@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import rs.getgo.backend.model.enums.MessageType;
+import rs.getgo.backend.model.enums.SenderType;
 
 import java.time.LocalDateTime;
 
@@ -23,12 +24,11 @@ public class Message {
     private LocalDateTime timestamp;
 
     @Enumerated(EnumType.STRING)
-    private MessageType type;
+    private MessageType type; // TEXT, IMAGE, SYSTEM
 
     @ManyToOne
     private Chat chat;
 
-    @ManyToOne
-    @JoinColumn(name = "sender_id")
-    private User sender;
+    @Enumerated(EnumType.STRING)
+    private SenderType senderType; // USER / ADMIN
 }

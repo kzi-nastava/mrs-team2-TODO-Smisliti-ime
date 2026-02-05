@@ -1,6 +1,5 @@
 package com.example.getgo.repositories;
 
-import android.content.Context;
 import android.util.Log;
 
 import com.example.getgo.api.ApiClient;
@@ -45,7 +44,11 @@ public class RideRepository {
         RideApiService service = ApiClient.getClient().create(RideApiService.class);
         Response<GetDriverActiveRideDTO> response = service.getDriverActiveRide().execute();
 
-        if (response.isSuccessful() && response.body() != null) {
+        if (response.isSuccessful()) {
+            if (response.body() == null) {
+                Log.d(TAG, "No active ride for driver");
+                return null;
+            }
             return response.body();
         } else {
             String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";

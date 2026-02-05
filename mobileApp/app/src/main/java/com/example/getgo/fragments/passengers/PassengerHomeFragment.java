@@ -19,6 +19,8 @@ import com.example.getgo.R;
 import com.example.getgo.dtos.driver.GetActiveDriverLocationDTO;
 import com.example.getgo.dtos.ride.CreateRideRequestDTO;
 import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
+import com.example.getgo.dtos.ride.GetReorderRideDTO;
+import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.repositories.DriverRepository;
 import com.example.getgo.repositories.RideRepository;
 import com.example.getgo.utils.MapManager;
@@ -72,7 +74,24 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         setupDropdowns();
         setupListeners();
 
+        // Check for re-order data
+        if (getArguments() != null && getArguments().containsKey("REORDER_RIDE")) {
+            GetReorderRideDTO reorderRide = (GetReorderRideDTO) getArguments().getSerializable("REORDER_RIDE");
+            prefillRideData(reorderRide);
+        }
         return root;
+    }
+
+    private void prefillRideData(GetReorderRideDTO ride) {
+        if (ride == null) return;
+        if (ride.getStartPoint() != null) etStartPoint.setText(ride.getStartPoint());
+        if (ride.getEndPoint() != null) etDestination.setText(ride.getEndPoint());
+        if (ride.getVehicleType() != null && actvVehicleType != null) {
+            actvVehicleType.setText(ride.getVehicleType().toString(), false);
+        }
+        if (ride.getNeedsPetFriendly() != null && cbHasPets != null) cbHasPets.setChecked(ride.getNeedsPetFriendly());
+        if (ride.getNeedsBabySeats() != null && cbHasBaby != null) cbHasBaby.setChecked(ride.getNeedsBabySeats());
+        // Waypoints fill (addresses only) can be added here when DTO available
     }
 
     private void initializeViews(View root) {
@@ -384,6 +403,78 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
             }
         }
 
+        // Geocode addresses if coordinates are not set
+        if (startPointCoord == null) {
+            String startAddress = etStartPoint.getText().toString().trim();
+            if (!startAddress.isEmpty()) {
+                geocodeAddressAndOrder(startAddress, true);
+                return; // Will retry after geocoding
+            }
+        }
+        if (destinationCoord == null) {
+            String destAddress = etDestination.getText().toString().trim();
+            if (!destAddress.isEmpty()) {
+                geocodeAddressAndOrder(destAddress, false);
+                return;
+            }
+        }
+
+        // Geocode waypoints if needed
+        for (int i = 0; i < waypointInputs.size(); i++) {
+            if (waypointCoords.get(i) == null) {
+                String addr = waypointInputs.get(i).getText().toString().trim();
+                if (!addr.isEmpty()) {
+                    final int idx = i;
+                    geocodeWaypointAndOrder(addr, idx);
+                    return;
+                }
+            }
+        }
+
+        // All coordinates ready, proceed with order
+        submitRideOrder();
+    }
+
+    private void geocodeAddressAndOrder(String address, boolean isStart) {
+        mapManager.getCoordinatesFromAddress(address, new MapManager.CoordinatesCallback() {
+            @Override
+            public void onCoordinatesFound(LatLng coordinates) {
+                if (isStart) {
+                    startPointCoord = coordinates;
+                    mapManager.addWaypointMarker(coordinates, 0, "Start Point");
+                } else {
+                    destinationCoord = coordinates;
+                    mapManager.addWaypointMarker(coordinates, 100, "Destination");
+                }
+                drawRouteIfReady();
+                orderRide(); // Retry
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(requireContext(), "Failed to geocode: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void geocodeWaypointAndOrder(String address, int index) {
+        mapManager.getCoordinatesFromAddress(address, new MapManager.CoordinatesCallback() {
+            @Override
+            public void onCoordinatesFound(LatLng coordinates) {
+                waypointCoords.set(index, coordinates);
+                mapManager.addWaypointMarker(coordinates, index + 1, "Waypoint " + (index + 1));
+                drawRouteIfReady();
+                orderRide(); // Retry
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(requireContext(), "Failed to geocode waypoint: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void submitRideOrder() {
         List<Double> lats = new ArrayList<>();
         List<Double> lngs = new ArrayList<>();
         List<String> addrs = new ArrayList<>();

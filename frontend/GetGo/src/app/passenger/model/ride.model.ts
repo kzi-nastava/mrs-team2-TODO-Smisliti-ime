@@ -15,7 +15,9 @@ export interface Ride {
 
 export interface GetRidePassengerDTO {
   id: number;
-  username: string;
+  email: string;
+  name: string;
+  surname: string;
 }
 
 export interface GetRideDTO {
@@ -36,6 +38,7 @@ export interface GetRideDTO {
   status: 'ACTIVE' | 'FINISHED' | 'CANCELLED' | 'SCHEDULED';
   price: number;
   panicActivated?: boolean;
+  waypoints?: Array<{ lat: number; lng: number; timestamp: string }>;
 }
 
 export interface GetInconsistencyReportDTO {

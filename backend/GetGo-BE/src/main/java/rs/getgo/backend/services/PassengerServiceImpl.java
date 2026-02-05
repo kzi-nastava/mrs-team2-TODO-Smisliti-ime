@@ -14,6 +14,7 @@ import rs.getgo.backend.dtos.passenger.GetPassengerDTO;
 import rs.getgo.backend.dtos.passenger.GetRidePassengerDTO;
 import rs.getgo.backend.dtos.passenger.UpdatePassengerDTO;
 import rs.getgo.backend.dtos.passenger.UpdatedPassengerDTO;
+import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.dtos.user.UpdatedProfilePictureDTO;
 import rs.getgo.backend.model.entities.CompletedRide;
@@ -50,6 +51,13 @@ public class PassengerServiceImpl implements PassengerService {
     public GetPassengerDTO getPassenger(String email) {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
+
+        return modelMapper.map(passenger, GetPassengerDTO.class);
+    }
+
+    public GetPassengerDTO getPassengerById(Long passengerId) {
+        Passenger passenger = passengerRepo.findById(passengerId)
+                .orElseThrow(() -> new RuntimeException("Passenger not found with id: " + passengerId));
 
         return modelMapper.map(passenger, GetPassengerDTO.class);
     }
@@ -130,7 +138,7 @@ public class PassengerServiceImpl implements PassengerService {
     }
 
     @Override
-    public GetRideDTO getPassengerRideById(String email, Long rideId) {
+    public GetReorderRideDTO getPassengerRideById(String email, Long rideId) {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
@@ -144,7 +152,7 @@ public class PassengerServiceImpl implements PassengerService {
             throw new RuntimeException("Passenger is not allowed to view this ride");
         }
 
-        return mapCompletedRideToDTO(r);
+        return mapCompletedReorderedRideToDTO(r);
     }
 
     private GetRideDTO mapCompletedRideToDTO(CompletedRide r) {
@@ -179,6 +187,45 @@ public class PassengerServiceImpl implements PassengerService {
                 r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
                 r.getEstimatedPrice(),
                 r.isPanicPressed()
+
+        );
+    }
+
+    private GetReorderRideDTO mapCompletedReorderedRideToDTO(CompletedRide r) {
+        List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
+
+        if (r.getPayingPassengerId() != null) {
+            passengerDTOs.add(new GetRidePassengerDTO(
+                    r.getPayingPassengerId(),
+                    r.getPayingPassengerEmail()
+            ));
+        }
+
+        if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
+            List<Passenger> passengers = passengerRepo.findAllById(r.getLinkedPassengerIds());
+            for (Passenger p : passengers) {
+                passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getEmail()));
+            }
+        }
+
+        return new GetReorderRideDTO(
+                r.getId(),
+                r.getDriverId(),
+                passengerDTOs,
+                r.getRoute() != null ? r.getRoute().getStartingPoint() : "Unknown",
+                r.getRoute() != null ? r.getRoute().getEndingPoint() : "Unknown",
+                r.getStartTime(),
+                r.getEndTime(),
+                r.getStartTime() != null && r.getEndTime() != null ?
+                        (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
+                r.isCancelled(),
+                false,
+                r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
+                r.getEstimatedPrice(),
+                r.isPanicPressed(),
+                r.getVehicleType(),
+                r.isNeedsBabySeats(),
+                r.isNeedsPetFriendly()
         );
     }
 }

@@ -589,4 +589,26 @@ public class DriverServiceImpl implements DriverService {
     public boolean hasExceededWorkingHours(Driver driver) {
         return calculateRecentHoursWorked(driver.getEmail()) >= 8.0;
     }
+
+    @Override
+    public GetDriverDTO findDriverById(Long driverId) {
+        Driver driver = driverRepository.findById(driverId)
+                .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
+
+        GetDriverDTO dto = modelMapper.map(driver, GetDriverDTO.class);
+
+        // Map vehicle info
+        if (driver.getVehicle() != null) {
+            dto.setVehicleModel(driver.getVehicle().getModel());
+            dto.setVehicleType(driver.getVehicle().getType().toString());
+            dto.setVehicleLicensePlate(driver.getVehicle().getLicensePlate());
+            dto.setVehicleSeats(driver.getVehicle().getNumberOfSeats());
+            dto.setVehicleHasBabySeats(driver.getVehicle().getIsBabyFriendly());
+            dto.setVehicleAllowsPets(driver.getVehicle().getIsPetFriendly());
+        }
+
+        dto.setProfilePictureUrl(driver.getProfilePictureUrl());
+
+        return dto;
+    }
 }

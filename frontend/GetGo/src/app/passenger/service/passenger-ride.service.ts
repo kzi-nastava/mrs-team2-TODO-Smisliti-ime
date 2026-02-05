@@ -5,6 +5,8 @@ import { environment } from '../../../env/environment';
 import { Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.model';
+import { GetRatingDTO } from '../../model/rating.model';
+import { GetDriverDTO } from '../../model/user.model';
 
 export interface CreatedFavoriteRideDTO {
   favoriteRideId: number;
@@ -91,6 +93,24 @@ export class RideService {
     const url = `${environment.apiHost}/api/passenger/rides/${rideId}`;
 
     return this.http.get<GetRideDTO>(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    });
+  }
+
+  getRatingsByRide(rideId: number): Observable<GetRatingDTO[]> {
+    const token = this.getAuthToken();
+    return this.http.get<GetRatingDTO[]>(`${environment.apiHost}/api/ratings/ride/${rideId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    });
+  }
+
+  getDriverProfile(driverId: number): Observable<GetDriverDTO> {
+    const token = this.getAuthToken();
+    return this.http.get<GetDriverDTO>(`${environment.apiHost}/api/drivers/profile/${driverId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       }

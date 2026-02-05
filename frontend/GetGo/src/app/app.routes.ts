@@ -33,6 +33,8 @@ import {PassengerRidesComponent} from './passenger/passenger-ride-history/passen
 import {PassengerRideDetailsComponent} from './passenger/passenger-ride-details/ride-details.component';
 import { SupportChatComponent } from './layout/support-chat/support-chat.component';
 import { AdminSupportChatComponent } from './admin/admin-support-chat/admin-support-chat.component';
+import {AdminRideDetailsComponent} from './admin/admin-ride-details/admin-ride-details.component';
+import {AdminRideHistoryComponent} from './admin/admin-ride-history/admin-ride-history.component';
 import { AdminActiveRidesComponent } from './admin/admin-active-rides/admin-active-rides.component';
 import { ActiveRideDetailsComponent } from './admin/active-ride-details/active-ride-details.component';
 
@@ -65,6 +67,9 @@ export const routes: Routes = [
   { path: 'admin/admin-profile', component: AdminProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/review-driver-requests', component: AdminReviewDriverRequests, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/change-password', component: AdminChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
+  { path: 'admin/rides/passenger/:id', component: AdminRideDetailsComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Admin]}},
+  { path: 'admin/rides/driver/:id', component: AdminRideDetailsComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Admin]}},
+  { path: 'admin/admin-ride-history', component: AdminRideHistoryComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/driver-registration', component: DriverRegistration, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/active-rides', component: AdminActiveRidesComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/active-rides/:id', component: ActiveRideDetailsComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },

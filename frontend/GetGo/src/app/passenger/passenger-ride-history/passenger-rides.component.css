@@ -3,6 +3,7 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   padding: 20px;
+  flex: 1;
 }
 
 .item {
@@ -23,14 +24,20 @@
 }
 
 .item h2 {
-  font-size: 20px;
-  margin: 0 0 8px 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
 }
 
 .item p {
   margin: 4px 0;
   color: #555;
   line-height: 1.4;
+}
+
+.item strong {
+  color: #111;
 }
 
 .card-time{
@@ -71,6 +78,8 @@
 }
 
 .ride-history-page{
+  display: flex;
+  flex-direction: column;
   background-color: #8FABD4;
   padding-top: 5px;
   min-height: 100vh;
@@ -81,7 +90,13 @@
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  margin: 20px 0;
+  margin: 20px auto;
+  max-width: 400px;
+}
+
+.filter-box {
+  background: #0b3a82;
+  color: white;
 }
 
 .date-picker-field {
@@ -97,6 +112,52 @@
   margin-top: -20px;
 }
 
+.filter-title {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
 .buttons button {
   flex: 1;
+}
+
+.date-inputs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.date-inputs input {
+  width: 100%;
+  padding: 6px;
+  border-radius: 6px;
+  border: none;
+  text-align: center;
+  background-color: #CBDCEB;
+}
+
+.filter-box button {
+  width: 100%;
+  padding: 6px;
+  border-radius: 8px;
+  border: none;
+  color: #0b3a82;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #CBDCEB;
+}
+
+.filter-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+#paginator {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  background-color: #8FABD4;
 }

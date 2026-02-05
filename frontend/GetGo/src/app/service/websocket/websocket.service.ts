@@ -136,7 +136,19 @@ export class WebSocketService {
   }
 
   subscribeToAdminPanic(): Observable<any> {
-    return this.createSubscription('/socket-publisher/admin/panic-alerts');
+    return new Observable((observer) => {
+      if (!this.stompClient || !this.stompClient.connected) {
+        observer.error('WebSocket not connected');
+        return;
+      }
+      const subscription = this.stompClient.subscribe(
+        '/topic/admin/panic',
+        (message: any) => {
+          observer.next(JSON.parse(message.body));
+        }
+      );
+      return () => subscription.unsubscribe();
+    });
   }
 
   subscribeToPassengerRideStopped(rideId: number): Observable<any> {

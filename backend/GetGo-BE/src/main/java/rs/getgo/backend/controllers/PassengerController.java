@@ -1,6 +1,7 @@
 package rs.getgo.backend.controllers;
 
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
@@ -79,19 +80,21 @@ public class PassengerController {
 
     // 2.9.1 - Get passenger rides
     @PreAuthorize("hasRole('PASSENGER')")
-    @GetMapping(value = "/rides", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Collection<GetRideDTO>> getPassengerRides(
-            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
+    @GetMapping(value = "/rides")
+    public ResponseEntity<Page<GetRideDTO>> getPassengerRides(
+            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
         String email = AuthUtils.getCurrentUserEmail();
-        List<GetRideDTO> rides = passengerService.getPassengerRides(email, startDate);
+        Page<GetRideDTO> rides = passengerService.getPassengerRides(email, startDate, page, size);
         return ResponseEntity.ok(rides);
     }
 
     // 2.9.2 - Get single passenger ride by id
     @PreAuthorize("hasRole('PASSENGER')")
-    @GetMapping(value = "/rides/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GetRideDTO> getPassengerRideById(@PathVariable Long id) {
+    @GetMapping(value = "/rides/{id}")
+    public ResponseEntity<GetRideDTO> getRideById(@PathVariable Long id) {
         String email = AuthUtils.getCurrentUserEmail();
         GetRideDTO ride = passengerService.getPassengerRideById(email, id);
         return ResponseEntity.ok(ride);

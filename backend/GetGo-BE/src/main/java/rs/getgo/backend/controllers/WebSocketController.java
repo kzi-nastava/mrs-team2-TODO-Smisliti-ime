@@ -3,13 +3,14 @@ package rs.getgo.backend.controllers;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import rs.getgo.backend.dtos.driver.GetDriverLocationDTO;
+import rs.getgo.backend.dtos.panic.GetPanicAlertDTO;
 import rs.getgo.backend.dtos.message.GetMessageDTO;
 import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
-import rs.getgo.backend.model.enums.RideStatus;
+import rs.getgo.backend.dtos.ride.GetRideStatusUpdateDTO;
+import rs.getgo.backend.dtos.ride.GetRideFinishedDTO;
+import rs.getgo.backend.dtos.ride.GetRideStoppedEarlyDTO;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 @Controller
 public class WebSocketController {
@@ -51,10 +52,12 @@ public class WebSocketController {
     }
 
     public void notifyDriverStatusUpdate(String driverEmail, Long rideId, String status) {
-        Map<String, Object> update = new HashMap<>();
-        update.put("rideId", rideId);
-        update.put("status", status);
-        update.put("timestamp", LocalDateTime.now());
+        GetRideStatusUpdateDTO update = new GetRideStatusUpdateDTO(
+                rideId,
+                status,
+                null,
+                LocalDateTime.now()
+        );
 
         messagingTemplate.convertAndSend(
                 "/socket-publisher/driver/" + driverEmail + "/status-update",
@@ -64,14 +67,14 @@ public class WebSocketController {
 
     public void notifyDriverRideFinished(String driverEmail, Long rideId, Double price,
                                          LocalDateTime startTime, LocalDateTime endTime) {
-        Map<String, Object> completion = new HashMap<>();
-        completion.put("rideId", rideId);
-        completion.put("status", RideStatus.FINISHED.toString());
-        completion.put("price", price);
-        completion.put("startTime", startTime);
-        completion.put("endTime", endTime);
-        completion.put("durationMinutes",
-                java.time.Duration.between(startTime, endTime).toMinutes());
+        GetRideFinishedDTO completion = new GetRideFinishedDTO(
+                rideId,
+                "FINISHED",
+                price,
+                startTime,
+                endTime,
+                java.time.Duration.between(startTime, endTime).toMinutes()
+        );
 
         messagingTemplate.convertAndSend(
                 "/socket-publisher/driver/" + driverEmail + "/ride-finished",
@@ -80,11 +83,12 @@ public class WebSocketController {
     }
 
     public void notifyPassengerRideStatusUpdate(Long rideId, String status, String message) {
-        Map<String, Object> update = new HashMap<>();
-        update.put("rideId", rideId);
-        update.put("status", status);
-        update.put("message", message);
-        update.put("timestamp", LocalDateTime.now());
+        GetRideStatusUpdateDTO update = new GetRideStatusUpdateDTO(
+                rideId,
+                status,
+                message,
+                LocalDateTime.now()
+        );
 
         messagingTemplate.convertAndSend(
                 "/socket-publisher/ride/" + rideId + "/status-update",
@@ -93,16 +97,14 @@ public class WebSocketController {
     }
 
     public void notifyPassengerRideFinished(Long rideId, Double price, LocalDateTime startTime, LocalDateTime endTime) {
-        Map<String, Object> completion = new HashMap<>();
-        completion.put("rideId", rideId);
-        completion.put("status", RideStatus.FINISHED.toString());
-        completion.put("price", price);
-        completion.put("startTime", startTime);
-        completion.put("endTime", endTime);
-        completion.put("durationMinutes",
-                java.time.Duration.between(startTime, endTime).toMinutes());
-        completion.put("message", "Ride completed! Total: " + price + " RSD");
-        completion.put("timestamp", LocalDateTime.now());
+        GetRideFinishedDTO completion = new GetRideFinishedDTO(
+                rideId,
+                "FINISHED",
+                price,
+                startTime,
+                endTime,
+                java.time.Duration.between(startTime, endTime).toMinutes()
+        );
 
         messagingTemplate.convertAndSend(
                 "/socket-publisher/ride/" + rideId + "/ride-finished",
@@ -110,21 +112,20 @@ public class WebSocketController {
         );
     }
 
-    // === notify passengers when ride is stopped early ===
     public void notifyPassengerRideStoppedEarly(Long rideId,
                                                 Double price,
                                                 LocalDateTime startTime,
                                                 LocalDateTime endTime) {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("rideId", rideId);
-        payload.put("status", "STOPPED_EARLY");
-        payload.put("price", price);
-        payload.put("startTime", startTime);
-        payload.put("endTime", endTime);
-        payload.put("durationMinutes",
-                java.time.Duration.between(startTime, endTime).toMinutes());
-        payload.put("message", "Ride was stopped early at passenger request.");
-        payload.put("timestamp", LocalDateTime.now());
+        GetRideStoppedEarlyDTO payload = new GetRideStoppedEarlyDTO(
+                rideId,
+                "STOPPED_EARLY",
+                price,
+                startTime,
+                endTime,
+                java.time.Duration.between(startTime, endTime).toMinutes(),
+                "Ride was stopped early at passenger request.",
+                LocalDateTime.now()
+        );
 
         messagingTemplate.convertAndSend(
                 "/socket-publisher/ride/" + rideId + "/ride-stopped",
@@ -132,17 +133,17 @@ public class WebSocketController {
         );
     }
 
-    // === notify admins when PANIC is triggered ===
     public void notifyAdminsPanicTriggered(Long rideId,
                                            Long userId,
                                            String userEmail,
                                            LocalDateTime triggeredAt) {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("rideId", rideId);
-        payload.put("userId", userId);
-        payload.put("userEmail", userEmail);
-        payload.put("triggeredAt", triggeredAt);
-        payload.put("message", "Panic button pressed for ride " + rideId);
+        GetPanicAlertDTO payload = new GetPanicAlertDTO(
+                rideId,
+                userId,
+                userEmail,
+                triggeredAt,
+                "Panic button pressed for ride " + rideId
+        );
 
         messagingTemplate.convertAndSend(
                 "/socket-publisher/admin/panic-alerts",

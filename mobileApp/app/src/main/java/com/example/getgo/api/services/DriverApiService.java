@@ -1,7 +1,10 @@
 package com.example.getgo.api.services;
 
+import com.example.getgo.dtos.driver.GetActiveDriverLocationDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.dtos.ride.PageResponse;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -14,4 +17,7 @@ public interface DriverApiService {
             @Query("size") int size,
             @Query("startDate") String startDate
     );
+
+    @GET("/api/drivers/active-locations")
+    Call<List<GetActiveDriverLocationDTO>> getActiveDriverLocations();
 }

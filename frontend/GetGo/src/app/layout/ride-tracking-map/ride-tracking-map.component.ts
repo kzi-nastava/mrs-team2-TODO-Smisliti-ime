@@ -51,6 +51,15 @@ export class RideTrackingMapComponent implements AfterViewInit {
     this.setupEventListeners();
   }
 
+  ngOnInit() {
+    this.elementRef.nativeElement.addEventListener('update-driver-position', (ev: Event) => {
+      const ce = ev as CustomEvent<{ lat: number; lng: number }>;
+      console.log('Received event in map:', ce.detail);
+      this.updateDriverMarker(ce.detail.lat, ce.detail.lng);
+    });
+  }
+
+
   ngOnChanges(): void {
     // Kad se Input promeni, update-uj mapu
     if (!this.mapInitialized) return;

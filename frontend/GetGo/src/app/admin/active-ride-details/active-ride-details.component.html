@@ -1,0 +1,27 @@
+<div *ngIf="ride()" class="item ride-details">
+
+  <h1>Active Ride</h1>
+
+  <p class="card-date"><b>Driver:</b> {{ ride()!.driverName }} ({{ ride()!.driverEmail }})</p>
+  <p class="card-date"><b>Status:</b> {{ ride()!.status }}</p>
+
+  <p><b>Started at:</b> {{ ride()!.actualStartTime | date:'HH:mm' }}</p>
+  <p><b>Estimated duration:</b> {{ ride()!.estimatedDurationMin }} min</p>
+
+  <p><b>Vehicle:</b> {{ ride()!.vehicleType }}</p>
+
+  <p><b>Baby seat:</b> {{ ride()!.needsBabySeats ? 'Yes' : 'No' }}</p>
+  <p><b>Pet friendly:</b> {{ ride()!.needsPetFriendly ? 'Yes' : 'No' }}</p>
+
+  <h2>Passengers</h2>
+  <ul class="linked-emails">
+    <li>{{ ride()!.payingPassengerEmail }} (paying)</li>
+    <li *ngFor="let p of ride()!.linkedPassengerEmails">
+      {{ p }}
+    </li>
+  </ul>
+
+  <h2>Current location</h2>
+  <p>{{ ride()!.currentLocationAddress }}</p>
+
+</div>

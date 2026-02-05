@@ -36,4 +36,9 @@ export interface GetActiveRideAdminDetailsDTO {
   linkedPassengers: string[];
 
   currentAddress: string;
+
+  currentLat: number;           // trenutna lokacija vozaca - latitude
+  currentLng: number;           // trenutna lokacija vozaca - longitude
+  latitudes?: number[];         // niz latitude za rutu
+  longitudes?: number[];
 }

@@ -1,87 +1,82 @@
 :host {
   display: block;
   min-height: 100vh;
-  background-color: #8FABD4;
+  background-color: #8FABD4; /* isto kao kod ride-history */
   padding-top: 40px;
   font-family: 'Arial', sans-serif;
 }
+/* active-ride-details.component.css */
 
-/* Kartica sa detaljima vožnje - ista kao ride-history */
-.item.ride-details {
-  max-width: 700px;
-  margin: 0 auto 20px auto;
-  background-color: #CBDCEB;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  padding: 20px 25px;
-  transition: transform 0.2s, box-shadow 0.2s;
+/* Glavna kartica */
+.ride-details {
+  max-width: 800px;
+  margin: 20px auto; /* centriranje */
+  padding: 10px;
 }
 
-.item.ride-details:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+mat-card {
+  background-color: #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
 }
 
-/* Naslov */
-.item.ride-details h1 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #333;
-  font-size: 24px;
+/* Naslov kartice */
+mat-card-header {
+  padding-bottom: 10px;
 }
 
-/* Sekcije unutar kartice */
-.item.ride-details h2 {
-  font-size: 20px;
-  margin-top: 20px;
-  margin-bottom: 10px;
-  color: #2a9d8f; /* ista boja kao u ride-history */
+mat-card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
 }
 
-/* Datum/status */
-.item.ride-details .card-date {
-  color: #777;
-  font-size: 14px;
-  margin-bottom: 5px;
-}
-
-/* Obični detalji */
-.item.ride-details p {
-  font-size: 16px;
-  margin: 8px 0;
-  color: #444;
-}
-
-/* Lista povezanih email-ova */
-.linked-emails {
-  margin-top: 10px;
-  padding-left: 15px;
-}
-
-.linked-emails li {
-  font-size: 14px;
+mat-card-subtitle {
+  font-size: 1rem;
   color: #555;
 }
 
-/* Responsive */
+/* Sadržaj kartice */
+mat-card-content p {
+  margin: 5px 0;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* Odvajanje sekcija */
+mat-divider {
+  margin: 10px 0;
+}
+
+/* Mapa unutar kartice */
+app-ride-tracking-map {
+  display: block;
+  width: 100%;
+  height: 400px;
+  margin-top: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Tooltip za marker (opciono) */
+.leaflet-popup-content {
+  font-size: 0.9rem;
+}
+
+/* Responsive dizajn */
 @media (max-width: 600px) {
-  .item.ride-details {
-    padding: 15px;
+  mat-card {
+    margin: 10px;
   }
 
-  .item.ride-details h1 {
-    font-size: 20px;
+  mat-card-title {
+    font-size: 1.3rem;
   }
 
-  .item.ride-details h2 {
-    font-size: 18px;
+  mat-card-content p {
+    font-size: 0.9rem;
   }
 
-  .item.ride-details p {
-    font-size: 14px;
-  }
-
-  .linked-emails li {
-    font-size: 13px;
+  app-ride-tracking-map {
+    height: 300px;
   }
 }

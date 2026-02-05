@@ -1,21 +1,49 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, inject, Signal, signal, computed, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { ActiveRideService } from '../../service/active-ride/active-ride.service';
 import { GetActiveRideAdminDetailsDTO } from '../../model/active-ride.model';
+import { ActiveRideService } from '../../service/active-ride/active-ride.service';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
+import { RideTrackingMapComponent } from '../../layout/ride-tracking-map/ride-tracking-map.component';
 
 @Component({
   selector: 'app-active-ride-details',
-  imports: [CommonModule],
+  imports: [CommonModule, MatCardModule, MatIconModule, MatDividerModule, RideTrackingMapComponent],
   templateUrl: './active-ride-details.component.html',
   styleUrl: './active-ride-details.component.css',
 })
-export class ActiveRideDetailsComponent {
-  ride = signal<GetActiveRideAdminDetailsDTO | null>(null);
 
+export class ActiveRideDetailsComponent implements OnInit {
+  rideId!: number;
+  ride: WritableSignal<GetActiveRideAdminDetailsDTO | null> = signal(null);
 
-  constructor(private route: ActivatedRoute, private service: ActiveRideService) {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.service.getActiveRideDetails(id).subscribe(r => this.ride.set(r));
+  private route = inject(ActivatedRoute);
+  private rideService = inject(ActiveRideService);
+
+  ngOnInit(): void {
+    this.rideId = Number(this.route.snapshot.paramMap.get('id'));
+    this.loadRideDetails();
   }
+
+  loadRideDetails() {
+    this.rideService.getActiveRideDetails(this.rideId).subscribe({
+      next: (data: GetActiveRideAdminDetailsDTO) => this.ride.set(data),
+      error: (err: any) => console.error('Error loading ride details', err),
+    });
+  }
+
+  // Computed for map waypoints
+  rideWaypoints = computed(() => {
+    const r = this.ride();
+    if (!r || !r.latitudes || !r.longitudes) return [];
+    return r.latitudes.map((lat, i) => ({ lat, lng: r.longitudes![i] }));
+  });
+
+  driverPosition = computed(() => {
+    const r = this.ride();
+    if (!r) return null;
+    return { lat: r.currentLat, lng: r.currentLng };
+  });
 }

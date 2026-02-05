@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, ElementRef, EventEmitter, Output } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, EventEmitter, Output, Input } from '@angular/core';
 import * as L from 'leaflet';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
@@ -12,6 +12,9 @@ import { DriverService, GetActiveDriverLocationDTO } from '../../service/driver/
   styleUrl: './ride-tracking-map.component.css',
 })
 export class RideTrackingMapComponent implements AfterViewInit{
+  @Input() driverPosition!: { lat: number; lng: number } | null;
+  @Input() waypoints: { lat: number; lng: number }[] = [];
+
   @Output() estimatedTimeChange = new EventEmitter<number>();
   private map: any;
   private driverMarker: L.Marker | null = null;

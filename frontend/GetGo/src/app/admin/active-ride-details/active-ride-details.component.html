@@ -1,27 +1,35 @@
-<div *ngIf="ride()" class="item ride-details">
+<div class="ride-details" *ngIf="ride() as ride">
 
-  <h1>Active Ride</h1>
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>🚗 {{ ride.driverName }}</mat-card-title>
+      <mat-card-subtitle>{{ ride.driverEmail }}</mat-card-subtitle>
+    </mat-card-header>
 
-  <p><b>Driver:</b> {{ ride()!.driverName }} ({{ ride()!.driverEmail }})</p>
-  <p><b>Status:</b> {{ ride()!.status }}</p>
+    <mat-divider></mat-divider>
 
-  <p><b>Started at:</b> {{ ride()!.actualStartTime | date:'HH:mm' }}</p>
-  <p><b>Estimated duration:</b> {{ ride()!.estimatedDurationMin }} min</p>
+    <mat-card-content>
+      <p><b>Status:</b> {{ ride.status }}</p>
+      <p><b>Vehicle:</b> {{ ride.vehicleType }}</p>
+      <p><b>Scheduled Start:</b> {{ ride.scheduledTime | date:'shortTime' }}</p>
+      <p><b>Actual Start:</b> {{ ride.actualStartTime | date:'shortTime' }}</p>
+      <p><b>Estimated Duration:</b> {{ ride.estimatedDurationMin }} min</p>
+      <p><b>Estimated Price:</b> {{ ride.estimatedPrice | number:'1.0-0' }} RSD</p>
+      <p><b>Paying Passenger:</b> {{ ride.payingPassenger }}</p>
+      <p><b>Linked Passengers:</b> {{ ride.linkedPassengers.join(', ') }}</p>
+      <p><b>Needs Baby Seat:</b> {{ ride.needsBabySeats ? 'Yes' : 'No' }}</p>
+      <p><b>Pet Friendly:</b> {{ ride.needsPetFriendly ? 'Yes' : 'No' }}</p>
+      <p><b>Current Address:</b> {{ ride.currentAddress }}</p>
 
-  <p><b>Vehicle:</b> {{ ride()!.vehicleType }}</p>
+      <mat-divider></mat-divider>
 
-  <p><b>Baby seat:</b> {{ ride()!.needsBabySeats ? 'Yes' : 'No' }}</p>
-  <p><b>Pet friendly:</b> {{ ride()!.needsPetFriendly ? 'Yes' : 'No' }}</p>
+      <!-- MAPA -->
+      <app-ride-tracking-map
+        *ngIf="driverPosition()"
+        [driverPosition]="driverPosition()"
+        [waypoints]="rideWaypoints()">
+      </app-ride-tracking-map>
 
-  <h2>Passengers</h2>
-  <ul class="linked-emails">
-    <li>{{ ride()!.payingPassenger }} (paying)</li>
-    <li *ngFor="let p of ride()!.linkedPassengers">
-      {{ p }}
-    </li>
-  </ul>
-
-  <h2>Current location</h2>
-  <p>{{ ride()!.currentAddress }}</p>
-
+    </mat-card-content>
+  </mat-card>
 </div>

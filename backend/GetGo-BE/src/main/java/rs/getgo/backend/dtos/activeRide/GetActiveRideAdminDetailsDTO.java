@@ -39,4 +39,9 @@ public class GetActiveRideAdminDetailsDTO {
     private List<String> linkedPassengers;
 
     private String currentAddress;
+
+    private double currentLat;
+    private double currentLng;
+    private List<Double> latitudes;
+    private List<Double> longitudes;
 }

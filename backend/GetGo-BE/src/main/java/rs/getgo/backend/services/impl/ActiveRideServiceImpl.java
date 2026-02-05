@@ -64,10 +64,14 @@ public class ActiveRideServiceImpl implements ActiveRideService {
                 ride.getEstimatedDurationMin(),
                 ride.getPayingPassenger().getEmail(),
                 ride.getLinkedPassengers().stream().map(Passenger::getEmail).toList(),
-                ride.getCurrentLocation().getAddress()
+                ride.getCurrentLocation().getAddress(),
+                ride.getCurrentLocation().getLatitude(),    // new
+                ride.getCurrentLocation().getLongitude(),   // new
+                ride.getRoute().getWaypoints().stream().map(wp -> wp.getLatitude()).toList(), // optional
+                ride.getRoute().getWaypoints().stream().map(wp -> wp.getLongitude()).toList() // optional
         );
-
     }
+
 
 
 }

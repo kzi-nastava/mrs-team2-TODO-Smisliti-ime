@@ -16,8 +16,10 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.example.getgo.R;
+import com.example.getgo.dtos.driver.GetActiveDriverLocationDTO;
 import com.example.getgo.dtos.ride.CreateRideRequestDTO;
 import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
+import com.example.getgo.repositories.DriverRepository;
 import com.example.getgo.repositories.RideRepository;
 import com.example.getgo.utils.MapManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -178,7 +180,25 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         LatLng noviSad = new LatLng(45.2519, 19.8370);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
+        loadActiveDrivers();
+
         mMap.setOnMapClickListener(this::handleMapClick);
+    }
+
+    private void loadActiveDrivers() {
+        new Thread(() -> {
+            try {
+                DriverRepository repo = DriverRepository.getInstance();
+                List<GetActiveDriverLocationDTO> drivers = repo.getActiveDriverLocations();
+
+                requireActivity().runOnUiThread(() -> {
+                    mapManager.updateDriverLocations(drivers);
+                    Log.d("PassengerHome", "Loaded " + drivers.size() + " active drivers");
+                });
+            } catch (Exception e) {
+                Log.e("PassengerHome", "Failed to load active drivers", e);
+            }
+        }).start();
     }
 
     private void handleMapClick(LatLng latLng) {

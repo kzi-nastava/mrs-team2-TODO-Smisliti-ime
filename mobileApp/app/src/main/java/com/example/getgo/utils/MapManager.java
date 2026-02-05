@@ -10,6 +10,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.example.getgo.R;
+import com.example.getgo.dtos.driver.GetActiveDriverLocationDTO;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -43,6 +45,8 @@ public class MapManager {
     private final OkHttpClient httpClient;
 
     private final List<Marker> waypointMarkers;
+    private final List<Marker> driverMarkers = new ArrayList<>();
+
     private Polyline routePolyline;
 
     public interface AddressCallback {
@@ -61,6 +65,34 @@ public class MapManager {
         this.geocoder = new Geocoder(context, Locale.getDefault());
         this.httpClient = new OkHttpClient();
         this.waypointMarkers = new ArrayList<>();
+    }
+
+    public void updateDriverLocations(List<GetActiveDriverLocationDTO> drivers) {
+        for (Marker marker : driverMarkers) {
+            if (marker != null) {
+                marker.remove();
+            }
+        }
+        driverMarkers.clear();
+
+        for (GetActiveDriverLocationDTO driver : drivers) {
+            if (driver.getLatitude() != null && driver.getLongitude() != null) {
+                LatLng position = new LatLng(driver.getLatitude(), driver.getLongitude());
+
+                int iconRes = driver.getIsAvailable() ? R.drawable.ic_car_green : R.drawable.ic_car_red;
+                BitmapDescriptor icon = ImageUtils.getBitmapDescriptorFromDrawable(context, iconRes);
+
+                String title = driver.getVehicleType() + " - " + (driver.getIsAvailable() ? "Available" : "Busy");
+
+                MarkerOptions markerOptions = new MarkerOptions()
+                        .position(position)
+                        .title(title)
+                        .icon(icon);
+
+                Marker marker = map.addMarker(markerOptions);
+                driverMarkers.add(marker);
+            }
+        }
     }
 
     public void getAddressFromLocation(LatLng latLng, AddressCallback callback) {
@@ -273,6 +305,12 @@ public class MapManager {
     public void reset() {
         clearWaypoints();
         clearRoute();
+        for (Marker marker : driverMarkers) {
+            if (marker != null) {
+                marker.remove();
+            }
+        }
+        driverMarkers.clear();
     }
 
     private BitmapDescriptor getColoredMarkerIcon(int color) {

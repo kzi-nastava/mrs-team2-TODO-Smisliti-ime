@@ -1,16 +1,14 @@
 :host {
   display: block;
   min-height: 100vh;
-  background-color: #8FABD4; /* isto kao kod ride-history */
+  background-color: #8FABD4;
   padding-top: 40px;
   font-family: 'Arial', sans-serif;
 }
-/* active-ride-details.component.css */
 
-/* Glavna kartica */
 .ride-details {
   max-width: 800px;
-  margin: 20px auto; /* centriranje */
+  margin: 20px auto;
   padding: 10px;
 }
 
@@ -20,7 +18,6 @@ mat-card {
   border-radius: 10px;
 }
 
-/* Naslov kartice */
 mat-card-header {
   padding-bottom: 10px;
 }
@@ -35,19 +32,19 @@ mat-card-subtitle {
   color: #555;
 }
 
-/* Sadržaj kartice */
+
 mat-card-content p {
   margin: 5px 0;
   font-size: 1rem;
   line-height: 1.4;
 }
 
-/* Odvajanje sekcija */
+
 mat-divider {
   margin: 10px 0;
 }
 
-/* Mapa unutar kartice */
+
 app-ride-tracking-map {
   display: block;
   width: 100%;
@@ -57,12 +54,12 @@ app-ride-tracking-map {
   overflow: hidden;
 }
 
-/* Tooltip za marker (opciono) */
+
 .leaflet-popup-content {
   font-size: 0.9rem;
 }
 
-/* Responsive dizajn */
+
 @media (max-width: 600px) {
   mat-card {
     margin: 10px;

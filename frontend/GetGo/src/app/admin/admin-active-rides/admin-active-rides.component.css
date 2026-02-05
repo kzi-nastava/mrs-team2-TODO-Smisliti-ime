@@ -1,7 +1,7 @@
 :host {
   display: block;
   min-height: 100vh;
-  background-color: #8FABD4; /* isto kao kod ride-history */
+  background-color: #8FABD4;
   padding-top: 40px;
   font-family: 'Arial', sans-serif;
 }
@@ -15,23 +15,6 @@
   font-family: Arial, sans-serif;
 }
 
-/* FILTER */
-.filter-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.filter-container input {
-  width: 300px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  font-size: 14px;
-}
-
-/* LISTA KARTICA */
 .list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -39,11 +22,10 @@
   padding: 0 10px;
 }
 
-/* JEDNA KARTICA */
 .item {
   display: flex;
   flex-direction: column;
-  background: #CBDCEB; /* isto boja kao kod drajvera */
+  background: #CBDCEB;
   border-radius: 15px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -82,7 +64,6 @@
   margin-left: -10px;
 }
 
-/* DETALJI ODABRANE VOŽNJE */
 .ride-details {
   max-width: 600px;
   margin: 30px auto;
@@ -128,3 +109,14 @@
   display: inline-block;
   margin-right: 4px;
 }
+
+.filter-form {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.filter-form mat-form-field {
+  width: 300px;
+}
+

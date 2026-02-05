@@ -38,12 +38,15 @@ export class ActiveRideDetailsComponent implements OnInit {
   rideWaypoints = computed(() => {
     const r = this.ride();
     if (!r || !r.latitudes || !r.longitudes) return [];
-    return r.latitudes.map((lat, i) => ({ lat, lng: r.longitudes![i] }));
+    const wps = r.latitudes.map((lat, i) => ({ lat, lng: r.longitudes![i] }));
+    console.log('Ride waypoints:', wps);
+    return wps;
   });
 
   driverPosition = computed(() => {
     const r = this.ride();
     if (!r) return null;
+    console.log('Driver position:', { lat: r.currentLat, lng: r.currentLng });
     return { lat: r.currentLat, lng: r.currentLng };
   });
 }

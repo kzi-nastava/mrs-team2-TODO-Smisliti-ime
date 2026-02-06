@@ -365,16 +365,39 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
             ));
         }
 
-        if (!waypoints.isEmpty()) {
-            mapManager.drawRoute(waypoints, null);
+        if (waypoints.size() < 2) return;
 
-            for (int i = 0; i < waypoints.size(); i++) {
-                mapManager.addWaypointMarker(waypoints.get(i), i, currentRide.getAddresses().get(i));
+        mapManager.drawRouteOSRM(waypoints, new MapManager.RouteCallback() {
+            @Override
+            public void onRouteFound(int distanceMeters, int durationSeconds) {
+
+                requireActivity().runOnUiThread(() -> {
+                    double distanceKm = distanceMeters / 1000.0;
+                    double durationMin = durationSeconds / 60.0;
+
+                    tvEstimatedTime.setText(String.format(Locale.ENGLISH, "%.0f min", durationMin));
+                    tvTimeRemaining.setText(String.format(Locale.ENGLISH, "%.0f min", durationMin));
+
+                    tvEstimatedPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD",
+                            currentRide.getEstimatedPrice()));
+                });
             }
 
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
+            @Override
+            public void onError(String message) {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Route error: " + message, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+
+        for (int i = 0; i < waypoints.size(); i++) {
+            mapManager.addWaypointMarker(waypoints.get(i), i, currentRide.getAddresses().get(i));
         }
+
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
     }
+
 
     private void cancelRide() {
         if (currentRide == null) return;

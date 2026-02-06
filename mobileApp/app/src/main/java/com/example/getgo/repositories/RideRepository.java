@@ -8,6 +8,7 @@ import com.example.getgo.dtos.ride.CancelRideRequestDTO;
 import com.example.getgo.dtos.ride.CreateRideRequestDTO;
 import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
 import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
+import com.example.getgo.dtos.ride.GetPassengerActiveRideDTO;
 import com.example.getgo.dtos.ride.UpdateRideDTO;
 import com.example.getgo.dtos.ride.UpdatedRideDTO;
 
@@ -37,6 +38,23 @@ public class RideRepository {
             String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
             Log.e(TAG, "Order ride failed: " + response.code() + " - " + errBody);
             throw new Exception("Failed to order ride: " + errBody);
+        }
+    }
+
+    public GetPassengerActiveRideDTO getPassengerActiveRide() throws Exception {
+        RideApiService service = ApiClient.getClient().create(RideApiService.class);
+        Response<GetPassengerActiveRideDTO> response = service.getPassengerActiveRide().execute();
+
+        if (response.isSuccessful()) {
+            if (response.body() == null) {
+                Log.d(TAG, "No active ride for passenger");
+                return null;
+            }
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to fetch active ride: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to fetch active ride");
         }
     }
 

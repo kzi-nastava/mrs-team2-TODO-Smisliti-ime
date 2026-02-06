@@ -58,7 +58,6 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     private ProgressBar progressBar;
     private Button btnCancelRide, btnPanic, btnOk;
 
-    // Report functionality
     private Button btnReport;
     private LinearLayout reportForm;
     private EditText editReport;
@@ -103,7 +102,6 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         tvStartTime = root.findViewById(R.id.tvStartTime);
         tvEndTime = root.findViewById(R.id.tvEndTime);
 
-        // Progress bar elements (from old version)
         tvProgressPercent = root.findViewById(R.id.tvProgressPercent);
         tvTimeRemaining = root.findViewById(R.id.tvTimeRemaining);
         progressBar = root.findViewById(R.id.progressBar);
@@ -112,7 +110,6 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         btnPanic = root.findViewById(R.id.btnPanic);
         btnOk = root.findViewById(R.id.btnOk);
 
-        // Report functionality (from old version)
         btnReport = root.findViewById(R.id.btnReport);
         reportForm = root.findViewById(R.id.reportForm);
         editReport = root.findViewById(R.id.editReport);
@@ -123,7 +120,6 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         btnPanic.setOnClickListener(v -> triggerPanic());
         btnOk.setOnClickListener(v -> handleFinishedRideOkClick());
 
-        // Setup report button listeners (from old version)
         setupReportListeners();
     }
 
@@ -255,7 +251,6 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     }
 
     private void subscribeToWebSocketUpdates(Long rideId) {
-        // Subscribe to driver location
         webSocketManager.subscribeToRideDriverLocation(rideId, location -> {
             requireActivity().runOnUiThread(() -> {
                 if (mapManager != null && location.getLatitude() != null && location.getLongitude() != null) {
@@ -265,7 +260,6 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
             });
         });
 
-        // Subscribe to status updates
         webSocketManager.subscribeToPassengerRideStatusUpdates(rideId, update -> {
             requireActivity().runOnUiThread(() -> {
                 Log.d(TAG, "Status update: " + update.getStatus());
@@ -276,12 +270,10 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
             });
         });
 
-        // Subscribe to ride finished
         webSocketManager.subscribeToPassengerRideFinished(rideId, finished -> {
             requireActivity().runOnUiThread(() -> showRideCompleted(finished));
         });
 
-        // Subscribe to ride stopped early
         webSocketManager.subscribeToPassengerRideStopped(rideId, stopped -> {
             requireActivity().runOnUiThread(() -> {
                 Log.d(TAG, "Ride stopped early");
@@ -312,7 +304,6 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         tvEstimatedTime.setText(String.format(Locale.ENGLISH, "%.0f min", currentRide.getEstimatedTimeMin()));
         tvEstimatedPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD", currentRide.getEstimatedPrice()));
 
-        // Update progress bar if available
         if (tvTimeRemaining != null) {
             tvTimeRemaining.setText(String.format(Locale.ENGLISH, "%.0f min", currentRide.getEstimatedTimeMin()));
         }
@@ -355,7 +346,6 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     }
 
     private void updateButtonVisibility(String status) {
-        // Can cancel before ride starts (not ACTIVE, not FINISHED)
         boolean canCancel = !status.equals("ACTIVE") &&
                 !status.equals("FINISHED") &&
                 !status.equals("DRIVER_ARRIVED_AT_DESTINATION");
@@ -376,14 +366,9 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         }
 
         if (!waypoints.isEmpty()) {
-            // Draw route
             mapManager.drawRoute(waypoints, null);
 
-            // Add markers
             for (int i = 0; i < waypoints.size(); i++) {
-                String title = i == 0 ? "Start" :
-                        i == waypoints.size() - 1 ? "Destination" :
-                                "Stop " + i;
                 mapManager.addWaypointMarker(waypoints.get(i), i, currentRide.getAddresses().get(i));
             }
 

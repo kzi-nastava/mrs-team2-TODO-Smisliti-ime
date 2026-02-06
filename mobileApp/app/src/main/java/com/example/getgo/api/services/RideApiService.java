@@ -7,6 +7,7 @@ import com.example.getgo.dtos.ride.CancelRideRequestDTO;
 import com.example.getgo.dtos.ride.CreateRideRequestDTO;
 import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
 import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
+import com.example.getgo.dtos.ride.GetPassengerActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideTrackingDTO;
 import com.example.getgo.dtos.ride.UpdateRideDTO;
 import com.example.getgo.dtos.ride.UpdatedRideDTO;
@@ -23,6 +24,9 @@ import retrofit2.http.Path;
 public interface RideApiService {
     @POST("api/rides/order")
     Call<CreatedRideResponseDTO> orderRide(@Body CreateRideRequestDTO request);
+
+    @GET("api/rides/passenger/active")
+    Call<GetPassengerActiveRideDTO> getPassengerActiveRide();
 
     @GET("api/rides/driver/active")
     Call<GetDriverActiveRideDTO> getDriverActiveRide();

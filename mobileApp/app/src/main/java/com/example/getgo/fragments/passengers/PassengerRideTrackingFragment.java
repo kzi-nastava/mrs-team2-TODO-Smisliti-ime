@@ -1,211 +1,472 @@
 package com.example.getgo.fragments.passengers;
 
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
 import com.example.getgo.R;
 import com.example.getgo.api.ApiClient;
+import com.example.getgo.api.services.RideApiService;
 import com.example.getgo.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
 import com.example.getgo.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
-import com.example.getgo.dtos.ride.GetRideTrackingDTO;
-import com.example.getgo.api.services.RideApiService;
+import com.example.getgo.dtos.ride.GetPassengerActiveRideDTO;
+import com.example.getgo.dtos.ride.GetRideFinishedDTO;
+import com.example.getgo.repositories.RideRepository;
+import com.example.getgo.utils.MapManager;
+import com.example.getgo.utils.WebSocketManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.gson.Gson;
+
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class PassengerRideTrackingFragment extends Fragment implements OnMapReadyCallback {
+    private static final String TAG = "PassengerRideTracking";
+    private static final String PREFS_NAME = "getgo_prefs";
+
     private GoogleMap mMap;
-    private Marker driverMarker;
-
+    private MapManager mapManager;
+    private WebSocketManager webSocketManager;
     private RideApiService rideApiService;
-    private Long rideId = 1L; // temporary hardcoded ride ID;
 
-    public PassengerRideTrackingFragment() {
-        // Required empty public constructor
-    }
+    private LinearLayout layoutLoading, layoutNoRide, layoutRideTracking, layoutRideCompleted;
+    private TextView tvStatusMessage, tvStartPoint, tvDestination, tvDriverName;
+    private TextView tvEstimatedTime, tvEstimatedPrice;
+    private TextView tvFinalPrice, tvDuration, tvStartTime, tvEndTime;
+    private TextView tvProgressPercent, tvTimeRemaining;
+    private ProgressBar progressBar;
+    private Button btnCancelRide, btnPanic, btnOk;
 
-    public static PassengerRideTrackingFragment newInstance(String param1, String param2) {
-        PassengerRideTrackingFragment fragment = new PassengerRideTrackingFragment();
-        Bundle args = new Bundle();
-        fragment.setArguments(args);
-        return fragment;
-    }
+    private Button btnReport;
+    private LinearLayout reportForm;
+    private EditText editReport;
+    private Button btnSubmitReport, btnCancelReport;
 
+    private GetPassengerActiveRideDTO currentRide;
+    private boolean panicSent = false;
+
+    public PassengerRideTrackingFragment() {}
+
+    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        View root = inflater.inflate(R.layout.fragment_passenger_ride_tracking, container, false);
 
-        Log.d("LIFECYCLE", "onCreateView called");
+        initializeViews(root);
+        setupMap();
+        showLoading();
+        setupWebSocket();
+        loadActiveRide();
 
-        View view = inflater.inflate(
-                R.layout.fragment_passenger_ride_tracking,
-                container,
-                false
-        );
+        return root;
+    }
 
-//        SupportMapFragment mapFragment =
-//                (SupportMapFragment) getChildFragmentManager()
-//                        .findFragmentById(R.id.mapContainer);
-//
-//        if (mapFragment == null) {
-//            mapFragment = SupportMapFragment.newInstance();
-//            getChildFragmentManager().beginTransaction()
-//                    .replace(R.id.mapContainer, mapFragment)
-//                    .commit();
-//        }
-//        mapFragment.getMapAsync(this);
+    private void initializeViews(View root) {
+        layoutLoading = root.findViewById(R.id.layoutLoading);
+        layoutNoRide = root.findViewById(R.id.layoutNoRide);
+        layoutRideTracking = root.findViewById(R.id.layoutRideTracking);
+        layoutRideCompleted = root.findViewById(R.id.layoutRideCompleted);
 
-        TextView placeholder = new TextView(getContext());
-        placeholder.setText("Ride Tracking Map Placeholder (API key missing)");
-        placeholder.setLayoutParams(new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-        ));
+        tvStatusMessage = root.findViewById(R.id.tvStatusMessage);
+        tvStartPoint = root.findViewById(R.id.tvStartPoint);
+        tvDestination = root.findViewById(R.id.tvDestination);
+        tvDriverName = root.findViewById(R.id.tvDriverName);
+        tvEstimatedTime = root.findViewById(R.id.tvEstimatedTime);
+        tvEstimatedPrice = root.findViewById(R.id.tvEstimatedPrice);
 
-        FrameLayout mapContainer = view.findViewById(R.id.mapContainer);
-        mapContainer.addView(placeholder);
+        tvFinalPrice = root.findViewById(R.id.tvFinalPrice);
+        tvDuration = root.findViewById(R.id.tvDuration);
+        tvStartTime = root.findViewById(R.id.tvStartTime);
+        tvEndTime = root.findViewById(R.id.tvEndTime);
 
-        Button btnReport = view.findViewById(R.id.btnReport);
-        LinearLayout reportForm = view.findViewById(R.id.reportForm);
-        Button btnSubmit = view.findViewById(R.id.btnSubmitReport);
-        Button btnCancel = view.findViewById(R.id.btnCancelReport);
-        EditText editReport = view.findViewById(R.id.editReport);
+        tvProgressPercent = root.findViewById(R.id.tvProgressPercent);
+        tvTimeRemaining = root.findViewById(R.id.tvTimeRemaining);
+        progressBar = root.findViewById(R.id.progressBar);
 
-        btnReport.setOnClickListener(v -> {
-            reportForm.setVisibility(View.VISIBLE);
-        });
+        btnCancelRide = root.findViewById(R.id.btnCancelRide);
+        btnPanic = root.findViewById(R.id.btnPanic);
+        btnOk = root.findViewById(R.id.btnOk);
 
-        btnCancel.setOnClickListener(v -> {
-            reportForm.setVisibility(View.GONE);
-        });
+        btnReport = root.findViewById(R.id.btnReport);
+        reportForm = root.findViewById(R.id.reportForm);
+        editReport = root.findViewById(R.id.editReport);
+        btnSubmitReport = root.findViewById(R.id.btnSubmitReport);
+        btnCancelReport = root.findViewById(R.id.btnCancelReport);
 
+        btnCancelRide.setOnClickListener(v -> cancelRide());
+        btnPanic.setOnClickListener(v -> triggerPanic());
+        btnOk.setOnClickListener(v -> handleFinishedRideOkClick());
 
-        btnSubmit.setOnClickListener(v -> {
-            String reportText = editReport.getText().toString();
-            if (reportText.isEmpty()) {
-                Toast.makeText(getContext(), "Please enter a note", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        setupReportListeners();
+    }
 
-            CreateInconsistencyReportDTO dto = new CreateInconsistencyReportDTO(reportText);
+    private void setupReportListeners() {
+        if (btnReport != null) {
+            btnReport.setOnClickListener(v -> {
+                if (reportForm != null) {
+                    reportForm.setVisibility(View.VISIBLE);
+                }
+            });
+        }
 
-            rideApiService.createInconsistencyReport(rideId, dto)
-                    .enqueue(new Callback<CreatedInconsistencyReportDTO>() {
-                        @Override
-                        public void onResponse(Call<CreatedInconsistencyReportDTO> call,
-                                               Response<CreatedInconsistencyReportDTO> response) {
+        if (btnCancelReport != null) {
+            btnCancelReport.setOnClickListener(v -> {
+                if (reportForm != null) {
+                    reportForm.setVisibility(View.GONE);
+                }
+            });
+        }
 
-                            if (response.isSuccessful()) {
-                                Toast.makeText(getContext(),
+        if (btnSubmitReport != null) {
+            btnSubmitReport.setOnClickListener(v -> submitReport());
+        }
+    }
+
+    private void submitReport() {
+        if (currentRide == null) {
+            Toast.makeText(requireContext(), "No active ride", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String reportText = editReport.getText().toString();
+        if (reportText.isEmpty()) {
+            Toast.makeText(requireContext(), "Please enter a note", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        CreateInconsistencyReportDTO dto = new CreateInconsistencyReportDTO(reportText);
+
+        rideApiService.createInconsistencyReport(currentRide.getRideId(), dto)
+                .enqueue(new Callback<CreatedInconsistencyReportDTO>() {
+                    @Override
+                    public void onResponse(Call<CreatedInconsistencyReportDTO> call,
+                                           Response<CreatedInconsistencyReportDTO> response) {
+                        if (response.isSuccessful()) {
+                            requireActivity().runOnUiThread(() -> {
+                                Toast.makeText(requireContext(),
                                         "Report sent successfully",
                                         Toast.LENGTH_SHORT).show();
 
-                                reportForm.setVisibility(View.GONE);
-                                editReport.setText("");
-                            } else {
-                                Log.e("REPORT", "Error: " + response.code());
-                            }
+                                if (reportForm != null) {
+                                    reportForm.setVisibility(View.GONE);
+                                }
+                                if (editReport != null) {
+                                    editReport.setText("");
+                                }
+                            });
+                        } else {
+                            Log.e(TAG, "Report error: " + response.code());
+                            requireActivity().runOnUiThread(() -> {
+                                Toast.makeText(requireContext(),
+                                        "Failed to send report",
+                                        Toast.LENGTH_SHORT).show();
+                            });
                         }
+                    }
 
-                        @Override
-                        public void onFailure(Call<CreatedInconsistencyReportDTO> call, Throwable t) {
-                            Log.e("REPORT", "POST failed", t);
-                        }
-                    });
-        });
+                    @Override
+                    public void onFailure(Call<CreatedInconsistencyReportDTO> call, Throwable t) {
+                        Log.e(TAG, "Report POST failed", t);
+                        requireActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(),
+                                    "Failed to send report",
+                                    Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                });
+    }
 
-        Log.d("TRACKING", "Does rideId exist = " + rideId);
-        if (rideId != null) {
-            Log.d("TRACKING", "Calling API for rideId = " + rideId);
-            loadRideTracking(view);
+    private void setupMap() {
+        SupportMapFragment mapFragment =
+                (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map_fragment);
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(this);
         }
-
-        return view;
     }
 
     @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
+        mapManager = new MapManager(requireContext(), mMap);
 
-
-
-        LatLng start = new LatLng(44.8176, 20.4633);
-        driverMarker = mMap.addMarker(
-                new MarkerOptions().position(start).title("Driver")
-        );
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(start, 15f));
+        LatLng noviSad = new LatLng(45.2519, 19.8370);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
     }
 
-    private void updateDriverPosition(double lat, double lng) {
-        if (driverMarker == null) return;
-
-        LatLng newPosition = new LatLng(lat, lng);
-        driverMarker.setPosition(newPosition);
-
-        mMap.animateCamera(CameraUpdateFactory.newLatLng(newPosition));
+    private void setupWebSocket() {
+        webSocketManager = new WebSocketManager();
+        webSocketManager.connect();
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         rideApiService = ApiClient.getClient().create(RideApiService.class);
-
-        if (getArguments() != null) {
-            rideId = getArguments().getLong("rideId");
-        }
     }
 
-    private void loadRideTracking(View view) {
-        Log.d("TRACKING", "Calling API for rideId = " + rideId);
-        rideApiService.trackRide(rideId).enqueue(new Callback<GetRideTrackingDTO>() {
-            @Override
-            public void onResponse(Call<GetRideTrackingDTO> call, Response<GetRideTrackingDTO> response) {
-                Log.d("TRACKING", "Response code = " + response.code());
-                if (response.isSuccessful() && response.body() != null) {
-                    GetRideTrackingDTO dto = response.body();
+    private void loadActiveRide() {
+        new Thread(() -> {
+            try {
+                RideRepository repo = RideRepository.getInstance();
+                GetPassengerActiveRideDTO ride = repo.getPassengerActiveRide();
 
-                    Log.d("TRACKING", "DTO = " + new Gson().toJson(dto));
+                requireActivity().runOnUiThread(() -> {
+                    if (ride != null) {
+                        currentRide = ride;
+                        updateUI();
+                        drawRideRoute();
+                        subscribeToWebSocketUpdates(ride.getRideId());
+                    } else {
+                        showNoRide();
+                    }
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to load active ride", e);
+                requireActivity().runOnUiThread(this::showNoRide);
+            }
+        }).start();
+    }
 
-                    TextView tvStart = view.findViewById(R.id.tvStartAddress);
-                    TextView tvDestination = view.findViewById(R.id.tvDestination);
-                    TextView tvEta = view.findViewById(R.id.tvTimeRemaining);
-
-                    tvStart.setText(dto.getStartAddress());
-                    tvDestination.setText(dto.getDestinationAddress());
-                    tvEta.setText(dto.getEstimatedTime() + " min");
-
-                    updateDriverPosition(dto.getVehicleLatitude(), dto.getVehicleLongitude());
-                } else {
-                    Log.e("TRACKING", "Error code: " + response.code());
+    private void subscribeToWebSocketUpdates(Long rideId) {
+        webSocketManager.subscribeToRideDriverLocation(rideId, location -> {
+            requireActivity().runOnUiThread(() -> {
+                if (mapManager != null && location.getLatitude() != null && location.getLongitude() != null) {
+                    LatLng position = new LatLng(location.getLatitude(), location.getLongitude());
+                    mapManager.updateDriverPosition(position);
                 }
-            }
+            });
+        });
 
-            @Override
-            public void onFailure(Call<GetRideTrackingDTO> call, Throwable t) {
-                Log.e("TRACKING", "API failed", t);
-            }
+        webSocketManager.subscribeToPassengerRideStatusUpdates(rideId, update -> {
+            requireActivity().runOnUiThread(() -> {
+                Log.d(TAG, "Status update: " + update.getStatus());
+                if (currentRide != null) {
+                    currentRide.setStatus(update.getStatus());
+                    updateStatusMessage(update.getStatus(), update.getMessage());
+                }
+            });
+        });
+
+        webSocketManager.subscribeToPassengerRideFinished(rideId, finished -> {
+            requireActivity().runOnUiThread(() -> showRideCompleted(finished));
+        });
+
+        webSocketManager.subscribeToPassengerRideStopped(rideId, stopped -> {
+            requireActivity().runOnUiThread(() -> {
+                Log.d(TAG, "Ride stopped early");
+                GetRideFinishedDTO finished = new GetRideFinishedDTO(
+                        stopped.getRideId(),
+                        stopped.getStatus(),
+                        stopped.getPrice(),
+                        stopped.getStartTime(),
+                        stopped.getEndTime(),
+                        stopped.getDurationMinutes()
+                );
+                showRideCompleted(finished);
+            });
         });
     }
 
+    private void updateUI() {
+        if (currentRide == null) {
+            showNoRide();
+            return;
+        }
 
+        showRideTracking();
+
+        tvStartPoint.setText(currentRide.getStartingPoint());
+        tvDestination.setText(currentRide.getEndingPoint());
+        tvDriverName.setText(currentRide.getDriverName() != null ? currentRide.getDriverName() : "Assigning...");
+        tvEstimatedTime.setText(String.format(Locale.ENGLISH, "%.0f min", currentRide.getEstimatedTimeMin()));
+        tvEstimatedPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD", currentRide.getEstimatedPrice()));
+
+        if (tvTimeRemaining != null) {
+            tvTimeRemaining.setText(String.format(Locale.ENGLISH, "%.0f min", currentRide.getEstimatedTimeMin()));
+        }
+
+        updateStatusMessage(currentRide.getStatus(), null);
+        updateButtonVisibility(currentRide.getStatus());
+    }
+
+    private void updateStatusMessage(String status, String customMessage) {
+        if (customMessage != null && !customMessage.isEmpty()) {
+            tvStatusMessage.setText(customMessage);
+            return;
+        }
+
+        switch (status) {
+            case "DRIVER_FINISHING_PREVIOUS_RIDE":
+                tvStatusMessage.setText("Driver is finishing their current ride. Please wait...");
+                break;
+            case "DRIVER_READY":
+                tvStatusMessage.setText("Driver is ready! Waiting to start...");
+                break;
+            case "DRIVER_INCOMING":
+                tvStatusMessage.setText("Driver is on the way to pick you up!");
+                break;
+            case "DRIVER_ARRIVED":
+                tvStatusMessage.setText("Driver has arrived at pickup location!");
+                break;
+            case "ACTIVE":
+                tvStatusMessage.setText("Ride in progress!");
+                break;
+            case "DRIVER_ARRIVED_AT_DESTINATION":
+                tvStatusMessage.setText("Driver has arrived at the destination!");
+                break;
+            case "FINISHED":
+                tvStatusMessage.setText("Ride completed!");
+                break;
+            default:
+                tvStatusMessage.setText("Tracking ride...");
+        }
+    }
+
+    private void updateButtonVisibility(String status) {
+        boolean canCancel = !status.equals("ACTIVE") &&
+                !status.equals("FINISHED") &&
+                !status.equals("DRIVER_ARRIVED_AT_DESTINATION");
+
+        btnCancelRide.setVisibility(canCancel ? View.VISIBLE : View.GONE);
+        btnPanic.setVisibility(View.VISIBLE);
+    }
+
+    private void drawRideRoute() {
+        if (currentRide == null || mapManager == null) return;
+
+        List<LatLng> waypoints = new ArrayList<>();
+        for (int i = 0; i < currentRide.getLatitudes().size(); i++) {
+            waypoints.add(new LatLng(
+                    currentRide.getLatitudes().get(i),
+                    currentRide.getLongitudes().get(i)
+            ));
+        }
+
+        if (!waypoints.isEmpty()) {
+            mapManager.drawRoute(waypoints, null);
+
+            for (int i = 0; i < waypoints.size(); i++) {
+                mapManager.addWaypointMarker(waypoints.get(i), i, currentRide.getAddresses().get(i));
+            }
+
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
+        }
+    }
+
+    private void cancelRide() {
+        if (currentRide == null) return;
+
+        btnCancelRide.setEnabled(false);
+
+        new Thread(() -> {
+            try {
+                RideRepository repo = RideRepository.getInstance();
+                repo.cancelRide(currentRide.getRideId(), "Passenger cancelled");
+
+                requireActivity().runOnUiThread(() -> {
+                    btnCancelRide.setEnabled(true);
+                    Toast.makeText(requireContext(), "Ride cancelled", Toast.LENGTH_SHORT).show();
+                    currentRide = null;
+                    showNoRide();
+                    if (mapManager != null) {
+                        mapManager.reset();
+                    }
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to cancel ride", e);
+                requireActivity().runOnUiThread(() -> {
+                    btnCancelRide.setEnabled(true);
+                    Toast.makeText(requireContext(), "Cannot cancel ride at this time", Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
+    }
+
+    private void triggerPanic() {
+        if (panicSent) {
+            Toast.makeText(requireContext(), "Emergency alert already sent", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // TODO: Implement panic API call
+        panicSent = true;
+        Toast.makeText(requireContext(), "Emergency alert sent!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void handleFinishedRideOkClick() {
+        currentRide = null;
+        panicSent = false;
+
+        if (mapManager != null) {
+            mapManager.reset();
+        }
+
+        showNoRide();
+    }
+
+    private void showLoading() {
+        layoutLoading.setVisibility(View.VISIBLE);
+        layoutNoRide.setVisibility(View.GONE);
+        layoutRideTracking.setVisibility(View.GONE);
+        layoutRideCompleted.setVisibility(View.GONE);
+    }
+
+    private void showNoRide() {
+        layoutLoading.setVisibility(View.GONE);
+        layoutNoRide.setVisibility(View.VISIBLE);
+        layoutRideTracking.setVisibility(View.GONE);
+        layoutRideCompleted.setVisibility(View.GONE);
+    }
+
+    private void showRideTracking() {
+        layoutLoading.setVisibility(View.GONE);
+        layoutNoRide.setVisibility(View.GONE);
+        layoutRideTracking.setVisibility(View.VISIBLE);
+        layoutRideCompleted.setVisibility(View.GONE);
+    }
+
+    private void showRideCompleted(GetRideFinishedDTO finished) {
+        layoutLoading.setVisibility(View.GONE);
+        layoutNoRide.setVisibility(View.GONE);
+        layoutRideTracking.setVisibility(View.GONE);
+        layoutRideCompleted.setVisibility(View.VISIBLE);
+
+        tvFinalPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD", finished.getPrice()));
+        tvDuration.setText(String.format(Locale.ENGLISH, "%d minutes", finished.getDurationMinutes()));
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        tvStartTime.setText(finished.getStartTime().format(timeFormatter));
+        tvEndTime.setText(finished.getEndTime().format(timeFormatter));
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (webSocketManager != null) {
+            webSocketManager.disconnect();
+        }
+    }
 }

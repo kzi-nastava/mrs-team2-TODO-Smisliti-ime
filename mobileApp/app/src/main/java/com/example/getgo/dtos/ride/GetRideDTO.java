@@ -1,6 +1,7 @@
 package com.example.getgo.dtos.ride;
 
 import com.example.getgo.dtos.passenger.GetRidePassengerDTO;
+import com.example.getgo.dtos.route.RouteDTO;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -21,11 +22,12 @@ public class GetRideDTO implements Serializable {
     private Double price;
 
     private Boolean panicActivated;
+    private RouteDTO route;
 
     public GetRideDTO() {
     }
 
-    public GetRideDTO(Long id, Long driverId, List<GetRidePassengerDTO> passengers, String startPoint, String endPoint, LocalDateTime startingTime, LocalDateTime finishedTime, Integer duration, Boolean isCancelled, Boolean isFavourite, String status, Double price, Boolean panicActivated) {
+    public GetRideDTO(Long id, Long driverId, List<GetRidePassengerDTO> passengers, String startPoint, String endPoint, LocalDateTime startingTime, LocalDateTime finishedTime, Integer duration, Boolean isCancelled, Boolean isFavourite, String status, Double price, Boolean panicActivated, RouteDTO route) {
         this.id = id;
         this.driverId = driverId;
         this.passengers = passengers;
@@ -39,6 +41,7 @@ public class GetRideDTO implements Serializable {
         this.status = status;
         this.price = price;
         this.panicActivated = panicActivated;
+        this.route = route;
     }
 
     public Long getId() {
@@ -145,9 +148,11 @@ public class GetRideDTO implements Serializable {
         this.panicActivated = panicActivated;
     }
 
+    public RouteDTO getRoute() {
+        return route;
+    }
 
-
-
-
-
+    public void setRoute(RouteDTO route) {
+        this.route = route;
+    }
 }

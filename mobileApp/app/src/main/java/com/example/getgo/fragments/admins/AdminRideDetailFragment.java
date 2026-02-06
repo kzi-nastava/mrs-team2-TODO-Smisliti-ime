@@ -18,19 +18,27 @@ import com.example.getgo.api.services.AdminApiService;
 import com.example.getgo.api.services.DriverApiService;
 import com.example.getgo.api.services.PassengerApiService;
 import com.example.getgo.api.services.RideApiService;
+import com.example.getgo.api.services.RatingApiService;
 import com.example.getgo.dtos.driver.GetDriverDTO;
 import com.example.getgo.dtos.passenger.GetPassengerDTO;
 import com.example.getgo.dtos.inconsistencyReport.GetInconsistencyReportDTO;
 import com.example.getgo.dtos.passenger.GetRidePassengerDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
+import com.example.getgo.dtos.route.RouteDTO;
+import com.example.getgo.dtos.rating.GetRatingDTO;
 import com.example.getgo.utils.MapManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.PolylineOptions;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -156,6 +164,9 @@ public class AdminRideDetailFragment extends Fragment {
                     Log.d("AdminRideDetail", "Loading passengers info");
                     loadPassengersInfo(view);
 
+                    Log.d("AdminRideDetail", "Loading ratings");
+                    loadRatings(view);
+
                     Log.d("AdminRideDetail", "Loading inconsistency reports");
                     loadInconsistencyReports(view, inflater);
                 } else {
@@ -210,6 +221,68 @@ public class AdminRideDetailFragment extends Fragment {
             return;
         }
 
+        RouteDTO route = ride.getRoute();
+        if (route == null || route.getEncodedPolyline() == null) {
+            Log.w("AdminRideDetail", "Route or polyline is null, falling back to geocoding");
+            drawRouteByGeocoding();
+            return;
+        }
+
+        try {
+            Log.d("AdminRideDetail", "Drawing route from encoded polyline");
+
+            // Parse encoded polyline JSON array
+            JSONArray polylineArray = new JSONArray(route.getEncodedPolyline());
+            List<LatLng> routePoints = new ArrayList<>();
+
+            for (int i = 0; i < polylineArray.length(); i++) {
+                JSONArray point = polylineArray.getJSONArray(i);
+                double lng = point.getDouble(0);
+                double lat = point.getDouble(1);
+                routePoints.add(new LatLng(lat, lng));
+            }
+
+            if (routePoints.isEmpty()) {
+                Log.w("AdminRideDetail", "No points in polyline");
+                return;
+            }
+
+            // Add start and end markers
+            LatLng start = routePoints.get(0);
+            LatLng end = routePoints.get(routePoints.size() - 1);
+
+            mapManager.addWaypointMarker(start, 0, "Start");
+            mapManager.addWaypointMarker(end, 100, "End");
+
+            // Draw polyline directly
+            PolylineOptions polylineOptions = new PolylineOptions()
+                    .addAll(routePoints)
+                    .width(10)
+                    .color(0xFF0000FF)
+                    .geodesic(true);
+
+            mMap.addPolyline(polylineOptions);
+
+            // Center camera on route
+            if (routePoints.size() > 1) {
+                com.google.android.gms.maps.model.LatLngBounds.Builder boundsBuilder =
+                    new com.google.android.gms.maps.model.LatLngBounds.Builder();
+                for (LatLng point : routePoints) {
+                    boundsBuilder.include(point);
+                }
+                mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(
+                    boundsBuilder.build(), 100));
+            }
+
+            Log.d("AdminRideDetail", "Route drawn with " + routePoints.size() + " points");
+
+        } catch (JSONException e) {
+            Log.e("AdminRideDetail", "Error parsing polyline: " + e.getMessage());
+            drawRouteByGeocoding();
+        }
+    }
+
+    private void drawRouteByGeocoding() {
         String startAddr = ride.getStartPoint();
         String endAddr = ride.getEndPoint();
 
@@ -360,6 +433,90 @@ public class AdminRideDetailFragment extends Fragment {
                 }
             });
         }
+    }
+
+    private void loadRatings(View view) {
+        TextView tvAvgDriverRating = view.findViewById(R.id.tvAvgDriverRating);
+        TextView tvAvgVehicleRating = view.findViewById(R.id.tvAvgVehicleRating);
+        LinearLayout ratingsContainer = view.findViewById(R.id.ratingsContainer);
+
+        if (tvAvgDriverRating == null || tvAvgVehicleRating == null || ratingsContainer == null) {
+            Log.w("AdminRideDetail", "Ratings views missing in layout");
+            return;
+        }
+
+        tvAvgDriverRating.setText("Driver rating: Loading...");
+        tvAvgVehicleRating.setText("Vehicle rating: Loading...");
+        ratingsContainer.removeAllViews();
+
+        RatingApiService ratingService = ApiClient.getClient().create(RatingApiService.class);
+        ratingService.getRatings(ride.getId()).enqueue(new Callback<List<GetRatingDTO>>() {
+            @Override
+            public void onResponse(Call<List<GetRatingDTO>> call, Response<List<GetRatingDTO>> response) {
+                if (!isAdded()) return;
+
+                if (response.isSuccessful() && response.body() != null) {
+                    List<GetRatingDTO> ratings = response.body();
+
+                    if (ratings.isEmpty()) {
+                        tvAvgDriverRating.setText("Driver rating: No ratings yet");
+                        tvAvgVehicleRating.setText("Vehicle rating: No ratings yet");
+                        TextView tvEmpty = new TextView(requireContext());
+                        tvEmpty.setText("No ratings for this ride.");
+                        tvEmpty.setTextColor(getResources().getColor(android.R.color.white, null));
+                        tvEmpty.setPadding(16, 8, 16, 8);
+                        ratingsContainer.addView(tvEmpty);
+                        return;
+                    }
+
+                    double sumDriver = 0;
+                    double sumVehicle = 0;
+
+                    for (GetRatingDTO rating : ratings) {
+                        sumDriver += rating.getDriverRating() != null ? rating.getDriverRating() : 0;
+                        sumVehicle += rating.getVehicleRating() != null ? rating.getVehicleRating() : 0;
+
+                        // Prikaz pojedinačne ocene
+                        TextView tvRating = new TextView(requireContext());
+                        tvRating.setPadding(16, 8, 16, 8);
+                        tvRating.setTextColor(getResources().getColor(android.R.color.white, null));
+
+                        String passengerId = rating.getPassengerId() != null ? "Passenger #" + rating.getPassengerId() : "Anonymous";
+                        String comment = rating.getComment() != null && !rating.getComment().isEmpty()
+                                ? "\n\"" + rating.getComment() + "\""
+                                : "";
+
+                        String ratingText = passengerId + "\n" +
+                                "Driver: " + (rating.getDriverRating() != null ? rating.getDriverRating() + "⭐" : "-") +
+                                " | Vehicle: " + (rating.getVehicleRating() != null ? rating.getVehicleRating() + "⭐" : "-") +
+                                comment;
+
+                        tvRating.setText(ratingText);
+                        ratingsContainer.addView(tvRating);
+                    }
+
+                    double avgDriver = sumDriver / ratings.size();
+                    double avgVehicle = sumVehicle / ratings.size();
+
+                    tvAvgDriverRating.setText(String.format("Average Driver Rating: %.1f ⭐", avgDriver));
+                    tvAvgVehicleRating.setText(String.format("Average Vehicle Rating: %.1f ⭐", avgVehicle));
+
+                    Log.d("AdminRideDetail", "Loaded " + ratings.size() + " ratings");
+                } else {
+                    tvAvgDriverRating.setText("Driver rating: Failed to load");
+                    tvAvgVehicleRating.setText("Vehicle rating: Failed to load");
+                    Log.w("AdminRideDetail", "Failed to load ratings: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<GetRatingDTO>> call, Throwable t) {
+                if (!isAdded()) return;
+                tvAvgDriverRating.setText("Driver rating: Error");
+                tvAvgVehicleRating.setText("Vehicle rating: Error");
+                Log.e("AdminRideDetail", "Error loading ratings", t);
+            }
+        });
     }
 
     private void loadInconsistencyReports(View view, LayoutInflater inflater) {

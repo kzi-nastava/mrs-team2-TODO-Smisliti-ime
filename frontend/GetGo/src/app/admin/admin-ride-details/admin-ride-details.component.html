@@ -13,6 +13,9 @@
         <p><b>Date:</b> {{ ride()!.startingTime | date:'dd.MM.yyyy' }}</p>
         <p><b>Start time:</b> {{ ride()!.startingTime | date:'HH:mm' }}</p>
         <p><b>End time:</b> {{ ride()!.finishedTime | date:'HH:mm' }}</p>
+        <p><b>Vehicle Type:</b> {{ ride()!.vehicleType }}</p>
+        <p><b>Baby Seats:</b> {{ ride()!.needsBabySeats ? 'Yes' : 'No' }}</p>
+        <p><b>Pet Friendly:</b> {{ ride()!.needsPetFriendly ? 'Yes' : 'No' }}</p>
         <p><b>Panic activated:</b> {{ ride()!.panicActivated ? 'Yes' : 'No' }}</p>
         <h2>Price: {{ ride()!.price | number:'1.0-0' }}rsd</h2>
       </div>

@@ -375,6 +375,8 @@ public class RideServiceImpl implements RideService {
 
         double totalDistance = 0.0;
         double totalTime = 0.0;
+        List<MapboxRoutingService.Coordinate> allCoordinates = new ArrayList<>();
+
         for (int i = 0; i < waypoints.size() - 1; i++) {
             WayPoint from = waypoints.get(i);
             WayPoint to = waypoints.get(i + 1);
@@ -386,11 +388,22 @@ public class RideServiceImpl implements RideService {
 
             totalDistance += segment.distanceKm();
             totalTime += segment.realDurationSeconds() / 60.0;
+
+            // Collect all coordinates for polyline
+            if (i == 0) {
+                allCoordinates.addAll(segment.coordinates());
+            } else {
+                // Skip first coordinate to avoid duplicates at waypoint connections
+                allCoordinates.addAll(segment.coordinates().subList(1, segment.coordinates().size()));
+            }
         }
 
-        route.setEstDistanceKm(totalDistance); // Distance from start to end point
-        route.setEstTimeMin(totalTime); // Duration from start to end point
-        route.setEncodedPolyline(""); // TODO: remove field or use this instead of movementPathJson in ActiveRide
+        route.setEstDistanceKm(totalDistance);
+        route.setEstTimeMin(totalTime);
+
+        // Save the polyline as JSON string
+        String polylineJson = convertCoordinatesToJson(allCoordinates);
+        route.setEncodedPolyline(polylineJson);
 
         return route;
     }

@@ -7,6 +7,7 @@ import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.CreateDriverDTO;
 import rs.getgo.backend.dtos.driver.CreatedDriverDTO;
 import rs.getgo.backend.dtos.request.*;
+import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 
 import java.time.LocalDate;
@@ -56,9 +57,9 @@ public interface AdminService {
 
     Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size);
 
-    GetRideDTO getPassengerRideById(String email, Long rideId);
+    GetReorderRideDTO getPassengerRideById(String email, Long rideId);
 
     Page<GetRideDTO> getDriverRides(String email, LocalDate startDate, int page, int size);
 
-    GetRideDTO getDriverRideById(String email, Long rideId);
+    GetReorderRideDTO getDriverRideById(String email, Long rideId);
 }

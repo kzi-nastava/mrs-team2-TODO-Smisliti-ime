@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../env/environment';
 import { Observable } from 'rxjs';
-import { GetRideDTO } from '../../passenger/model/ride.model';
+import { GetRideDTO } from '../../model/ride.model';
 import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.model';
 import { GetRatingDTO } from '../../model/rating.model';
 import { GetDriverDTO, GetPassengerDTO } from '../../model/user.model';

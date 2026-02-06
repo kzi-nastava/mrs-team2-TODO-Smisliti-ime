@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Ride, GetRideDTO } from '../model/ride.model';
+import { Ride, GetRideDTO } from '../../model/ride.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../env/environment';
 import { Signal } from '@angular/core';

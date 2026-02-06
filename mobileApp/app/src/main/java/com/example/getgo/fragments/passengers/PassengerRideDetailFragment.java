@@ -23,13 +23,18 @@ import com.example.getgo.dtos.passenger.GetRidePassengerDTO;
 import com.example.getgo.dtos.rating.GetRatingDTO;
 import com.example.getgo.dtos.ride.GetReorderRideDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
+import com.example.getgo.dtos.route.RouteDTO;
 import com.example.getgo.utils.MapManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.PolylineOptions;
+import org.json.JSONArray;
+import org.json.JSONException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -138,7 +143,6 @@ public class PassengerRideDetailFragment extends Fragment {
                 mMap = googleMap;
                 mapManager = new MapManager(requireContext(), mMap);
 
-                // Centriraj mapu na Novi Sad
                 LatLng noviSad = new LatLng(45.2519, 19.8370);
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
@@ -149,42 +153,86 @@ public class PassengerRideDetailFragment extends Fragment {
 
     private void drawRouteOnMap() {
         if (mapManager == null || ride == null) {
-            Log.w("RideDetail", "MapManager or ride is null");
+            Log.w("PassengerRideDetail", "MapManager or ride is null");
             return;
         }
 
+        RouteDTO route = ride.getRoute();
+        if (route != null && route.getEncodedPolyline() != null) {
+            try {
+                Log.d("PassengerRideDetail", "Drawing route from encoded polyline");
+
+                JSONArray polylineArray = new JSONArray(route.getEncodedPolyline());
+                List<LatLng> routePoints = new ArrayList<>();
+
+                for (int i = 0; i < polylineArray.length(); i++) {
+                    JSONArray point = polylineArray.getJSONArray(i);
+                    double lng = point.getDouble(0);
+                    double lat = point.getDouble(1);
+                    routePoints.add(new LatLng(lat, lng));
+                }
+
+                if (!routePoints.isEmpty()) {
+                    LatLng start = routePoints.get(0);
+                    LatLng end = routePoints.get(routePoints.size() - 1);
+
+                    mapManager.addWaypointMarker(start, 0, "Start");
+                    mapManager.addWaypointMarker(end, 100, "End");
+
+                    PolylineOptions polylineOptions = new PolylineOptions()
+                            .addAll(routePoints)
+                            .width(10)
+                            .color(0xFF0000FF)
+                            .geodesic(true);
+
+                    mMap.addPolyline(polylineOptions);
+
+                    if (routePoints.size() > 1) {
+                        com.google.android.gms.maps.model.LatLngBounds.Builder boundsBuilder =
+                            new com.google.android.gms.maps.model.LatLngBounds.Builder();
+                        for (LatLng point : routePoints) {
+                            boundsBuilder.include(point);
+                        }
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(
+                            boundsBuilder.build(), 100));
+                    }
+
+                    Log.d("PassengerRideDetail", "Route drawn with " + routePoints.size() + " points");
+                    return;
+                }
+            } catch (JSONException e) {
+                Log.e("PassengerRideDetail", "Error parsing polyline: " + e.getMessage());
+            }
+        }
+
+        // Fallback to geocoding
+        Log.d("PassengerRideDetail", "Using geocoding fallback");
         String startAddr = ride.getStartPoint();
         String endAddr = ride.getEndPoint();
 
-        if (startAddr == null || endAddr == null) {
-            Log.w("RideDetail", "Start or end address is null");
-            return;
+        if (startAddr != null && endAddr != null) {
+            mapManager.getCoordinatesFromAddress(startAddr, new MapManager.CoordinatesCallback() {
+                @Override
+                public void onCoordinatesFound(LatLng startLatLng) {
+                    mapManager.addWaypointMarker(startLatLng, 0, "Start");
+                    mapManager.getCoordinatesFromAddress(endAddr, new MapManager.CoordinatesCallback() {
+                        @Override
+                        public void onCoordinatesFound(LatLng endLatLng) {
+                            mapManager.addWaypointMarker(endLatLng, 100, "End");
+                            mapManager.drawRoute(java.util.Arrays.asList(startLatLng, endLatLng), null);
+                        }
+                        @Override
+                        public void onError(String error) {
+                            Log.w("PassengerRideDetail", "Geocode end failed: " + error);
+                        }
+                    });
+                }
+                @Override
+                public void onError(String error) {
+                    Log.w("PassengerRideDetail", "Geocode start failed: " + error);
+                }
+            });
         }
-
-        mapManager.getCoordinatesFromAddress(startAddr, new MapManager.CoordinatesCallback() {
-            @Override
-            public void onCoordinatesFound(LatLng startLatLng) {
-                mapManager.addWaypointMarker(startLatLng, 0, "Start");
-
-                mapManager.getCoordinatesFromAddress(endAddr, new MapManager.CoordinatesCallback() {
-                    @Override
-                    public void onCoordinatesFound(LatLng endLatLng) {
-                        mapManager.addWaypointMarker(endLatLng, 100, "End");
-                        mapManager.drawRoute(java.util.Arrays.asList(startLatLng, endLatLng), null);
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        Log.w("RideDetail", "Geocode end failed: " + error);
-                    }
-                });
-            }
-
-            @Override
-            public void onError(String error) {
-                Log.w("RideDetail", "Geocode start failed: " + error);
-            }
-        });
     }
 
     private void loadDriverInfo(View view) {

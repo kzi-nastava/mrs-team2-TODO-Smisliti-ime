@@ -225,7 +225,8 @@ public class PassengerServiceImpl implements PassengerService {
                 r.isPanicPressed(),
                 r.getVehicleType(),
                 r.isNeedsBabySeats(),
-                r.isNeedsPetFriendly()
+                r.isNeedsPetFriendly(),
+                r.getRoute()
         );
     }
 }

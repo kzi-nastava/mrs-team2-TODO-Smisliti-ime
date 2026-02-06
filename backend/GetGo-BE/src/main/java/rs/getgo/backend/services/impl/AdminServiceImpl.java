@@ -15,6 +15,7 @@ import rs.getgo.backend.dtos.driver.CreateDriverDTO;
 import rs.getgo.backend.dtos.driver.CreatedDriverDTO;
 import rs.getgo.backend.dtos.passenger.GetRidePassengerDTO;
 import rs.getgo.backend.dtos.request.*;
+import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
@@ -608,7 +609,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public GetRideDTO getPassengerRideById(String email, Long rideId) {
+    public GetReorderRideDTO getPassengerRideById(String email, Long rideId) {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
@@ -622,7 +623,7 @@ public class AdminServiceImpl implements AdminService {
             throw new RuntimeException("Passenger is not allowed to view this ride");
         }
 
-        return mapCompletedRideToDTO(ride);
+        return mapCompletedReorderRideToDTO(ride);
     }
 
     @Override
@@ -644,7 +645,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public GetRideDTO getDriverRideById(String email, Long rideId) {
+    public GetReorderRideDTO getDriverRideById(String email, Long rideId) {
         Driver driver = driverRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 
@@ -655,7 +656,7 @@ public class AdminServiceImpl implements AdminService {
             throw new RuntimeException("Driver is not allowed to view this ride");
         }
 
-        return mapCompletedRideToDTO(ride);
+        return mapCompletedReorderRideToDTO(ride);
     }
 
     private GetRideDTO mapCompletedRideToDTO(CompletedRide r) {
@@ -690,6 +691,45 @@ public class AdminServiceImpl implements AdminService {
                 r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
                 r.getEstimatedPrice(),
                 r.isPanicPressed()
+        );
+    }
+
+    private GetReorderRideDTO mapCompletedReorderRideToDTO(CompletedRide r) {
+        List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
+
+        if (r.getPayingPassengerId() != null) {
+            passengerDTOs.add(new GetRidePassengerDTO(
+                    r.getPayingPassengerId(),
+                    r.getPayingPassengerEmail()
+            ));
+        }
+
+        if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
+            List<Passenger> passengers = passengerRepo.findAllById(r.getLinkedPassengerIds());
+            for (Passenger p : passengers) {
+                passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getEmail()));
+            }
+        }
+
+        return new GetReorderRideDTO(
+                r.getId(),
+                r.getDriverId(),
+                passengerDTOs,
+                r.getRoute() != null ? r.getRoute().getStartingPoint() : "Unknown",
+                r.getRoute() != null ? r.getRoute().getEndingPoint() : "Unknown",
+                r.getStartTime(),
+                r.getEndTime(),
+                r.getStartTime() != null && r.getEndTime() != null ?
+                        (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
+                r.isCancelled(),
+                false,
+                r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
+                r.getEstimatedPrice(),
+                r.isPanicPressed(),
+                r.getVehicleType(),
+                r.isNeedsBabySeats(),
+                r.isNeedsPetFriendly(),
+                r.getRoute()
         );
     }
 }

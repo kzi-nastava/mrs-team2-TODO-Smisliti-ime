@@ -10,6 +10,7 @@ import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.*;
 import rs.getgo.backend.dtos.report.GetReportDTO;
 import rs.getgo.backend.dtos.request.*;
+import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.dtos.user.CreatedUserDTO;
 import org.springframework.http.HttpStatus;
@@ -266,10 +267,10 @@ public class AdminController {
     // 2.9.2 - Get single passenger ride by id
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/rides/passenger/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GetRideDTO> getPassengerRideById(
+    public ResponseEntity<GetReorderRideDTO> getPassengerRideById(
             @RequestParam String email,
             @PathVariable Long id) {
-        GetRideDTO ride = adminService.getPassengerRideById(email, id);
+        GetReorderRideDTO ride = adminService.getPassengerRideById(email, id);
         return ResponseEntity.ok(ride);
     }
 
@@ -289,10 +290,10 @@ public class AdminController {
     // Get single driver ride by id
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/rides/driver/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<GetRideDTO> getDriverRideById(
+    public ResponseEntity<GetReorderRideDTO> getDriverRideById(
             @RequestParam String email,
             @PathVariable Long id) {
-        GetRideDTO ride = adminService.getDriverRideById(email, id);
+        GetReorderRideDTO ride = adminService.getDriverRideById(email, id);
         return ResponseEntity.ok(ride);
     }
 }

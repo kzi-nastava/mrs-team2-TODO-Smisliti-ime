@@ -33,7 +33,10 @@
   </div>
 
   <div class="list">
-    <div *ngFor="let ride of rides() || []" class="item" [routerLink]="['/admin/rides',  this.currentUserType, ride.id]" [queryParams]="{email: searchRideForm.value.email}">
+    <div *ngFor="let ride of rides() || []"
+         class="item"
+         [routerLink]="['/admin/rides', currentUserType, ride.id]"
+         [queryParams]="{email: searchRideForm.value.email}">
       <p class="card-date"><b>{{ride.startingTime | date:'dd.MM.yyyy'}}</b></p>
       <h2>
         <img class="pin-icon" src="/map-pin.svg" alt="Pin icon">

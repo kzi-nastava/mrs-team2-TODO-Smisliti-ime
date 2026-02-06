@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import rs.getgo.backend.dtos.passenger.GetRidePassengerDTO;
+import rs.getgo.backend.model.entities.Route;
 import rs.getgo.backend.model.enums.VehicleType;
 
 import java.time.LocalDateTime;
@@ -31,4 +32,5 @@ public class GetReorderRideDTO {
     private VehicleType vehicleType;
     private Boolean needsBabySeats;
     private Boolean needsPetFriendly;
+    private Route route;
 }

@@ -1,5 +1,5 @@
 import { Component, Signal, signal, computed } from '@angular/core';
-import { GetRideDTO } from '../model/ride.model';
+import { GetRideDTO } from '../../model/ride.model';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';

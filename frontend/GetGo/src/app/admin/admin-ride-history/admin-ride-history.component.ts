@@ -1,5 +1,5 @@
-import { Component, Signal, signal, computed } from '@angular/core';
-import { GetRideDTO } from '../../passenger/model/ride.model';
+import { Component, Signal, signal, computed, OnInit } from '@angular/core';
+import { GetRideDTO } from '../../model/ride.model';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -32,7 +32,7 @@ import { AdminRideService } from '../service/admin-ride.service';
   templateUrl: './admin-ride-history.component.html',
   styleUrl: './admin-ride-history.component.css'
 })
-export class AdminRideHistoryComponent {
+export class AdminRideHistoryComponent implements OnInit {
 
   protected rides: Signal<GetRideDTO[]>;
 
@@ -57,14 +57,48 @@ export class AdminRideHistoryComponent {
     this.rides = this.adminRideService.rides;
   }
 
+  ngOnInit() {
+    // Load saved values from localStorage
+    const savedEmail = localStorage.getItem('lastSearchedEmail');
+    const savedUserType = localStorage.getItem('lastSearchedUserType');
+
+    if (savedEmail) {
+      this.searchRideForm.patchValue({
+        email: savedEmail
+      });
+    }
+
+    if (savedUserType === 'passenger' || savedUserType === 'driver') {
+      this.currentUserType = savedUserType;
+      this.searchRideForm.patchValue({
+        userType: savedUserType
+      });
+    }
+
+    // If we have saved values, automatically search
+    if (savedEmail && savedUserType) {
+      this.getPagedEntities();
+    }
+  }
+
   searchRides() {
     if (this.searchRideForm.invalid) {
       this.searchRideForm.markAllAsTouched();
       return;
     }
 
+    const email = this.searchRideForm.value.email?.trim();
+    if (!email) {
+      console.error('Email is required');
+      return;
+    }
+
     // Save the current user type from the search
     this.currentUserType = this.searchRideForm.value.userType || 'passenger';
+
+    // Save email to localStorage for ride details component
+    localStorage.setItem('lastSearchedEmail', email);
+    localStorage.setItem('lastSearchedUserType', this.currentUserType);
 
     this.pagePropertiesSignal.update(props => ({ ...props, page: 0 }));
     this.getPagedEntities();
@@ -77,6 +111,11 @@ export class AdminRideHistoryComponent {
       date: null
     });
     this.currentUserType = 'passenger';
+
+    // Clear localStorage
+    localStorage.removeItem('lastSearchedEmail');
+    localStorage.removeItem('lastSearchedUserType');
+
     this.pagePropertiesSignal.update(props => ({ ...props, page: 0 }));
     this.adminRideService.setRides([]);
   }

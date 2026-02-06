@@ -20,16 +20,33 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.example.getgo.R;
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.api.services.DriverApiService;
+import com.example.getgo.dtos.driver.GetDriverDTO;
+import com.example.getgo.dtos.request.CreatedDriverChangeRequestDTO;
+import com.example.getgo.dtos.request.UpdateDriverPersonalDTO;
+import com.example.getgo.dtos.request.UpdateDriverVehicleDTO;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
 
-import java.util.Objects;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class DriverProfileInfoFragment extends Fragment {
 
@@ -51,6 +68,7 @@ public class DriverProfileInfoFragment extends Fragment {
 
     // States
     private boolean isDriverTabSelected = true;
+    private DriverApiService driverApiService;
 
     public DriverProfileInfoFragment() {}
 
@@ -62,6 +80,8 @@ public class DriverProfileInfoFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        driverApiService = ApiClient.getClient().create(DriverApiService.class);
+
         // Register image picker launcher
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -69,7 +89,7 @@ public class DriverProfileInfoFragment extends Fragment {
                     if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                         selectedImageUri = result.getData().getData();
                         ivProfilePicture.setImageURI(selectedImageUri);
-                        Toast.makeText(requireContext(), "Profile picture updated", Toast.LENGTH_SHORT).show();
+                        uploadProfilePicture();
                     }
                 }
         );
@@ -81,7 +101,7 @@ public class DriverProfileInfoFragment extends Fragment {
                     if (isGranted) {
                         openImagePicker();
                     } else {
-                        Toast.makeText(requireContext(), "Permission denied. Cannot select image.", Toast.LENGTH_LONG).show();
+                        showToast("Permission denied. Cannot select image.");
                     }
                 }
         );
@@ -124,19 +144,22 @@ public class DriverProfileInfoFragment extends Fragment {
         tvChangePassword = view.findViewById(R.id.tvChangePassword);
         btnSave = view.findViewById(R.id.btnSave);
 
+        etEmail.setEnabled(false);
+
         // Get data from backend
         loadVehicleTypeDropdown();
         loadDriverData();
-        loadVehicleData();
-        loadRecentHoursWorked();
 
         // Set listeners
         cvProfilePicture.setOnClickListener(v -> checkPermissionAndOpenPicker());
         btnDriverTab.setOnClickListener(v -> showDriverTab());
         btnVehicleTab.setOnClickListener(v -> showVehicleTab());
-        tvChangePassword.setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "Change password not implemented yet", Toast.LENGTH_SHORT).show();
-        });
+//        tvChangePassword.setOnClickListener(v -> {
+//            getParentFragmentManager().beginTransaction()
+//                    .replace(R.id.fragmentContainer, DriverChangePasswordFragment.newInstance())
+//                    .addToBackStack(null)
+//                    .commit();
+//        });
         btnSave.setOnClickListener(v -> saveData());
 
         return view;
@@ -199,53 +222,57 @@ public class DriverProfileInfoFragment extends Fragment {
     }
 
     private void loadVehicleTypeDropdown() {
-        // TODO: Get vehicle types from backend
-        String[] vehicleTypes = getVehicleTypes();
-
+        String[] vehicleTypes = new String[]{"STANDARD", "LUXURY", "VAN"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_dropdown_item_1line,
                 vehicleTypes
         );
-
         actvVehicleType.setAdapter(adapter);
     }
 
-    private String[] getVehicleTypes() {
-        // TODO: Replace with actual backend call
-        return new String[]{"Sedan", "SUV", "Hatchback", "Van", "Luxury"};
-    }
-
-    @SuppressWarnings("SetTextI18n")
     private void loadDriverData() {
-        // TODO: Load actual data from backend
-        etEmail.setText("driver@getgo.com");
-        etFirstName.setText("John");
-        etLastName.setText("Smith");
-        etPhone.setText("+381 11 123 4567");
-        etAddress.setText("Belgrade, Serbia");
-    }
+        driverApiService.getProfile().enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<GetDriverDTO> call, @NonNull Response<GetDriverDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    GetDriverDTO driver = response.body();
 
-    @SuppressWarnings("SetTextI18n")
-    private void loadVehicleData() {
-        // TODO: Load actual data from backend
-        etVehicleModel.setText("Toyota Camry");
-        actvVehicleType.setText("Sedan", false);
-        etRegistrationNumber.setText("BG-1234-AB");
-        etSeatNumber.setText("4");
-        cbAllowPets.setChecked(true);
-        cbAllowBabies.setChecked(false);
-    }
+                    etEmail.setText(driver.getEmail());
+                    etFirstName.setText(driver.getName());
+                    etLastName.setText(driver.getSurname());
+                    etPhone.setText(driver.getPhone());
+                    etAddress.setText(driver.getAddress());
 
-    private void loadRecentHoursWorked() {
-        // TODO: Load actual data from backend
-        int recentHours = getRecentActiveHours();
-        tvRecentHours.setText(getString(R.string.recent_hours_format, recentHours));
-    }
+                    etVehicleModel.setText(driver.getVehicleModel());
+                    actvVehicleType.setText(driver.getVehicleType(), false);
+                    etRegistrationNumber.setText(driver.getVehicleLicensePlate());
+                    etSeatNumber.setText(String.valueOf(driver.getVehicleSeats()));
+                    cbAllowPets.setChecked(driver.getVehicleAllowsPets());
+                    cbAllowBabies.setChecked(driver.getVehicleHasBabySeats());
 
-    private int getRecentActiveHours() {
-        // TODO: Load actual data from backend
-        return 42;
+                    tvRecentHours.setText(getString(R.string.recent_hours_format, driver.getRecentHoursWorked()));
+
+                    // Profile picture
+                    if (driver.getProfilePictureUrl() != null && !driver.getProfilePictureUrl().isEmpty()) {
+                        String imageUrl = ApiClient.SERVER_URL + driver.getProfilePictureUrl();
+                        Glide.with(requireContext())
+                                .load(imageUrl)
+                                .placeholder(R.drawable.unregistered_profile)
+                                .error(R.drawable.unregistered_profile)
+                                .circleCrop()
+                                .into(ivProfilePicture);
+                    }
+                } else {
+                    showToast("Failed to load profile");
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<GetDriverDTO> call, @NonNull Throwable t) {
+                showToast("Error: " + t.getMessage());
+            }
+        });
     }
 
     private void saveData() {
@@ -257,42 +284,57 @@ public class DriverProfileInfoFragment extends Fragment {
     }
 
     private void saveDriverData() {
-        // Get values
-        String email = Objects.requireNonNull(etEmail.getText()).toString().trim();
-        String firstName = Objects.requireNonNull(etFirstName.getText()).toString().trim();
-        String lastName = Objects.requireNonNull(etLastName.getText()).toString().trim();
-        String phone = Objects.requireNonNull(etPhone.getText()).toString().trim();
-        String address = Objects.requireNonNull(etAddress.getText()).toString().trim();
+        String email = String.valueOf(etEmail.getText()).trim();
+        String firstName = String.valueOf(etFirstName.getText()).trim();
+        String lastName = String.valueOf(etLastName.getText()).trim();
+        String phone = String.valueOf(etPhone.getText()).trim();
+        String address = String.valueOf(etAddress.getText()).trim();
 
-        // Basic validation
         if (email.isEmpty() || firstName.isEmpty() || lastName.isEmpty() ||
                 phone.isEmpty() || address.isEmpty()) {
-            Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+            showToast("Please fill all fields");
             return;
         }
 
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(requireContext(), "Please enter a valid email", Toast.LENGTH_SHORT).show();
+            showToast("Please enter a valid email");
             return;
         }
 
-        // TODO: Connect to backend
-        Toast.makeText(requireContext(), "Driver profile updated successfully", Toast.LENGTH_SHORT).show();
+        btnSave.setEnabled(false);
+
+        UpdateDriverPersonalDTO updateDTO = new UpdateDriverPersonalDTO(firstName, lastName, phone, address);
+
+        driverApiService.requestPersonalInfoChange(updateDTO).enqueue(new Callback<CreatedDriverChangeRequestDTO>() {
+            @Override
+            public void onResponse(@NonNull Call<CreatedDriverChangeRequestDTO> call, @NonNull Response<CreatedDriverChangeRequestDTO> response) {
+                btnSave.setEnabled(true);
+                if (response.isSuccessful() && response.body() != null) {
+                    showToast("Change request submitted successfully");
+                } else {
+                    showToast("Failed to submit change request");
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<CreatedDriverChangeRequestDTO> call, @NonNull Throwable t) {
+                btnSave.setEnabled(true);
+                showToast("Error: " + t.getMessage());
+            }
+        });
     }
 
     private void saveVehicleData() {
-        // Get values
-        String vehicleModel = Objects.requireNonNull(etVehicleModel.getText()).toString().trim();
+        String vehicleModel = String.valueOf(etVehicleModel.getText()).trim();
         String vehicleType = actvVehicleType.getText().toString().trim();
-        String registrationNumber = Objects.requireNonNull(etRegistrationNumber.getText()).toString().trim();
-        String seatNumberStr = Objects.requireNonNull(etSeatNumber.getText()).toString().trim();
+        String registrationNumber = String.valueOf(etRegistrationNumber.getText()).trim();
+        String seatNumberStr = String.valueOf(etSeatNumber.getText()).trim();
         boolean allowPets = cbAllowPets.isChecked();
         boolean allowBabies = cbAllowBabies.isChecked();
 
-        // Basic validation
         if (vehicleModel.isEmpty() || vehicleType.isEmpty() ||
                 registrationNumber.isEmpty() || seatNumberStr.isEmpty()) {
-            Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+            showToast("Please fill all fields");
             return;
         }
 
@@ -300,15 +342,93 @@ public class DriverProfileInfoFragment extends Fragment {
         try {
             seatNumber = Integer.parseInt(seatNumberStr);
             if (seatNumber <= 0) {
-                Toast.makeText(requireContext(), "Seat number must be positive", Toast.LENGTH_SHORT).show();
+                showToast("Seat number must be positive");
                 return;
             }
         } catch (NumberFormatException e) {
-            Toast.makeText(requireContext(), "Invalid seat number", Toast.LENGTH_SHORT).show();
+            showToast("Invalid seat number");
             return;
         }
 
-        // TODO: Connect to backend
-        Toast.makeText(requireContext(), "Vehicle information updated successfully", Toast.LENGTH_SHORT).show();
+        btnSave.setEnabled(false);
+
+        UpdateDriverVehicleDTO updateDTO = new UpdateDriverVehicleDTO(
+                vehicleModel, vehicleType, registrationNumber, seatNumber, allowPets, allowBabies
+        );
+
+        driverApiService.requestVehicleInfoChange(updateDTO).enqueue(new Callback<CreatedDriverChangeRequestDTO>() {
+            @Override
+            public void onResponse(@NonNull Call<CreatedDriverChangeRequestDTO> call, @NonNull Response<CreatedDriverChangeRequestDTO> response) {
+                btnSave.setEnabled(true);
+                if (response.isSuccessful() && response.body() != null) {
+                    showToast("Change request submitted successfully");
+                } else {
+                    showToast("Failed to submit change request");
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<CreatedDriverChangeRequestDTO> call, @NonNull Throwable t) {
+                btnSave.setEnabled(true);
+                showToast("Error: " + t.getMessage());
+            }
+        });
+    }
+
+    private void uploadProfilePicture() {
+        if (selectedImageUri == null) {
+            showToast("No image selected");
+            return;
+        }
+
+        try {
+            File file = convertUriToFile(selectedImageUri);
+            RequestBody requestFile = RequestBody.create(file, MediaType.parse("image/*"));
+            MultipartBody.Part body = MultipartBody.Part.createFormData("file", file.getName(), requestFile);
+
+            driverApiService.requestProfilePictureChange(body).enqueue(new Callback<CreatedDriverChangeRequestDTO>() {
+                @Override
+                public void onResponse(@NonNull Call<CreatedDriverChangeRequestDTO> call, @NonNull Response<CreatedDriverChangeRequestDTO> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        showToast("Profile picture change request submitted successfully");
+                    } else {
+                        showToast("Failed to submit picture change request");
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<CreatedDriverChangeRequestDTO> call, @NonNull Throwable t) {
+                    showToast("Error: " + t.getMessage());
+                }
+            });
+
+        } catch (Exception e) {
+            showToast("Error uploading image: " + e.getMessage());
+        }
+    }
+
+    private File convertUriToFile(Uri uri) throws Exception {
+        InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
+        if (inputStream == null) {
+            throw new Exception("Failed to open input stream");
+        }
+
+        File file = new File(requireContext().getCacheDir(), "profile_picture.jpg");
+        FileOutputStream outputStream = new FileOutputStream(file);
+
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = inputStream.read(buffer)) > 0) {
+            outputStream.write(buffer, 0, length);
+        }
+
+        outputStream.close();
+        inputStream.close();
+
+        return file;
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
     }
 }

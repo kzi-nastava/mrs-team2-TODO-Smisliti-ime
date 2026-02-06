@@ -47,7 +47,7 @@
     <string name="driver_tab">Driver</string>
     <string name="vehicle_tab">Vehicle</string>
     <string name="recent_hours_placeholder">Recent hours active: 0</string>
-    <string name="recent_hours_format">Recent hours active: %d</string>
+    <string name="recent_hours_format">Recent hours active: %.2f</string>
     <string name="vehicle_model_hint">Vehicle Model</string>
     <string name="vehicle_type_hint">Vehicle Type</string>
     <string name="registration_number_hint">Registration Number</string>

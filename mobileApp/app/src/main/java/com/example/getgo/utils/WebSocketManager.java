@@ -7,6 +7,7 @@ import com.example.getgo.dtos.driver.GetDriverLocationDTO;
 import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideFinishedDTO;
 import com.example.getgo.dtos.ride.GetRideStatusUpdateDTO;
+import com.example.getgo.dtos.ride.GetRideStoppedEarlyDTO;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -40,6 +41,10 @@ public class WebSocketManager {
 
     public interface DriverLocationListener {
         void onLocationUpdate(GetDriverLocationDTO location);
+    }
+
+    public interface RideStoppedEarlyListener {
+        void onRideStopped(GetRideStoppedEarlyDTO stopped);
     }
 
     public WebSocketManager() {
@@ -151,6 +156,90 @@ public class WebSocketManager {
                     listener.onLocationUpdate(location);
                 }, throwable -> {
                     Log.e(TAG, "Error on driver location topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
+    public void subscribeToRideDriverLocation(Long rideId, DriverLocationListener listener) {
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
+
+        String topic = "/socket-publisher/ride/" + rideId + "/driver-location";
+        Log.d(TAG, "Subscribing to: " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    Log.d(TAG, "Driver location (for ride): " + topicMessage.getPayload());
+                    GetDriverLocationDTO location = gson.fromJson(topicMessage.getPayload(), GetDriverLocationDTO.class);
+                    listener.onLocationUpdate(location);
+                }, throwable -> {
+                    Log.e(TAG, "Error on driver location for ride topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
+    public void subscribeToPassengerRideStatusUpdates(Long rideId, RideStatusUpdateListener listener) {
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
+
+        String topic = "/socket-publisher/ride/" + rideId + "/status-update";
+        Log.d(TAG, "Subscribing to: " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    Log.d(TAG, "Ride status update: " + topicMessage.getPayload());
+                    GetRideStatusUpdateDTO update = gson.fromJson(topicMessage.getPayload(), GetRideStatusUpdateDTO.class);
+                    listener.onStatusUpdate(update);
+                }, throwable -> {
+                    Log.e(TAG, "Error on ride status update topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
+    public void subscribeToPassengerRideFinished(Long rideId, RideFinishedListener listener) {
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
+
+        String topic = "/socket-publisher/ride/" + rideId + "/ride-finished";
+        Log.d(TAG, "Subscribing to: " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    Log.d(TAG, "Ride finished: " + topicMessage.getPayload());
+                    GetRideFinishedDTO finished = gson.fromJson(topicMessage.getPayload(), GetRideFinishedDTO.class);
+                    listener.onRideFinished(finished);
+                }, throwable -> {
+                    Log.e(TAG, "Error on ride finished topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
+    public void subscribeToPassengerRideStopped(Long rideId, RideStoppedEarlyListener listener) {
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
+
+        String topic = "/socket-publisher/ride/" + rideId + "/ride-stopped";
+        Log.d(TAG, "Subscribing to: " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    Log.d(TAG, "Ride stopped early: " + topicMessage.getPayload());
+                    GetRideStoppedEarlyDTO stopped = gson.fromJson(topicMessage.getPayload(), GetRideStoppedEarlyDTO.class);
+                    listener.onRideStopped(stopped);
+                }, throwable -> {
+                    Log.e(TAG, "Error on ride stopped topic", throwable);
                 });
 
         compositeDisposable.add(disposable);

@@ -119,18 +119,27 @@ public class SupportChatController {
     }
 
 
-    @GetMapping("/chat/my")
-    public List<GetMessageDTO> getMyChat(Authentication auth) {
-        User user = authService.getUserFromAuth(auth);
+//    @GetMapping("/chat/my")
+//    public List<GetMessageDTO> getMyChat(Authentication auth) {
+//        User user = authService.getUserFromAuth(auth);
+//
+//        return service.getMessages(user).stream()
+//                .map(m -> new GetMessageDTO(
+//                        m.getText(),
+//                        m.getSenderType(),
+//                        m.getTimestamp()
+//                ))
+//                .toList();
+//    }
 
-        return service.getMessages(user).stream()
-                .map(m -> new GetMessageDTO(
-                        m.getText(),
-                        m.getSenderType(),
-                        m.getTimestamp()
-                ))
-                .toList();
+    @GetMapping("/chat/my")
+    public GetUserChatDTO getMyChat(Authentication auth) {
+        User user = authService.getUserFromAuth(auth);
+        Chat chat = service.getOrCreateChat(user);
+
+        return new GetUserChatDTO(chat.getId(), user.getName());
     }
+
 
 
 

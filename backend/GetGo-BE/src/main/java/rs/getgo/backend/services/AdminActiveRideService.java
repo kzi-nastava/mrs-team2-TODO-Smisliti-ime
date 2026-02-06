@@ -6,7 +6,7 @@ import rs.getgo.backend.model.entities.ActiveRide;
 
 import java.util.List;
 
-public interface ActiveRideService {
+public interface AdminActiveRideService {
     GetActiveRideAdminDTO toAdminDTO(ActiveRide ride);
     List<GetActiveRideAdminDTO> getAllActiveRidesForAdmin();
     GetActiveRideAdminDetailsDTO getActiveRideDetails(Long id);

@@ -43,35 +43,37 @@ public class RideRepository {
 
     public GetPassengerActiveRideDTO getPassengerActiveRide() throws Exception {
         RideApiService service = ApiClient.getClient().create(RideApiService.class);
-        Response<GetPassengerActiveRideDTO> response = service.getPassengerActiveRide().execute();
 
-        if (response.isSuccessful()) {
-            if (response.body() == null) {
-                Log.d(TAG, "No active ride for passenger");
-                return null;
+        try {
+            Response<GetPassengerActiveRideDTO> response = service.getPassengerActiveRide().execute();
+
+            if (response.isSuccessful()) {
+                return response.body();
+            } else {
+                String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+                Log.e(TAG, "Failed to fetch active ride: " + response.code() + " - " + errBody);
+                throw new Exception("Failed to fetch active ride");
             }
-            return response.body();
-        } else {
-            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
-            Log.e(TAG, "Failed to fetch active ride: " + response.code() + " - " + errBody);
-            throw new Exception("Failed to fetch active ride");
+        } catch (com.google.gson.JsonSyntaxException | java.io.EOFException e) {
+            return null; // No active ride, response body empty
         }
     }
 
     public GetDriverActiveRideDTO getDriverActiveRide() throws Exception {
         RideApiService service = ApiClient.getClient().create(RideApiService.class);
-        Response<GetDriverActiveRideDTO> response = service.getDriverActiveRide().execute();
 
-        if (response.isSuccessful()) {
-            if (response.body() == null) {
-                Log.d(TAG, "No active ride for driver");
-                return null;
+        try {
+            Response<GetDriverActiveRideDTO> response = service.getDriverActiveRide().execute();
+
+            if (response.isSuccessful()) {
+                return response.body();
+            } else {
+                String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+                Log.e(TAG, "Failed to fetch active ride: " + response.code() + " - " + errBody);
+                throw new Exception("Failed to fetch active ride");
             }
-            return response.body();
-        } else {
-            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
-            Log.e(TAG, "Failed to fetch active ride: " + response.code() + " - " + errBody);
-            throw new Exception("Failed to fetch active ride");
+        } catch (com.google.gson.JsonSyntaxException | java.io.EOFException e) {
+            return null; // No active ride, response body empty
         }
     }
 

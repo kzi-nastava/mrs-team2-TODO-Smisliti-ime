@@ -63,18 +63,8 @@ public class RatingController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CreatedRatingDTO> createRating(@Valid @RequestBody CreateRatingDTO dto, @RequestParam Long rideId, Authentication auth) throws Exception {
 
-        CompletedRide ride = rideRepository.findById(rideId)
-                .orElseThrow(() -> new Exception("Ride not found with id: " + rideId));
-
-        String email = auth.getName();
-        Long passengerId = passengerRepository.findByEmail(email)
-                .orElseThrow(() -> new Exception("Passenger not found"))
-                .getId();
-
-
-        CreatedRatingDTO savedRating = ratingService.create(dto, ride, passengerId);
-
-        return new ResponseEntity<CreatedRatingDTO>(savedRating, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ratingService.createRating(dto, rideId, auth));
     }
 
     @GetMapping("/debug-auth")

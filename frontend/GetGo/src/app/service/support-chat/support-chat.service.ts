@@ -26,7 +26,6 @@ export class SupportChatService {
   }
 
 
-
   getAllChats() {
     return this.http.get<Chat[]>(`${environment.apiHost}/api/support/admin/chats`);
   }

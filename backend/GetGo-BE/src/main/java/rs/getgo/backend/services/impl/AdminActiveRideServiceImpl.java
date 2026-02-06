@@ -6,16 +6,16 @@ import rs.getgo.backend.dtos.activeRide.GetActiveRideAdminDetailsDTO;
 import rs.getgo.backend.model.entities.ActiveRide;
 import rs.getgo.backend.model.entities.Passenger;
 import rs.getgo.backend.repositories.ActiveRideRepository;
-import rs.getgo.backend.services.ActiveRideService;
+import rs.getgo.backend.services.AdminActiveRideService;
 
 import java.util.List;
 
 @Service
-public class ActiveRideServiceImpl implements ActiveRideService {
+public class AdminActiveRideServiceImpl implements AdminActiveRideService {
 
     private final ActiveRideRepository activeRideRepository;
 
-    public ActiveRideServiceImpl(ActiveRideRepository activeRideRepository) {
+    public AdminActiveRideServiceImpl(ActiveRideRepository activeRideRepository) {
         this.activeRideRepository = activeRideRepository;
     }
 

@@ -22,20 +22,8 @@ export class SupportChatService {
   private reloadTrigger = signal(0);
 
   sendMessage(chatId: number, text: string) {
-    return this.http.post(`${environment.apiHost}/api/support/messages`, { text }).pipe(
-      tap(() => {
-        const msg: Message = {
-          text,
-          senderType: 'USER',
-          timestamp: new Date().toISOString(),
-        };
-        if (this.ws.connectionStatus) {
-          this.ws.pushLocalMessage(chatId, msg);
-        }
-      })
-    );
+    return this.http.post(`${environment.apiHost}/api/support/messages`, { text })
   }
-
 
 
   getAllChats() {
@@ -61,7 +49,12 @@ export class SupportChatService {
   subscribe(chatId: number, callback: (msg: Message) => void) {
     if (!this.ws.connectionStatus) {
       this.ws.connect().then(() => {
-        this.ws.subscribeToChat(chatId).subscribe(callback);
+        this.ws.subscribeToChat(chatId).subscribe(msg => {
+
+          console.log('WS MESSAGE (PASSENGER)', msg);
+
+          callback(msg);
+        });
       });
     } else {
       this.ws.subscribeToChat(chatId).subscribe(callback);

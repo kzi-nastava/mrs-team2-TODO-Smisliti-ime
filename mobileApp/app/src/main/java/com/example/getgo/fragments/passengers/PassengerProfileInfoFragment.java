@@ -17,15 +17,32 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.example.getgo.R;
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.api.services.PassengerApiService;
+import com.example.getgo.dtos.passenger.GetPassengerDTO;
+import com.example.getgo.dtos.passenger.UpdatePassengerDTO;
+import com.example.getgo.dtos.passenger.UpdatedPassengerDTO;
+import com.example.getgo.dtos.user.UpdatedProfilePictureDTO;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 
-import java.util.Objects;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class PassengerProfileInfoFragment extends Fragment {
 
@@ -38,6 +55,8 @@ public class PassengerProfileInfoFragment extends Fragment {
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private ActivityResultLauncher<String> requestPermissionLauncher;
 
+    private PassengerApiService passengerApiService;
+
     public PassengerProfileInfoFragment() {}
 
     public static PassengerProfileInfoFragment newInstance() {
@@ -48,6 +67,8 @@ public class PassengerProfileInfoFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        passengerApiService = ApiClient.getClient().create(PassengerApiService.class);
+
         // Register image picker launcher
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -55,7 +76,7 @@ public class PassengerProfileInfoFragment extends Fragment {
                     if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                         selectedImageUri = result.getData().getData();
                         ivProfilePicture.setImageURI(selectedImageUri);
-                        Toast.makeText(requireContext(), "Profile picture updated", Toast.LENGTH_SHORT).show();
+                        uploadProfilePicture();
                     }
                 }
         );
@@ -67,7 +88,7 @@ public class PassengerProfileInfoFragment extends Fragment {
                     if (isGranted) {
                         openImagePicker();
                     } else {
-                        Toast.makeText(requireContext(), "Permission denied. Cannot select image.", Toast.LENGTH_LONG).show();
+                        showToast("Permission denied. Cannot select image.");
                     }
                 }
         );
@@ -90,13 +111,19 @@ public class PassengerProfileInfoFragment extends Fragment {
         tvChangePassword = view.findViewById(R.id.tvChangePassword);
         btnSave = view.findViewById(R.id.btnSave);
 
+        etEmail.setEnabled(false);
+
         // Load existing user data
         loadUserData();
 
         // Setup listeners
         cvProfilePicture.setOnClickListener(v -> checkPermissionAndOpenPicker());
-        tvChangePassword.setOnClickListener(v -> Toast.makeText(requireContext(),
-                "Change password not implemented yet", Toast.LENGTH_SHORT).show());
+        tvChangePassword.setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragmentContainer, PassengerChangePasswordFragment.newInstance())
+                    .addToBackStack(null)
+                    .commit();
+        });
         btnSave.setOnClickListener(v -> saveUserData());
 
         return view;
@@ -128,37 +155,146 @@ public class PassengerProfileInfoFragment extends Fragment {
         imagePickerLauncher.launch(intent);
     }
 
-    @SuppressWarnings("SetTextI18n")
     private void loadUserData() {
-        // TODO: Load actual data from backend
-        etEmail.setText("passenger@getgo.com");
-        etFirstName.setText("John");
-        etLastName.setText("Doe");
-        etPhone.setText("+381 11 123 4567");
-        etAddress.setText("Belgrade, Serbia");
+        passengerApiService.getProfile().enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<GetPassengerDTO> call, @NonNull Response<GetPassengerDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    GetPassengerDTO passenger = response.body();
+
+                    etEmail.setText(passenger.getEmail());
+                    etFirstName.setText(passenger.getName());
+                    etLastName.setText(passenger.getSurname());
+                    etPhone.setText(passenger.getPhone());
+                    etAddress.setText(passenger.getAddress());
+
+                    if (passenger.getProfilePictureUrl() != null && !passenger.getProfilePictureUrl().isEmpty()) {
+                        String imageUrl = ApiClient.SERVER_URL + passenger.getProfilePictureUrl();
+                        Glide.with(requireContext())
+                                .load(imageUrl)
+                                .placeholder(R.drawable.unregistered_profile)
+                                .error(R.drawable.unregistered_profile)
+                                .circleCrop()
+                                .into(ivProfilePicture);
+                    }
+                } else {
+                    showToast("Failed to load profile");
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<GetPassengerDTO> call, @NonNull Throwable t) {
+                showToast("Error: " + t.getMessage());
+            }
+        });
     }
 
     private void saveUserData() {
-        // Get values from input fields with null safety
-        String email = Objects.requireNonNull(etEmail.getText()).toString().trim();
-        String firstName = Objects.requireNonNull(etFirstName.getText()).toString().trim();
-        String lastName = Objects.requireNonNull(etLastName.getText()).toString().trim();
-        String phone = Objects.requireNonNull(etPhone.getText()).toString().trim();
-        String address = Objects.requireNonNull(etAddress.getText()).toString().trim();
+        String email = String.valueOf(etEmail.getText()).trim();
+        String firstName = String.valueOf(etFirstName.getText()).trim();
+        String lastName = String.valueOf(etLastName.getText()).trim();
+        String phone = String.valueOf(etPhone.getText()).trim();
+        String address = String.valueOf(etAddress.getText()).trim();
 
-        // Basic validation
         if (email.isEmpty() || firstName.isEmpty() || lastName.isEmpty() ||
                 phone.isEmpty() || address.isEmpty()) {
-            Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+            showToast("Please fill all fields");
             return;
         }
 
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(requireContext(), "Please enter a valid email", Toast.LENGTH_SHORT).show();
+            showToast("Please enter a valid email");
             return;
         }
 
-        // TODO: Connect to backend
-        Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show();
+        btnSave.setEnabled(false);
+
+        UpdatePassengerDTO updateDTO = new UpdatePassengerDTO(firstName, lastName, phone, address);
+
+        passengerApiService.updateProfile(updateDTO).enqueue(new Callback<UpdatedPassengerDTO>() {
+            @Override
+            public void onResponse(@NonNull Call<UpdatedPassengerDTO> call, @NonNull Response<UpdatedPassengerDTO> response) {
+                btnSave.setEnabled(true);
+                if (response.isSuccessful() && response.body() != null) {
+                    showToast("Profile updated successfully");
+                    loadUserData();
+                } else {
+                    showToast("Failed to update profile");
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<UpdatedPassengerDTO> call, @NonNull Throwable t) {
+                btnSave.setEnabled(true);
+                showToast("Error: " + t.getMessage());
+            }
+        });
+    }
+
+    private void uploadProfilePicture() {
+        if (selectedImageUri == null) {
+            showToast("No image selected");
+            return;
+        }
+
+        try {
+            File file = convertUriToFile(selectedImageUri);
+            RequestBody requestFile = RequestBody.create(file, MediaType.parse("image/*"));
+            MultipartBody.Part body = MultipartBody.Part.createFormData("file", file.getName(), requestFile);
+
+            passengerApiService.uploadProfilePicture(body).enqueue(new Callback<>() {
+                @Override
+                public void onResponse(@NonNull Call<UpdatedProfilePictureDTO> call, @NonNull Response<UpdatedProfilePictureDTO> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        showToast("Profile picture updated successfully");
+                        UpdatedProfilePictureDTO result = response.body();
+                        if (result.getPictureUrl() != null) {
+                            String imageUrl = ApiClient.SERVER_URL + result.getPictureUrl();
+                            Glide.with(requireContext())
+                                    .load(imageUrl)
+                                    .placeholder(R.drawable.unregistered_profile)
+                                    .error(R.drawable.unregistered_profile)
+                                    .circleCrop()
+                                    .into(ivProfilePicture);
+                        }
+                    } else {
+                        showToast("Failed to update profile picture");
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<UpdatedProfilePictureDTO> call, @NonNull Throwable t) {
+                    showToast("Error: " + t.getMessage());
+                }
+            });
+
+        } catch (Exception e) {
+            showToast("Error uploading image: " + e.getMessage());
+        }
+    }
+
+    private File convertUriToFile(Uri uri) throws Exception {
+        InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
+        if (inputStream == null) {
+            throw new Exception("Failed to open input stream");
+        }
+
+        File file = new File(requireContext().getCacheDir(), "profile_picture.jpg");
+        FileOutputStream outputStream = new FileOutputStream(file);
+
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = inputStream.read(buffer)) > 0) {
+            outputStream.write(buffer, 0, length);
+        }
+
+        outputStream.close();
+        inputStream.close();
+
+        return file;
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
     }
 }

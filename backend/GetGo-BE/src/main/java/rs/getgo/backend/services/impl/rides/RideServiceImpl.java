@@ -260,7 +260,7 @@ public class RideServiceImpl implements RideService {
         ride.setRoute(route);
         ride.setScheduledTime(scheduledTime);
         ride.setEstimatedPrice(estimatedPrice);
-        ride.setVehicleType(vehicleType);
+//        ride.setVehicleType(vehicleType);
         ride.setNeedsBabySeats(createRideRequestDTO.getHasBaby() != null && createRideRequestDTO.getHasBaby());
         ride.setNeedsPetFriendly(createRideRequestDTO.getHasPets() != null && createRideRequestDTO.getHasPets());
         ride.setPayingPassenger(payingPassenger);
@@ -280,6 +280,9 @@ public class RideServiceImpl implements RideService {
             }
 
             ride.setDriver(driver);
+            VehicleType vehicleTypeEnum = ride.getDriver() != null ? ride.getDriver().getVehicle().getType() : null;
+            ride.setVehicleType(vehicleTypeEnum);
+
 
             // Decide initial status based on driver's current state
             if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
@@ -416,6 +419,11 @@ public class RideServiceImpl implements RideService {
         } catch (IllegalArgumentException | NullPointerException e) {
             return null;
         }
+//        if (vehicleTypeStr == null) {
+//            return VehicleType.SEDAN; // default
+//        }
+//
+//        return VehicleType.valueOf(vehicleTypeStr.toUpperCase());
     }
 
     @Override

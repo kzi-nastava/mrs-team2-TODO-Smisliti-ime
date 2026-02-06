@@ -1,7 +1,6 @@
 package com.example.getgo.api.services;
 
 import com.example.getgo.dtos.passenger.GetPassengerDTO;
-import com.example.getgo.dtos.ride.GetReorderRideDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.dtos.ride.PageResponse;
 
@@ -21,10 +20,12 @@ public interface PassengerApiService {
     Call<PageResponse<GetRideDTO>> getPassengerRides(
             @Query("page") int page,
             @Query("size") int size,
-            @Query("startDate") String startDate
+            @Query("startDate") String startDate,
+            @Query("sort") String sort,
+            @Query("direction") String direction
     );
 
     // Fetch single ride for re-order (returns GetReorderRideDTO)
     @GET("api/passenger/rides/{id}")
-    Call<GetReorderRideDTO> getRideForReorder(@Path("id") Long rideId);
+    Call<GetRideDTO> getRideForReorder(@Path("id") Long rideId);
 }

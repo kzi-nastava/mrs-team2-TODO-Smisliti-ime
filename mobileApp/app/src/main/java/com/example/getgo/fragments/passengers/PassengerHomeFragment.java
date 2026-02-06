@@ -19,7 +19,6 @@ import com.example.getgo.R;
 import com.example.getgo.dtos.driver.GetActiveDriverLocationDTO;
 import com.example.getgo.dtos.ride.CreateRideRequestDTO;
 import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
-import com.example.getgo.dtos.ride.GetReorderRideDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.repositories.DriverRepository;
 import com.example.getgo.repositories.RideRepository;
@@ -29,7 +28,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
@@ -76,13 +74,13 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
         // Check for re-order data
         if (getArguments() != null && getArguments().containsKey("REORDER_RIDE")) {
-            GetReorderRideDTO reorderRide = (GetReorderRideDTO) getArguments().getSerializable("REORDER_RIDE");
+            GetRideDTO reorderRide = (GetRideDTO) getArguments().getSerializable("REORDER_RIDE");
             prefillRideData(reorderRide);
         }
         return root;
     }
 
-    private void prefillRideData(GetReorderRideDTO ride) {
+    private void prefillRideData(GetRideDTO ride) {
         if (ride == null) return;
         if (ride.getStartPoint() != null) etStartPoint.setText(ride.getStartPoint());
         if (ride.getEndPoint() != null) etDestination.setText(ride.getEndPoint());

@@ -92,9 +92,9 @@ public class PassengerController {
     @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/rides")
     public ResponseEntity<Page<GetRideDTO>> getPassengerRides(
-            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
 
         String email = AuthUtils.getCurrentUserEmail();
         Page<GetRideDTO> rides = passengerService.getPassengerRides(email, startDate, page, size);

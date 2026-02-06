@@ -33,8 +33,21 @@ export class AdminRideService {
     return token;
   }
 
-  loadPassengerRides(email: string, page: number = 0, size: number = 5, startDate?: Date): Observable<PageResponse<GetRideDTO>> {
-    let params: any = { email, page, size };
+  loadPassengerRides(
+    email: string,
+    page: number = 0,
+    size: number = 5,
+    startDate?: Date,
+    sort: string = 'startTime',
+    direction: string = 'DESC'
+  ): Observable<PageResponse<GetRideDTO>> {
+    let params: any = {
+      email,
+      page: page.toString(),
+      size: size.toString(),
+      sort,
+      direction
+    };
 
     if (startDate) {
       const day = startDate.getDate().toString().padStart(2, '0');
@@ -46,6 +59,9 @@ export class AdminRideService {
     const token = this.getAuthToken();
     const url = `${environment.apiHost}/api/admin/rides/passenger`;
 
+    console.log('Loading passenger rides with URL:', url);
+    console.log('Params:', params);
+
     return this.http.get<PageResponse<GetRideDTO>>(url, {
       params,
       headers: {
@@ -54,8 +70,21 @@ export class AdminRideService {
     });
   }
 
-  loadDriverRides(email: string, page: number = 0, size: number = 5, startDate?: Date): Observable<PageResponse<GetRideDTO>> {
-    let params: any = { email, page, size };
+  loadDriverRides(
+    email: string,
+    page: number = 0,
+    size: number = 5,
+    startDate?: Date,
+    sort: string = 'startTime',
+    direction: string = 'DESC'
+  ): Observable<PageResponse<GetRideDTO>> {
+    let params: any = {
+      email,
+      page: page.toString(),
+      size: size.toString(),
+      sort,
+      direction
+    };
 
     if (startDate) {
       const day = startDate.getDate().toString().padStart(2, '0');
@@ -66,6 +95,9 @@ export class AdminRideService {
 
     const token = this.getAuthToken();
     const url = `${environment.apiHost}/api/admin/rides/driver`;
+
+    console.log('Loading driver rides with URL:', url);
+    console.log('Params:', params);
 
     return this.http.get<PageResponse<GetRideDTO>>(url, {
       params,

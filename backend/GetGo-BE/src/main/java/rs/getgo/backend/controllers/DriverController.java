@@ -54,7 +54,6 @@ public class DriverController {
         return ResponseEntity.ok(rides);
     }
 
-
     // 2.2.3 - Driver registration (validate activation token)
     @GetMapping(value = "/activate/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetActivationTokenDTO> validateActivationToken(@PathVariable String token) {

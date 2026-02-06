@@ -10,5 +10,6 @@ public enum RideStatus {
     CANCELLED,
     DRIVER_ARRIVED_AT_DESTINATION,
     FINISHED,
+    STOPPED
     // TODO: add PANIC_PRESSED and potentially more to reduce attribute count from completed ride?
 }

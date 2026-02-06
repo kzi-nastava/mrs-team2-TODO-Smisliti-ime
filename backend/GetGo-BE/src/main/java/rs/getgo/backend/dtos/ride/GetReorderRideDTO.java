@@ -33,4 +33,8 @@ public class GetReorderRideDTO {
     private Boolean needsBabySeats;
     private Boolean needsPetFriendly;
     private Route route;
+    private Double estDistance;
+    private Double estTime;
+    private String cancelReason;
+    private String cancelledBy;
 }

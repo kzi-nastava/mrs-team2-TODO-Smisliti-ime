@@ -32,7 +32,11 @@ export class RideService {
 
   constructor(private http: HttpClient) {}
 
-  loadRides(page: number = 0, size: number = 5, startDate?: Date): Observable<PageResponse<GetRideDTO>> {
+  loadRides(
+    page: number = 0,
+    size: number = 5,
+    startDate?: Date
+  ): Observable<PageResponse<GetRideDTO>> {
     let params: any = {page, size};
 
     if (startDate) {
@@ -45,10 +49,13 @@ export class RideService {
     const token = this.getAuthToken();
     const url = `${environment.apiHost}/api/passenger/rides`;
 
+    console.log('Request URL:', url);
+    console.log('Request params:', params);
+
     return this.http.get<PageResponse<GetRideDTO>>(url, {
       params,
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Authorization': `Bearer ${token}`
       }
     });
   }

@@ -34,6 +34,8 @@ public class CompletedRide {
     private double estDistanceKm;
     private double actualDistanceKm;
 
+    private double estTime;
+
     @Enumerated(EnumType.STRING)
     private VehicleType vehicleType;
     private String vehicleModel;

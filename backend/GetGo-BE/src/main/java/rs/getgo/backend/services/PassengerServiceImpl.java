@@ -19,12 +19,15 @@ import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.dtos.user.UpdatedProfilePictureDTO;
 import rs.getgo.backend.model.entities.CompletedRide;
 import rs.getgo.backend.model.entities.Passenger;
+import rs.getgo.backend.model.entities.User;
 import rs.getgo.backend.repositories.CompletedRideRepository;
 import rs.getgo.backend.repositories.PassengerRepository;
+import rs.getgo.backend.repositories.UserRepository;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PassengerServiceImpl implements PassengerService {
@@ -34,18 +37,22 @@ public class PassengerServiceImpl implements PassengerService {
     private final FileStorageService fileStorageService;
     private final BCryptPasswordEncoder passwordEncoder;
     private final CompletedRideRepository completedRideRepository;
+    private final UserRepository userRepository;
 
     public PassengerServiceImpl(
             PassengerRepository passengerRepo,
             ModelMapper modelMapper,
             FileStorageService fileStorageService,
-            BCryptPasswordEncoder passwordEncoder, CompletedRideRepository completedRideRepository
+            BCryptPasswordEncoder passwordEncoder,
+            CompletedRideRepository completedRideRepository,
+            UserRepository userRepository
     ) {
         this.passengerRepo = passengerRepo;
         this.modelMapper = modelMapper;
         this.fileStorageService = fileStorageService;
         this.passwordEncoder = passwordEncoder;
         this.completedRideRepository = completedRideRepository;
+        this.userRepository = userRepository;
     }
 
     public GetPassengerDTO getPassenger(String email) {
@@ -128,10 +135,15 @@ public class PassengerServiceImpl implements PassengerService {
 
         Page<CompletedRide> ridesPage;
         if (startDate != null) {
-            ridesPage = completedRideRepository.findByPayingPassengerIdAndStartTimeAfter(
-                    passenger.getId(), startDate.atStartOfDay(), pageable);
+            // Filter rides ON the specific date (from 00:00 to 23:59:59.999)
+            ridesPage = completedRideRepository.findByPassengerIdAndStartTimeBetween(
+                    passenger.getId(),
+                    startDate.atStartOfDay(),
+                    startDate.plusDays(1).atStartOfDay(),
+                    pageable);
         } else {
-            ridesPage = completedRideRepository.findByPayingPassengerId(passenger.getId(), pageable);
+            // Get all rides where passenger is either paying or linked
+            ridesPage = completedRideRepository.findByPassengerId(passenger.getId(), pageable);
         }
 
         return ridesPage.map(this::mapCompletedRideToDTO);
@@ -172,6 +184,14 @@ public class PassengerServiceImpl implements PassengerService {
             }
         }
 
+        String cancelledUserEmail = null;
+        if (r.getCancelledByUserId() != null) {
+            Optional<User> user = userRepository.findById(r.getCancelledByUserId());
+            if (user.isPresent()) {
+                cancelledUserEmail = user.get().getEmail();
+            }
+        }
+
         return new GetRideDTO(
                 r.getId(),
                 r.getDriverId(),
@@ -184,10 +204,13 @@ public class PassengerServiceImpl implements PassengerService {
                         (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
                 r.isCancelled(),
                 false,
-                r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
+                r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : (r.isStoppedEarly() ? "STOPPED" : "ACTIVE")),
                 r.getEstimatedPrice(),
-                r.isPanicPressed()
-
+                r.isPanicPressed(),
+                r.getEstDistanceKm(),
+                r.getEstTime(),
+                cancelledUserEmail,
+                r.getCancelReason()
         );
     }
 
@@ -208,6 +231,13 @@ public class PassengerServiceImpl implements PassengerService {
             }
         }
 
+        String cancelledUserEmail = null;
+        if (r.getCancelledByUserId() != null) {
+            Optional<User> user = userRepository.findById(r.getCancelledByUserId());
+            if (user.isPresent()) {
+                cancelledUserEmail = user.get().getEmail();
+            }
+        }
         return new GetReorderRideDTO(
                 r.getId(),
                 r.getDriverId(),
@@ -220,13 +250,17 @@ public class PassengerServiceImpl implements PassengerService {
                         (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
                 r.isCancelled(),
                 false,
-                r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
+                r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : (r.isStoppedEarly() ? "STOPPED" : "ACTIVE")),
                 r.getEstimatedPrice(),
                 r.isPanicPressed(),
                 r.getVehicleType(),
                 r.isNeedsBabySeats(),
                 r.isNeedsPetFriendly(),
-                r.getRoute()
+                r.getRoute(),
+                r.getEstDistanceKm(),
+                r.getEstTime(),
+                cancelledUserEmail,
+                r.getCancelReason()
         );
     }
 }

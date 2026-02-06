@@ -112,7 +112,6 @@ public class AdminRideDetailFragment extends Fragment {
                 mMap = googleMap;
                 mapManager = new MapManager(requireContext(), mMap);
 
-                // Centriraj mapu na Novi Sad
                 LatLng noviSad = new LatLng(45.2519, 19.8370);
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
             });

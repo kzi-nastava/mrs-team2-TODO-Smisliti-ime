@@ -15,7 +15,9 @@ public interface AdminApiService {
             @Query("email") String email,
             @Query("page") int page,
             @Query("size") int size,
-            @Query("startDate") String startDate
+            @Query("startDate") String startDate,
+            @Query("sort") String sort,
+            @Query("direction") String direction
     );
 
     @GET("api/admin/rides/driver")
@@ -23,7 +25,9 @@ public interface AdminApiService {
             @Query("email") String email,
             @Query("page") int page,
             @Query("size") int size,
-            @Query("startDate") String startDate
+            @Query("startDate") String startDate,
+            @Query("sort") String sort,
+            @Query("direction") String direction
     );
 
     @GET("api/admin/rides/passenger/{rideId}")

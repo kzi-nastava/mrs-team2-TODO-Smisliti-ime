@@ -21,7 +21,6 @@ import com.example.getgo.dtos.driver.GetDriverDTO;
 import com.example.getgo.dtos.inconsistencyReport.GetInconsistencyReportDTO;
 import com.example.getgo.dtos.passenger.GetRidePassengerDTO;
 import com.example.getgo.dtos.rating.GetRatingDTO;
-import com.example.getgo.dtos.ride.GetReorderRideDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.dtos.route.RouteDTO;
 import com.example.getgo.utils.MapManager;
@@ -48,13 +47,14 @@ public class PassengerRideDetailFragment extends Fragment {
 
     public PassengerRideDetailFragment() {}
 
-    public static PassengerRideDetailFragment newInstance(GetRideDTO ride) {
+    public static PassengerRideDetailFragment newInstance(Long rideId) {
         PassengerRideDetailFragment fragment = new PassengerRideDetailFragment();
         Bundle args = new Bundle();
-        args.putSerializable(ARG_RIDE, ride);
+        args.putLong("RIDE_ID", rideId);
         fragment.setArguments(args);
         return fragment;
     }
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -68,29 +68,38 @@ public class PassengerRideDetailFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_passenger_ride_detail, container, false);
 
-        if (ride == null) {
-            Toast.makeText(requireContext(), "Error: No ride data", Toast.LENGTH_SHORT).show();
+        Long rideId = getArguments() != null ? getArguments().getLong("RIDE_ID") : null;
+        if (rideId == null) {
+            Toast.makeText(requireContext(), "Error: No ride ID", Toast.LENGTH_SHORT).show();
             return view;
         }
 
-        displayBasicRideInfo(view);
+        PassengerApiService passengerService = ApiClient.getClient().create(PassengerApiService.class);
+        passengerService.getRideForReorder(rideId).enqueue(new Callback<GetRideDTO>() {
+            @Override
+            public void onResponse(Call<GetRideDTO> call, Response<GetRideDTO> response) {
+                if (!isAdded()) return;
 
-        setupMap(view);
+                if (response.isSuccessful() && response.body() != null) {
+                    ride = response.body();
 
-        if (ride.getDriverId() != null) {
-            loadDriverInfo(view);
-        } else {
-            TextView tvDriverHeader = view.findViewById(R.id.tvDriverHeader);
-            if (tvDriverHeader != null) {
-                tvDriverHeader.setText("Driver: Not assigned");
+                    displayBasicRideInfo(view);
+                    setupMap(view);  // Crtanje mape samo nakon što je ride učitan
+                    if (ride.getDriverId() != null) loadDriverInfo(view);
+                    loadRatings(view);
+                    loadInconsistencyReports(view, inflater);
+                    setupButtons(view);
+                } else {
+                    Toast.makeText(requireContext(), "Failed to load ride", Toast.LENGTH_SHORT).show();
+                }
             }
-        }
 
-        loadRatings(view);
-
-        loadInconsistencyReports(view, inflater);
-
-        setupButtons(view);
+            @Override
+            public void onFailure(Call<GetRideDTO> call, Throwable t) {
+                if (!isAdded()) return;
+                Toast.makeText(requireContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
 
         return view;
     }
@@ -146,93 +155,118 @@ public class PassengerRideDetailFragment extends Fragment {
                 LatLng noviSad = new LatLng(45.2519, 19.8370);
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
-                drawRouteOnMap();
+                if (ride != null) {
+                    if (ride.getRoute() != null && ride.getRoute().getEncodedPolyline() != null) {
+                        drawRouteOnMap();
+                    } else if (ride.getStartPoint() != null && ride.getEndPoint() != null) {
+                        drawRouteByGeocoding();
+                    }
+                }
+
             });
         }
     }
 
     private void drawRouteOnMap() {
         if (mapManager == null || ride == null) {
-            Log.w("PassengerRideDetail", "MapManager or ride is null");
+            Log.w("AdminRideDetail", "MapManager or ride is null");
             return;
         }
 
         RouteDTO route = ride.getRoute();
-        if (route != null && route.getEncodedPolyline() != null) {
-            try {
-                Log.d("PassengerRideDetail", "Drawing route from encoded polyline");
-
-                JSONArray polylineArray = new JSONArray(route.getEncodedPolyline());
-                List<LatLng> routePoints = new ArrayList<>();
-
-                for (int i = 0; i < polylineArray.length(); i++) {
-                    JSONArray point = polylineArray.getJSONArray(i);
-                    double lng = point.getDouble(0);
-                    double lat = point.getDouble(1);
-                    routePoints.add(new LatLng(lat, lng));
-                }
-
-                if (!routePoints.isEmpty()) {
-                    LatLng start = routePoints.get(0);
-                    LatLng end = routePoints.get(routePoints.size() - 1);
-
-                    mapManager.addWaypointMarker(start, 0, "Start");
-                    mapManager.addWaypointMarker(end, 100, "End");
-
-                    PolylineOptions polylineOptions = new PolylineOptions()
-                            .addAll(routePoints)
-                            .width(10)
-                            .color(0xFF0000FF)
-                            .geodesic(true);
-
-                    mMap.addPolyline(polylineOptions);
-
-                    if (routePoints.size() > 1) {
-                        com.google.android.gms.maps.model.LatLngBounds.Builder boundsBuilder =
-                            new com.google.android.gms.maps.model.LatLngBounds.Builder();
-                        for (LatLng point : routePoints) {
-                            boundsBuilder.include(point);
-                        }
-                        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(
-                            boundsBuilder.build(), 100));
-                    }
-
-                    Log.d("PassengerRideDetail", "Route drawn with " + routePoints.size() + " points");
-                    return;
-                }
-            } catch (JSONException e) {
-                Log.e("PassengerRideDetail", "Error parsing polyline: " + e.getMessage());
-            }
+        if (route == null || route.getEncodedPolyline() == null) {
+            Log.w("AdminRideDetail", "Route or polyline is null, falling back to geocoding");
+            drawRouteByGeocoding();
+            return;
         }
 
-        // Fallback to geocoding
-        Log.d("PassengerRideDetail", "Using geocoding fallback");
+        try {
+            Log.d("AdminRideDetail", "Drawing route from encoded polyline");
+
+            // Parse encoded polyline JSON array
+            JSONArray polylineArray = new JSONArray(route.getEncodedPolyline());
+            List<LatLng> routePoints = new ArrayList<>();
+
+            for (int i = 0; i < polylineArray.length(); i++) {
+                JSONArray point = polylineArray.getJSONArray(i);
+                double lng = point.getDouble(0);
+                double lat = point.getDouble(1);
+                routePoints.add(new LatLng(lat, lng));
+            }
+
+            if (routePoints.isEmpty()) {
+                Log.w("AdminRideDetail", "No points in polyline");
+                return;
+            }
+
+            // Add start and end markers
+            LatLng start = routePoints.get(0);
+            LatLng end = routePoints.get(routePoints.size() - 1);
+
+            mapManager.addWaypointMarker(start, 0, "Start");
+            mapManager.addWaypointMarker(end, 100, "End");
+
+            // Draw polyline directly
+            PolylineOptions polylineOptions = new PolylineOptions()
+                    .addAll(routePoints)
+                    .width(10)
+                    .color(0xFF0000FF)
+                    .geodesic(true);
+
+            mMap.addPolyline(polylineOptions);
+
+            // Center camera on route
+            if (routePoints.size() > 1) {
+                com.google.android.gms.maps.model.LatLngBounds.Builder boundsBuilder =
+                        new com.google.android.gms.maps.model.LatLngBounds.Builder();
+                for (LatLng point : routePoints) {
+                    boundsBuilder.include(point);
+                }
+                mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(
+                        boundsBuilder.build(), 100));
+            }
+
+            Log.d("AdminRideDetail", "Route drawn with " + routePoints.size() + " points");
+
+        } catch (JSONException e) {
+            Log.e("AdminRideDetail", "Error parsing polyline: " + e.getMessage());
+            drawRouteByGeocoding();
+        }
+    }
+
+    private void drawRouteByGeocoding() {
         String startAddr = ride.getStartPoint();
         String endAddr = ride.getEndPoint();
 
-        if (startAddr != null && endAddr != null) {
-            mapManager.getCoordinatesFromAddress(startAddr, new MapManager.CoordinatesCallback() {
-                @Override
-                public void onCoordinatesFound(LatLng startLatLng) {
-                    mapManager.addWaypointMarker(startLatLng, 0, "Start");
-                    mapManager.getCoordinatesFromAddress(endAddr, new MapManager.CoordinatesCallback() {
-                        @Override
-                        public void onCoordinatesFound(LatLng endLatLng) {
-                            mapManager.addWaypointMarker(endLatLng, 100, "End");
-                            mapManager.drawRoute(java.util.Arrays.asList(startLatLng, endLatLng), null);
-                        }
-                        @Override
-                        public void onError(String error) {
-                            Log.w("PassengerRideDetail", "Geocode end failed: " + error);
-                        }
-                    });
-                }
-                @Override
-                public void onError(String error) {
-                    Log.w("PassengerRideDetail", "Geocode start failed: " + error);
-                }
-            });
+        if (startAddr == null || endAddr == null) {
+            Log.w("PassengerRideDetail", "Start or end address is null");
+            return;
         }
+
+        mapManager.getCoordinatesFromAddress(startAddr, new MapManager.CoordinatesCallback() {
+            @Override
+            public void onCoordinatesFound(LatLng startLatLng) {
+                mapManager.addWaypointMarker(startLatLng, 0, "Start");
+
+                mapManager.getCoordinatesFromAddress(endAddr, new MapManager.CoordinatesCallback() {
+                    @Override
+                    public void onCoordinatesFound(LatLng endLatLng) {
+                        mapManager.addWaypointMarker(endLatLng, 100, "End");
+                        mapManager.drawRoute(java.util.Arrays.asList(startLatLng, endLatLng), null);
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        Log.w("PassengerRideDetail", "Geocode end failed: " + error);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.w("PassengerRideDetail", "Geocode start failed: " + error);
+            }
+        });
     }
 
     private void loadDriverInfo(View view) {
@@ -455,41 +489,22 @@ public class PassengerRideDetailFragment extends Fragment {
         }
 
         if (btnReorderRide != null) {
-            btnReorderRide.setOnClickListener(v -> reorderRide());
+            btnReorderRide.setOnClickListener(v -> reorderRide(ride));
         }
     }
 
-    private void reorderRide() {
-        PassengerApiService passengerService = ApiClient.getClient().create(PassengerApiService.class);
-        passengerService.getRideForReorder(ride.getId()).enqueue(new Callback<GetReorderRideDTO>() {
-            @Override
-            public void onResponse(Call<GetReorderRideDTO> call, Response<GetReorderRideDTO> response) {
-                if (!isAdded()) return;
+    private void reorderRide(GetRideDTO ride) {
+        PassengerHomeFragment fragment = PassengerHomeFragment.newInstance();
 
-                if (response.isSuccessful() && response.body() != null) {
-                    GetReorderRideDTO reorderRide = response.body();
-                    Bundle args = new Bundle();
-                    args.putSerializable("REORDER_RIDE", reorderRide);
+        Bundle args = new Bundle();
+        args.putSerializable("REORDER_RIDE", ride);
+        fragment.setArguments(args);
 
-                    PassengerHomeFragment fragment = PassengerHomeFragment.newInstance();
-                    fragment.setArguments(args);
-
-                    requireActivity().getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.fragmentContainer, fragment)
-                            .addToBackStack(null)
-                            .commit();
-                } else {
-                    Toast.makeText(requireContext(), "Failed to load ride for reorder", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<GetReorderRideDTO> call, Throwable t) {
-                if (!isAdded()) return;
-                Toast.makeText(requireContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 
     private void setStyledText(TextView tv, String label, String value) {

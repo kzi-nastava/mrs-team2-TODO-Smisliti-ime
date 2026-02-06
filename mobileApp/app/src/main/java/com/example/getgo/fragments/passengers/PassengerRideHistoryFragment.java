@@ -59,6 +59,8 @@ public class PassengerRideHistoryFragment extends Fragment implements SensorEven
     private long lastShakeTime = 0;
     private boolean sortAscending = true;
     private String selectedDateForApi = "";
+    private String sortField = "startTime";
+    private String sortDirection = "DESC";
 
     public PassengerRideHistoryFragment() {}
 
@@ -101,6 +103,7 @@ public class PassengerRideHistoryFragment extends Fragment implements SensorEven
         tvFilterDate = view.findViewById(R.id.tvFilterDate);
         rideHistoryLV = view.findViewById(R.id.rideHistoryListView);
 
+        // Page size spinner
         Spinner spinnerPageSize = view.findViewById(R.id.spinnerPageSize);
         Integer[] pageSizes = {5, 10, 20};
         ArrayAdapter<Integer> adapterSpinner = new ArrayAdapter<>(requireContext(),
@@ -108,15 +111,13 @@ public class PassengerRideHistoryFragment extends Fragment implements SensorEven
         adapterSpinner.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerPageSize.setAdapter(adapterSpinner);
         spinnerPageSize.setSelection(0);
-
         spinnerPageSize.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 pageSize = pageSizes[position];
                 currentPage = 0;
-                loadRideHistoryFromServer();
+                loadPassengerRides();
             }
-
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
@@ -129,34 +130,34 @@ public class PassengerRideHistoryFragment extends Fragment implements SensorEven
 
         btnReset.setOnClickListener(v -> {
             tvFilterDate.setText(getString(R.string.filter_by_date));
-            selectedDateForApi = ""; // Reset API datum
+            selectedDateForApi = "";
             currentPage = 0;
-            loadRideHistoryFromServer();
+            loadPassengerRides();
         });
 
         btnApply.setOnClickListener(v -> {
             currentPage = 0;
-            loadRideHistoryFromServer();
+            loadPassengerRides();
         });
 
         btnNext.setOnClickListener(v -> {
             if ((currentPage + 1) * pageSize < totalElements) {
                 currentPage++;
-                loadRideHistoryFromServer();
+                loadPassengerRides();
             }
         });
 
         btnPrev.setOnClickListener(v -> {
             if (currentPage > 0) {
                 currentPage--;
-                loadRideHistoryFromServer();
+                loadPassengerRides();
             }
         });
 
-        loadRideHistoryFromServer();
+        loadPassengerRides();
 
         adapter.setOnRideClickListener(ride -> {
-            PassengerRideDetailFragment fragment = PassengerRideDetailFragment.newInstance(ride);
+            PassengerRideDetailFragment fragment = PassengerRideDetailFragment.newInstance(ride.getId());
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragmentContainer, fragment)
@@ -192,14 +193,16 @@ public class PassengerRideHistoryFragment extends Fragment implements SensorEven
 
             float acceleration = (float) Math.sqrt(x * x + y * y + z * z) - SensorManager.GRAVITY_EARTH;
 
-            if (acceleration > 12) { // Shake threshold
+            if (acceleration > 12) {
                 long currentTime = System.currentTimeMillis();
-                if (currentTime - lastShakeTime > 1000) { // debounce 1s
+                if (currentTime - lastShakeTime > 1000) {
                     lastShakeTime = currentTime;
                     sortAscending = !sortAscending;
-                    sortRidesByDate();
+                    sortDirection = sortAscending ? "ASC" : "DESC";
+                    currentPage = 0;
+                    loadPassengerRides();
                     Toast.makeText(requireContext(),
-                            "Sorted by date: " + (sortAscending ? "Oldest first" : "Newest first"),
+                            "Sorted: " + (sortAscending ? "Ascending ▲" : "Descending ▼"),
                             Toast.LENGTH_SHORT).show();
                 }
             }
@@ -210,65 +213,82 @@ public class PassengerRideHistoryFragment extends Fragment implements SensorEven
     public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
     private void sortRidesByDate() {
-        Collections.sort(fullHistoryList, new Comparator<GetRideDTO>() {
-            @Override
-            public int compare(GetRideDTO r1, GetRideDTO r2) {
-                if (r1.getStartingTime() == null || r2.getStartingTime() == null) return 0;
-                int cmp = r1.getStartingTime().compareTo(r2.getStartingTime());
-                return sortAscending ? cmp : -cmp;
-            }
-        });
-        adapter.setRides(fullHistoryList);
+        // This method can be removed or simplified since backend now handles sorting
+        sortDirection = sortAscending ? "ASC" : "DESC";
+        loadPassengerRides();
     }
 
     private void showDatePicker() {
         MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
                 .setTitleText("Select date")
                 .build();
+
         datePicker.show(getParentFragmentManager(), "DATE_PICKER");
+
         datePicker.addOnPositiveButtonClickListener(selection -> {
-            // Format za prikaz korisniku
+
             SimpleDateFormat displayFormat = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
             String displayDate = displayFormat.format(new Date(selection));
             tvFilterDate.setText(displayDate);
 
-            // Format za API - backend očekuje dd-MM-yyyy
             SimpleDateFormat apiFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
             selectedDateForApi = apiFormat.format(new Date(selection));
 
             Log.d("PassengerRideHistory", "Date selected - Display: " + displayDate + ", API: " + selectedDateForApi);
+
+            currentPage = 0;
+            loadPassengerRides();
         });
     }
 
-    private void loadRideHistoryFromServer() {
-        PassengerApiService passengerApiService = ApiClient.getClient().create(PassengerApiService.class);
-
-        // Koristi sačuvani datum za API
+    private void loadPassengerRides() {
         String startDate = selectedDateForApi;
 
-        Log.d("PassengerRideHistory", "Loading rides - page: " + currentPage + ", size: " + pageSize + ", startDate: " + startDate);
+        Log.d("PassengerRideHistory", "Loading rides - startDate: '" + startDate +
+              "', page: " + currentPage + ", size: " + pageSize +
+              ", sort: " + sortField + ", dir: " + sortDirection);
 
-        passengerApiService.getPassengerRides(currentPage, pageSize, startDate).enqueue(new Callback<PageResponse<GetRideDTO>>() {
+        PassengerApiService passengerService = ApiClient.getClient().create(PassengerApiService.class);
+
+        Call<PageResponse<GetRideDTO>> call = passengerService.getPassengerRides(
+                currentPage,
+                pageSize,
+                startDate.isEmpty() ? null : startDate,
+                sortField,
+                sortDirection
+        );
+
+        call.enqueue(new Callback<PageResponse<GetRideDTO>>() {
             @Override
             public void onResponse(Call<PageResponse<GetRideDTO>> call, Response<PageResponse<GetRideDTO>> response) {
+                if (!isAdded()) return;
+
                 if (response.isSuccessful() && response.body() != null) {
-                    PageResponse<GetRideDTO> pageResponse = response.body();
-                    List<GetRideDTO> ridesFromServer = pageResponse.getContent();
-                    totalElements = pageResponse.getTotalElements();
-                    fullHistoryList = new ArrayList<>(ridesFromServer);
-                    adapter.setRides(ridesFromServer);
-                    Log.d("PassengerRideHistory", "Loaded " + ridesFromServer.size() + " rides, total: " + totalElements);
+                    PageResponse<GetRideDTO> page = response.body();
+                    totalElements = page.getTotalElements();
+                    adapter.setRides(new ArrayList<>(page.getContent()));
+
+                    Log.d("PassengerRideHistory", "Loaded " + page.getContent().size() + " rides, total: " + totalElements);
                 } else {
-                    Log.d("PassengerRideHistory", "Response failed: " + response.code());
+                    Log.w("PassengerRideHistory", "Failed to load rides: " + response.code());
                     try {
-                        Log.d("PassengerRideHistory", "Error: " + response.errorBody().string());
-                    } catch (Exception e) {}
+                        String errorBody = response.errorBody() != null ? response.errorBody().string() : "No error body";
+                        Log.w("PassengerRideHistory", "Error body: " + errorBody);
+                    } catch (Exception e) {
+                        Log.e("PassengerRideHistory", "Error reading error body", e);
+                    }
+                    adapter.setRides(Collections.emptyList());
+                    totalElements = 0;
                 }
             }
 
             @Override
             public void onFailure(Call<PageResponse<GetRideDTO>> call, Throwable t) {
-                Log.d("PassengerRideHistory", "Failed to load rides: " + t.getMessage());
+                if (!isAdded()) return;
+                Log.e("PassengerRideHistory", "API call failed", t);
+                adapter.setRides(Collections.emptyList());
+                totalElements = 0;
+                Toast.makeText(requireContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

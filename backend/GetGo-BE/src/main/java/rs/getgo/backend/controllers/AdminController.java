@@ -258,9 +258,11 @@ public class AdminController {
             @RequestParam String email,
             @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "startTime") String sort,
+            @RequestParam(defaultValue = "DESC") String direction) {
 
-        Page<GetRideDTO> rides = adminService.getPassengerRides(email, startDate, page, size);
+        Page<GetRideDTO> rides = adminService.getPassengerRides(email, startDate, page, size, sort, direction);
         return ResponseEntity.ok(rides);
     }
 
@@ -281,9 +283,11 @@ public class AdminController {
             @RequestParam String email,
             @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "startTime") String sort,
+            @RequestParam(defaultValue = "DESC") String direction) {
 
-        Page<GetRideDTO> rides = adminService.getDriverRides(email, startDate, page, size);
+        Page<GetRideDTO> rides = adminService.getDriverRides(email, startDate, page, size, sort, direction);
         return ResponseEntity.ok(rides);
     }
 

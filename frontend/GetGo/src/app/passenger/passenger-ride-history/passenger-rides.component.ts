@@ -28,7 +28,7 @@ import { RideService } from '../service/passenger-ride.service';
     MatPaginatorModule
   ],
   templateUrl: './passenger-rides.component.html',
-  styleUrl: './passenger-rides.component.css'
+  styleUrls: ['./passenger-rides.component.css']
 })
 export class PassengerRidesComponent {
 
@@ -76,9 +76,12 @@ export class PassengerRidesComponent {
     const props = this.pagePropertiesSignal();
     const dateValue = this.searchRideForm.value.date ?? undefined;
 
+    console.log('Fetching rides with:', { page: props.page, size: props.pageSize, date: dateValue });
+
     this.rideService.loadRides(props.page, props.pageSize, dateValue)
       .subscribe({
         next: res => {
+          console.log('Rides loaded successfully:', res);
           this.rideService.setRides(res.content || []);
 
           this.pagePropertiesSignal.update(p => ({
@@ -88,6 +91,14 @@ export class PassengerRidesComponent {
         },
         error: err => {
           console.error('Error loading rides:', err);
+          console.error('Error status:', err.status);
+          console.error('Error message:', err.error);
+          console.error('Error URL:', err.url);
+
+          if (err.error && err.error.message) {
+            console.error('Backend error message:', err.error.message);
+          }
+
           this.rideService.setRides([]);
         }
       });

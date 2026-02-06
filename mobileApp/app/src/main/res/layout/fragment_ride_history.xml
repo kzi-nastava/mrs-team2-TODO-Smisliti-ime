@@ -1,92 +1,157 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".fragments.drivers.DriverRideHistoryFragment"
     android:orientation="vertical"
-    android:background="@color/blue"
-    android:gravity="center">
+    android:background="@color/blue">
 
+    <!-- Header -->
     <TextView
-        android:id="@+id/tvFilterDate"
-        android:layout_width="300sp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/filter_by_date"
-        android:padding="12dp"
-        android:layout_margin="8dp"
-        android:background="#EEEEEE"
-        android:textSize="16sp"
-        android:clickable="true"
-        android:focusable="true" />
+        android:text="Ride History"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:paddingVertical="12dp"
+        android:gravity="center"/>
 
+    <!-- Filters Section -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginHorizontal="8dp"
-        android:layout_marginBottom="8dp">
+        android:orientation="vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingBottom="8dp">
 
-        <com.google.android.material.button.MaterialButton
-            style="?attr/materialButtonElevatedStyle"
-            android:id="@+id/btnReset"
-            android:layout_width="wrap_content"
+        <!-- Date filter and Page Size in one row -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/reset"
-            android:checkable="true"
-            android:layout_marginEnd="8dp" />
+            android:orientation="horizontal"
+            android:layout_marginBottom="6dp">
 
-        <com.google.android.material.button.MaterialButton
-            style="?attr/materialButtonElevatedStyle"
-            android:id="@+id/btnApply"
-            android:layout_width="wrap_content"
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:layout_marginEnd="4dp"
+                app:cardCornerRadius="10dp"
+                app:cardElevation="3dp"
+                app:cardBackgroundColor="@color/dark_blue">
+                <TextView
+                    android:id="@+id/tvFilterDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/filter_by_date"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp"
+                    android:padding="12dp"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"/>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                app:cardCornerRadius="10dp"
+                app:cardElevation="3dp"
+                app:cardBackgroundColor="@color/dark_blue">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="6dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Per page"
+                        android:textColor="@android:color/white"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="2dp"/>
+                    <Spinner
+                        android:id="@+id/spinnerPageSize"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <!-- Apply, Reset buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/apply"
-            android:checkable="true"/>
+            android:orientation="horizontal"
+            android:layout_marginBottom="6dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnApply"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="@string/apply"
+                android:backgroundTint="@color/dark_blue"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:layout_marginEnd="4dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReset"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="@string/reset"
+                android:backgroundTint="@color/dark_blue"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:layout_marginStart="4dp"/>
+        </LinearLayout>
     </LinearLayout>
 
+    <!-- Ride list -->
     <ListView
         android:id="@+id/rideHistoryListView"
         android:layout_width="match_parent"
         tools:listitem="@layout/ride_card"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="0dp"
+        android:paddingHorizontal="12dp"
+        android:clipToPadding="false"/>
 
+    <!-- Pagination -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginTop="8dp">
+        android:padding="8dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPrevPage"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Previous"
-            android:backgroundTint="@color/dark_blue"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Cards per page:"
-            android:layout_marginStart="16dp"/>
-
-        <Spinner
-            android:id="@+id/spinnerPageSize"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"/>
+            android:layout_height="48dp"
+            android:text="◀ Previous"
+            android:backgroundTint="@color/dark_blue"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            android:layout_marginEnd="12dp"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNextPage"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Next"
-            android:backgroundTint="@color/dark_blue"/>
-
+            android:layout_height="48dp"
+            android:text="Next ▶"
+            android:backgroundTint="@color/dark_blue"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"/>
     </LinearLayout>
-
 
 </LinearLayout>

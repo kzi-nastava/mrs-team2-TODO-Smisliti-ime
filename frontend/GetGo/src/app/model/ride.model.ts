@@ -46,6 +46,10 @@ export interface GetRideDTO {
   needsBabySeats: boolean;
   needsPetFriendly: boolean;
   route: RoutePoint[];
+  estDistance: number;
+  estTime: number;
+  cancelReason: string;
+  cancelledBy: string;
 }
 
 export interface GetInconsistencyReportDTO {

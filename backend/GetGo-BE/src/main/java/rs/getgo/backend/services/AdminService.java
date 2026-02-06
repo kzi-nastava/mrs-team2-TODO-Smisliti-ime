@@ -55,11 +55,11 @@ public interface AdminService {
 
     CreatedAdminDTO createAdmin(CreateAdminDTO createAdminDTO);
 
-    Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size);
+    Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction);
 
     GetReorderRideDTO getPassengerRideById(String email, Long rideId);
 
-    Page<GetRideDTO> getDriverRides(String email, LocalDate startDate, int page, int size);
+    Page<GetRideDTO> getDriverRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction);
 
     GetReorderRideDTO getDriverRideById(String email, Long rideId);
 }

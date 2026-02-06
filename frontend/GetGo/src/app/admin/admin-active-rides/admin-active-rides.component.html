@@ -1,0 +1,34 @@
+<div class="active-rides-page">
+
+  <form [formGroup]="searchForm" class="filter-form">
+    <mat-form-field appearance="fill">
+      <mat-label>Search by driver name</mat-label>
+      <input matInput formControlName="driverName">
+    </mat-form-field>
+  </form>
+
+  <div class="list">
+    <div *ngFor="let ride of filteredRides()">
+      <div class="item" [routerLink]="['/admin/active-rides', ride.id]">
+
+        <p class="card-date">
+          <b>Status:</b> {{ ride.status }}
+        </p>
+
+        <h2>
+          🚗 {{ ride.driverName }}
+        </h2>
+
+        <p><b>Start:</b> {{ ride.actualStartTime | date:'HH:mm' }}</p>
+        <p><b>Scheduled:</b> {{ ride.scheduledTime | date:'HH:mm' }}</p>
+
+        <p><b>Vehicle:</b> {{ ride.vehicleType }}</p>
+
+        <p class="card-price">
+          {{ ride.estimatedPrice | number:'1.0-0' }} rsd
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>

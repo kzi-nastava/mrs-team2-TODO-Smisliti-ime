@@ -49,7 +49,7 @@
       <h1 class="card-price">{{ride.price | number:'1.0-0'}}rsd</h1>
     </div>
 
-    <div *ngIf="!rides() || rides()?.length === 0" style="text-align: center; padding: 40px; color: #555;">
+    <div *ngIf="!rides() || rides().length === 0" style="text-align: center; padding: 40px; color: #555;">
       {{ searchRideForm.value.email ? 'No rides found for this user.' : 'Enter email and search to view rides.' }}
     </div>
   </div>

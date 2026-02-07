@@ -81,7 +81,7 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public List<GetRatingDTO> getRatingsByDriver(Long driverId) {
         List<Rating> ratings = ratingRepository
-                .findByCompletedRide_DriverId(driverId);
+                .findByCompletedRide_DriverIdOrderByIdDesc(driverId);
 
         return ratings.stream()
                 .map(this::mapToGetDTO)

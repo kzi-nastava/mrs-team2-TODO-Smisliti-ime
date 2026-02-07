@@ -1,6 +1,15 @@
 package com.example.getgo.fragments.passengers;
 
+import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,9 +23,14 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
+import com.example.getgo.activities.MainActivity;
 import com.example.getgo.api.ApiClient;
 import com.example.getgo.api.services.RideApiService;
 import com.example.getgo.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
@@ -31,6 +45,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -44,6 +59,8 @@ import retrofit2.Response;
 public class PassengerRideTrackingFragment extends Fragment implements OnMapReadyCallback {
     private static final String TAG = "PassengerRideTracking";
     private static final String PREFS_NAME = "getgo_prefs";
+    private static final String NOTIF_TAG = "RIDE_NOTIF";
+
 
     private GoogleMap mMap;
     private MapManager mapManager;
@@ -65,6 +82,9 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 
     private GetPassengerActiveRideDTO currentRide;
     private boolean panicSent = false;
+    private int totalRouteDistanceMeters = 0;
+    private Long finishedRideDriverId;
+
 
     public PassengerRideTrackingFragment() {}
 
@@ -80,6 +100,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         showLoading();
         setupWebSocket();
         loadActiveRide();
+
+        requestNotificationPermission();
 
         return root;
     }
@@ -105,6 +127,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         tvProgressPercent = root.findViewById(R.id.tvProgressPercent);
         tvTimeRemaining = root.findViewById(R.id.tvTimeRemaining);
         progressBar = root.findViewById(R.id.progressBar);
+        progressBar.setMax(100);
+        progressBar.setProgress(0);
 
         btnCancelRide = root.findViewById(R.id.btnCancelRide);
         btnPanic = root.findViewById(R.id.btnPanic);
@@ -214,9 +238,17 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 
         LatLng noviSad = new LatLng(45.2519, 19.8370);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            progressBar.setMax(100);
+            progressBar.setProgress(50);
+            tvProgressPercent.setText("50%");
+            tvTimeRemaining.setText("10 min");
+        }, 3000);
+
     }
 
     private void setupWebSocket() {
+        Log.d("WS_TEST", "Connecting WebSocket...");
         webSocketManager = new WebSocketManager();
         webSocketManager.connect();
     }
@@ -238,6 +270,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
                         currentRide = ride;
                         updateUI();
                         drawRideRoute();
+                        Log.d("RIDE_DEBUG", "Calling subscribeToRideDriverLocation");
                         subscribeToWebSocketUpdates(ride.getRideId());
                     } else {
                         showNoRide();
@@ -251,11 +284,32 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     }
 
     private void subscribeToWebSocketUpdates(Long rideId) {
+        Log.d("WS_TEST", "Subscribed to rideId = " + rideId);
         webSocketManager.subscribeToRideDriverLocation(rideId, location -> {
+            Log.d("WS_TEST", "RAW LOCATION MESSAGE RECEIVED");
+            Log.d("RIDE_DEBUG", "LOCATION RECEIVED");
             requireActivity().runOnUiThread(() -> {
                 if (mapManager != null && location.getLatitude() != null && location.getLongitude() != null) {
                     LatLng position = new LatLng(location.getLatitude(), location.getLongitude());
                     mapManager.updateDriverPosition(position);
+
+                    if (currentRide != null && totalRouteDistanceMeters > 0) {
+                        double traveled = mapManager.getDistanceAlongRoute(position);
+                        Log.d(TAG, "Traveled: " + traveled);
+                        int progressPercent = (int) ((traveled / totalRouteDistanceMeters) * 100);
+                        Log.d(TAG, "Traveled: " + traveled + " / " + totalRouteDistanceMeters + " -> " + progressPercent + "%");
+
+                        progressBar.setProgress(Math.min(progressPercent, 100));
+                        tvProgressPercent.setText(progressPercent + "%");
+
+                        // Remaining time estimation
+                        double remainingPercent = 1.0 - ((double) progressPercent / 100);
+                        double totalEstimatedMinutes = currentRide.getEstimatedTimeMin();
+                        double remainingMinutes = totalEstimatedMinutes * remainingPercent;
+
+                        tvTimeRemaining.setText(String.format(Locale.ENGLISH, "%.0f min", remainingMinutes));
+                    }
+
                 }
             });
         });
@@ -271,7 +325,15 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         });
 
         webSocketManager.subscribeToPassengerRideFinished(rideId, finished -> {
-            requireActivity().runOnUiThread(() -> showRideCompleted(finished));
+            requireActivity().runOnUiThread(() -> {
+
+                Log.d(NOTIF_TAG, "Ride finished received! rideId = " + finished.getRideId());
+                Log.i(NOTIF_TAG, "Ride finished received! rideId = " + finished.getRideId());
+                Log.e(NOTIF_TAG, "Ride finished received! rideId = " + finished.getRideId());
+
+                showRideCompleted(finished);
+                showRideFinishedNotification(finished);
+            });
         });
 
         webSocketManager.subscribeToPassengerRideStopped(rideId, stopped -> {
@@ -283,7 +345,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
                         stopped.getPrice(),
                         stopped.getStartTime(),
                         stopped.getEndTime(),
-                        stopped.getDurationMinutes()
+                        stopped.getDurationMinutes(),
+                        stopped.getDriverId()
                 );
                 showRideCompleted(finished);
             });
@@ -365,16 +428,48 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
             ));
         }
 
-        if (!waypoints.isEmpty()) {
-            mapManager.drawRoute(waypoints, null);
+        if (waypoints.size() < 2) return;
 
-            for (int i = 0; i < waypoints.size(); i++) {
-                mapManager.addWaypointMarker(waypoints.get(i), i, currentRide.getAddresses().get(i));
+        mapManager.drawRouteOSRM(waypoints, new MapManager.RouteCallback() {
+            @Override
+            public void onRouteFound(int distanceMeters, int durationSeconds) {
+                totalRouteDistanceMeters = distanceMeters;
+
+                requireActivity().runOnUiThread(() -> {
+                    double durationMin = durationSeconds / 60.0;
+
+                    tvEstimatedTime.setText(String.format(Locale.ENGLISH, "%.0f min", durationMin));
+                    tvTimeRemaining.setText(String.format(Locale.ENGLISH, "%.0f min", durationMin));
+
+                    tvEstimatedPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD",
+                            currentRide.getEstimatedPrice()));
+                    progressBar.setProgress(0);
+                });
             }
 
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
+            @Override
+            public void onError(String message) {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Route error: " + message, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+
+        for (int i = 0; i < waypoints.size(); i++) {
+            mapManager.addWaypointMarker(waypoints.get(i), i, currentRide.getAddresses().get(i));
         }
+
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        for (LatLng point : waypoints) {
+            builder.include(point);
+        }
+        LatLngBounds bounds = builder.build();
+        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)); // 100 = padding u px
+
+
+//        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
     }
+
 
     private void cancelRide() {
         if (currentRide == null) return;
@@ -469,4 +564,93 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
             webSocketManager.disconnect();
         }
     }
+
+    private void showRideFinishedNotification(GetRideFinishedDTO finished) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(),
+                    Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                Log.w(NOTIF_TAG, "POST_NOTIFICATIONS permission not granted. Skipping notification.");
+                return;
+            }
+        }
+
+        Log.d(NOTIF_TAG, "Preparing ride finished notification for rideId = " + finished.getRideId());
+
+        if (finished.getRideId() == null) {
+            Log.e(NOTIF_TAG, "RideId is null! This should never happen.");
+            return;
+        }
+        // Create notification channel (only once)
+        String channelId = "ride_channel";
+        String channelName = "Ride Notifications";
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    channelId,
+                    channelName,
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            NotificationManager manager = requireContext().getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(channel);
+        }
+
+        Intent intent = new Intent(requireContext(), MainActivity.class);
+        intent.putExtra("OPEN_RATE_FRAGMENT", true);
+        intent.putExtra("RIDE_ID", finished.getRideId());
+        intent.putExtra("driverId", finished.getDriverId());
+        if (finished.getRideId() == null) {
+            Log.e(TAG, "RideId is null! This should never happen.");
+            return;
+        }
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        int requestCode = finished.getRideId().intValue();
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                requireContext(),
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        // Build the notification
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(requireContext(), channelId)
+                .setSmallIcon(R.drawable.ic_car)
+                .setContentTitle("Ride Finished")
+                .setContentText(String.format(Locale.ENGLISH,
+                        "Your ride has finished. Price: %.2f RSD", finished.getPrice()))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(requireContext());
+        Log.d("NOTIF_TEST", "Ride finished notification intent prepared, rideId=" + finished.getRideId());
+        notificationManager.notify(1001, builder.build());
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == 1002) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(getContext(), "Notifications enabled", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getContext(), "Notifications denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(),
+                    Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+
+                ActivityCompat.requestPermissions(requireActivity(),
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        1002); // request code
+            }
+        }
+    }
+
 }

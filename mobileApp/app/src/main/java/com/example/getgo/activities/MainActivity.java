@@ -2,6 +2,7 @@ package com.example.getgo.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -16,6 +17,7 @@ import androidx.fragment.app.Fragment;
 import androidx.core.view.WindowCompat;
 
 import com.example.getgo.R;
+import com.example.getgo.fragments.passengers.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.admins.AdminRideHistoryFragment;
 import com.example.getgo.fragments.passengers.PassengerRideHistoryFragment;
 import com.example.getgo.utils.NavigationHelper;
@@ -38,9 +40,16 @@ public class MainActivity extends AppCompatActivity {
         setupGuestRestrictions();
         setupToolbarAndNavigation();
 
-        openFragment(navigationHelper.getStartFragment());
-    }
+        Intent intent = getIntent();
+        boolean openRate = intent.getBooleanExtra("OPEN_RATE_FRAGMENT", false);
 
+        if (!openRate) {
+            openFragment(navigationHelper.getStartFragment());
+        }
+
+        handleNotificationIntent(intent);
+
+    }
     private void initUserRole() {
         String roleString = getIntent().getStringExtra("USER_ROLE");
         currentUserRole = roleString != null
@@ -207,5 +216,50 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
+
+    private void handleNotificationIntent(Intent intent) {
+        if (intent == null) {
+            Log.d("NOTIF_TEST", "Intent je null");
+            return;
+        }
+
+        Log.d("NOTIF_TEST", "Intent action = " + intent.getAction());
+        Log.d("NOTIF_TEST", "Intent extras = " + intent.getExtras());
+
+        boolean openRate = intent.getBooleanExtra("OPEN_RATE_FRAGMENT", false);
+        long rideId = intent.getLongExtra("RIDE_ID", -1);
+        long driverId = intent.getLongExtra("driverId", -1);
+
+        Log.d("NOTIF_TEST", "handleNotificationIntent called");
+        Log.d("NOTIF_TEST", "OPEN_RATE_FRAGMENT = " + openRate);
+        Log.d("NOTIF_TEST", "RIDE_ID = " + rideId);
+
+        if (openRate && rideId != -1 && !(getSupportFragmentManager().findFragmentById(R.id.fragmentContainer)
+                instanceof PassengerRateDriverVehicleFragment)) {
+            Log.d("NOTIF_TEST", "Opening PassengerRateDriverVehicleFragment for rideId: " + rideId);
+
+            Bundle bundle = new Bundle();
+            bundle.putLong("rideId", rideId);
+            bundle.putLong("driverId", driverId);
+
+            Fragment fragment = new PassengerRateDriverVehicleFragment();
+            fragment.setArguments(bundle);
+
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, fragment)
+                    .commit();
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        Log.d("NOTIF_TEST", "onNewIntent called");
+        handleNotificationIntent(intent);
+    }
+
+
 
 }

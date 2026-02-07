@@ -1,7 +1,9 @@
 package com.example.getgo.fragments.drivers;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,6 +16,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
@@ -29,6 +32,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
+
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +56,8 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
 
     private GetDriverActiveRideDTO currentRide;
     private String driverEmail;
+    private boolean pendingDrawRoute = false;
+
 
     public DriverHomeFragment() {}
 
@@ -112,6 +120,17 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
 
         LatLng noviSad = new LatLng(45.2519, 19.8370);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
+
+        if (pendingDrawRoute && currentRide != null) {
+            drawRideRoute();
+        }
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED) {
+            mMap.setMyLocationEnabled(true);
+        }
+
     }
 
     private void loadDriverEmail() {
@@ -174,10 +193,17 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                 GetDriverActiveRideDTO ride = repo.getDriverActiveRide();
 
                 requireActivity().runOnUiThread(() -> {
-                    currentRide = ride;
-                    updateUI();
                     if (ride != null) {
+                        currentRide = ride;
+
+                        if (ride.getStatus().equals("DRIVER_ARRIVED_AT_DESTINATION")) {
+                            Log.d(TAG, "Ride is at destination but not yet ended. Showing it as active.");
+                        }
+
+                        updateUI();
                         drawRideRoute();
+                    } else {
+                        showNoRide();
                     }
                 });
             } catch (Exception e) {
@@ -263,9 +289,20 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                 break;
         }
     }
-
     private void drawRideRoute() {
-        if (currentRide == null || mapManager == null) return;
+        if (currentRide == null) return;
+
+        if (mapManager == null || mMap == null) {
+            pendingDrawRoute = true;
+            return;
+        }
+
+        if (currentRide.getLatitudes() == null ||
+                currentRide.getLongitudes() == null ||
+                currentRide.getLatitudes().size() < 2) {
+            Log.w("ROUTE_DEBUG", "Not enough points to draw route");
+            return;
+        }
 
         List<LatLng> waypoints = new ArrayList<>();
         for (int i = 0; i < currentRide.getLatitudes().size(); i++) {
@@ -275,10 +312,22 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
             ));
         }
 
-        if (!waypoints.isEmpty()) {
-            mapManager.drawRoute(waypoints, null);
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
+        mMap.clear();
+
+        mMap.addMarker(new MarkerOptions().position(waypoints.get(0)).title("Start"));
+        mMap.addMarker(new MarkerOptions().position(waypoints.get(waypoints.size() - 1)).title("Destination"));
+
+        mapManager.drawRouteOSRM(waypoints, null);
+
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        for (LatLng point : waypoints) {
+            builder.include(point);
         }
+        LatLngBounds bounds = builder.build();
+        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)); // 100 = padding u px
+//        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
+
+        pendingDrawRoute = false;
     }
 
     private void handlePrimaryAction() {

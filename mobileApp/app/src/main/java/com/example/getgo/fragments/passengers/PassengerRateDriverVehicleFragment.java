@@ -34,8 +34,10 @@ import retrofit2.Response;
 public class PassengerRateDriverVehicleFragment extends Fragment {
 
     private RatingApiService api;
-    private Long rideId = 1L; // temporary hardcoded ride ID
-//    rideId = getArguments().getLong("rideId");
+//    private Long rideId = 1L; // temporary hardcoded ride ID
+    private Long rideId;
+    private Long driverId;
+
 
     private RecyclerView rvRatings;
     private RatingAdapter ratingAdapter;
@@ -56,9 +58,17 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
 
         api = ApiClient.getClient().create(RatingApiService.class);
+
+        if (getArguments() != null) {
+            rideId = getArguments().getLong("rideId");
+            driverId = getArguments().getLong("driverId");
+        }
+        Log.d("RATE_DEBUG", "rideId = " + rideId);
+        Log.d("RATE_DEBUG", "driverId = " + driverId);
     }
 
     @Override
@@ -91,19 +101,26 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
         ratingBarAvgDriver = view.findViewById(R.id.ratingBarAvgDriver);
 
 
-        if (rideId != null) {
+        if (driverId != null) {
             loadRatings();
+        } else {
+            Log.e("RATINGS", "driverId is null – cannot load ratings by driver");
         }
+
     }
 
 
     private void loadRatings() {
+        Log.d("RATINGS", "Pozvao sam loadRatings() sa driverId = " + driverId);
+        if (driverId == null) {
+            Log.e("RATINGS", "driverId is null, cannot load ratings");
+            return;
+        }
 //        String token = "Bearer " + getTokenFromStorage();
 
 //        String token = getTokenFromStorage();
 //        Log.d("TOKEN", "JWT = " + token);
-
-        api.getRatings(rideId).enqueue(new Callback<List<GetRatingDTO>>() {
+        api.getRatingsByDriver(driverId).enqueue(new Callback<List<GetRatingDTO>>() {
             @Override
             public void onResponse(Call<List<GetRatingDTO>> call,
                                    Response<List<GetRatingDTO>> response) {
@@ -155,6 +172,7 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
     }
 
     private void submitRating() {
+        Log.d("RATING_POST", "Usao sam u submitRating()");
 
         int vehicleRating = (int) ratingVehicle.getRating();
         int driverRating = (int) ratingDriver.getRating();
@@ -172,6 +190,8 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
         );
 
         api.createRating(rideId, dto).enqueue(new Callback<CreatedRatingDTO>() {
+
+
             @Override
             public void onResponse(Call<CreatedRatingDTO> call,
                                    Response<CreatedRatingDTO> response) {
@@ -186,6 +206,7 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
                     ratingDriver.setRating(0);
                     commentInput.setText("");
 
+                    Log.d("RATING_POST", "Refreshovao sam polja nakon postovanja");
                     // refresh liste
                     loadRatings();
                 } else {

@@ -737,7 +737,8 @@ public class RideServiceImpl implements RideService {
                         List.of(RideStatus.DRIVER_READY,
                                 RideStatus.DRIVER_INCOMING,
                                 RideStatus.DRIVER_ARRIVED,
-                                RideStatus.ACTIVE)
+                                RideStatus.ACTIVE,
+                                RideStatus.DRIVER_ARRIVED_AT_DESTINATION)
                 )
                 .stream()
                 .findFirst()
@@ -882,7 +883,8 @@ public class RideServiceImpl implements RideService {
                 ride.getId(),
                 completedRide.getEstimatedPrice(),
                 completedRide.getStartTime(),
-                completedRide.getEndTime()
+                completedRide.getEndTime(),
+                completedRide.getDriverId()
         );
 
         // === WS: notify PASSENGERS ===
@@ -890,7 +892,8 @@ public class RideServiceImpl implements RideService {
                 ride.getId(),
                 completedRide.getEstimatedPrice(),
                 completedRide.getStartTime(),
-                completedRide.getEndTime()
+                completedRide.getEndTime(),
+                completedRide.getDriverId()
         );
 
         // Return DTO
@@ -998,7 +1001,8 @@ public class RideServiceImpl implements RideService {
                 ride.getId(),
                 actualPrice,
                 startTime,
-                endTime
+                endTime,
+                ride.getDriver().getId()
         );
 
         RideCompletionDTO response = new RideCompletionDTO();

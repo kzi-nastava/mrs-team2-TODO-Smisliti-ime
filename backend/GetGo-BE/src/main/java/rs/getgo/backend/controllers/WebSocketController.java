@@ -66,14 +66,15 @@ public class WebSocketController {
     }
 
     public void notifyDriverRideFinished(String driverEmail, Long rideId, Double price,
-                                         LocalDateTime startTime, LocalDateTime endTime) {
+                                         LocalDateTime startTime, LocalDateTime endTime, Long driverId) {
         GetRideFinishedDTO completion = new GetRideFinishedDTO(
                 rideId,
                 "FINISHED",
                 price,
                 startTime,
                 endTime,
-                java.time.Duration.between(startTime, endTime).toMinutes()
+                java.time.Duration.between(startTime, endTime).toMinutes(),
+                driverId
         );
 
         messagingTemplate.convertAndSend(
@@ -96,14 +97,15 @@ public class WebSocketController {
         );
     }
 
-    public void notifyPassengerRideFinished(Long rideId, Double price, LocalDateTime startTime, LocalDateTime endTime) {
+    public void notifyPassengerRideFinished(Long rideId, Double price, LocalDateTime startTime, LocalDateTime endTime, Long driverId) {
         GetRideFinishedDTO completion = new GetRideFinishedDTO(
                 rideId,
                 "FINISHED",
                 price,
                 startTime,
                 endTime,
-                java.time.Duration.between(startTime, endTime).toMinutes()
+                java.time.Duration.between(startTime, endTime).toMinutes(),
+                driverId
         );
 
         messagingTemplate.convertAndSend(
@@ -115,7 +117,8 @@ public class WebSocketController {
     public void notifyPassengerRideStoppedEarly(Long rideId,
                                                 Double price,
                                                 LocalDateTime startTime,
-                                                LocalDateTime endTime) {
+                                                LocalDateTime endTime,
+                                                Long driverId) {
         GetRideStoppedEarlyDTO payload = new GetRideStoppedEarlyDTO(
                 rideId,
                 "STOPPED_EARLY",
@@ -124,7 +127,8 @@ public class WebSocketController {
                 endTime,
                 java.time.Duration.between(startTime, endTime).toMinutes(),
                 "Ride was stopped early at passenger request.",
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                driverId
         );
 
         messagingTemplate.convertAndSend(

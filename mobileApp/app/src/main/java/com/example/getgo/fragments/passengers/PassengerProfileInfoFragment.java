@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,12 +22,23 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.example.getgo.R;
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.dtos.passenger.GetPassengerDTO;
+import com.example.getgo.dtos.passenger.UpdatePassengerDTO;
+import com.example.getgo.dtos.passenger.UpdatedPassengerDTO;
+import com.example.getgo.dtos.user.UpdatedProfilePictureDTO;
+import com.example.getgo.repositories.PassengerRepository;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 
-import java.util.Objects;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PassengerProfileInfoFragment extends Fragment {
 
@@ -38,6 +51,10 @@ public class PassengerProfileInfoFragment extends Fragment {
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private ActivityResultLauncher<String> requestPermissionLauncher;
 
+    private PassengerRepository passengerRepository;
+    private ExecutorService executor;
+    private Handler mainHandler;
+
     public PassengerProfileInfoFragment() {}
 
     public static PassengerProfileInfoFragment newInstance() {
@@ -48,6 +65,10 @@ public class PassengerProfileInfoFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        passengerRepository = PassengerRepository.getInstance();
+        executor = Executors.newSingleThreadExecutor();
+        mainHandler = new Handler(Looper.getMainLooper());
+
         // Register image picker launcher
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -55,7 +76,7 @@ public class PassengerProfileInfoFragment extends Fragment {
                     if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                         selectedImageUri = result.getData().getData();
                         ivProfilePicture.setImageURI(selectedImageUri);
-                        Toast.makeText(requireContext(), "Profile picture updated", Toast.LENGTH_SHORT).show();
+                        uploadProfilePicture();
                     }
                 }
         );
@@ -67,7 +88,7 @@ public class PassengerProfileInfoFragment extends Fragment {
                     if (isGranted) {
                         openImagePicker();
                     } else {
-                        Toast.makeText(requireContext(), "Permission denied. Cannot select image.", Toast.LENGTH_LONG).show();
+                        showToast("Permission denied. Cannot select image.");
                     }
                 }
         );
@@ -79,7 +100,20 @@ public class PassengerProfileInfoFragment extends Fragment {
         View view = inflater.inflate(
                 R.layout.fragment_passenger_profile_info, container, false);
 
-        // Initialize views
+        initializeViews(view);
+        setupListeners();
+        loadUserData();
+
+        return view;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        executor.shutdown();
+    }
+
+    private void initializeViews(View view) {
         ivProfilePicture = view.findViewById(R.id.ivProfilePicture);
         cvProfilePicture = view.findViewById(R.id.cvProfilePicture);
         etEmail = view.findViewById(R.id.etEmail);
@@ -90,16 +124,18 @@ public class PassengerProfileInfoFragment extends Fragment {
         tvChangePassword = view.findViewById(R.id.tvChangePassword);
         btnSave = view.findViewById(R.id.btnSave);
 
-        // Load existing user data
-        loadUserData();
+        etEmail.setEnabled(false);
+    }
 
-        // Setup listeners
+    private void setupListeners() {
         cvProfilePicture.setOnClickListener(v -> checkPermissionAndOpenPicker());
-        tvChangePassword.setOnClickListener(v -> Toast.makeText(requireContext(),
-                "Change password not implemented yet", Toast.LENGTH_SHORT).show());
+        tvChangePassword.setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragmentContainer, PassengerChangePasswordFragment.newInstance())
+                    .addToBackStack(null)
+                    .commit();
+        });
         btnSave.setOnClickListener(v -> saveUserData());
-
-        return view;
     }
 
     private void checkPermissionAndOpenPicker() {
@@ -128,37 +164,125 @@ public class PassengerProfileInfoFragment extends Fragment {
         imagePickerLauncher.launch(intent);
     }
 
-    @SuppressWarnings("SetTextI18n")
     private void loadUserData() {
-        // TODO: Load actual data from backend
-        etEmail.setText("passenger@getgo.com");
-        etFirstName.setText("John");
-        etLastName.setText("Doe");
-        etPhone.setText("+381 11 123 4567");
-        etAddress.setText("Belgrade, Serbia");
+        executor.execute(() -> {
+            try {
+                GetPassengerDTO passenger = passengerRepository.getProfile();
+
+                mainHandler.post(() -> {
+                    etEmail.setText(passenger.getEmail());
+                    etFirstName.setText(passenger.getName());
+                    etLastName.setText(passenger.getSurname());
+                    etPhone.setText(passenger.getPhone());
+                    etAddress.setText(passenger.getAddress());
+
+                    if (passenger.getProfilePictureUrl() != null && !passenger.getProfilePictureUrl().isEmpty()) {
+                        String imageUrl = ApiClient.SERVER_URL + passenger.getProfilePictureUrl();
+                        Glide.with(requireContext())
+                                .load(imageUrl)
+                                .placeholder(R.drawable.unregistered_profile)
+                                .error(R.drawable.unregistered_profile)
+                                .circleCrop()
+                                .into(ivProfilePicture);
+                    }
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> showToast("Failed to load profile: " + e.getMessage()));
+            }
+        });
     }
 
     private void saveUserData() {
-        // Get values from input fields with null safety
-        String email = Objects.requireNonNull(etEmail.getText()).toString().trim();
-        String firstName = Objects.requireNonNull(etFirstName.getText()).toString().trim();
-        String lastName = Objects.requireNonNull(etLastName.getText()).toString().trim();
-        String phone = Objects.requireNonNull(etPhone.getText()).toString().trim();
-        String address = Objects.requireNonNull(etAddress.getText()).toString().trim();
+        String email = String.valueOf(etEmail.getText()).trim();
+        String firstName = String.valueOf(etFirstName.getText()).trim();
+        String lastName = String.valueOf(etLastName.getText()).trim();
+        String phone = String.valueOf(etPhone.getText()).trim();
+        String address = String.valueOf(etAddress.getText()).trim();
 
-        // Basic validation
         if (email.isEmpty() || firstName.isEmpty() || lastName.isEmpty() ||
                 phone.isEmpty() || address.isEmpty()) {
-            Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+            showToast("Please fill all fields");
             return;
         }
 
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(requireContext(), "Please enter a valid email", Toast.LENGTH_SHORT).show();
+            showToast("Please enter a valid email");
             return;
         }
 
-        // TODO: Connect to backend
-        Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show();
+        btnSave.setEnabled(false);
+
+        UpdatePassengerDTO updateDTO = new UpdatePassengerDTO(firstName, lastName, phone, address);
+
+        executor.execute(() -> {
+            try {
+                UpdatedPassengerDTO result = passengerRepository.updateProfile(updateDTO);
+
+                mainHandler.post(() -> {
+                    btnSave.setEnabled(true);
+                    showToast("Profile updated successfully");
+                    loadUserData();
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> {
+                    btnSave.setEnabled(true);
+                    showToast("Failed to update profile: " + e.getMessage());
+                });
+            }
+        });
+    }
+
+    private void uploadProfilePicture() {
+        if (selectedImageUri == null) {
+            showToast("No image selected");
+            return;
+        }
+
+        executor.execute(() -> {
+            try {
+                File file = convertUriToFile(selectedImageUri);
+                UpdatedProfilePictureDTO result = passengerRepository.uploadProfilePicture(file);
+
+                mainHandler.post(() -> {
+                    showToast("Profile picture updated successfully");
+                    if (result.getPictureUrl() != null) {
+                        String imageUrl = ApiClient.SERVER_URL + result.getPictureUrl();
+                        Glide.with(requireContext())
+                                .load(imageUrl)
+                                .placeholder(R.drawable.unregistered_profile)
+                                .error(R.drawable.unregistered_profile)
+                                .circleCrop()
+                                .into(ivProfilePicture);
+                    }
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> showToast("Failed to upload profile picture: " + e.getMessage()));
+            }
+        });
+    }
+
+    private File convertUriToFile(Uri uri) throws Exception {
+        InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
+        if (inputStream == null) {
+            throw new Exception("Failed to open input stream");
+        }
+
+        File file = new File(requireContext().getCacheDir(), "profile_picture.jpg");
+        FileOutputStream outputStream = new FileOutputStream(file);
+
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = inputStream.read(buffer)) > 0) {
+            outputStream.write(buffer, 0, length);
+        }
+
+        outputStream.close();
+        inputStream.close();
+
+        return file;
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
     }
 }

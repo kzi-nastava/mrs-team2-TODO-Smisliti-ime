@@ -119,12 +119,15 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
+
+
     // 2.3 - Get all pending personal change requests
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping(value = "/driver-change-requests/personal",
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<GetPersonalDriverChangeRequestDTO>> getPendingPersonalChangeRequests() {
-        List<GetPersonalDriverChangeRequestDTO> response = adminService.getPendingPersonalChangeRequests();
+    @GetMapping(value = "/driver-change-requests/personal")
+    public ResponseEntity<Page<GetPersonalDriverChangeRequestDTO>> getPendingPersonalChangeRequests(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<GetPersonalDriverChangeRequestDTO> response = adminService.getPendingPersonalChangeRequests(page, size);
         return ResponseEntity.ok(response);
     }
 
@@ -132,8 +135,10 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/driver-change-requests/vehicle",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<GetDriverVehicleChangeRequestDTO>> getPendingVehicleChangeRequests() {
-        List<GetDriverVehicleChangeRequestDTO> response = adminService.getPendingVehicleChangeRequests();
+    public ResponseEntity<Page<GetDriverVehicleChangeRequestDTO>> getPendingVehicleChangeRequests(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<GetDriverVehicleChangeRequestDTO> response = adminService.getPendingVehicleChangeRequests(page, size);
         return ResponseEntity.ok(response);
     }
 
@@ -141,8 +146,10 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping(value = "/driver-change-requests/picture",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<GetDriverAvatarChangeRequestDTO>> getPendingPictureChangeRequests() {
-        List<GetDriverAvatarChangeRequestDTO> response = adminService.getPendingAvatarChangeRequests();
+    public ResponseEntity<Page<GetDriverAvatarChangeRequestDTO>> getPendingPictureChangeRequests(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<GetDriverAvatarChangeRequestDTO> response = adminService.getPendingAvatarChangeRequests(page, size);
         return ResponseEntity.ok(response);
     }
 

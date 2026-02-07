@@ -3,7 +3,6 @@ package com.example.getgo.dtos.driver;
 import java.io.Serializable;
 
 public class GetDriverDTO implements Serializable {
-    // Personal info
     private Long id;
     private String email;
     private String name;
@@ -12,8 +11,6 @@ public class GetDriverDTO implements Serializable {
     private String address;
     private String profilePictureUrl;
     private Double recentHoursWorked;
-
-    // Vehicle info
     private String vehicleModel;
     private String vehicleType;
     private String vehicleLicensePlate;
@@ -23,10 +20,10 @@ public class GetDriverDTO implements Serializable {
 
     public GetDriverDTO() {}
 
-    public GetDriverDTO(Long id, String email, String name, String surname, String phone,
-                       String address, String profilePictureUrl, Double recentHoursWorked,
-                       String vehicleModel, String vehicleType, String vehicleLicensePlate,
-                       Integer vehicleSeats, Boolean vehicleHasBabySeats, Boolean vehicleAllowsPets) {
+    public GetDriverDTO(Long id, String email, String name, String surname, String phone, String address,
+                        String profilePictureUrl, Double recentHoursWorked, String vehicleModel,
+                        String vehicleType, String vehicleLicensePlate, Integer vehicleSeats,
+                        Boolean vehicleHasBabySeats, Boolean vehicleAllowsPets) {
         this.id = id;
         this.email = email;
         this.name = name;
@@ -43,7 +40,6 @@ public class GetDriverDTO implements Serializable {
         this.vehicleAllowsPets = vehicleAllowsPets;
     }
 
-    // Getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -86,4 +82,3 @@ public class GetDriverDTO implements Serializable {
     public Boolean getVehicleAllowsPets() { return vehicleAllowsPets; }
     public void setVehicleAllowsPets(Boolean vehicleAllowsPets) { this.vehicleAllowsPets = vehicleAllowsPets; }
 }
-

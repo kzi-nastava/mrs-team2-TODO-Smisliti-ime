@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,17 +25,27 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.example.getgo.R;
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.dtos.driver.GetDriverDTO;
+import com.example.getgo.dtos.request.CreatedDriverChangeRequestDTO;
+import com.example.getgo.dtos.request.UpdateDriverPersonalDTO;
+import com.example.getgo.dtos.request.UpdateDriverVehicleDTO;
+import com.example.getgo.repositories.DriverRepository;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
 
-import java.util.Objects;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class DriverProfileInfoFragment extends Fragment {
 
-    // Elements
     private ImageView ivProfilePicture;
     private MaterialCardView cvProfilePicture;
     private Uri selectedImageUri;
@@ -49,8 +61,10 @@ public class DriverProfileInfoFragment extends Fragment {
     private TextView tvChangePassword;
     private MaterialButton btnSave;
 
-    // States
     private boolean isDriverTabSelected = true;
+    private DriverRepository driverRepository;
+    private ExecutorService executor;
+    private Handler mainHandler;
 
     public DriverProfileInfoFragment() {}
 
@@ -62,6 +76,10 @@ public class DriverProfileInfoFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        driverRepository = DriverRepository.getInstance();
+        executor = Executors.newSingleThreadExecutor();
+        mainHandler = new Handler(Looper.getMainLooper());
+
         // Register image picker launcher
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -69,7 +87,7 @@ public class DriverProfileInfoFragment extends Fragment {
                     if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                         selectedImageUri = result.getData().getData();
                         ivProfilePicture.setImageURI(selectedImageUri);
-                        Toast.makeText(requireContext(), "Profile picture updated", Toast.LENGTH_SHORT).show();
+                        uploadProfilePicture();
                     }
                 }
         );
@@ -81,7 +99,7 @@ public class DriverProfileInfoFragment extends Fragment {
                     if (isGranted) {
                         openImagePicker();
                     } else {
-                        Toast.makeText(requireContext(), "Permission denied. Cannot select image.", Toast.LENGTH_LONG).show();
+                        showToast("Permission denied. Cannot select image.");
                     }
                 }
         );
@@ -92,27 +110,37 @@ public class DriverProfileInfoFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_driver_profile_info, container, false);
 
-        // Initialize profile picture
+        initializeViews(view);
+        setupListeners();
+        loadVehicleTypeDropdown();
+        loadDriverData();
+
+        return view;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        executor.shutdown();
+    }
+
+    private void initializeViews(View view) {
         ivProfilePicture = view.findViewById(R.id.ivProfilePicture);
         cvProfilePicture = view.findViewById(R.id.cvProfilePicture);
 
-        // Initialize tab buttons
         btnDriverTab = view.findViewById(R.id.btnDriverTab);
         btnVehicleTab = view.findViewById(R.id.btnVehicleTab);
 
-        // Initialize sections
         layoutDriverInfo = view.findViewById(R.id.layoutDriverInfo);
         layoutVehicleInfo = view.findViewById(R.id.layoutVehicleInfo);
         tvRecentHours = view.findViewById(R.id.tvRecentHours);
 
-        // Initialize driver info fields
         etEmail = view.findViewById(R.id.etEmail);
         etFirstName = view.findViewById(R.id.etFirstName);
         etLastName = view.findViewById(R.id.etLastName);
         etPhone = view.findViewById(R.id.etPhone);
         etAddress = view.findViewById(R.id.etAddress);
 
-        // Initialize vehicle info fields
         etVehicleModel = view.findViewById(R.id.etVehicleModel);
         actvVehicleType = view.findViewById(R.id.actvVehicleType);
         etRegistrationNumber = view.findViewById(R.id.etRegistrationNumber);
@@ -120,26 +148,23 @@ public class DriverProfileInfoFragment extends Fragment {
         cbAllowPets = view.findViewById(R.id.cbAllowPets);
         cbAllowBabies = view.findViewById(R.id.cbAllowBabies);
 
-        // Initialize common fields
         tvChangePassword = view.findViewById(R.id.tvChangePassword);
         btnSave = view.findViewById(R.id.btnSave);
 
-        // Get data from backend
-        loadVehicleTypeDropdown();
-        loadDriverData();
-        loadVehicleData();
-        loadRecentHoursWorked();
+        etEmail.setEnabled(false);
+    }
 
-        // Set listeners
+    private void setupListeners() {
         cvProfilePicture.setOnClickListener(v -> checkPermissionAndOpenPicker());
         btnDriverTab.setOnClickListener(v -> showDriverTab());
         btnVehicleTab.setOnClickListener(v -> showVehicleTab());
         tvChangePassword.setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "Change password not implemented yet", Toast.LENGTH_SHORT).show();
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragmentContainer, DriverChangePasswordFragment.newInstance())
+                    .addToBackStack(null)
+                    .commit();
         });
         btnSave.setOnClickListener(v -> saveData());
-
-        return view;
     }
 
     private void checkPermissionAndOpenPicker() {
@@ -172,11 +197,9 @@ public class DriverProfileInfoFragment extends Fragment {
         if (!isDriverTabSelected) {
             isDriverTabSelected = true;
 
-            // Update button colors
             btnDriverTab.setBackgroundTintList(getResources().getColorStateList(R.color.selected_blue, null));
             btnVehicleTab.setBackgroundTintList(getResources().getColorStateList(R.color.dark_blue, null));
 
-            // Show/hide sections
             layoutDriverInfo.setVisibility(View.VISIBLE);
             layoutVehicleInfo.setVisibility(View.GONE);
             tvRecentHours.setVisibility(View.VISIBLE);
@@ -187,11 +210,9 @@ public class DriverProfileInfoFragment extends Fragment {
         if (isDriverTabSelected) {
             isDriverTabSelected = false;
 
-            // Update button colors
             btnDriverTab.setBackgroundTintList(getResources().getColorStateList(R.color.dark_blue, null));
             btnVehicleTab.setBackgroundTintList(getResources().getColorStateList(R.color.selected_blue, null));
 
-            // Show/hide sections
             layoutDriverInfo.setVisibility(View.GONE);
             layoutVehicleInfo.setVisibility(View.VISIBLE);
             tvRecentHours.setVisibility(View.GONE);
@@ -199,53 +220,50 @@ public class DriverProfileInfoFragment extends Fragment {
     }
 
     private void loadVehicleTypeDropdown() {
-        // TODO: Get vehicle types from backend
-        String[] vehicleTypes = getVehicleTypes();
-
+        String[] vehicleTypes = new String[]{"STANDARD", "LUXURY", "VAN"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_dropdown_item_1line,
                 vehicleTypes
         );
-
         actvVehicleType.setAdapter(adapter);
     }
 
-    private String[] getVehicleTypes() {
-        // TODO: Replace with actual backend call
-        return new String[]{"Sedan", "SUV", "Hatchback", "Van", "Luxury"};
-    }
-
-    @SuppressWarnings("SetTextI18n")
     private void loadDriverData() {
-        // TODO: Load actual data from backend
-        etEmail.setText("driver@getgo.com");
-        etFirstName.setText("John");
-        etLastName.setText("Smith");
-        etPhone.setText("+381 11 123 4567");
-        etAddress.setText("Belgrade, Serbia");
-    }
+        executor.execute(() -> {
+            try {
+                GetDriverDTO driver = driverRepository.getProfile();
 
-    @SuppressWarnings("SetTextI18n")
-    private void loadVehicleData() {
-        // TODO: Load actual data from backend
-        etVehicleModel.setText("Toyota Camry");
-        actvVehicleType.setText("Sedan", false);
-        etRegistrationNumber.setText("BG-1234-AB");
-        etSeatNumber.setText("4");
-        cbAllowPets.setChecked(true);
-        cbAllowBabies.setChecked(false);
-    }
+                mainHandler.post(() -> {
+                    etEmail.setText(driver.getEmail());
+                    etFirstName.setText(driver.getName());
+                    etLastName.setText(driver.getSurname());
+                    etPhone.setText(driver.getPhone());
+                    etAddress.setText(driver.getAddress());
 
-    private void loadRecentHoursWorked() {
-        // TODO: Load actual data from backend
-        int recentHours = getRecentActiveHours();
-        tvRecentHours.setText(getString(R.string.recent_hours_format, recentHours));
-    }
+                    etVehicleModel.setText(driver.getVehicleModel());
+                    actvVehicleType.setText(driver.getVehicleType(), false);
+                    etRegistrationNumber.setText(driver.getVehicleLicensePlate());
+                    etSeatNumber.setText(String.valueOf(driver.getVehicleSeats()));
+                    cbAllowPets.setChecked(driver.getVehicleAllowsPets());
+                    cbAllowBabies.setChecked(driver.getVehicleHasBabySeats());
 
-    private int getRecentActiveHours() {
-        // TODO: Load actual data from backend
-        return 42;
+                    tvRecentHours.setText(getString(R.string.recent_hours_format, driver.getRecentHoursWorked()));
+
+                    if (driver.getProfilePictureUrl() != null && !driver.getProfilePictureUrl().isEmpty()) {
+                        String imageUrl = ApiClient.SERVER_URL + driver.getProfilePictureUrl();
+                        Glide.with(requireContext())
+                                .load(imageUrl)
+                                .placeholder(R.drawable.unregistered_profile)
+                                .error(R.drawable.unregistered_profile)
+                                .circleCrop()
+                                .into(ivProfilePicture);
+                    }
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> showToast("Failed to load profile: " + e.getMessage()));
+            }
+        });
     }
 
     private void saveData() {
@@ -257,42 +275,57 @@ public class DriverProfileInfoFragment extends Fragment {
     }
 
     private void saveDriverData() {
-        // Get values
-        String email = Objects.requireNonNull(etEmail.getText()).toString().trim();
-        String firstName = Objects.requireNonNull(etFirstName.getText()).toString().trim();
-        String lastName = Objects.requireNonNull(etLastName.getText()).toString().trim();
-        String phone = Objects.requireNonNull(etPhone.getText()).toString().trim();
-        String address = Objects.requireNonNull(etAddress.getText()).toString().trim();
+        String email = String.valueOf(etEmail.getText()).trim();
+        String firstName = String.valueOf(etFirstName.getText()).trim();
+        String lastName = String.valueOf(etLastName.getText()).trim();
+        String phone = String.valueOf(etPhone.getText()).trim();
+        String address = String.valueOf(etAddress.getText()).trim();
 
-        // Basic validation
         if (email.isEmpty() || firstName.isEmpty() || lastName.isEmpty() ||
                 phone.isEmpty() || address.isEmpty()) {
-            Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+            showToast("Please fill all fields");
             return;
         }
 
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(requireContext(), "Please enter a valid email", Toast.LENGTH_SHORT).show();
+            showToast("Please enter a valid email");
             return;
         }
 
-        // TODO: Connect to backend
-        Toast.makeText(requireContext(), "Driver profile updated successfully", Toast.LENGTH_SHORT).show();
+        btnSave.setEnabled(false);
+        UpdateDriverPersonalDTO updateDTO = new UpdateDriverPersonalDTO(firstName, lastName, phone, address);
+        executeSaveDriverData(updateDTO);
+    }
+
+    private void executeSaveDriverData(UpdateDriverPersonalDTO updateDTO) {
+        executor.execute(() -> {
+            try {
+                CreatedDriverChangeRequestDTO result = driverRepository.requestPersonalInfoChange(updateDTO);
+
+                mainHandler.post(() -> {
+                    btnSave.setEnabled(true);
+                    showToast("Change request submitted successfully");
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> {
+                    btnSave.setEnabled(true);
+                    showToast("Failed to submit change request: " + e.getMessage());
+                });
+            }
+        });
     }
 
     private void saveVehicleData() {
-        // Get values
-        String vehicleModel = Objects.requireNonNull(etVehicleModel.getText()).toString().trim();
+        String vehicleModel = String.valueOf(etVehicleModel.getText()).trim();
         String vehicleType = actvVehicleType.getText().toString().trim();
-        String registrationNumber = Objects.requireNonNull(etRegistrationNumber.getText()).toString().trim();
-        String seatNumberStr = Objects.requireNonNull(etSeatNumber.getText()).toString().trim();
+        String registrationNumber = String.valueOf(etRegistrationNumber.getText()).trim();
+        String seatNumberStr = String.valueOf(etSeatNumber.getText()).trim();
         boolean allowPets = cbAllowPets.isChecked();
         boolean allowBabies = cbAllowBabies.isChecked();
 
-        // Basic validation
         if (vehicleModel.isEmpty() || vehicleType.isEmpty() ||
                 registrationNumber.isEmpty() || seatNumberStr.isEmpty()) {
-            Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+            showToast("Please fill all fields");
             return;
         }
 
@@ -300,15 +333,79 @@ public class DriverProfileInfoFragment extends Fragment {
         try {
             seatNumber = Integer.parseInt(seatNumberStr);
             if (seatNumber <= 0) {
-                Toast.makeText(requireContext(), "Seat number must be positive", Toast.LENGTH_SHORT).show();
+                showToast("Seat number must be positive");
                 return;
             }
         } catch (NumberFormatException e) {
-            Toast.makeText(requireContext(), "Invalid seat number", Toast.LENGTH_SHORT).show();
+            showToast("Invalid seat number");
             return;
         }
 
-        // TODO: Connect to backend
-        Toast.makeText(requireContext(), "Vehicle information updated successfully", Toast.LENGTH_SHORT).show();
+        btnSave.setEnabled(false);
+        UpdateDriverVehicleDTO updateDTO = new UpdateDriverVehicleDTO(
+                vehicleModel, vehicleType, registrationNumber, seatNumber, allowPets, allowBabies
+        );
+        executeSaveVehicleData(updateDTO);
+    }
+
+    private void executeSaveVehicleData(UpdateDriverVehicleDTO updateDTO) {
+        executor.execute(() -> {
+            try {
+                CreatedDriverChangeRequestDTO result = driverRepository.requestVehicleInfoChange(updateDTO);
+
+                mainHandler.post(() -> {
+                    btnSave.setEnabled(true);
+                    showToast("Change request submitted successfully");
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> {
+                    btnSave.setEnabled(true);
+                    showToast("Failed to submit change request: " + e.getMessage());
+                });
+            }
+        });
+    }
+
+    private void uploadProfilePicture() {
+        if (selectedImageUri == null) {
+            showToast("No image selected");
+            return;
+        }
+
+        executor.execute(() -> {
+            try {
+                File file = convertUriToFile(selectedImageUri);
+                CreatedDriverChangeRequestDTO result = driverRepository.requestProfilePictureChange(file);
+
+                mainHandler.post(() -> showToast("Profile picture change request submitted successfully"));
+            } catch (Exception e) {
+                mainHandler.post(() -> showToast("Failed to submit picture change request: " + e.getMessage()));
+            }
+        });
+    }
+
+    private File convertUriToFile(Uri uri) throws Exception {
+        InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
+        if (inputStream == null) {
+            throw new Exception("Failed to open input stream");
+        }
+
+        File file = new File(requireContext().getCacheDir(), "profile_picture.jpg");
+        FileOutputStream outputStream = new FileOutputStream(file);
+
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = inputStream.read(buffer)) > 0) {
+            outputStream.write(buffer, 0, length);
+        }
+
+        outputStream.close();
+        inputStream.close();
+
+        return file;
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
     }
 }

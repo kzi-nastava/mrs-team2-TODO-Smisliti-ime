@@ -1,35 +1,26 @@
 package com.example.getgo.dtos.passenger;
 
-import java.io.Serializable;
-
-/**
- * DTO returned by PUT /api/passenger/profile (updated passenger data)
- */
-public class UpdatedPassengerDTO implements Serializable {
+public class UpdatedPassengerDTO {
     private Long id;
     private String email;
     private String name;
     private String surname;
-    private String address;
     private String phone;
-    private boolean blocked;
+    private String address;
     private String profilePictureUrl;
 
     public UpdatedPassengerDTO() {}
 
-    public UpdatedPassengerDTO(Long id, String email, String name, String surname,
-                               String address, String phone, boolean blocked, String profilePictureUrl) {
+    public UpdatedPassengerDTO(Long id, String email, String name, String surname, String phone, String address, String profilePictureUrl) {
         this.id = id;
         this.email = email;
         this.name = name;
         this.surname = surname;
-        this.address = address;
         this.phone = phone;
-        this.blocked = blocked;
+        this.address = address;
         this.profilePictureUrl = profilePictureUrl;
     }
 
-    // getters / setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -42,16 +33,12 @@ public class UpdatedPassengerDTO implements Serializable {
     public String getSurname() { return surname; }
     public void setSurname(String surname) { this.surname = surname; }
 
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
 
-    public boolean isBlocked() { return blocked; }
-    public void setBlocked(boolean blocked) { this.blocked = blocked; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
 
     public String getProfilePictureUrl() { return profilePictureUrl; }
     public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
 }
-

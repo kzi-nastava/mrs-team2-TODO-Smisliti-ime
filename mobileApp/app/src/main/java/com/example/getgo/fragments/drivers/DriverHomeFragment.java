@@ -208,7 +208,10 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Failed to load active ride", e);
-                requireActivity().runOnUiThread(this::showNoRide);
+                requireActivity().runOnUiThread(() -> {
+                    currentRide = null;
+                    showNoRide();
+                });
             }
         }).start();
     }

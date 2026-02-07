@@ -117,9 +117,9 @@ public class RideHistoryAdapter extends ArrayAdapter<GetRideDTO> {
 
         // Distance
         if (ride.getEstDistance() != null && ride.getEstDistance() > 0) {
-            tvDistance.setText(String.format(Locale.getDefault(), "%.1f km", ride.getEstDistance()));
+            tvDistance.setText(String.format(Locale.getDefault(), "📏 %.1f km", ride.getEstDistance()));
         } else {
-            tvDistance.setText("N/A");
+            tvDistance.setText("📏 N/A");
         }
 
         // Status indicators

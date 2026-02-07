@@ -27,6 +27,7 @@ import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.dtos.route.RouteDTO;
 import com.example.getgo.dtos.rating.GetRatingDTO;
 import com.example.getgo.utils.MapManager;
+import com.example.getgo.utils.RideDetailHelper;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -200,176 +201,30 @@ public class AdminRideDetailFragment extends Fragment {
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm");
 
         if (ride.getStartingTime() != null) {
-            setStyledText(tvDate, "Date:", ride.getStartingTime().format(dateFormat));
-            setStyledText(tvStartTime, "Start time:", ride.getStartingTime().format(timeFormat));
+            RideDetailHelper.setStyledText(tvDate, "Date:", ride.getStartingTime().format(dateFormat));
+            RideDetailHelper.setStyledText(tvStartTime, "Start time:", ride.getStartingTime().format(timeFormat));
         }
         if (ride.getFinishedTime() != null) {
-            setStyledText(tvEndTime, "End time:", ride.getFinishedTime().format(timeFormat));
+            RideDetailHelper.setStyledText(tvEndTime, "End time:", ride.getFinishedTime().format(timeFormat));
         }
 
-        setStyledText(tvStartLocation, "Start location:", ride.getStartPoint());
-        setStyledText(tvEndLocation, "End location:", ride.getEndPoint());
-        setStyledText(tvPrice, "Price:", "$" + ride.getPrice());
-        setStyledText(tvPanicActivated, "Panic Activated:",
+        RideDetailHelper.setStyledText(tvStartLocation, "Start location:", ride.getStartPoint());
+        RideDetailHelper.setStyledText(tvEndLocation, "End location:", ride.getEndPoint());
+        RideDetailHelper.setStyledText(tvPrice, "Price:", "$" + ride.getPrice());
+        RideDetailHelper.setStyledText(tvPanicActivated, "Panic Activated:",
                 ride.getPanicActivated() != null && ride.getPanicActivated() ? "Yes" : "No");
     }
 
     private void drawRouteOnMap() {
-        if (mapManager == null || ride == null) {
-            Log.w("AdminRideDetail", "MapManager or ride is null");
-            return;
-        }
-
-        RouteDTO route = ride.getRoute();
-        if (route == null || route.getEncodedPolyline() == null) {
-            Log.w("AdminRideDetail", "Route or polyline is null, falling back to geocoding");
-            drawRouteByGeocoding();
-            return;
-        }
-
-        try {
-            Log.d("AdminRideDetail", "Drawing route from encoded polyline");
-
-            // Parse encoded polyline JSON array
-            JSONArray polylineArray = new JSONArray(route.getEncodedPolyline());
-            List<LatLng> routePoints = new ArrayList<>();
-
-            for (int i = 0; i < polylineArray.length(); i++) {
-                JSONArray point = polylineArray.getJSONArray(i);
-                double lng = point.getDouble(0);
-                double lat = point.getDouble(1);
-                routePoints.add(new LatLng(lat, lng));
-            }
-
-            if (routePoints.isEmpty()) {
-                Log.w("AdminRideDetail", "No points in polyline");
-                return;
-            }
-
-            // Add start and end markers
-            LatLng start = routePoints.get(0);
-            LatLng end = routePoints.get(routePoints.size() - 1);
-
-            mapManager.addWaypointMarker(start, 0, "Start");
-            mapManager.addWaypointMarker(end, 100, "End");
-
-            // Draw polyline directly
-            PolylineOptions polylineOptions = new PolylineOptions()
-                    .addAll(routePoints)
-                    .width(10)
-                    .color(0xFF0000FF)
-                    .geodesic(true);
-
-            mMap.addPolyline(polylineOptions);
-
-            // Center camera on route
-            if (routePoints.size() > 1) {
-                com.google.android.gms.maps.model.LatLngBounds.Builder boundsBuilder =
-                    new com.google.android.gms.maps.model.LatLngBounds.Builder();
-                for (LatLng point : routePoints) {
-                    boundsBuilder.include(point);
-                }
-                mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(
-                    boundsBuilder.build(), 100));
-            }
-
-            Log.d("AdminRideDetail", "Route drawn with " + routePoints.size() + " points");
-
-        } catch (JSONException e) {
-            Log.e("AdminRideDetail", "Error parsing polyline: " + e.getMessage());
-            drawRouteByGeocoding();
-        }
+        RideDetailHelper.drawRouteOnMap(mMap, mapManager, ride, this::drawRouteByGeocoding);
     }
 
     private void drawRouteByGeocoding() {
-        String startAddr = ride.getStartPoint();
-        String endAddr = ride.getEndPoint();
-
-        if (startAddr == null || endAddr == null) {
-            Log.w("AdminRideDetail", "Start or end address is null");
-            return;
-        }
-
-        mapManager.getCoordinatesFromAddress(startAddr, new MapManager.CoordinatesCallback() {
-            @Override
-            public void onCoordinatesFound(LatLng startLatLng) {
-                mapManager.addWaypointMarker(startLatLng, 0, "Start");
-
-                mapManager.getCoordinatesFromAddress(endAddr, new MapManager.CoordinatesCallback() {
-                    @Override
-                    public void onCoordinatesFound(LatLng endLatLng) {
-                        mapManager.addWaypointMarker(endLatLng, 100, "End");
-                        mapManager.drawRoute(java.util.Arrays.asList(startLatLng, endLatLng), null);
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        Log.w("AdminRideDetail", "Geocode end failed: " + error);
-                    }
-                });
-            }
-
-            @Override
-            public void onError(String error) {
-                Log.w("AdminRideDetail", "Geocode start failed: " + error);
-            }
-        });
+        RideDetailHelper.drawRouteByGeocoding(mapManager, ride.getStartPoint(), ride.getEndPoint());
     }
 
     private void loadDriverInfo(View view) {
-        TextView tvDriverHeader = view.findViewById(R.id.tvDriverHeader);
-        LinearLayout layoutDriverDetails = view.findViewById(R.id.layoutDriverDetails);
-        TextView tvDriverDetails = view.findViewById(R.id.tvDriverDetails);
-
-        if (tvDriverHeader == null) {
-            Log.w("AdminRideDetail", "Driver header view not found");
-            return;
-        }
-
-        tvDriverHeader.setText("Driver: Loading...");
-        layoutDriverDetails.setVisibility(View.GONE);
-
-        tvDriverHeader.setOnClickListener(v -> {
-            int visibility = layoutDriverDetails.getVisibility() == View.GONE ? View.VISIBLE : View.GONE;
-            layoutDriverDetails.setVisibility(visibility);
-        });
-
-        DriverApiService driverService = ApiClient.getClient().create(DriverApiService.class);
-        driverService.getDriverProfileById(ride.getDriverId()).enqueue(new Callback<GetDriverDTO>() {
-            @Override
-            public void onResponse(Call<GetDriverDTO> call, Response<GetDriverDTO> response) {
-                if (!isAdded()) return;
-
-                if (response.isSuccessful() && response.body() != null) {
-                    GetDriverDTO driver = response.body();
-                    tvDriverHeader.setText("Driver: " + driver.getName() + " " + driver.getSurname());
-
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("Email: ").append(driver.getEmail()).append("\n");
-                    sb.append("Phone: ").append(driver.getPhone()).append("\n\n");
-                    sb.append("Vehicle Information:\n");
-                    sb.append("Model: ").append(driver.getVehicleModel() != null ? driver.getVehicleModel() : "N/A").append("\n");
-                    sb.append("Type: ").append(driver.getVehicleType() != null ? driver.getVehicleType() : "N/A").append("\n");
-                    sb.append("License: ").append(driver.getVehicleLicensePlate() != null ? driver.getVehicleLicensePlate() : "N/A").append("\n");
-                    sb.append("Seats: ").append(driver.getVehicleSeats() != null ? driver.getVehicleSeats() : "N/A").append("\n");
-                    sb.append("Baby seats: ").append(Boolean.TRUE.equals(driver.getVehicleHasBabySeats()) ? "Yes" : "No").append("\n");
-                    sb.append("Pet friendly: ").append(Boolean.TRUE.equals(driver.getVehicleAllowsPets()) ? "Yes" : "No");
-
-                    tvDriverDetails.setText(sb.toString());
-                    Log.d("AdminRideDetail", "Driver loaded: " + driver.getName());
-                } else {
-                    tvDriverHeader.setText("Driver: Failed to load");
-                    Log.w("AdminRideDetail", "Failed to load driver: " + response.code());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<GetDriverDTO> call, Throwable t) {
-                if (!isAdded()) return;
-                tvDriverHeader.setText("Driver: Error");
-                Log.e("AdminRideDetail", "Error loading driver", t);
-            }
-        });
+        RideDetailHelper.loadDriverInfo(requireContext(), view, ride.getDriverId(), isAdded());
     }
 
     private void loadPassengersInfo(View view) {
@@ -587,11 +442,5 @@ public class AdminRideDetailFragment extends Fragment {
                 Log.e("AdminRideDetail", "Error loading reports", t);
             }
         });
-    }
-
-    private void setStyledText(TextView tv, String label, String value) {
-        String html = "<b><font color='#FFFFFF'>" + label + "</font></b> " +
-                "<font color='#FFFFFF'>" + (value == null ? "-" : value) + "</font>";
-        tv.setText(Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY));
     }
 }

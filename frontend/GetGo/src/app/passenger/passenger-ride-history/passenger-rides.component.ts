@@ -11,6 +11,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { RideService } from '../service/passenger-ride.service';
+import { RideHistorySummaryHelper } from '../../helpers/ride-history.summary';
 
 @Component({
   selector: 'app-passenger-rides',
@@ -46,7 +47,10 @@ export class PassengerRidesComponent {
     date: new FormControl<Date | null>(null)
   });
 
-  constructor(private rideService: RideService) {
+  constructor(
+    private rideService: RideService,
+    private summaryHelper: RideHistorySummaryHelper
+  ) {
     this.rides = this.rideService.rides;
     this.getPagedEntities();
   }
@@ -105,23 +109,6 @@ export class PassengerRidesComponent {
   }
 
   getRideSummary(address: string): string {
-    if (!address) return '';
-
-    const parts = address.split(',').map(p => p.trim());
-
-    const firstPart = parts[0] || '';
-    const secondPart = parts[1] || '';
-
-    let cityOrMunicipality = parts.find(p => p.startsWith('Град '));
-
-    if (!cityOrMunicipality) {
-      cityOrMunicipality = parts.find(p => p.startsWith('Општина '));
-    }
-
-    const name = cityOrMunicipality
-      ? cityOrMunicipality.replace(/^Град |^Општина /, '')
-      : '';
-
-    return `${firstPart}, ${secondPart}${name ? ', ' + name : ''}`;
+    return this.summaryHelper.getRideSummary(address);
   }
 }

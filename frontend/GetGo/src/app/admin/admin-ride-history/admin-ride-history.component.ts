@@ -12,6 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { AdminRideService } from '../service/admin-ride.service';
+import { RideHistorySummaryHelper } from '../../helpers/ride-history.summary';
 
 @Component({
   selector: 'app-admin-ride-history',
@@ -55,7 +56,10 @@ export class AdminRideHistoryComponent implements OnInit {
     sortDirection: new FormControl('DESC')
   });
 
-  constructor(private adminRideService: AdminRideService) {
+  constructor(
+    private adminRideService: AdminRideService,
+    private summaryHelper: RideHistorySummaryHelper
+  ) {
     this.rides = this.adminRideService.rides;
   }
 
@@ -209,23 +213,6 @@ export class AdminRideHistoryComponent implements OnInit {
   }
 
   getRideSummary(address: string): string {
-    if (!address) return '';
-
-    const parts = address.split(',').map(p => p.trim());
-
-    const firstPart = parts[0] || '';
-    const secondPart = parts[1] || '';
-
-    let cityOrMunicipality = parts.find(p => p.startsWith('Град '));
-
-    if (!cityOrMunicipality) {
-      cityOrMunicipality = parts.find(p => p.startsWith('Општина '));
-    }
-
-    const name = cityOrMunicipality
-      ? cityOrMunicipality.replace(/^Град |^Општина /, '')
-      : '';
-
-    return `${firstPart}, ${secondPart}${name ? ', ' + name : ''}`;
+    return this.summaryHelper.getRideSummary(address);
   }
 }

@@ -1,6 +1,8 @@
 package com.example.getgo.dtos.driver;
 
-public class GetDriverDTO {
+import java.io.Serializable;
+
+public class GetDriverDTO implements Serializable {
     private Long id;
     private String email;
     private String name;

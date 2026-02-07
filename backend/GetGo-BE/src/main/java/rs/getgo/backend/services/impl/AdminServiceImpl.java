@@ -15,6 +15,7 @@ import rs.getgo.backend.dtos.driver.CreateDriverDTO;
 import rs.getgo.backend.dtos.driver.CreatedDriverDTO;
 import rs.getgo.backend.dtos.passenger.GetRidePassengerDTO;
 import rs.getgo.backend.dtos.request.*;
+import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
@@ -27,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -47,6 +49,7 @@ public class AdminServiceImpl implements AdminService {
     private final DriverService driverService;
     private final CompletedRideRepository completedRideRepo;
     private final PassengerRepository passengerRepo;
+    private final UserRepository userRepository;
 
     public AdminServiceImpl(
             AdministratorRepository adminRepo,
@@ -62,7 +65,8 @@ public class AdminServiceImpl implements AdminService {
             PassengerServiceImpl passengerService,
             DriverServiceImpl driverService,
             ModelMapper modelMapper,
-            BCryptPasswordEncoder passwordEncoder
+            BCryptPasswordEncoder passwordEncoder,
+            UserRepository userRepository
     ) {
         this.adminRepo = adminRepo;
         this.driverRepo = driverRepo;
@@ -78,6 +82,7 @@ public class AdminServiceImpl implements AdminService {
         this.passwordEncoder = passwordEncoder;
         this.passengerService = passengerService;
         this.driverService = driverService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -593,25 +598,31 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size) {
+    public Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction) {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
 
         Page<CompletedRide> ridesPage;
         if (startDate != null) {
-            ridesPage = completedRideRepo.findByPayingPassengerIdAndStartTimeAfter(
-                    passenger.getId(), startDate.atStartOfDay(), pageable);
+            // Filter rides ON the specific date (from 00:00 to 23:59:59.999)
+            ridesPage = completedRideRepo.findByPassengerIdAndStartTimeBetween(
+                    passenger.getId(),
+                    startDate.atStartOfDay(),
+                    startDate.plusDays(1).atStartOfDay(),
+                    pageable);
         } else {
-            ridesPage = completedRideRepo.findByPayingPassengerId(passenger.getId(), pageable);
+            // Get all rides where passenger is either paying or linked
+            ridesPage = completedRideRepo.findByPassengerId(passenger.getId(), pageable);
         }
 
         return ridesPage.map(this::mapCompletedRideToDTO);
     }
 
     @Override
-    public GetRideDTO getPassengerRideById(String email, Long rideId) {
+    public GetReorderRideDTO getPassengerRideById(String email, Long rideId) {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
@@ -625,20 +636,25 @@ public class AdminServiceImpl implements AdminService {
             throw new RuntimeException("Passenger is not allowed to view this ride");
         }
 
-        return mapCompletedRideToDTO(ride);
+        return mapCompletedReorderRideToDTO(ride);
     }
 
     @Override
-    public Page<GetRideDTO> getDriverRides(String email, LocalDate startDate, int page, int size) {
+    public Page<GetRideDTO> getDriverRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction) {
         Driver driver = driverRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
 
         Page<CompletedRide> ridesPage;
         if (startDate != null) {
-            ridesPage = completedRideRepo.findByDriverIdAndStartTimeAfter(
-                    driver.getId(), startDate.atStartOfDay(), pageable);
+            // Filter rides ON the specific date (from 00:00 to 23:59:59.999)
+            ridesPage = completedRideRepo.findByDriverIdAndStartTimeBetween(
+                    driver.getId(),
+                    startDate.atStartOfDay(),
+                    startDate.plusDays(1).atStartOfDay(),
+                    pageable);
         } else {
             ridesPage = completedRideRepo.findByDriverId(driver.getId(), pageable);
         }
@@ -647,7 +663,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public GetRideDTO getDriverRideById(String email, Long rideId) {
+    public GetReorderRideDTO getDriverRideById(String email, Long rideId) {
         Driver driver = driverRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 
@@ -658,7 +674,7 @@ public class AdminServiceImpl implements AdminService {
             throw new RuntimeException("Driver is not allowed to view this ride");
         }
 
-        return mapCompletedRideToDTO(ride);
+        return mapCompletedReorderRideToDTO(ride);
     }
 
     private GetRideDTO mapCompletedRideToDTO(CompletedRide r) {
@@ -677,7 +693,13 @@ public class AdminServiceImpl implements AdminService {
                 passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getEmail()));
             }
         }
-
+        String cancelledUserEmail = null;
+        if (r.getCancelledByUserId() != null) {
+            Optional<User> user = userRepository.findById(r.getCancelledByUserId());
+            if (user.isPresent()) {
+                cancelledUserEmail = user.get().getEmail();
+            }
+        }
         return new GetRideDTO(
                 r.getId(),
                 r.getDriverId(),
@@ -690,9 +712,63 @@ public class AdminServiceImpl implements AdminService {
                         (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
                 r.isCancelled(),
                 false,
-                r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
+                r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : (r.isStoppedEarly() ? "STOPPED" : "ACTIVE")),
                 r.getEstimatedPrice(),
-                r.isPanicPressed()
+                r.isPanicPressed(),
+                r.getEstDistanceKm(),
+                r.getEstTime(),
+                cancelledUserEmail,
+                r.getCancelReason()
+        );
+    }
+
+    private GetReorderRideDTO mapCompletedReorderRideToDTO(CompletedRide r) {
+        List<GetRidePassengerDTO> passengerDTOs = new ArrayList<>();
+
+        if (r.getPayingPassengerId() != null) {
+            passengerDTOs.add(new GetRidePassengerDTO(
+                    r.getPayingPassengerId(),
+                    r.getPayingPassengerEmail()
+            ));
+        }
+
+        if (r.getLinkedPassengerIds() != null && !r.getLinkedPassengerIds().isEmpty()) {
+            List<Passenger> passengers = passengerRepo.findAllById(r.getLinkedPassengerIds());
+            for (Passenger p : passengers) {
+                passengerDTOs.add(new GetRidePassengerDTO(p.getId(), p.getEmail()));
+            }
+        }
+
+        String cancelledUserEmail = null;
+        if (r.getCancelledByUserId() != null) {
+            Optional<User> user = userRepository.findById(r.getCancelledByUserId());
+            if (user.isPresent()) {
+                cancelledUserEmail = user.get().getEmail();
+            }
+        }
+        return new GetReorderRideDTO(
+                r.getId(),
+                r.getDriverId(),
+                passengerDTOs,
+                r.getRoute() != null ? r.getRoute().getStartingPoint() : "Unknown",
+                r.getRoute() != null ? r.getRoute().getEndingPoint() : "Unknown",
+                r.getStartTime(),
+                r.getEndTime(),
+                r.getStartTime() != null && r.getEndTime() != null ?
+                        (int) java.time.Duration.between(r.getStartTime(), r.getEndTime()).toMinutes() : 0,
+                r.isCancelled(),
+                false,
+                r.isCompletedNormally() ? "FINISHED" : (r.isCancelled() ? "CANCELLED" : (r.isStoppedEarly() ? "STOPPED" : "ACTIVE")),
+                r.getEstimatedPrice(),
+                r.isPanicPressed(),
+                r.getVehicleType(),
+                r.isNeedsBabySeats(),
+                r.isNeedsPetFriendly(),
+                r.getRoute(),
+                r.getEstDistanceKm(),
+                r.getEstTime(),
+                cancelledUserEmail,
+                r.getCancelReason()
         );
     }
 }

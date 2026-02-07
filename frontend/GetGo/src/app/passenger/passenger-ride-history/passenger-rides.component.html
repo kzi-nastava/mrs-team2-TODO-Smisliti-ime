@@ -29,11 +29,14 @@
       </h2>
 
       <p><span class="card-time">Start time: </span>{{ride.startingTime | date:'HH:mm'}}</p>
-      <p><span class="card-time">End time: </span>{{ride.finishedTime | date:'HH:mm'}}</p>
+      <p *ngIf="ride.finishedTime"><span class="card-time">End time: </span>{{ride.finishedTime | date:'HH:mm'}}</p>
+      <p *ngIf="ride.estTime"><span class="card-time">Estimated duration: </span>{{ride.estTime | number:'1.0-2'}} min</p>
+      <p *ngIf="ride.estDistance"><span class="card-time">Distance: </span>{{ride.estDistance | number:'1.2-2'}} km</p>
+      <p *ngIf="ride.status"><span class="card-time">Status: </span>{{ride.status}}</p>
       <h1 class="card-price">{{ride.price | number:'1.0-0'}}rsd</h1>
     </div>
 
-    <div *ngIf="!rides() || rides()?.length === 0" style="text-align: center; padding: 40px; color: #555;">
+    <div *ngIf="!rides() || rides().length === 0" style="text-align: center; padding: 40px; color: #555;">
       No rides found. Start booking to see your ride history!
     </div>
   </div>

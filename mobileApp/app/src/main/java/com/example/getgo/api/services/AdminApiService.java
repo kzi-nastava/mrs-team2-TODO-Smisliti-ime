@@ -14,6 +14,8 @@ import com.example.getgo.dtos.request.GetDriverVehicleChangeRequestDTO;
 import com.example.getgo.dtos.request.GetPersonalDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.RejectDriverChangeRequestDTO;
 import com.example.getgo.dtos.user.CreatedUserDTO;
+import com.example.getgo.dtos.ride.GetRideDTO;
+import com.example.getgo.dtos.ride.PageResponse;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -24,6 +26,38 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface AdminApiService {
+
+    @GET("api/admin/rides/passenger")
+    Call<PageResponse<GetRideDTO>> getPassengerRides(
+            @Query("email") String email,
+            @Query("page") int page,
+            @Query("size") int size,
+            @Query("startDate") String startDate,
+            @Query("sort") String sort,
+            @Query("direction") String direction
+    );
+
+    @GET("api/admin/rides/driver")
+    Call<PageResponse<GetRideDTO>> getDriverRides(
+            @Query("email") String email,
+            @Query("page") int page,
+            @Query("size") int size,
+            @Query("startDate") String startDate,
+            @Query("sort") String sort,
+            @Query("direction") String direction
+    );
+
+    @GET("api/admin/rides/passenger/{rideId}")
+    Call<GetRideDTO> getPassengerRideById(
+            @Path("rideId") Long rideId,
+            @Query("email") String email
+    );
+
+    @GET("api/admin/rides/driver/{rideId}")
+    Call<GetRideDTO> getDriverRideById(
+            @Path("rideId") Long rideId,
+            @Query("email") String email
+    );
 
     @PUT("api/admin/users/{id}/block")
     Call<CreatedUserDTO> blockUser(@Path("id") Long id);

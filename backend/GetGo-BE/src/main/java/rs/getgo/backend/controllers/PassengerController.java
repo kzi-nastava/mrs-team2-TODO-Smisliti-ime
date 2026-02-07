@@ -6,9 +6,11 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
+import rs.getgo.backend.dtos.driver.GetDriverDTO;
 import rs.getgo.backend.dtos.passenger.GetPassengerDTO;
 import rs.getgo.backend.dtos.passenger.UpdatePassengerDTO;
 import rs.getgo.backend.dtos.passenger.UpdatedPassengerDTO;
+import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.dtos.user.UpdatedProfilePictureDTO;
 import org.springframework.http.MediaType;
@@ -30,7 +32,7 @@ public class PassengerController {
 
     public PassengerController(PassengerService passengerService) { this.passengerService = passengerService; }
 
-    // 2.3 - User profile
+    // 2.3 - User profile (GET) current authenticated passenger
     @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetPassengerDTO> getProfile() {
@@ -39,8 +41,16 @@ public class PassengerController {
         return ResponseEntity.ok(response);
     }
 
+    // 2.3 - User profile (GET) by passenger id for admin/passenger
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('ADMIN')")
+    @GetMapping(value = "/profile/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetPassengerDTO> getProfileById(@PathVariable("id") Long passengerId) {
+        GetPassengerDTO response = passengerService.getPassengerById(passengerId);
+        return ResponseEntity.ok(response);
+    }
+
     // 2.3 - User profile
-    @PreAuthorize("hasRole('PASSENGER')")
+    @PreAuthorize("hasRole('PASSENGER') or hasRole('ADMIN')")
     @PutMapping(value = "/profile",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -82,9 +92,9 @@ public class PassengerController {
     @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/rides")
     public ResponseEntity<Page<GetRideDTO>> getPassengerRides(
-            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
 
         String email = AuthUtils.getCurrentUserEmail();
         Page<GetRideDTO> rides = passengerService.getPassengerRides(email, startDate, page, size);
@@ -94,9 +104,9 @@ public class PassengerController {
     // 2.9.2 - Get single passenger ride by id
     @PreAuthorize("hasRole('PASSENGER')")
     @GetMapping(value = "/rides/{id}")
-    public ResponseEntity<GetRideDTO> getRideById(@PathVariable Long id) {
+    public ResponseEntity<GetReorderRideDTO> getRideById(@PathVariable Long id) {
         String email = AuthUtils.getCurrentUserEmail();
-        GetRideDTO ride = passengerService.getPassengerRideById(email, id);
+        GetReorderRideDTO ride = passengerService.getPassengerRideById(email, id);
         return ResponseEntity.ok(ride);
     }
 }

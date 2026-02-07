@@ -1,0 +1,35 @@
+<div class="ride-details" *ngIf="ride() as ride">
+
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>🚗 {{ ride.driverName }}</mat-card-title>
+      <mat-card-subtitle>{{ ride.driverEmail }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-divider></mat-divider>
+
+    <mat-card-content>
+      <p><b>Status:</b> {{ ride.status }}</p>
+      <p><b>Vehicle:</b> {{ ride.vehicleType }}</p>
+      <p><b>Scheduled Start:</b> {{ ride.scheduledTime | date:'shortTime' }}</p>
+      <p><b>Actual Start:</b> {{ ride.actualStartTime | date:'shortTime' }}</p>
+      <p><b>Estimated Duration:</b> {{ ride.estimatedDurationMin }} min</p>
+      <p><b>Estimated Price:</b> {{ ride.estimatedPrice | number:'1.0-0' }} RSD</p>
+      <p><b>Paying Passenger:</b> {{ ride.payingPassenger }}</p>
+      <p><b>Linked Passengers:</b> {{ ride.linkedPassengers.join(', ') }}</p>
+      <p><b>Needs Baby Seat:</b> {{ ride.needsBabySeats ? 'Yes' : 'No' }}</p>
+      <p><b>Pet Friendly:</b> {{ ride.needsPetFriendly ? 'Yes' : 'No' }}</p>
+      <p><b>Current Address:</b> {{ ride.currentAddress }}</p>
+
+      <mat-divider></mat-divider>
+
+
+      <app-ride-tracking-map
+        *ngIf="driverPosition()"
+        [driverPosition]="driverPosition()"
+        [waypoints]="rideWaypoints()">
+      </app-ride-tracking-map>
+
+    </mat-card-content>
+  </mat-card>
+</div>

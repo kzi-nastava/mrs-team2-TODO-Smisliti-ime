@@ -9,6 +9,7 @@ import com.example.getgo.dtos.driver.GetDriverDTO;
 import com.example.getgo.dtos.request.CreatedDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.UpdateDriverPersonalDTO;
 import com.example.getgo.dtos.request.UpdateDriverVehicleDTO;
+import com.example.getgo.dtos.driver.GetDriverDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.dtos.ride.PageResponse;
 
@@ -18,6 +19,7 @@ import okhttp3.MultipartBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Path;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
@@ -58,4 +60,8 @@ public interface DriverApiService {
 
     @GET("/api/drivers/active-locations")
     Call<List<GetActiveDriverLocationDTO>> getActiveDriverLocations();
+
+    // Get driver by ID (for admin/passenger viewing driver details)
+    @GET("api/drivers/profile/{id}")
+    Call<GetDriverDTO> getDriverProfileById(@Path("id") Long driverId);
 }

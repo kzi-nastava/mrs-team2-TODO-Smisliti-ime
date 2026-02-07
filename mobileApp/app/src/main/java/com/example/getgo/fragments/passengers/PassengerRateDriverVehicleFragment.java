@@ -34,8 +34,8 @@ import retrofit2.Response;
 public class PassengerRateDriverVehicleFragment extends Fragment {
 
     private RatingApiService api;
-    private Long rideId = 1L; // temporary hardcoded ride ID
-//    rideId = getArguments().getLong("rideId");
+//    private Long rideId = 1L; // temporary hardcoded ride ID
+    private Long rideId;
 
     private RecyclerView rvRatings;
     private RatingAdapter ratingAdapter;
@@ -59,6 +59,10 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         api = ApiClient.getClient().create(RatingApiService.class);
+
+        if (getArguments() != null) {
+            rideId = getArguments().getLong("rideId");
+        }
     }
 
     @Override

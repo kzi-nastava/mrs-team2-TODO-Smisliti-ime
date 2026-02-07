@@ -3,6 +3,8 @@ package com.example.getgo.fragments.passengers;
 import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,6 +30,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
+import com.example.getgo.activities.MainActivity;
 import com.example.getgo.api.ApiClient;
 import com.example.getgo.api.services.RideApiService;
 import com.example.getgo.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
@@ -56,6 +59,8 @@ import retrofit2.Response;
 public class PassengerRideTrackingFragment extends Fragment implements OnMapReadyCallback {
     private static final String TAG = "PassengerRideTracking";
     private static final String PREFS_NAME = "getgo_prefs";
+    private static final String NOTIF_TAG = "RIDE_NOTIF";
+
 
     private GoogleMap mMap;
     private MapManager mapManager;
@@ -320,6 +325,11 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 
         webSocketManager.subscribeToPassengerRideFinished(rideId, finished -> {
             requireActivity().runOnUiThread(() -> {
+
+                Log.d(NOTIF_TAG, "Ride finished received! rideId = " + finished.getRideId());
+                Log.i(NOTIF_TAG, "Ride finished received! rideId = " + finished.getRideId());
+                Log.e(NOTIF_TAG, "Ride finished received! rideId = " + finished.getRideId());
+
                 showRideCompleted(finished);
                 showRideFinishedNotification(finished);
             });
@@ -554,6 +564,20 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     }
 
     private void showRideFinishedNotification(GetRideFinishedDTO finished) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(),
+                    Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                Log.w(NOTIF_TAG, "POST_NOTIFICATIONS permission not granted. Skipping notification.");
+                return;
+            }
+        }
+
+        Log.d(NOTIF_TAG, "Preparing ride finished notification for rideId = " + finished.getRideId());
+
+        if (finished.getRideId() == null) {
+            Log.e(NOTIF_TAG, "RideId is null! This should never happen.");
+            return;
+        }
         // Create notification channel (only once)
         String channelId = "ride_channel";
         String channelName = "Ride Notifications";
@@ -567,6 +591,23 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
             manager.createNotificationChannel(channel);
         }
 
+        Intent intent = new Intent(requireContext(), MainActivity.class);
+        intent.putExtra("OPEN_RATE_FRAGMENT", true);
+        intent.putExtra("RIDE_ID", finished.getRideId());
+        if (finished.getRideId() == null) {
+            Log.e(TAG, "RideId is null! This should never happen.");
+            return;
+        }
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        int requestCode = finished.getRideId().intValue();
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                requireContext(),
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
         // Build the notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(requireContext(), channelId)
                 .setSmallIcon(R.drawable.ic_car)
@@ -574,9 +615,11 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
                 .setContentText(String.format(Locale.ENGLISH,
                         "Your ride has finished. Price: %.2f RSD", finished.getPrice()))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true);
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent);
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(requireContext());
+        Log.d("NOTIF_TEST", "Ride finished notification intent prepared, rideId=" + finished.getRideId());
         notificationManager.notify(1001, builder.build());
     }
 
@@ -606,7 +649,5 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
             }
         }
     }
-
-
 
 }

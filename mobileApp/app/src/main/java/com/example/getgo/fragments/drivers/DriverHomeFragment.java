@@ -193,13 +193,9 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                 GetDriverActiveRideDTO ride = repo.getDriverActiveRide();
 
                 requireActivity().runOnUiThread(() -> {
-//                    currentRide = ride;
-//                    updateUI();
                     if (ride != null) {
                         currentRide = ride;
 
-                        // PROVERA: Ako je status DRIVER_ARRIVED_AT_DESTINATION,
-                        // tretiraj vožnju kao aktivnu i prikazi je
                         if (ride.getStatus().equals("DRIVER_ARRIVED_AT_DESTINATION")) {
                             Log.d(TAG, "Ride is at destination but not yet ended. Showing it as active.");
                         }
@@ -290,81 +286,6 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                 break;
         }
     }
-
-//    private void drawRideRoute() {
-//        Log.d("ROUTE_DEBUG", "Latitudes size: " + currentRide.getLatitudes().size());
-//        Log.d("ROUTE_DEBUG", "Longitudes size: " + currentRide.getLongitudes().size());
-//        if (currentRide == null || mapManager == null) return;
-//
-//        List<LatLng> waypoints = new ArrayList<>();
-//        for (int i = 0; i < currentRide.getLatitudes().size(); i++) {
-//            waypoints.add(new LatLng(
-//                    currentRide.getLatitudes().get(i),
-//                    currentRide.getLongitudes().get(i)
-//            ));
-//        }
-//
-//        if (!waypoints.isEmpty()) {
-//            mapManager.drawRoute(waypoints, null);
-//            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
-//        }
-//    }
-//    private void drawRideRoute() {
-//        if (currentRide == null) return;
-//
-//        if (mapManager == null || mMap == null) {
-//            pendingDrawRoute = true;
-//            return;
-//        }
-//
-//        if (currentRide.getLatitudes() == null ||
-//                currentRide.getLongitudes() == null ||
-//                currentRide.getLatitudes().size() < 2) {
-//            Log.w("ROUTE_DEBUG", "Not enough points to draw route");
-//            return;
-//        }
-//
-//        List<LatLng> waypoints = new ArrayList<>();
-//        for (int i = 0; i < currentRide.getLatitudes().size(); i++) {
-//            waypoints.add(new LatLng(
-//                    currentRide.getLatitudes().get(i),
-//                    currentRide.getLongitudes().get(i)
-//            ));
-//        }
-//
-//        mMap.clear();
-//
-//        mMap.addMarker(new MarkerOptions().position(waypoints.get(0)).title("Start"));
-//        mMap.addMarker(new MarkerOptions().position(waypoints.get(waypoints.size() - 1)).title("Destination"));
-//
-////        mapManager.drawRoute(waypoints, null);
-////        mMap.animateCamera(
-////                CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f)
-////        );
-////
-////        pendingDrawRoute = false;
-//
-//        mapManager.drawRoute(waypoints, new MapManager.RouteCallback() {
-//            @Override
-//            public void onRouteFound(int distanceMeters, int durationSeconds) {
-//                // Kada ruta stigne, obuhvati kamerom celu rutu
-//                LatLngBounds.Builder builder = new LatLngBounds.Builder();
-//                for (LatLng point : waypoints) {
-//                    builder.include(point);
-//                }
-//                LatLngBounds bounds = builder.build();
-//                mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100));
-//            }
-//
-//            @Override
-//            public void onError(String error) {
-//                Log.e("ROUTE_DEBUG", "Route error: " + error);
-//            }
-//        });
-//
-//        pendingDrawRoute = false;
-//    }
-
     private void drawRideRoute() {
         if (currentRide == null) return;
 

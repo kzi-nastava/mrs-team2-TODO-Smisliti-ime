@@ -6,6 +6,7 @@ import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
 import com.example.getgo.fragments.admins.AdminProfileInfoFragment;
+import com.example.getgo.fragments.admins.AdminReviewDriverRequestsFragment;
 import com.example.getgo.fragments.drivers.DriverHomeFragment;
 import com.example.getgo.fragments.drivers.DriverProfileInfoFragment;
 import com.example.getgo.fragments.guests.GuestHomeFragment;
@@ -96,7 +97,6 @@ public class NavigationHelper {
         } else if (itemId == R.id.nav_bottom_rate_ride) {
             return new PassengerRateDriverVehicleFragment();
         } else if (itemId == R.id.nav_bottom_ride_tracking) {
-            Log.d("NavigationHelper", "Navigating to PassengerRideTrackingFragment");
             return new PassengerRideTrackingFragment();
         }
         return null;
@@ -107,6 +107,8 @@ public class NavigationHelper {
             return new DriverHomeFragment();
         } else if (itemId == R.id.nav_bottom_profile) {
             return new AdminProfileInfoFragment();
+        } else if (itemId == R.id.nav_review_requests) {
+            return AdminReviewDriverRequestsFragment.newInstance();
         }
 
         return null;

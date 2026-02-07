@@ -208,10 +208,11 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public List<GetPersonalDriverChangeRequestDTO> getPendingPersonalChangeRequests() {
-        List<PersonalChangeRequest> requests = personalChangeRequestRepo.findByStatus(RequestStatus.PENDING);
+    public Page<GetPersonalDriverChangeRequestDTO> getPendingPersonalChangeRequests(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<PersonalChangeRequest> requests = personalChangeRequestRepo.findByStatus(RequestStatus.PENDING, pageable);
 
-        return requests.stream().map(request -> {
+        return requests.map(request -> {
             Driver driver = request.getDriver();
 
             GetPersonalDriverChangeRequestDTO dto = new GetPersonalDriverChangeRequestDTO();
@@ -236,14 +237,15 @@ public class AdminServiceImpl implements AdminService {
             dto.setCreatedAt(request.getCreatedAt());
 
             return dto;
-        }).collect(Collectors.toList());
+        });
     }
 
     @Override
-    public List<GetDriverVehicleChangeRequestDTO> getPendingVehicleChangeRequests() {
-        List<VehicleChangeRequest> requests = vehicleChangeRequestRepo.findByStatus(RequestStatus.PENDING);
+    public Page<GetDriverVehicleChangeRequestDTO> getPendingVehicleChangeRequests(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<VehicleChangeRequest> requests = vehicleChangeRequestRepo.findByStatus(RequestStatus.PENDING, pageable);
 
-        return requests.stream().map(request -> {
+        return requests.map(request -> {
             Driver driver = request.getDriver();
             Vehicle vehicle = driver.getVehicle();
 
@@ -275,14 +277,15 @@ public class AdminServiceImpl implements AdminService {
             dto.setCreatedAt(request.getCreatedAt());
 
             return dto;
-        }).collect(Collectors.toList());
+        });
     }
 
     @Override
-    public List<GetDriverAvatarChangeRequestDTO> getPendingAvatarChangeRequests() {
-        List<AvatarChangeRequest> requests = avatarChangeRequestRepo.findByStatus(RequestStatus.PENDING);
+    public Page<GetDriverAvatarChangeRequestDTO> getPendingAvatarChangeRequests(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<AvatarChangeRequest> requests = avatarChangeRequestRepo.findByStatus(RequestStatus.PENDING, pageable);
 
-        return requests.stream().map(request -> {
+        return requests.map(request -> {
             Driver driver = request.getDriver();
 
             GetDriverAvatarChangeRequestDTO dto = new GetDriverAvatarChangeRequestDTO();
@@ -301,7 +304,7 @@ public class AdminServiceImpl implements AdminService {
             dto.setCreatedAt(request.getCreatedAt());
 
             return dto;
-        }).collect(Collectors.toList());
+        });
     }
 
     @Override

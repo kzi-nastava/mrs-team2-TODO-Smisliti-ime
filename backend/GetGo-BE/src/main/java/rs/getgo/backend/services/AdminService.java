@@ -22,11 +22,11 @@ public interface AdminService {
 
     UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO);
 
-    List<GetPersonalDriverChangeRequestDTO> getPendingPersonalChangeRequests();
+    Page<GetPersonalDriverChangeRequestDTO> getPendingPersonalChangeRequests(int page, int size);
 
-    List<GetDriverVehicleChangeRequestDTO> getPendingVehicleChangeRequests();
+    Page<GetDriverVehicleChangeRequestDTO> getPendingVehicleChangeRequests(int page, int size);
 
-    List<GetDriverAvatarChangeRequestDTO> getPendingAvatarChangeRequests();
+    Page<GetDriverAvatarChangeRequestDTO> getPendingAvatarChangeRequests(int page, int size);
 
     GetPersonalDriverChangeRequestDTO getPersonalChangeRequest(Long requestId);
 

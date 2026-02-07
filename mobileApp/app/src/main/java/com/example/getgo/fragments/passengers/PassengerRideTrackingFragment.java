@@ -83,6 +83,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     private GetPassengerActiveRideDTO currentRide;
     private boolean panicSent = false;
     private int totalRouteDistanceMeters = 0;
+    private Long finishedRideDriverId;
 
 
     public PassengerRideTrackingFragment() {}
@@ -344,7 +345,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
                         stopped.getPrice(),
                         stopped.getStartTime(),
                         stopped.getEndTime(),
-                        stopped.getDurationMinutes()
+                        stopped.getDurationMinutes(),
+                        stopped.getDriverId()
                 );
                 showRideCompleted(finished);
             });
@@ -594,6 +596,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         Intent intent = new Intent(requireContext(), MainActivity.class);
         intent.putExtra("OPEN_RATE_FRAGMENT", true);
         intent.putExtra("RIDE_ID", finished.getRideId());
+        intent.putExtra("driverId", finished.getDriverId());
         if (finished.getRideId() == null) {
             Log.e(TAG, "RideId is null! This should never happen.");
             return;

@@ -192,6 +192,7 @@ public class MainActivity extends AppCompatActivity {
 
         boolean openRate = intent.getBooleanExtra("OPEN_RATE_FRAGMENT", false);
         long rideId = intent.getLongExtra("RIDE_ID", -1);
+        long driverId = intent.getLongExtra("driverId", -1);
 
         Log.d("NOTIF_TEST", "handleNotificationIntent called");
         Log.d("NOTIF_TEST", "OPEN_RATE_FRAGMENT = " + openRate);
@@ -203,6 +204,7 @@ public class MainActivity extends AppCompatActivity {
 
             Bundle bundle = new Bundle();
             bundle.putLong("rideId", rideId);
+            bundle.putLong("driverId", driverId);
 
             Fragment fragment = new PassengerRateDriverVehicleFragment();
             fragment.setArguments(bundle);

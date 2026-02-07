@@ -32,4 +32,6 @@ public interface DriverService {
     boolean isDriverActive(String email);
 
     Driver findAvailableDriver(ActiveRide ride);
+
+    GetDriverDTO findDriverById(Long driverId);
 }

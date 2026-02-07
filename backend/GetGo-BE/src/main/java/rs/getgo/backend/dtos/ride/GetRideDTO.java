@@ -26,7 +26,11 @@ public class GetRideDTO {
     private Integer duration;
     private Boolean isCancelled;
     private Boolean isFavourite;
-    private String status; // it can be ACTIVE, FINISHED, CANCELLED, SCHEDULED
+    private String status; // it can be ACTIVE, FINISHED, CANCELLED, SCHEDULED, STOPPED
     private Double price;
     private Boolean panicActivated;
+    private Double estDistance;
+    private Double estTime;
+    private String cancelReason;
+    private String cancelledBy;
 }

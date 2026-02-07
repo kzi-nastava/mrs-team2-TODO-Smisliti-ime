@@ -25,6 +25,24 @@
         <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
 
+      <mat-form-field appearance="fill" class="sort-field">
+        <mat-label>Sort By</mat-label>
+        <mat-select formControlName="sortBy">
+          <mat-option value="startTime">Start Date/Time</mat-option>
+          <mat-option value="estTime">Duration</mat-option>
+          <mat-option value="estDistanceKm">Distance</mat-option>
+          <mat-option value="estimatedPrice">Price</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="sort-direction-field">
+        <mat-label>Order</mat-label>
+        <mat-select formControlName="sortDirection">
+          <mat-option value="DESC">Descending</mat-option>
+          <mat-option value="ASC">Ascending</mat-option>
+        </mat-select>
+      </mat-form-field>
+
       <div class="buttons">
         <button mat-raised-button color="warn" type="button" (click)="resetFilter()">Reset</button>
         <button mat-raised-button color="primary" type="submit">Search</button>
@@ -33,7 +51,10 @@
   </div>
 
   <div class="list">
-    <div *ngFor="let ride of rides() || []" class="item" [routerLink]="['/admin/rides',  this.currentUserType, ride.id]" [queryParams]="{email: searchRideForm.value.email}">
+    <div *ngFor="let ride of rides() || []"
+         class="item"
+         [routerLink]="['/admin/rides', currentUserType, ride.id]"
+         [queryParams]="{email: searchRideForm.value.email}">
       <p class="card-date"><b>{{ride.startingTime | date:'dd.MM.yyyy'}}</b></p>
       <h2>
         <img class="pin-icon" src="/map-pin.svg" alt="Pin icon">
@@ -45,7 +66,13 @@
       </h2>
 
       <p><span class="card-time">Start time: </span>{{ride.startingTime | date:'HH:mm'}}</p>
-      <p><span class="card-time">End time: </span>{{ride.finishedTime | date:'HH:mm'}}</p>
+      <p *ngIf="ride.finishedTime"><span class="card-time">End time: </span>{{ride.finishedTime | date:'HH:mm'}}</p>
+      <p *ngIf="ride.estTime"><span class="card-time">Estimated duration: </span>{{ride.estTime | number:'1.0-2'}} min</p>
+      <p *ngIf="ride.estDistance"><span class="card-time">Distance: </span>{{ride.estDistance | number:'1.2-2'}} km</p>
+      <p *ngIf="ride.status"><span class="card-time">Status: </span>{{ride.status}}</p>
+      <p *ngIf="ride.isCancelled && ride.cancelledBy"><span class="card-time">Canceled by: </span>{{ride.cancelledBy}}</p>
+      <p *ngIf="ride.isCancelled && ride.cancelReason"><span class="card-time">Reason: </span>{{ride.cancelReason}}</p>
+      <p *ngIf="ride.panicActivated" class="panic-indicator"><span class="card-time">PANIC activated</span></p>
       <h1 class="card-price">{{ride.price | number:'1.0-0'}}rsd</h1>
     </div>
 

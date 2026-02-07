@@ -53,28 +53,31 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".activities.ResetPasswordActivity"
+        <activity
+            android:name=".activities.ActivationActivity"
             android:exported="true">
+            <!-- Custom scheme deep link (ALWAYS works) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="getgo" android:host="reset-password" />
+                <data
+                    android:scheme="getgo"
+                    android:host="activate" />
             </intent-filter>
         </activity>
 
         <activity
-            android:name=".activities.ActivationActivity"
+            android:name=".activities.ResetPasswordActivity"
             android:exported="true">
+            <!-- Custom scheme deep link (ALWAYS works) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-
                 <data
                     android:scheme="getgo"
-                    android:host="activate"
-                    android:pathPrefix="/" />
+                    android:host="reset-password" />
             </intent-filter>
         </activity>
 

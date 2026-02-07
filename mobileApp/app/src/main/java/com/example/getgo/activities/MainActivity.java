@@ -16,6 +16,8 @@ import androidx.fragment.app.Fragment;
 import androidx.core.view.WindowCompat;
 
 import com.example.getgo.R;
+import com.example.getgo.fragments.admins.AdminRideHistoryFragment;
+import com.example.getgo.fragments.passengers.PassengerRideHistoryFragment;
 import com.example.getgo.utils.NavigationHelper;
 import com.example.getgo.model.UserRole;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -46,6 +48,10 @@ public class MainActivity extends AppCompatActivity {
                 : UserRole.GUEST;
 
         navigationHelper = new NavigationHelper(currentUserRole);
+    }
+
+    private UserRole getCurrentUserRole() {
+        return currentUserRole;
     }
 
     private void setupGuestRestrictions() {
@@ -106,18 +112,33 @@ public class MainActivity extends AppCompatActivity {
     private void setupBottomNavigation() {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_nav);
         bottomNav.getMenu().clear();
-//        bottomNav.inflateMenu(navigationHelper.getBottomNavMenu());
         int menuRes = navigationHelper.getBottomNavMenu();
         if (menuRes != 0) {
             bottomNav.inflateMenu(menuRes);
         }
 
         bottomNav.setOnItemSelectedListener(item -> {
-            Fragment fragment = navigationHelper.getFragmentForMenuItem(item.getItemId());
+            int id = item.getItemId();
+
+            // Handle "My Rides" for both passenger and admin
+            if (id == R.id.nav_bottom_my_rides) {
+                if (currentUserRole == UserRole.PASSENGER) {
+                    PassengerRideHistoryFragment.navigateTo(this);
+                } else if (currentUserRole == UserRole.ADMIN) {
+                    AdminRideHistoryFragment.navigateTo(this);
+                } else {
+                    Toast.makeText(this, "My Rides not available for your role", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            }
+
+            // Try NavigationHelper for other menu items
+            Fragment fragment = navigationHelper.getFragmentForMenuItem(id);
             if (fragment != null) {
                 openFragment(fragment);
                 return true;
             }
+
             // Fragment not implemented yet - show toast
             Toast.makeText(this, "Feature coming soon", Toast.LENGTH_SHORT).show();
             return false;
@@ -130,15 +151,30 @@ public class MainActivity extends AppCompatActivity {
         navView.inflateMenu(navigationHelper.getDrawerNavMenu());
 
         navView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
             // Handle logout separately
-            if (item.getItemId() == R.id.nav_drawer_logout) {
+            if (id == R.id.nav_drawer_logout) {
                 handleLogout();
                 drawer.closeDrawer(GravityCompat.START);
                 return true;
             }
 
-            // Handle other menu items
-            Fragment fragment = navigationHelper.getFragmentForMenuItem(item.getItemId());
+            // Handle "My Rides" from drawer too
+            if (id == R.id.nav_bottom_my_rides) {
+                if (currentUserRole == UserRole.PASSENGER) {
+                    PassengerRideHistoryFragment.navigateTo(this);
+                } else if (currentUserRole == UserRole.ADMIN) {
+                    AdminRideHistoryFragment.navigateTo(this);
+                } else {
+                    Toast.makeText(this, "My Rides not available for your role", Toast.LENGTH_SHORT).show();
+                }
+                drawer.closeDrawer(GravityCompat.START);
+                return true;
+            }
+
+            // Try NavigationHelper for other items
+            Fragment fragment = navigationHelper.getFragmentForMenuItem(id);
             if (fragment != null) {
                 openFragment(fragment);
             } else {

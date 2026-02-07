@@ -63,7 +63,42 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
         this.destinations.at(0).patchValue({ name: params['from'] });
         this.destinations.at(1).patchValue({ name: params['to'] });
 
-        this.successMessage = 'Route loaded from previous ride!';
+        // Set vehicle type
+        if (params['vehicleType']) {
+          this.travelForm.patchValue({
+            vehicleType: params['vehicleType'] === 'ANY' ? '' : params['vehicleType']
+          });
+        }
+
+        // Set baby seats
+        if (params['babySeats']) {
+          this.travelForm.patchValue({
+            hasBaby: params['babySeats'] === 'true'
+          });
+        }
+
+        // Set pet friendly
+        if (params['petFriendly']) {
+          this.travelForm.patchValue({
+            hasPets: params['petFriendly'] === 'true'
+          });
+        }
+
+        // Set passengers
+        if (params['passengers']) {
+          const emails = params['passengers'].split(',').filter((e: string) => e.trim());
+          if (emails.length > 0) {
+            this.travelForm.patchValue({ travelOption: 'friends' });
+            this.friendEmails.clear();
+            emails.forEach((email: string) => {
+              this.friendEmails.push(this.fb.group({
+                email: [email.trim(), [Validators.required, Validators.email]]
+              }));
+            });
+          }
+        }
+
+        this.successMessage = 'Route and settings loaded from previous ride!';
         setTimeout(() => {
           this.successMessage = null;
           this.cdr.detectChanges();

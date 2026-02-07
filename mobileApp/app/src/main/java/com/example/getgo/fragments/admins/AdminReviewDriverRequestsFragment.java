@@ -331,7 +331,7 @@ public class AdminReviewDriverRequestsFragment extends Fragment {
     }
 
     private void showRejectAlert(Long requestId) {
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_reject_reason, null);
+        View dialogView = getLayoutInflater().inflate(R.layout.admin_dialog_reject_reason, null);
         TextInputEditText etReason = dialogView.findViewById(R.id.etReason);
 
         new AlertDialog.Builder(requireContext())

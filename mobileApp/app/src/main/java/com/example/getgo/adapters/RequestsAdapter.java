@@ -52,7 +52,7 @@ public class RequestsAdapter extends RecyclerView.Adapter<RequestsAdapter.ViewHo
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_driver_change_request, parent, false);
+                .inflate(R.layout.admin_item_driver_change_request, parent, false);
         return new ViewHolder(view);
     }
 
@@ -144,7 +144,7 @@ public class RequestsAdapter extends RecyclerView.Adapter<RequestsAdapter.ViewHo
     private void addChange(ViewHolder holder, String label, String oldValue, String newValue) {
         if (!oldValue.equals(newValue)) {
             View changeView = LayoutInflater.from(holder.itemView.getContext())
-                    .inflate(R.layout.item_change, holder.layoutChanges, false);
+                    .inflate(R.layout.admin_item_change, holder.layoutChanges, false);
 
             TextView tvLabel = changeView.findViewById(R.id.tvChangeLabel);
             TextView tvOldValue = changeView.findViewById(R.id.tvOldValue);

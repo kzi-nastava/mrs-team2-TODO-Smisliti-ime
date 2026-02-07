@@ -54,7 +54,6 @@ public class DriverController {
         return ResponseEntity.ok(rides);
     }
 
-
     // 2.2.3 - Driver registration (validate activation token)
     @GetMapping(value = "/activate/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetActivationTokenDTO> validateActivationToken(@PathVariable String token) {
@@ -73,12 +72,20 @@ public class DriverController {
         return ResponseEntity.ok(response);
     }
 
-    // 2.3 - User profile (GET)
+    // 2.3 - User profile (GET) current authenticated driver
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverDTO> getProfile() {
         String email = AuthUtils.getCurrentUserEmail();
         GetDriverDTO response = driverService.getDriver(email);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - User profile (GET) by driver id for admin/passenger
+    @PreAuthorize("hasRole('ADMIN') or hasRole('PASSENGER')")
+    @GetMapping(value = "/profile/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetDriverDTO> getProfileById(@PathVariable("id") Long driverId) {
+        GetDriverDTO response = driverService.findDriverById(driverId);
         return ResponseEntity.ok(response);
     }
 

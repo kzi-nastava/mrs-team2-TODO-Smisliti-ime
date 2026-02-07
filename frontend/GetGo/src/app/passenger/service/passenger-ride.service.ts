@@ -1,10 +1,12 @@
 import { Injectable, signal } from '@angular/core';
-import { Ride, GetRideDTO } from '../model/ride.model';
+import { Ride, GetRideDTO } from '../../model/ride.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../env/environment';
 import { Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.model';
+import { GetRatingDTO } from '../../model/rating.model';
+import { GetDriverDTO } from '../../model/user.model';
 
 export interface CreatedFavoriteRideDTO {
   favoriteRideId: number;
@@ -30,7 +32,11 @@ export class RideService {
 
   constructor(private http: HttpClient) {}
 
-  loadRides(page: number = 0, size: number = 5, startDate?: Date): Observable<PageResponse<GetRideDTO>> {
+  loadRides(
+    page: number = 0,
+    size: number = 5,
+    startDate?: Date
+  ): Observable<PageResponse<GetRideDTO>> {
     let params: any = {page, size};
 
     if (startDate) {
@@ -43,10 +49,13 @@ export class RideService {
     const token = this.getAuthToken();
     const url = `${environment.apiHost}/api/passenger/rides`;
 
+    console.log('Request URL:', url);
+    console.log('Request params:', params);
+
     return this.http.get<PageResponse<GetRideDTO>>(url, {
       params,
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Authorization': `Bearer ${token}`
       }
     });
   }
@@ -91,6 +100,24 @@ export class RideService {
     const url = `${environment.apiHost}/api/passenger/rides/${rideId}`;
 
     return this.http.get<GetRideDTO>(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    });
+  }
+
+  getRatingsByRide(rideId: number): Observable<GetRatingDTO[]> {
+    const token = this.getAuthToken();
+    return this.http.get<GetRatingDTO[]>(`${environment.apiHost}/api/ratings/ride/${rideId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    });
+  }
+
+  getDriverProfile(driverId: number): Observable<GetDriverDTO> {
+    const token = this.getAuthToken();
+    return this.http.get<GetDriverDTO>(`${environment.apiHost}/api/drivers/profile/${driverId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       }

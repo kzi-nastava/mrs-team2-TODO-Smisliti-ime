@@ -2,8 +2,10 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../env/environment';
 import { Observable } from 'rxjs';
-import { GetRideDTO } from '../../passenger/model/ride.model';
+import { GetRideDTO } from '../../model/ride.model';
 import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.model';
+import { GetRatingDTO } from '../../model/rating.model';
+import { GetDriverDTO, GetPassengerDTO } from '../../model/user.model';
 
 export interface PageResponse<T> {
   content: T[];
@@ -31,8 +33,21 @@ export class AdminRideService {
     return token;
   }
 
-  loadPassengerRides(email: string, page: number = 0, size: number = 5, startDate?: Date): Observable<PageResponse<GetRideDTO>> {
-    let params: any = { email, page, size };
+  loadPassengerRides(
+    email: string,
+    page: number = 0,
+    size: number = 5,
+    startDate?: Date,
+    sort: string = 'startTime',
+    direction: string = 'DESC'
+  ): Observable<PageResponse<GetRideDTO>> {
+    let params: any = {
+      email,
+      page: page.toString(),
+      size: size.toString(),
+      sort,
+      direction
+    };
 
     if (startDate) {
       const day = startDate.getDate().toString().padStart(2, '0');
@@ -44,6 +59,9 @@ export class AdminRideService {
     const token = this.getAuthToken();
     const url = `${environment.apiHost}/api/admin/rides/passenger`;
 
+    console.log('Loading passenger rides with URL:', url);
+    console.log('Params:', params);
+
     return this.http.get<PageResponse<GetRideDTO>>(url, {
       params,
       headers: {
@@ -52,8 +70,21 @@ export class AdminRideService {
     });
   }
 
-  loadDriverRides(email: string, page: number = 0, size: number = 5, startDate?: Date): Observable<PageResponse<GetRideDTO>> {
-    let params: any = { email, page, size };
+  loadDriverRides(
+    email: string,
+    page: number = 0,
+    size: number = 5,
+    startDate?: Date,
+    sort: string = 'startTime',
+    direction: string = 'DESC'
+  ): Observable<PageResponse<GetRideDTO>> {
+    let params: any = {
+      email,
+      page: page.toString(),
+      size: size.toString(),
+      sort,
+      direction
+    };
 
     if (startDate) {
       const day = startDate.getDate().toString().padStart(2, '0');
@@ -64,6 +95,9 @@ export class AdminRideService {
 
     const token = this.getAuthToken();
     const url = `${environment.apiHost}/api/admin/rides/driver`;
+
+    console.log('Loading driver rides with URL:', url);
+    console.log('Params:', params);
 
     return this.http.get<PageResponse<GetRideDTO>>(url, {
       params,
@@ -102,8 +136,34 @@ export class AdminRideService {
     return this.http.get<GetInconsistencyReportDTO[]>(url);
   }
 
+  getRatingsByRide(rideId: number): Observable<GetRatingDTO[]> {
+    const token = this.getAuthToken();
+    return this.http.get<GetRatingDTO[]>(`${environment.apiHost}/api/ratings/ride/${rideId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    });
+  }
+
+  getDriverProfile(driverId: number): Observable<GetDriverDTO> {
+    const token = this.getAuthToken();
+    return this.http.get<GetDriverDTO>(`${environment.apiHost}/api/drivers/profile/${driverId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    });
+  }
+
+  getPassengerProfile(passengerId: number): Observable<GetPassengerDTO> {
+    const token = this.getAuthToken();
+    return this.http.get<GetPassengerDTO>(`${environment.apiHost}/api/passenger/profile/${passengerId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    });
+  }
+
   setRides(rides: GetRideDTO[]) {
     this._rides.set(rides || []);
   }
 }
-

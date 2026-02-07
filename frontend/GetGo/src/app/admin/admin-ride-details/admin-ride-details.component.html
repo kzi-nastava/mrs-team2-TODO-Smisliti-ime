@@ -3,32 +3,102 @@
   <h1>Ride Details {{ userType }}</h1>
   <p><b>User Email:</b> {{ userEmail }}</p>
 
-  <p><b>Start location:</b> {{ ride()!.startPoint }}</p>
-  <p><b>End location:</b> {{ ride()!.endPoint }}</p>
+  <div class="content-wrapper">
+    <!-- Left side - Ride information -->
+    <div class="left-content">
+      <div class="info-card">
+        <h2>Trip Information</h2>
+        <p><b>Start location:</b> {{ ride()!.startPoint }}</p>
+        <p><b>End location:</b> {{ ride()!.endPoint }}</p>
+        <p><b>Date:</b> {{ ride()!.startingTime | date:'dd.MM.yyyy' }}</p>
+        <p><b>Start time:</b> {{ ride()!.startingTime | date:'HH:mm' }}</p>
+        <p><b>End time:</b> {{ ride()!.finishedTime | date:'HH:mm' }}</p>
+        <p><b>Vehicle Type:</b> {{ ride()!.vehicleType }}</p>
+        <p><b>Baby Seats:</b> {{ ride()!.needsBabySeats ? 'Yes' : 'No' }}</p>
+        <p><b>Pet Friendly:</b> {{ ride()!.needsPetFriendly ? 'Yes' : 'No' }}</p>
+        <p><b>Panic activated:</b> {{ ride()!.panicActivated ? 'Yes' : 'No' }}</p>
+        <h2>Price: {{ ride()!.price | number:'1.0-0' }}rsd</h2>
+      </div>
 
-  <p><b>Date:</b> {{ ride()!.startingTime | date:'dd.MM.yyyy' }}</p>
-  <p><b>Start time:</b> {{ ride()!.startingTime | date:'HH:mm' }}</p>
-  <p><b>End time:</b> {{ ride()!.finishedTime | date:'HH:mm' }}</p>
+      <!-- Driver Profile -->
+      <div *ngIf="!loadingProfiles() && driver()" class="profile-section">
+        <h2>Driver Information</h2>
+        <div class="profile-card">
+          <img *ngIf="driver()!.profilePictureUrl" [src]="driver()!.profilePictureUrl" alt="Driver" class="profile-picture">
+          <div class="profile-info">
+            <p><b>Name:</b> {{ driver()!.name }} {{ driver()!.surname }}</p>
+            <p><b>Email:</b> {{ driver()!.email }}</p>
+            <p><b>Phone:</b> {{ driver()!.phone }}</p>
+            <p *ngIf="driver()!.address"><b>Address:</b> {{ driver()!.address }}</p>
+            <p *ngIf="driver()!.vehicleModel"><b>Vehicle:</b> {{ driver()!.vehicleType }} - {{ driver()!.vehicleModel }}</p>
+            <p *ngIf="driver()!.vehicleLicensePlate"><b>License Plate:</b> {{ driver()!.vehicleLicensePlate }}</p>
+            <p *ngIf="driver()!.vehicleSeats"><b>Seats:</b> {{ driver()!.vehicleSeats }}</p>
+          </div>
+        </div>
+      </div>
 
-  <p><b>Panic activated:</b> {{ ride()!.panicActivated ? 'Yes' : 'No' }}</p>
+      <!-- Passenger Profiles -->
+      <div *ngIf="!loadingProfiles() && passengers().length > 0" class="profile-section">
+        <h2>Passenger Information ({{ passengers().length }} passenger{{ passengers().length > 1 ? 's' : '' }})</h2>
+        <div class="profile-card" *ngFor="let passenger of passengers()">
+          <img *ngIf="passenger.profilePictureUrl" [src]="passenger.profilePictureUrl" alt="Passenger" class="profile-picture">
+          <div class="profile-info">
+            <p><b>Name:</b> {{ passenger.name }} {{ passenger.surname }}</p>
+            <p><b>Email:</b> {{ passenger.email }}</p>
+            <p><b>Phone:</b> {{ passenger.phone }}</p>
+            <p *ngIf="passenger.address"><b>Address:</b> {{ passenger.address }}</p>
+          </div>
+        </div>
+      </div>
 
-  <h2>Price: {{ ride()!.price | number:'1.0-0' }}rsd</h2>
+      <!-- Ratings Section -->
+      <div class="ratings-section">
+        <h2>Ride Ratings</h2>
+        <div *ngIf="loadingRatings()">Loading ratings...</div>
+        <div *ngIf="!loadingRatings() && ratings().length === 0">No ratings for this ride</div>
+        <div *ngIf="ratings().length > 0">
+          <p class="average-rating"><b>Average Driver Rating:</b> {{ getAverageRating() | number:'1.1-1' }} / 5.0</p>
+          <div class="rating-list">
+            <div class="rating-card" *ngFor="let rating of ratings()">
+              <p class="rating-score">⭐ Driver: {{ rating.driverRating }}/5 | Vehicle: {{ rating.vehicleRating }}/5</p>
+              <p class="rating-comment" *ngIf="rating.comment">"{{ rating.comment }}"</p>
+              <p class="rating-meta">By passenger ID: {{ rating.passengerId }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  <h2>Reported inconsistencies</h2>
+      <h2>Reported inconsistencies</h2>
 
-  <div *ngIf="loadingReports()">Loading reports...</div>
+      <div *ngIf="loadingReports()">Loading reports...</div>
 
-  <div *ngIf="!loadingReports() && reports().length === 0">
-    No reports for this ride
-  </div>
+      <div *ngIf="!loadingReports() && reports().length === 0">
+        No reports for this ride
+      </div>
 
-  <div *ngIf="reports().length > 0" class="report-list">
-    <div class="report-card" *ngFor="let report of reports()">
-      <p class="report-text">"{{ report.text }}"</p>
-      <p class="report-meta">
-        Reported by <b>{{ report.passengerEmail }}</b>
-        - {{ report.createdAt | date:'dd.MM.yyyy HH:mm' }}
-      </p>
+      <div *ngIf="reports().length > 0" class="report-list">
+        <div class="report-card" *ngFor="let report of reports()">
+          <p class="report-text">"{{ report.text }}"</p>
+          <p class="report-meta">
+            Reported by <b>{{ report.passengerEmail }}</b>
+            - {{ report.createdAt | date:'dd.MM.yyyy HH:mm' }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right side - Map -->
+    <div class="right-content">
+      <div class="map-container">
+        <h2>Route Map</h2>
+        <div id="map"></div>
+        <p class="map-hint" *ngIf="ride()!.waypoints && ride()!.waypoints!.length > 0">
+          Map showing {{ ride()!.waypoints!.length }} waypoints
+        </p>
+        <p class="map-hint" *ngIf="!ride()!.waypoints || ride()!.waypoints!.length === 0">
+          Map showing route between start and end points
+        </p>
+      </div>
     </div>
   </div>
 
@@ -37,4 +107,3 @@
 <ng-template #loading>
   <p class="loading">Loading ride details...</p>
 </ng-template>
-

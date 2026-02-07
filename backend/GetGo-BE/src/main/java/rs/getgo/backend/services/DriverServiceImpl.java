@@ -42,6 +42,7 @@ public class DriverServiceImpl implements DriverService {
     private final ModelMapper modelMapper;
     private final FileStorageService fileStorageService;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
     public DriverServiceImpl(
             DriverRepository driverRepository,
@@ -54,7 +55,8 @@ public class DriverServiceImpl implements DriverService {
             ActiveRideRepository activeRideRepository,
             ModelMapper modelMapper,
             FileStorageService fileStorageService,
-            BCryptPasswordEncoder passwordEncoder
+            BCryptPasswordEncoder passwordEncoder,
+            UserRepository userRepository
     ) {
         this.driverRepository = driverRepository;
         this.completedRideRepository = completedRideRepository;
@@ -67,6 +69,7 @@ public class DriverServiceImpl implements DriverService {
         this.modelMapper = modelMapper;
         this.fileStorageService = fileStorageService;
         this.passwordEncoder = passwordEncoder;
+        this.userRepository = userRepository;
     }
 
     public List<GetActiveDriverLocationDTO> getActiveDriverLocations() {
@@ -148,6 +151,13 @@ public class DriverServiceImpl implements DriverService {
             );
         }
 
+        String cancelledUserEmail = null;
+        if (r.getCancelledByUserId() != null) {
+            Optional<User> user = userRepository.findById(r.getCancelledByUserId());
+            if (user.isPresent()) {
+                cancelledUserEmail = user.get().getEmail();
+            }
+        }
         return new GetRideDTO(
                 r.getId(),
                 r.getDriverId(),
@@ -166,7 +176,11 @@ public class DriverServiceImpl implements DriverService {
                 r.isCompletedNormally() ? "FINISHED" :
                         (r.isCancelled() ? "CANCELLED" : "ACTIVE"),
                 r.getEstimatedPrice(),
-                r.isPanicPressed()
+                r.isPanicPressed(),
+                r.getEstDistanceKm(),
+                r.getEstTime(),
+                cancelledUserEmail,
+                r.getCancelReason()
         );
     }
 
@@ -588,5 +602,27 @@ public class DriverServiceImpl implements DriverService {
 
     public boolean hasExceededWorkingHours(Driver driver) {
         return calculateRecentHoursWorked(driver.getEmail()) >= 8.0;
+    }
+
+    @Override
+    public GetDriverDTO findDriverById(Long driverId) {
+        Driver driver = driverRepository.findById(driverId)
+                .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
+
+        GetDriverDTO dto = modelMapper.map(driver, GetDriverDTO.class);
+
+        // Map vehicle info
+        if (driver.getVehicle() != null) {
+            dto.setVehicleModel(driver.getVehicle().getModel());
+            dto.setVehicleType(driver.getVehicle().getType().toString());
+            dto.setVehicleLicensePlate(driver.getVehicle().getLicensePlate());
+            dto.setVehicleSeats(driver.getVehicle().getNumberOfSeats());
+            dto.setVehicleHasBabySeats(driver.getVehicle().getIsBabyFriendly());
+            dto.setVehicleAllowsPets(driver.getVehicle().getIsPetFriendly());
+        }
+
+        dto.setProfilePictureUrl(driver.getProfilePictureUrl());
+
+        return dto;
     }
 }

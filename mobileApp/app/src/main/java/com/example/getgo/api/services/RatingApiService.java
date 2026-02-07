@@ -14,8 +14,8 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface RatingApiService {
-//    @GET("/api/ratings/ride/{rideId}")
-//    Call<List<GetRatingDTO>> getRatings(@Path("rideId") Long rideId);
+    @GET("/api/ratings/ride/{rideId}")
+    Call<List<GetRatingDTO>> getRatings(@Path("rideId") Long rideId);
 
     @GET("/api/ratings/driver/{driverId}")
     Call<List<GetRatingDTO>> getRatingsByDriver(@Path("driverId") Long driverId);

@@ -59,6 +59,11 @@ public class MapManager {
         void onError(String error);
     }
 
+    public interface CoordinatesCallback {
+        void onCoordinatesFound(LatLng coordinates);
+        void onError(String error);
+    }
+
     public interface RouteCallback {
         void onRouteFound(int distanceMeters, int durationSeconds);
         void onError(String error);
@@ -91,6 +96,32 @@ public class MapManager {
                 } else {
                     ((android.app.Activity) context).runOnUiThread(() ->
                             callback.onError("No address found")
+                    );
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "Geocoding error", e);
+                ((android.app.Activity) context).runOnUiThread(() ->
+                        callback.onError("Geocoding failed: " + e.getMessage())
+                );
+            }
+        }).start();
+    }
+
+    // Reverse: get coordinates from address string
+    public void getCoordinatesFromAddress(String addressString, CoordinatesCallback callback) {
+        new Thread(() -> {
+            try {
+                List<Address> addresses = geocoder.getFromLocationName(addressString, 1);
+
+                if (addresses != null && !addresses.isEmpty()) {
+                    Address address = addresses.get(0);
+                    LatLng coordinates = new LatLng(address.getLatitude(), address.getLongitude());
+                    ((android.app.Activity) context).runOnUiThread(() ->
+                            callback.onCoordinatesFound(coordinates)
+                    );
+                } else {
+                    ((android.app.Activity) context).runOnUiThread(() ->
+                            callback.onError("No coordinates found for address")
                     );
                 }
             } catch (IOException e) {

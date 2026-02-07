@@ -44,11 +44,11 @@ public class EmailService {
         message.setText(
                 "Your account has been created.\n\n" +
                 "Activate your account:\n\n" +
-                "1) Mobile app (if installed):\n" +
-                mobileDeepLink + "\n\n" +
-                "2) Browser fallback (works on phone):\n" +
+                /*"1) Mobile app (if installed):\n" +
+                mobileDeepLink + "\n\n" +*/
+                "1) Browser fallback (works on phone):\n" +
                 mobileHttpLink + "\n\n" +
-                "3) Web app:\n" +
+                "2) Web app:\n" +
                 webLink + "\n\n" +
                 "This activation link is valid for 24 hours.\n"
         );
@@ -97,11 +97,11 @@ public class EmailService {
         message.setText(
                 "Hello,\n\n" +
                 "To reset your password (valid for 15 minutes), use one of the links below:\n\n" +
-                "1) Mobile app (if installed):\n" +
+                /*"1) Mobile app (if installed):\n" +
                 (token == null ? "(missing token in reset URL)\n" : (mobileScheme + "://reset-password/?token=" + token + "\n")) +
-                "\n2) Phone browser fallback:\n" +
+              */"\n1) Phone browser fallback:\n" +
                 mobileHttpLink + "\n\n" +
-                "3) Web app:\n" +
+                "2) Web app:\n" +
                 webLink + "\n\n" +
                 "If you didn't request this, ignore this email.\n\nRegards,\nGetGo Team"
         );

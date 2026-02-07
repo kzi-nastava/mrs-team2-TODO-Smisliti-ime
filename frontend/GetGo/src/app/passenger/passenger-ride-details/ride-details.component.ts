@@ -1,9 +1,13 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, AfterViewInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RideService } from '../service/passenger-ride.service';
-import { GetRideDTO } from '../model/ride.model';
+import { GetRideDTO } from '../../model/ride.model';
 import { CommonModule } from '@angular/common';
 import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.model';
+import { GetRatingDTO } from '../../model/rating.model';
+import { GetDriverDTO } from '../../model/user.model';
+import { RideHistoryMapHelper } from '../../helpers/ride-history.map.drawing';
+import * as L from 'leaflet';
 
 @Component({
   selector: 'app-passenger-ride-details',
@@ -12,7 +16,7 @@ import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.mode
   templateUrl: './ride-details.component.html',
   styleUrl: './ride-details.component.css'
 })
-export class PassengerRideDetailsComponent implements OnInit {
+export class PassengerRideDetailsComponent implements OnInit, AfterViewInit {
 
   rideId!: number;
 
@@ -20,6 +24,10 @@ export class PassengerRideDetailsComponent implements OnInit {
   loadingRide = signal(true);
   reports = signal<GetInconsistencyReportDTO[]>([]);
   loadingReports = signal(true);
+  ratings = signal<GetRatingDTO[]>([]);
+  loadingRatings = signal(true);
+  driver = signal<GetDriverDTO | undefined>(undefined);
+  loadingDriver = signal(true);
 
   isFavoriting = signal(false);
   isUnfavoriting = signal(false);
@@ -27,10 +35,13 @@ export class PassengerRideDetailsComponent implements OnInit {
   unfavoriteSuccess = signal(false);
   favoriteError = signal<string | null>(null);
 
+  private map?: L.Map;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private rideService: RideService
+    private rideService: RideService,
+    private mapHelper: RideHistoryMapHelper
   ) {
     this.rideId = Number(this.route.snapshot.paramMap.get('id'));
   }
@@ -41,6 +52,27 @@ export class PassengerRideDetailsComponent implements OnInit {
       next: (ride) => {
         this.ride.set(ride);
         this.loadingRide.set(false);
+
+        // Fetch driver profile
+        if (ride.driverId) {
+          this.rideService.getDriverProfile(ride.driverId).subscribe({
+            next: (driver) => {
+              this.driver.set(driver);
+              this.loadingDriver.set(false);
+            },
+            error: (err) => {
+              console.error('Error loading driver profile:', err);
+              this.loadingDriver.set(false);
+            }
+          });
+        }
+
+        // Initialize map after ride data is loaded
+        setTimeout(() => {
+          if (this.ride()) {
+            this.initializeMap();
+          }
+        }, 500);
       },
       error: (err) => {
         console.error('Error loading ride details:', err);
@@ -59,6 +91,54 @@ export class PassengerRideDetailsComponent implements OnInit {
         this.loadingReports.set(false);
       }
     });
+
+    // Fetch ratings
+    this.rideService.getRatingsByRide(this.rideId).subscribe({
+      next: (data) => {
+        this.ratings.set(data);
+        this.loadingRatings.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading ratings:', err);
+        this.loadingRatings.set(false);
+      }
+    });
+  }
+
+  ngAfterViewInit() {
+    // Map will be initialized in ngOnInit after data is fetched
+  }
+
+  private initializeMap(): void {
+    const currentRide = this.ride();
+    if (!currentRide) return;
+
+    const mapElement = document.getElementById('map');
+    if (!mapElement) {
+      console.error('Map element not found');
+      return;
+    }
+
+    try {
+      // Remove existing map if it exists
+      if (this.map) {
+        this.map.remove();
+        this.map = undefined;
+      }
+
+      // Initialize map centered on Novi Sad
+      this.map = L.map('map').setView([45.2671, 19.8335], 13);
+
+      // Add OpenStreetMap tiles
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(this.map);
+
+      // Use helper to draw route
+      this.mapHelper.initializeMap(this.map, currentRide);
+    } catch (error) {
+      console.error('Error initializing map:', error);
+    }
   }
 
   onFavoriteRide(): void {
@@ -121,11 +201,27 @@ export class PassengerRideDetailsComponent implements OnInit {
     const currentRide = this.ride();
     if (!currentRide) return;
 
+    // Extract passenger emails from the ride
+    const passengerEmails = currentRide.passengers
+      ? currentRide.passengers.map(p => p.email).join(',')
+      : '';
+
     this.router.navigate(['/registered-home'], {
       queryParams: {
         from: currentRide.startPoint,
-        to: currentRide.endPoint
+        to: currentRide.endPoint,
+        vehicleType: currentRide.vehicleType,
+        babySeats: currentRide.needsBabySeats,
+        petFriendly: currentRide.needsPetFriendly,
+        passengers: passengerEmails
       }
     });
+  }
+
+  getAverageRating(): number {
+    const ratingsList = this.ratings();
+    if (ratingsList.length === 0) return 0;
+    const sum = ratingsList.reduce((acc, r) => acc + r.driverRating, 0);
+    return sum / ratingsList.length;
   }
 }

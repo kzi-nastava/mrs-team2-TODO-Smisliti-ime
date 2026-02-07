@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Observable } from 'rxjs';
 import { AdminNavBarComponent } from '../../layout/admin-nav-bar/admin-nav-bar.component';
 import { AdminService } from '../service/admin.service';
 import { environment } from '../../../env/environment';
@@ -93,21 +94,21 @@ export class AdminReviewDriverRequests implements OnInit {
   loadRequests(): void {
     this.isLoading = true;
 
-    const loader = this.activeTab === 'personal'
+    const loader: Observable<any> = this.activeTab === 'personal'
       ? this.adminService.getPendingPersonalChangeRequests(this.currentPage, this.itemsPerPage)
       : this.activeTab === 'vehicle'
       ? this.adminService.getPendingVehicleChangeRequests(this.currentPage, this.itemsPerPage)
       : this.adminService.getPendingAvatarChangeRequests(this.currentPage, this.itemsPerPage);
 
     loader.subscribe({
-      next: (page) => {
+      next: (page: any) => {
         this.requests = this.mapRequests(page.content);
         this.totalPages = page.totalPages;
         this.totalElements = page.totalElements;
         this.isLoading = false;
         this.cdr.detectChanges();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading requests:', error);
         this.isLoading = false;
       }

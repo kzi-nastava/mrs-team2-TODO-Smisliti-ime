@@ -1,7 +1,5 @@
 package com.example.getgo.dtos.request;
 
-import java.time.LocalDateTime;
-
 public class GetDriverVehicleChangeRequestDTO {
     private Long requestId;
     private Long driverId;
@@ -23,7 +21,7 @@ public class GetDriverVehicleChangeRequestDTO {
     private Boolean requestedVehicleAllowsPets;
 
     private String status;
-    private LocalDateTime createdAt;
+    private String createdAt;
 
     public GetDriverVehicleChangeRequestDTO() {}
 
@@ -34,7 +32,8 @@ public class GetDriverVehicleChangeRequestDTO {
                                             Boolean currentVehicleAllowsPets, String requestedVehicleModel,
                                             String requestedVehicleType, String requestedVehicleLicensePlate,
                                             Integer requestedVehicleSeats, Boolean requestedVehicleHasBabySeats,
-                                            Boolean requestedVehicleAllowsPets, String status, LocalDateTime createdAt) {
+                                            Boolean requestedVehicleAllowsPets, String status,
+                                            String createdAt) {
         this.requestId = requestId;
         this.driverId = driverId;
         this.driverEmail = driverEmail;
@@ -191,11 +190,11 @@ public class GetDriverVehicleChangeRequestDTO {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public String getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
 }

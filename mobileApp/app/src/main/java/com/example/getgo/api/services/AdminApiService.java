@@ -7,6 +7,7 @@ import com.example.getgo.dtos.authentication.UpdatePasswordDTO;
 import com.example.getgo.dtos.authentication.UpdatedPasswordDTO;
 import com.example.getgo.dtos.driver.CreateDriverDTO;
 import com.example.getgo.dtos.driver.CreatedDriverDTO;
+import com.example.getgo.dtos.general.Page;
 import com.example.getgo.dtos.request.AcceptDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.GetDriverAvatarChangeRequestDTO;
 import com.example.getgo.dtos.request.GetDriverVehicleChangeRequestDTO;
@@ -14,14 +15,13 @@ import com.example.getgo.dtos.request.GetPersonalDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.RejectDriverChangeRequestDTO;
 import com.example.getgo.dtos.user.CreatedUserDTO;
 
-import java.util.List;
-
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 public interface AdminApiService {
 
@@ -44,10 +44,31 @@ public interface AdminApiService {
     Call<CreatedDriverDTO> registerDriver(@Body CreateDriverDTO createDriverDTO);
 
     @GET("api/admin/driver-change-requests/personal")
-    Call<List<GetPersonalDriverChangeRequestDTO>> getPendingPersonalChangeRequests();
+    Call<Page<GetPersonalDriverChangeRequestDTO>> getPendingPersonalChangeRequests(
+            @Query("page") int page,
+            @Query("size") int size
+    );
+
+    @GET("api/admin/driver-change-requests/vehicle")
+    Call<Page<GetDriverVehicleChangeRequestDTO>> getPendingVehicleChangeRequests(
+            @Query("page") int page,
+            @Query("size") int size
+    );
+
+    @GET("api/admin/driver-change-requests/picture")
+    Call<Page<GetDriverAvatarChangeRequestDTO>> getPendingPictureChangeRequests(
+            @Query("page") int page,
+            @Query("size") int size
+    );
 
     @PUT("api/admin/driver-change-requests/personal/{requestId}/approve")
     Call<AcceptDriverChangeRequestDTO> approvePersonalChangeRequest(@Path("requestId") Long requestId);
+
+    @PUT("api/admin/driver-change-requests/vehicle/{requestId}/approve")
+    Call<AcceptDriverChangeRequestDTO> approveVehicleChangeRequest(@Path("requestId") Long requestId);
+
+    @PUT("api/admin/driver-change-requests/picture/{requestId}/approve")
+    Call<AcceptDriverChangeRequestDTO> approvePictureChangeRequest(@Path("requestId") Long requestId);
 
     @PUT("api/admin/driver-change-requests/personal/{requestId}/reject")
     Call<AcceptDriverChangeRequestDTO> rejectPersonalChangeRequest(
@@ -55,23 +76,11 @@ public interface AdminApiService {
             @Body RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO
     );
 
-    @GET("api/admin/driver-change-requests/vehicle")
-    Call<List<GetDriverVehicleChangeRequestDTO>> getPendingVehicleChangeRequests();
-
-    @PUT("api/admin/driver-change-requests/vehicle/{requestId}/approve")
-    Call<AcceptDriverChangeRequestDTO> approveVehicleChangeRequest(@Path("requestId") Long requestId);
-
     @PUT("api/admin/driver-change-requests/vehicle/{requestId}/reject")
     Call<AcceptDriverChangeRequestDTO> rejectVehicleChangeRequest(
             @Path("requestId") Long requestId,
             @Body RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO
     );
-
-    @GET("api/admin/driver-change-requests/picture")
-    Call<List<GetDriverAvatarChangeRequestDTO>> getPendingPictureChangeRequests();
-
-    @PUT("api/admin/driver-change-requests/picture/{requestId}/approve")
-    Call<AcceptDriverChangeRequestDTO> approvePictureChangeRequest(@Path("requestId") Long requestId);
 
     @PUT("api/admin/driver-change-requests/picture/{requestId}/reject")
     Call<AcceptDriverChangeRequestDTO> rejectPictureChangeRequest(

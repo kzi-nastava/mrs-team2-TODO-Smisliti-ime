@@ -1,26 +1,21 @@
 package com.example.getgo.dtos.request;
 
-import java.time.LocalDateTime;
-
 public class GetDriverAvatarChangeRequestDTO {
     private Long requestId;
     private Long driverId;
     private String driverEmail;
     private String driverName;
-
     private String currentProfilePictureUrl;
-
     private String requestedProfilePictureUrl;
-
     private String status;
-    private LocalDateTime createdAt;
+    private String createdAt;
 
     public GetDriverAvatarChangeRequestDTO() {}
 
     public GetDriverAvatarChangeRequestDTO(Long requestId, Long driverId, String driverEmail,
                                            String driverName, String currentProfilePictureUrl,
                                            String requestedProfilePictureUrl, String status,
-                                           LocalDateTime createdAt) {
+                                           String createdAt) {
         this.requestId = requestId;
         this.driverId = driverId;
         this.driverEmail = driverEmail;
@@ -87,11 +82,11 @@ public class GetDriverAvatarChangeRequestDTO {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public String getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
 }

@@ -808,7 +808,8 @@ public class RideServiceImpl implements RideService {
                 ride.getId(),
                 completedRide.getEstimatedPrice(),
                 completedRide.getStartTime(),
-                completedRide.getEndTime()
+                completedRide.getEndTime(),
+                completedRide.getDriverId()
         );
 
         // === WS: notify PASSENGERS ===
@@ -816,7 +817,8 @@ public class RideServiceImpl implements RideService {
                 ride.getId(),
                 completedRide.getEstimatedPrice(),
                 completedRide.getStartTime(),
-                completedRide.getEndTime()
+                completedRide.getEndTime(),
+                completedRide.getDriverId()
         );
 
         // Return DTO
@@ -922,7 +924,8 @@ public class RideServiceImpl implements RideService {
                 ride.getId(),
                 actualPrice,
                 startTime,
-                endTime
+                endTime,
+                ride.getDriver().getId()
         );
 
         RideCompletionDTO response = new RideCompletionDTO();

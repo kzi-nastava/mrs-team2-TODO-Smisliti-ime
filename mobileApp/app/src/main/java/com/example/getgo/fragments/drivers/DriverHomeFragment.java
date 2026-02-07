@@ -193,10 +193,21 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                 GetDriverActiveRideDTO ride = repo.getDriverActiveRide();
 
                 requireActivity().runOnUiThread(() -> {
-                    currentRide = ride;
-                    updateUI();
+//                    currentRide = ride;
+//                    updateUI();
                     if (ride != null) {
+                        currentRide = ride;
+
+                        // PROVERA: Ako je status DRIVER_ARRIVED_AT_DESTINATION,
+                        // tretiraj vožnju kao aktivnu i prikazi je
+                        if (ride.getStatus().equals("DRIVER_ARRIVED_AT_DESTINATION")) {
+                            Log.d(TAG, "Ride is at destination but not yet ended. Showing it as active.");
+                        }
+
+                        updateUI();
                         drawRideRoute();
+                    } else {
+                        showNoRide();
                     }
                 });
             } catch (Exception e) {

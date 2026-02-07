@@ -1,5 +1,10 @@
 package com.example.getgo.fragments.passengers;
 
+import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,6 +21,10 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
@@ -85,6 +94,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         showLoading();
         setupWebSocket();
         loadActiveRide();
+
+        requestNotificationPermission();
 
         return root;
     }
@@ -308,7 +319,10 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         });
 
         webSocketManager.subscribeToPassengerRideFinished(rideId, finished -> {
-            requireActivity().runOnUiThread(() -> showRideCompleted(finished));
+            requireActivity().runOnUiThread(() -> {
+                showRideCompleted(finished);
+                showRideFinishedNotification(finished);
+            });
         });
 
         webSocketManager.subscribeToPassengerRideStopped(rideId, stopped -> {
@@ -538,4 +552,61 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
             webSocketManager.disconnect();
         }
     }
+
+    private void showRideFinishedNotification(GetRideFinishedDTO finished) {
+        // Create notification channel (only once)
+        String channelId = "ride_channel";
+        String channelName = "Ride Notifications";
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    channelId,
+                    channelName,
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            NotificationManager manager = requireContext().getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(channel);
+        }
+
+        // Build the notification
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(requireContext(), channelId)
+                .setSmallIcon(R.drawable.ic_car)
+                .setContentTitle("Ride Finished")
+                .setContentText(String.format(Locale.ENGLISH,
+                        "Your ride has finished. Price: %.2f RSD", finished.getPrice()))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(requireContext());
+        notificationManager.notify(1001, builder.build());
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == 1002) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(getContext(), "Notifications enabled", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getContext(), "Notifications denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(),
+                    Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+
+                ActivityCompat.requestPermissions(requireActivity(),
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        1002); // request code
+            }
+        }
+    }
+
+
+
 }

@@ -121,6 +121,14 @@ export interface ApproveRejectResponseDTO {
   reviewedAt: string;
 }
 
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -145,16 +153,16 @@ export class AdminService {
     return this.http.post<CreatedDriverDTO>(`${this.apiUrl}/drivers/register`, driverData);
   }
 
-  getPendingPersonalChangeRequests(): Observable<GetPersonalChangeRequestDTO[]> {
-    return this.http.get<GetPersonalChangeRequestDTO[]>(`${this.apiUrl}/driver-change-requests/personal`);
+  getPendingPersonalChangeRequests(page: number = 0, size: number = 10): Observable<Page<GetPersonalChangeRequestDTO>> {
+    return this.http.get<Page<GetPersonalChangeRequestDTO>>(`${this.apiUrl}/driver-change-requests/personal?page=${page}&size=${size}`);
   }
 
-  getPendingVehicleChangeRequests(): Observable<GetVehicleChangeRequestDTO[]> {
-    return this.http.get<GetVehicleChangeRequestDTO[]>(`${this.apiUrl}/driver-change-requests/vehicle`);
+  getPendingVehicleChangeRequests(page: number = 0, size: number = 10): Observable<Page<GetVehicleChangeRequestDTO>> {
+    return this.http.get<Page<GetVehicleChangeRequestDTO>>(`${this.apiUrl}/driver-change-requests/vehicle?page=${page}&size=${size}`);
   }
 
-  getPendingAvatarChangeRequests(): Observable<GetAvatarChangeRequestDTO[]> {
-    return this.http.get<GetAvatarChangeRequestDTO[]>(`${this.apiUrl}/driver-change-requests/picture`);
+  getPendingAvatarChangeRequests(page: number = 0, size: number = 10): Observable<Page<GetAvatarChangeRequestDTO>> {
+    return this.http.get<Page<GetAvatarChangeRequestDTO>>(`${this.apiUrl}/driver-change-requests/picture?page=${page}&size=${size}`);
   }
 
   approvePersonalChangeRequest(requestId: number): Observable<ApproveRejectResponseDTO> {

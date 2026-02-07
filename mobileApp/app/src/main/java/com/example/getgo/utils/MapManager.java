@@ -51,6 +51,7 @@ public class MapManager {
 
     // ===== ROUTE =====
     private Polyline routePolyline;
+    private List<LatLng> currentRoute = new ArrayList<>();
 
     // ===== INTERFACES =====
     public interface AddressCallback {
@@ -332,6 +333,8 @@ public class MapManager {
         int[] totals = calculateTotals(route.getJSONArray("legs"));
 
         ((android.app.Activity) context).runOnUiThread(() -> {
+            currentRoute = new ArrayList<>(decodedPath);
+
             PolylineOptions options = new PolylineOptions()
                     .addAll(decodedPath)
                     .color(Color.parseColor("#3B82F6"))
@@ -465,11 +468,12 @@ public class MapManager {
                     String encodedPolyline = route.getString("geometry");
                     List<LatLng> decodedPath = decodePolyline(encodedPolyline);
 
-                    // Distance & Duration (u metrima i sekundama)
+                    // Distance & Duration (in meters and seconds)
                     int totalDistance = route.getInt("distance"); // meters
                     int totalDuration = route.getInt("duration"); // seconds
 
                     ((android.app.Activity) context).runOnUiThread(() -> {
+                        currentRoute = new ArrayList<>(decodedPath);
                         PolylineOptions options = new PolylineOptions()
                                 .addAll(decodedPath)
                                 .color(Color.parseColor("#3B82F6"))
@@ -487,6 +491,48 @@ public class MapManager {
                 }
             }
         });
+    }
+
+    public double getDistanceAlongRoute(LatLng currentPosition) {
+        if (currentRoute == null || currentRoute.size() < 2) return 0;
+
+        double distance = 0;
+
+
+        for (int i = 0; i < currentRoute.size() - 1; i++) {
+            LatLng start = currentRoute.get(i);
+            LatLng end = currentRoute.get(i + 1);
+
+            double segmentDistance = distanceBetween(start, end);
+
+            if (isPointNearSegment(currentPosition, start, end)) {
+                double partial = distanceBetween(start, currentPosition);
+                distance += partial;
+                break;
+            } else {
+                distance += segmentDistance;
+            }
+        }
+
+        return distance;
+    }
+
+    private double distanceBetween(LatLng a, LatLng b) {
+        float[] results = new float[1];
+        android.location.Location.distanceBetween(
+                a.latitude, a.longitude,
+                b.latitude, b.longitude,
+                results
+        );
+        return results[0];
+    }
+
+    private boolean isPointNearSegment(LatLng point, LatLng start, LatLng end) {
+        double threshold = 30; // 30 meters tolerance
+        double distToStart = distanceBetween(point, start);
+        double distToEnd = distanceBetween(point, end);
+        double segmentLength = distanceBetween(start, end);
+        return distToStart + distToEnd <= segmentLength + threshold;
     }
 
 }

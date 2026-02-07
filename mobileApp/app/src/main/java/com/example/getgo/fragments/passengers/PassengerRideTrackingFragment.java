@@ -1,6 +1,8 @@
 package com.example.getgo.fragments.passengers;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,6 +33,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -65,6 +68,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 
     private GetPassengerActiveRideDTO currentRide;
     private boolean panicSent = false;
+    private int totalRouteDistanceMeters = 0;
+
 
     public PassengerRideTrackingFragment() {}
 
@@ -105,6 +110,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         tvProgressPercent = root.findViewById(R.id.tvProgressPercent);
         tvTimeRemaining = root.findViewById(R.id.tvTimeRemaining);
         progressBar = root.findViewById(R.id.progressBar);
+        progressBar.setMax(100);
+        progressBar.setProgress(0);
 
         btnCancelRide = root.findViewById(R.id.btnCancelRide);
         btnPanic = root.findViewById(R.id.btnPanic);
@@ -214,9 +221,17 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 
         LatLng noviSad = new LatLng(45.2519, 19.8370);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            progressBar.setMax(100);
+            progressBar.setProgress(50);
+            tvProgressPercent.setText("50%");
+            tvTimeRemaining.setText("10 min");
+        }, 3000);
+
     }
 
     private void setupWebSocket() {
+        Log.d("WS_TEST", "Connecting WebSocket...");
         webSocketManager = new WebSocketManager();
         webSocketManager.connect();
     }
@@ -238,6 +253,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
                         currentRide = ride;
                         updateUI();
                         drawRideRoute();
+                        Log.d("RIDE_DEBUG", "Calling subscribeToRideDriverLocation");
                         subscribeToWebSocketUpdates(ride.getRideId());
                     } else {
                         showNoRide();
@@ -251,11 +267,32 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     }
 
     private void subscribeToWebSocketUpdates(Long rideId) {
+        Log.d("WS_TEST", "Subscribed to rideId = " + rideId);
         webSocketManager.subscribeToRideDriverLocation(rideId, location -> {
+            Log.d("WS_TEST", "RAW LOCATION MESSAGE RECEIVED");
+            Log.d("RIDE_DEBUG", "LOCATION RECEIVED");
             requireActivity().runOnUiThread(() -> {
                 if (mapManager != null && location.getLatitude() != null && location.getLongitude() != null) {
                     LatLng position = new LatLng(location.getLatitude(), location.getLongitude());
                     mapManager.updateDriverPosition(position);
+
+                    if (currentRide != null && totalRouteDistanceMeters > 0) {
+                        double traveled = mapManager.getDistanceAlongRoute(position);
+                        Log.d(TAG, "Traveled: " + traveled);
+                        int progressPercent = (int) ((traveled / totalRouteDistanceMeters) * 100);
+                        Log.d(TAG, "Traveled: " + traveled + " / " + totalRouteDistanceMeters + " -> " + progressPercent + "%");
+
+                        progressBar.setProgress(Math.min(progressPercent, 100));
+                        tvProgressPercent.setText(progressPercent + "%");
+
+                        // Remaining time estimation
+                        double remainingPercent = 1.0 - ((double) progressPercent / 100);
+                        double totalEstimatedMinutes = currentRide.getEstimatedTimeMin();
+                        double remainingMinutes = totalEstimatedMinutes * remainingPercent;
+
+                        tvTimeRemaining.setText(String.format(Locale.ENGLISH, "%.0f min", remainingMinutes));
+                    }
+
                 }
             });
         });
@@ -370,9 +407,9 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         mapManager.drawRouteOSRM(waypoints, new MapManager.RouteCallback() {
             @Override
             public void onRouteFound(int distanceMeters, int durationSeconds) {
+                totalRouteDistanceMeters = distanceMeters;
 
                 requireActivity().runOnUiThread(() -> {
-                    double distanceKm = distanceMeters / 1000.0;
                     double durationMin = durationSeconds / 60.0;
 
                     tvEstimatedTime.setText(String.format(Locale.ENGLISH, "%.0f min", durationMin));
@@ -380,6 +417,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 
                     tvEstimatedPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD",
                             currentRide.getEstimatedPrice()));
+                    progressBar.setProgress(0);
                 });
             }
 
@@ -395,7 +433,15 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
             mapManager.addWaypointMarker(waypoints.get(i), i, currentRide.getAddresses().get(i));
         }
 
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        for (LatLng point : waypoints) {
+            builder.include(point);
+        }
+        LatLngBounds bounds = builder.build();
+        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)); // 100 = padding u px
+
+
+//        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
     }
 
 

@@ -384,12 +384,16 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
 
         mapManager.drawRouteOSRM(waypoints, null);
 
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        for (LatLng point : waypoints) {
+            builder.include(point);
+        }
+        LatLngBounds bounds = builder.build();
+        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)); // 100 = padding u px
+//        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
 
         pendingDrawRoute = false;
     }
-
-
 
     private void handlePrimaryAction() {
         if (currentRide == null) return;

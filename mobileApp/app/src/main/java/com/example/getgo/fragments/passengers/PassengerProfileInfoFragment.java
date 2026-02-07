@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,18 +19,17 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
 import com.example.getgo.R;
 import com.example.getgo.api.ApiClient;
-import com.example.getgo.api.services.PassengerApiService;
 import com.example.getgo.dtos.passenger.GetPassengerDTO;
 import com.example.getgo.dtos.passenger.UpdatePassengerDTO;
 import com.example.getgo.dtos.passenger.UpdatedPassengerDTO;
 import com.example.getgo.dtos.user.UpdatedProfilePictureDTO;
+import com.example.getgo.repositories.PassengerRepository;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
@@ -36,13 +37,8 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PassengerProfileInfoFragment extends Fragment {
 
@@ -55,7 +51,9 @@ public class PassengerProfileInfoFragment extends Fragment {
     private ActivityResultLauncher<Intent> imagePickerLauncher;
     private ActivityResultLauncher<String> requestPermissionLauncher;
 
-    private PassengerApiService passengerApiService;
+    private PassengerRepository passengerRepository;
+    private ExecutorService executor;
+    private Handler mainHandler;
 
     public PassengerProfileInfoFragment() {}
 
@@ -67,7 +65,9 @@ public class PassengerProfileInfoFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        passengerApiService = ApiClient.getClient().create(PassengerApiService.class);
+        passengerRepository = PassengerRepository.getInstance();
+        executor = Executors.newSingleThreadExecutor();
+        mainHandler = new Handler(Looper.getMainLooper());
 
         // Register image picker launcher
         imagePickerLauncher = registerForActivityResult(
@@ -100,7 +100,20 @@ public class PassengerProfileInfoFragment extends Fragment {
         View view = inflater.inflate(
                 R.layout.fragment_passenger_profile_info, container, false);
 
-        // Initialize views
+        initializeViews(view);
+        setupListeners();
+        loadUserData();
+
+        return view;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        executor.shutdown();
+    }
+
+    private void initializeViews(View view) {
         ivProfilePicture = view.findViewById(R.id.ivProfilePicture);
         cvProfilePicture = view.findViewById(R.id.cvProfilePicture);
         etEmail = view.findViewById(R.id.etEmail);
@@ -112,11 +125,9 @@ public class PassengerProfileInfoFragment extends Fragment {
         btnSave = view.findViewById(R.id.btnSave);
 
         etEmail.setEnabled(false);
+    }
 
-        // Load existing user data
-        loadUserData();
-
-        // Setup listeners
+    private void setupListeners() {
         cvProfilePicture.setOnClickListener(v -> checkPermissionAndOpenPicker());
         tvChangePassword.setOnClickListener(v -> {
             getParentFragmentManager().beginTransaction()
@@ -125,8 +136,6 @@ public class PassengerProfileInfoFragment extends Fragment {
                     .commit();
         });
         btnSave.setOnClickListener(v -> saveUserData());
-
-        return view;
     }
 
     private void checkPermissionAndOpenPicker() {
@@ -156,12 +165,11 @@ public class PassengerProfileInfoFragment extends Fragment {
     }
 
     private void loadUserData() {
-        passengerApiService.getProfile().enqueue(new Callback<>() {
-            @Override
-            public void onResponse(@NonNull Call<GetPassengerDTO> call, @NonNull Response<GetPassengerDTO> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    GetPassengerDTO passenger = response.body();
+        executor.execute(() -> {
+            try {
+                GetPassengerDTO passenger = passengerRepository.getProfile();
 
+                mainHandler.post(() -> {
                     etEmail.setText(passenger.getEmail());
                     etFirstName.setText(passenger.getName());
                     etLastName.setText(passenger.getSurname());
@@ -177,14 +185,9 @@ public class PassengerProfileInfoFragment extends Fragment {
                                 .circleCrop()
                                 .into(ivProfilePicture);
                     }
-                } else {
-                    showToast("Failed to load profile");
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<GetPassengerDTO> call, @NonNull Throwable t) {
-                showToast("Error: " + t.getMessage());
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> showToast("Failed to load profile: " + e.getMessage()));
             }
         });
     }
@@ -211,22 +214,20 @@ public class PassengerProfileInfoFragment extends Fragment {
 
         UpdatePassengerDTO updateDTO = new UpdatePassengerDTO(firstName, lastName, phone, address);
 
-        passengerApiService.updateProfile(updateDTO).enqueue(new Callback<UpdatedPassengerDTO>() {
-            @Override
-            public void onResponse(@NonNull Call<UpdatedPassengerDTO> call, @NonNull Response<UpdatedPassengerDTO> response) {
-                btnSave.setEnabled(true);
-                if (response.isSuccessful() && response.body() != null) {
+        executor.execute(() -> {
+            try {
+                UpdatedPassengerDTO result = passengerRepository.updateProfile(updateDTO);
+
+                mainHandler.post(() -> {
+                    btnSave.setEnabled(true);
                     showToast("Profile updated successfully");
                     loadUserData();
-                } else {
-                    showToast("Failed to update profile");
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<UpdatedPassengerDTO> call, @NonNull Throwable t) {
-                btnSave.setEnabled(true);
-                showToast("Error: " + t.getMessage());
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> {
+                    btnSave.setEnabled(true);
+                    showToast("Failed to update profile: " + e.getMessage());
+                });
             }
         });
     }
@@ -237,40 +238,27 @@ public class PassengerProfileInfoFragment extends Fragment {
             return;
         }
 
-        try {
-            File file = convertUriToFile(selectedImageUri);
-            RequestBody requestFile = RequestBody.create(file, MediaType.parse("image/*"));
-            MultipartBody.Part body = MultipartBody.Part.createFormData("file", file.getName(), requestFile);
+        executor.execute(() -> {
+            try {
+                File file = convertUriToFile(selectedImageUri);
+                UpdatedProfilePictureDTO result = passengerRepository.uploadProfilePicture(file);
 
-            passengerApiService.uploadProfilePicture(body).enqueue(new Callback<>() {
-                @Override
-                public void onResponse(@NonNull Call<UpdatedProfilePictureDTO> call, @NonNull Response<UpdatedProfilePictureDTO> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        showToast("Profile picture updated successfully");
-                        UpdatedProfilePictureDTO result = response.body();
-                        if (result.getPictureUrl() != null) {
-                            String imageUrl = ApiClient.SERVER_URL + result.getPictureUrl();
-                            Glide.with(requireContext())
-                                    .load(imageUrl)
-                                    .placeholder(R.drawable.unregistered_profile)
-                                    .error(R.drawable.unregistered_profile)
-                                    .circleCrop()
-                                    .into(ivProfilePicture);
-                        }
-                    } else {
-                        showToast("Failed to update profile picture");
+                mainHandler.post(() -> {
+                    showToast("Profile picture updated successfully");
+                    if (result.getPictureUrl() != null) {
+                        String imageUrl = ApiClient.SERVER_URL + result.getPictureUrl();
+                        Glide.with(requireContext())
+                                .load(imageUrl)
+                                .placeholder(R.drawable.unregistered_profile)
+                                .error(R.drawable.unregistered_profile)
+                                .circleCrop()
+                                .into(ivProfilePicture);
                     }
-                }
-
-                @Override
-                public void onFailure(@NonNull Call<UpdatedProfilePictureDTO> call, @NonNull Throwable t) {
-                    showToast("Error: " + t.getMessage());
-                }
-            });
-
-        } catch (Exception e) {
-            showToast("Error uploading image: " + e.getMessage());
-        }
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> showToast("Failed to upload profile picture: " + e.getMessage()));
+            }
+        });
     }
 
     private File convertUriToFile(Uri uri) throws Exception {

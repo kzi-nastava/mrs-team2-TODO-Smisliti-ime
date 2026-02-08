@@ -16,6 +16,7 @@ import android.widget.EditText;
 import android.widget.RatingBar;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.getgo.R;
 import com.example.getgo.adapters.RatingAdapter;
@@ -34,10 +35,8 @@ import retrofit2.Response;
 public class PassengerRateDriverVehicleFragment extends Fragment {
 
     private RatingApiService api;
-//    private Long rideId = 1L; // temporary hardcoded ride ID
     private Long rideId;
     private Long driverId;
-
 
     private RecyclerView rvRatings;
     private RatingAdapter ratingAdapter;
@@ -210,6 +209,18 @@ public class PassengerRateDriverVehicleFragment extends Fragment {
                     // refresh liste
                     loadRatings();
                 } else {
+                    try {
+                        String errorBody = response.errorBody().string();
+                        if (errorBody.contains("ALREADY_RATED")) {
+                            Toast.makeText(getContext(), "You have already rated this ride!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(getContext(), "Failed to rate ride: " + response.code(), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Failed to rate ride: " + response.code(), Toast.LENGTH_SHORT).show();
+                    }
+
                     Log.e("RATING_POST", "POST error: " + response.code());
                 }
             }

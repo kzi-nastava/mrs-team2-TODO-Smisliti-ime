@@ -88,6 +88,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     private int totalRouteDistanceMeters = 0;
     private Long finishedRideDriverId;
 
+    private int estimatedTime = 0;
+
 
     public PassengerRideTrackingFragment() {}
 
@@ -367,6 +369,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         tvStartPoint.setText(currentRide.getStartingPoint());
         tvDestination.setText(currentRide.getEndingPoint());
         tvDriverName.setText(currentRide.getDriverName() != null ? currentRide.getDriverName() : "Assigning...");
+        estimatedTime = (int) Math.round(currentRide.getEstimatedTimeMin());
         tvEstimatedTime.setText(String.format(Locale.ENGLISH, "%.0f min", currentRide.getEstimatedTimeMin()));
         tvEstimatedPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD", currentRide.getEstimatedPrice()));
 
@@ -640,7 +643,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         layoutRideCompleted.setVisibility(View.VISIBLE);
 
         tvFinalPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD", finished.getPrice()));
-        tvDuration.setText(String.format(Locale.ENGLISH, "%d minutes", finished.getDurationMinutes()));
+        tvDuration.setText(String.format(Locale.ENGLISH, "%d minutes", estimatedTime));
 
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
         tvStartTime.setText(finished.getStartTime().format(timeFormatter));
@@ -706,7 +709,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
                 .setSmallIcon(R.drawable.ic_car)
                 .setContentTitle("Ride Finished")
                 .setContentText(String.format(Locale.ENGLISH,
-                        "Your ride has finished. Price: %.2f RSD", finished.getPrice()))
+                        "Your ride has finished. Price: %.2f RSD. Tap to rate your driver!", finished.getPrice()))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent);

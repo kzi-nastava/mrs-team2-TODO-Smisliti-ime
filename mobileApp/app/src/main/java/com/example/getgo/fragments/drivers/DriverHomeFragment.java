@@ -1,6 +1,7 @@
 package com.example.getgo.fragments.drivers;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -10,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -40,6 +42,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
     private static final String TAG = "DriverHomeFragment";
     private static final String PREFS_NAME = "getgo_prefs";
@@ -48,11 +54,12 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
     private MapManager mapManager;
     private WebSocketManager webSocketManager;
 
-    private LinearLayout layoutNoRide, layoutRideInfo, layoutRideCompleted, layoutScheduledTime;
+    private LinearLayout layoutNoRide, layoutRideInfo, layoutRideCompleted, layoutScheduledTime, layoutCancelForm;
     private TextView tvRideId, tvRideTitle, tvStatus, tvStartPoint, tvDestination, tvPassengerInfo, tvPassengerCount;
     private TextView tvEstimatedTime, tvEstimatedPrice, tvScheduledTime;
     private TextView tvFinalPrice, tvDuration;
-    private Button btnPrimaryAction, btnSecondaryAction, btnOk;
+    private Button btnPrimaryAction, btnSecondaryAction, btnOk, btnConfirmCancel, btnDismissCancel;
+    private EditText etCancelReason;
 
     private GetDriverActiveRideDTO currentRide;
     private String driverEmail;
@@ -82,6 +89,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         layoutRideInfo = root.findViewById(R.id.layoutRideInfo);
         layoutRideCompleted = root.findViewById(R.id.layoutRideCompleted);
         layoutScheduledTime = root.findViewById(R.id.layoutScheduledTime);
+        layoutCancelForm = root.findViewById(R.id.layoutCancelForm);
 
         tvRideId = root.findViewById(R.id.tvRideId);
         tvRideTitle = root.findViewById(R.id.tvRideTitle);
@@ -99,10 +107,16 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         btnPrimaryAction = root.findViewById(R.id.btnPrimaryAction);
         btnSecondaryAction = root.findViewById(R.id.btnSecondaryAction);
         btnOk = root.findViewById(R.id.btnOk);
+        btnConfirmCancel = root.findViewById(R.id.btnConfirmCancel);
+        btnDismissCancel = root.findViewById(R.id.btnDismissCancel);
+
+        etCancelReason = root.findViewById(R.id.etCancelReason);
 
         btnPrimaryAction.setOnClickListener(v -> handlePrimaryAction());
         btnSecondaryAction.setOnClickListener(v -> handleSecondaryAction());
         btnOk.setOnClickListener(v -> handleOkClick());
+        btnConfirmCancel.setOnClickListener(v -> confirmCancelRide());
+        btnDismissCancel.setOnClickListener(v -> dismissCancelForm());
     }
 
     private void setupMap() {
@@ -358,8 +372,70 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         if (status.equals("ACTIVE")) {
             triggerPanic();
         } else {
-            cancelRide();
+            showCancelForm();
         }
+    }
+
+    private void showCancelForm() {
+        layoutCancelForm.setVisibility(View.VISIBLE);
+        etCancelReason.setText("");
+        etCancelReason.requestFocus();
+    }
+
+    private void dismissCancelForm() {
+        layoutCancelForm.setVisibility(View.GONE);
+        etCancelReason.setText("");
+    }
+
+    private void confirmCancelRide() {
+        String reason = etCancelReason.getText() != null ? etCancelReason.getText().toString().trim() : "";
+
+        if (reason.isEmpty()) {
+            Toast.makeText(requireContext(), "Please enter a reason for cancellation", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnConfirmCancel.setEnabled(false);
+        btnDismissCancel.setEnabled(false);
+
+        com.example.getgo.api.services.RideApiService service =
+                com.example.getgo.api.ApiClient.getClient().create(com.example.getgo.api.services.RideApiService.class);
+
+        com.example.getgo.dtos.ride.CancelRideRequestDTO dto =
+                new com.example.getgo.dtos.ride.CancelRideRequestDTO(reason);
+
+        service.cancelRideByDriver(currentRide.getRideId(), dto).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                requireActivity().runOnUiThread(() -> {
+                    btnConfirmCancel.setEnabled(true);
+                    btnDismissCancel.setEnabled(true);
+
+                    if (response.isSuccessful()) {
+                        dismissCancelForm();
+                        currentRide = null;
+                        showNoRide();
+                        Toast.makeText(requireContext(), "Ride cancelled", Toast.LENGTH_SHORT).show();
+                        if (mapManager != null) mapManager.reset();
+                    } else {
+                        Toast.makeText(requireContext(), "Failed to cancel ride", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                requireActivity().runOnUiThread(() -> {
+                    btnConfirmCancel.setEnabled(true);
+                    btnDismissCancel.setEnabled(true);
+                    Toast.makeText(requireContext(), "Failed to cancel ride", Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void cancelRide() {
+        // Removed - now using showCancelForm()
     }
 
     private void handleOkClick() {
@@ -438,31 +514,6 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         }).start();
     }
 
-    private void cancelRide() {
-        // TODO: Show dialog to enter cancellation reason
-        btnSecondaryAction.setEnabled(false);
-
-        new Thread(() -> {
-            try {
-                RideRepository repo = RideRepository.getInstance();
-                repo.cancelRide(currentRide.getRideId(), "Driver cancelled");
-
-                requireActivity().runOnUiThread(() -> {
-                    btnSecondaryAction.setEnabled(true);
-                    currentRide = null;
-                    showNoRide();
-                    Toast.makeText(requireContext(), "Ride cancelled", Toast.LENGTH_SHORT).show();
-                });
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to cancel ride", e);
-                requireActivity().runOnUiThread(() -> {
-                    btnSecondaryAction.setEnabled(true);
-                    Toast.makeText(requireContext(), "Failed to cancel ride", Toast.LENGTH_SHORT).show();
-                });
-            }
-        }).start();
-    }
-
     private void triggerPanic() {
         // TODO: Implement panic
         Toast.makeText(requireContext(), "Panic not yet implemented", Toast.LENGTH_SHORT).show();
@@ -497,3 +548,4 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 }
+

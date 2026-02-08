@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/light_blue"
-    tools:context=".fragments.PassengerProfileInfoFragment">
+    tools:context=".fragments.passengers.PassengerProfileInfoFragment">
 
     <LinearLayout
         android:layout_width="match_parent"

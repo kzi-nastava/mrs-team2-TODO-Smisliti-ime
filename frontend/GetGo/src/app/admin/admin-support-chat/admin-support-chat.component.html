@@ -1,0 +1,56 @@
+<div class="chat-container">
+
+  <div class="chat-list">
+    <div
+      *ngFor="let c of chats()"
+      (click)="selectChat(c)"
+      [class.selected]="selectedChat() === c"
+      class="chat-item"
+    >
+      {{ c.user.name }}
+    </div>
+  </div>
+
+  <div class="chat-window" *ngIf="selectedChat()">
+
+    <!-- CHAT HEADER -->
+    <div class="chat-header">
+      <div class="user-info">
+        <div class="avatar">
+          {{ selectedChat()?.user?.name?.charAt(0) }}
+        </div>
+        <div>
+          <div class="username">
+            {{ selectedChat()?.user?.name }}
+          </div>
+          <div class="status">Passenger</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="messages" #messagesContainer>
+      <div
+        *ngFor="let msg of messages()"
+        class="message"
+        [class.admin]="msg.senderType === 'ADMIN'"
+      >
+        <div class="bubble">
+          {{ msg.text }}
+          <div class="time">
+            {{ msg.timestamp | date:'shortTime' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <textarea
+        [value]="newMessage()"
+        (input)="newMessage.set($any($event.target).value)"
+        placeholder="Type your message..."
+      ></textarea>
+      <button (click)="sendMessage()">Send</button>
+    </div>
+
+  </div>
+</div>

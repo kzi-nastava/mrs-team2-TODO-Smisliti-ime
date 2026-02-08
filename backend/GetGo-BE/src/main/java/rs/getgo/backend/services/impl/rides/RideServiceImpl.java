@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import rs.getgo.backend.controllers.WebSocketController;
-import rs.getgo.backend.dtos.driver.GetDriverLocationDTO;
+import rs.getgo.backend.dtos.panic.PanicAlertDTO;
 import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
 import rs.getgo.backend.model.entities.*;
@@ -15,6 +15,7 @@ import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.DriverService;
 import rs.getgo.backend.services.EmailService;
+import rs.getgo.backend.services.PanicNotifierService;
 import rs.getgo.backend.services.RideService;
 import rs.getgo.backend.utils.AuthUtils;
 
@@ -42,6 +43,7 @@ public class RideServiceImpl implements RideService {
     private final MapboxRoutingService routingService;
     private final WebSocketController webSocketController;
     private final InconsistencyReportRepository reportRepository;
+    private final PanicNotifierService panicNotifierService;
 
     @Value("${driver.default.latitude}")
     private Double defaultDriverLatitude;
@@ -64,7 +66,8 @@ public class RideServiceImpl implements RideService {
                            WebSocketController webSocketController,
                            CompletedRideRepository completedRideRepository,
                            EmailService emailService,
-                           InconsistencyReportRepository reportRepository) {
+                           InconsistencyReportRepository reportRepository,
+                           PanicNotifierService panicNotifierService) {
         this.cancellationRepository = cancellationRepository;
         this.panicRepository = panicRepository;
         this.activeRideRepository = activeRideRepository;
@@ -78,6 +81,7 @@ public class RideServiceImpl implements RideService {
         this.routingService = mapboxRoutingService;
         this.webSocketController = webSocketController;
         this.reportRepository = reportRepository;
+        this.panicNotifierService = panicNotifierService;
     }
 
     @Override
@@ -110,11 +114,92 @@ public class RideServiceImpl implements RideService {
         rc.setCreatedAt(LocalDateTime.now());
         cancellationRepository.save(rc);
 
+        // Create CompletedRide with cancelled status
+        CompletedRide completedRide = new CompletedRide();
+        completedRide.setRoute(ride.getRoute());
+        completedRide.setScheduledTime(ride.getScheduledTime());
+        completedRide.setStartTime(LocalDateTime.now());
+        completedRide.setEndTime(LocalDateTime.now());
+        completedRide.setEstimatedPrice(ride.getEstimatedPrice());
+        completedRide.setEstDistanceKm(ride.getRoute().getEstDistanceKm());
+        completedRide.setEstTime(ride.getRoute().getEstTimeMin());
+        completedRide.setVehicleType(ride.getVehicleType());
+        completedRide.setNeedsBabySeats(ride.isNeedsBabySeats());
+        completedRide.setNeedsPetFriendly(ride.isNeedsPetFriendly());
+        completedRide.setDriverId(ride.getDriver() != null ? ride.getDriver().getId() : null);
+        completedRide.setDriverName(ride.getDriver() != null ? ride.getDriver().getName() : null);
+        completedRide.setDriverEmail(ride.getDriver() != null ? ride.getDriver().getEmail() : null);
+        completedRide.setPayingPassengerId(ride.getPayingPassenger().getId());
+        completedRide.setPayingPassengerName(ride.getPayingPassenger().getName() + " " + ride.getPayingPassenger().getSurname());
+        completedRide.setPayingPassengerEmail(ride.getPayingPassenger().getEmail());
+        completedRide.setLinkedPassengerIds(
+                ride.getLinkedPassengers() != null
+                        ? ride.getLinkedPassengers().stream().map(Passenger::getId).toList()
+                        : List.of()
+        );
+        completedRide.setCompletedNormally(false);
+        completedRide.setCancelled(true);
+        completedRide.setCancelledByUserId(req.getCancelerId());
+        completedRide.setCancelReason(req.getReason());
+        completedRide.setStoppedEarly(false);
+        completedRide.setPanicPressed(false);
+
+        completedRide = completedRideRepository.save(completedRide);
+
+        // Link panic records to completed ride if any exist
         List<Panic> ridePanics = panicRepository.findAll().stream()
                 .filter(p -> p.getRideId() != null && p.getRideId().equals(ride.getId()))
                 .collect(Collectors.toList());
+
         if (!ridePanics.isEmpty()) {
-            panicRepository.deleteAll(ridePanics);
+            for (Panic panic : ridePanics) {
+                panic.setRideId(completedRide.getId());
+                panicRepository.save(panic);
+            }
+            completedRide.setPanicPressed(true);
+            completedRideRepository.save(completedRide);
+        }
+
+        // Link inconsistency reports to completed ride
+        List<Passenger> allPassengers = new ArrayList<>();
+        allPassengers.add(ride.getPayingPassenger());
+        if (ride.getLinkedPassengers() != null) {
+            allPassengers.addAll(ride.getLinkedPassengers());
+        }
+
+        for (Passenger p : allPassengers) {
+            List<InconsistencyReport> reports = reportRepository.findUnlinkedReportsByPassenger(p);
+            for (InconsistencyReport report : reports) {
+                report.setCompletedRide(completedRide);
+                reportRepository.save(report);
+            }
+        }
+
+        // Release driver if assigned
+        Driver driver = ride.getDriver();
+        if (driver != null) {
+            driver.setActive(true);
+            driverRepository.save(driver);
+        }
+
+        // Notify via WebSocket about ride cancellation
+        String cancelledBy = "DRIVER".equals(role) ? "Driver" : "Passenger";
+
+        // Notify all participants about cancellation
+        webSocketController.notifyRideCancelled(
+                ride.getId(),
+                cancelledBy,
+                req.getReason() != null ? req.getReason() : "No reason provided"
+        );
+
+        // If driver exists, notify driver specifically
+        if (driver != null) {
+            webSocketController.notifyDriverRideCancelled(
+                    driver.getEmail(),
+                    ride.getId(),
+                    cancelledBy,
+                    req.getReason() != null ? req.getReason() : "No reason provided"
+            );
         }
 
         activeRideRepository.delete(ride);
@@ -151,6 +236,7 @@ public class RideServiceImpl implements RideService {
         dto.setCancelerId(driverId);
         dto.setPassengersEntered(false);
         dto.setScheduledStartTime(ride.getScheduledTime());
+
         cancelRide(ride, dto);
     }
 
@@ -256,7 +342,7 @@ public class RideServiceImpl implements RideService {
         ride.setRoute(route);
         ride.setScheduledTime(scheduledTime);
         ride.setEstimatedPrice(estimatedPrice);
-        ride.setVehicleType(vehicleType);
+//        ride.setVehicleType(vehicleType);
         ride.setNeedsBabySeats(createRideRequestDTO.getHasBaby() != null && createRideRequestDTO.getHasBaby());
         ride.setNeedsPetFriendly(createRideRequestDTO.getHasPets() != null && createRideRequestDTO.getHasPets());
         ride.setPayingPassenger(payingPassenger);
@@ -276,6 +362,9 @@ public class RideServiceImpl implements RideService {
             }
 
             ride.setDriver(driver);
+            VehicleType vehicleTypeEnum = ride.getDriver() != null ? ride.getDriver().getVehicle().getType() : null;
+            ride.setVehicleType(vehicleTypeEnum);
+
 
             // Decide initial status based on driver's current state
             if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
@@ -368,6 +457,8 @@ public class RideServiceImpl implements RideService {
 
         double totalDistance = 0.0;
         double totalTime = 0.0;
+        List<MapboxRoutingService.Coordinate> allCoordinates = new ArrayList<>();
+
         for (int i = 0; i < waypoints.size() - 1; i++) {
             WayPoint from = waypoints.get(i);
             WayPoint to = waypoints.get(i + 1);
@@ -379,11 +470,22 @@ public class RideServiceImpl implements RideService {
 
             totalDistance += segment.distanceKm();
             totalTime += segment.realDurationSeconds() / 60.0;
+
+            // Collect all coordinates for polyline
+            if (i == 0) {
+                allCoordinates.addAll(segment.coordinates());
+            } else {
+                // Skip first coordinate to avoid duplicates at waypoint connections
+                allCoordinates.addAll(segment.coordinates().subList(1, segment.coordinates().size()));
+            }
         }
 
-        route.setEstDistanceKm(totalDistance); // Distance from start to end point
-        route.setEstTimeMin(totalTime); // Duration from start to end point
-        route.setEncodedPolyline(""); // TODO: remove field or use this instead of movementPathJson in ActiveRide
+        route.setEstDistanceKm(totalDistance);
+        route.setEstTimeMin(totalTime);
+
+        // Save the polyline as JSON string
+        String polylineJson = convertCoordinatesToJson(allCoordinates);
+        route.setEncodedPolyline(polylineJson);
 
         return route;
     }
@@ -412,6 +514,11 @@ public class RideServiceImpl implements RideService {
         } catch (IllegalArgumentException | NullPointerException e) {
             return null;
         }
+//        if (vehicleTypeStr == null) {
+//            return VehicleType.SEDAN; // default
+//        }
+//
+//        return VehicleType.valueOf(vehicleTypeStr.toUpperCase());
     }
 
     @Override
@@ -651,7 +758,8 @@ public class RideServiceImpl implements RideService {
                         List.of(RideStatus.DRIVER_READY,
                                 RideStatus.DRIVER_INCOMING,
                                 RideStatus.DRIVER_ARRIVED,
-                                RideStatus.ACTIVE)
+                                RideStatus.ACTIVE,
+                                RideStatus.DRIVER_ARRIVED_AT_DESTINATION)
                 )
                 .stream()
                 .findFirst()
@@ -676,12 +784,22 @@ public class RideServiceImpl implements RideService {
 
         panicRepository.save(panic);
 
+        // Existing WS notification
         webSocketController.notifyAdminsPanicTriggered(
                 ride.getId(),
                 userId,
                 email,
                 triggeredAt
         );
+
+        // New unified notifier for admin chat stream
+        PanicAlertDTO dto = new PanicAlertDTO();
+        dto.setPanicId(panic.getId());
+        dto.setRideId(ride.getId());
+        dto.setTriggeredByUserId(userId);
+        dto.setTriggeredAt(triggeredAt);
+        dto.setStatus(false);
+        panicNotifierService.notifyAdmins(dto);
     }
 
     @Override
@@ -694,7 +812,6 @@ public class RideServiceImpl implements RideService {
             throw new IllegalStateException("Ride cannot be finished in current state");
         }
 
-
         // Create CompletedRide
         CompletedRide completedRide = new CompletedRide();
         completedRide.setRoute(ride.getRoute());
@@ -702,6 +819,8 @@ public class RideServiceImpl implements RideService {
         completedRide.setStartTime(ride.getActualStartTime());
         completedRide.setEndTime(LocalDateTime.now());
         completedRide.setEstimatedPrice(ride.getEstimatedPrice());
+        completedRide.setEstDistanceKm(ride.getRoute().getEstDistanceKm());
+        completedRide.setEstTime(ride.getRoute().getEstTimeMin());
         completedRide.setVehicleType(ride.getVehicleType());
         completedRide.setNeedsBabySeats(ride.isNeedsBabySeats());
         completedRide.setNeedsPetFriendly(ride.isNeedsPetFriendly());
@@ -785,7 +904,8 @@ public class RideServiceImpl implements RideService {
                 ride.getId(),
                 completedRide.getEstimatedPrice(),
                 completedRide.getStartTime(),
-                completedRide.getEndTime()
+                completedRide.getEndTime(),
+                completedRide.getDriverId()
         );
 
         // === WS: notify PASSENGERS ===
@@ -793,7 +913,8 @@ public class RideServiceImpl implements RideService {
                 ride.getId(),
                 completedRide.getEstimatedPrice(),
                 completedRide.getStartTime(),
-                completedRide.getEndTime()
+                completedRide.getEndTime(),
+                completedRide.getDriverId()
         );
 
         // Return DTO
@@ -807,6 +928,8 @@ public class RideServiceImpl implements RideService {
         for (Optional<Panic> panic : panics) {
             if (panic.isPresent()) {
                 panic.get().setRideId(completedRide.getId());
+                completedRide.setPanicPressed(true);
+                completedRideRepository.save(completedRide);
             }
         }
 
@@ -839,6 +962,8 @@ public class RideServiceImpl implements RideService {
         completedRide.setStartTime(startTime);
         completedRide.setEndTime(endTime);
         completedRide.setEstimatedPrice(ride.getEstimatedPrice());
+        completedRide.setEstDistanceKm(ride.getRoute().getEstDistanceKm());
+        completedRide.setEstTime(ride.getRoute().getEstTimeMin());
         completedRide.setVehicleType(ride.getVehicleType());
         completedRide.setNeedsBabySeats(ride.isNeedsBabySeats());
         completedRide.setNeedsPetFriendly(ride.isNeedsPetFriendly());
@@ -897,7 +1022,8 @@ public class RideServiceImpl implements RideService {
                 ride.getId(),
                 actualPrice,
                 startTime,
-                endTime
+                endTime,
+                ride.getDriver().getId()
         );
 
         RideCompletionDTO response = new RideCompletionDTO();

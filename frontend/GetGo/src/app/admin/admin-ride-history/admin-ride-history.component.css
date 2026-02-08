@@ -1,0 +1,132 @@
+.list{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  flex: 1;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  background: #CBDCEB;
+  border-radius: 15px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 2px solid #133E87;
+  cursor: pointer;
+}
+
+.item:hover{
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.item h2 {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.item p {
+  margin: 4px 0;
+  color: #555;
+  line-height: 1.4;
+}
+
+.item strong {
+  color: #111;
+}
+
+.card-time{
+  color: black;
+}
+
+.card-date{
+  align-self: flex-end;
+  color: #000000;
+}
+
+.card-price{
+  align-self: flex-end;
+}
+
+.pin-icon{
+  height: 30px;
+  width: 30px;
+  margin-bottom: -5px;
+}
+
+.flag-icon{
+  height: 29px;
+  width: 50px;
+  position: relative;
+  left: -10px;
+  top: 2px;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.location-text {
+  margin-left: -12px;
+}
+
+.ride-history-page{
+  display: flex;
+  flex-direction: column;
+  background-color: #8FABD4;
+  padding-top: 5px;
+  min-height: 100vh;
+}
+
+.filter-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin: 20px auto;
+  max-width: 500px;
+}
+
+.email-field,
+.user-type-field,
+.date-picker-field {
+  padding: 10px;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.buttons button {
+  flex: 1;
+}
+
+.filter-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+#paginator {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  background-color: #8FABD4;
+}
+

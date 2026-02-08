@@ -1,0 +1,210 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #8FABD4;
+  padding-top: 40px;
+  width: 100%;
+}
+
+.ride-details {
+  max-width: 1600px;
+  width: 95%;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #CBDCEB;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-family: Arial, sans-serif;
+}
+
+.ride-details h1 {
+  font-size: 26px;
+  color: #133E87;
+  margin-bottom: 15px;
+}
+
+.ride-details h2 {
+  font-size: 22px;
+  color: #2C3E50;
+  margin-top: 20px;
+}
+
+.ride-details p {
+  font-size: 16px;
+  margin: 5px 0;
+  color: #555;
+}
+
+.ride-details b {
+  color: #133E87;
+}
+
+p.loading {
+  text-align: center;
+  font-style: italic;
+  color: #888;
+  margin-top: 50px;
+}
+
+.content-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 500px;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.left-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.right-content {
+  position: sticky;
+  top: 20px;
+  height: fit-content;
+}
+
+.info-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-card {
+  display: flex;
+  gap: 20px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.profile-picture {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-info p {
+  margin: 5px 0;
+}
+
+.ratings-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.average-rating {
+  font-size: 18px;
+  color: #2196F3;
+  margin-bottom: 15px;
+}
+
+.rating-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rating-card {
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border-left: 4px solid #4CAF50;
+}
+
+.rating-score {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.rating-comment {
+  font-style: italic;
+  color: #666;
+  margin: 10px 0;
+}
+
+.rating-meta {
+  font-size: 12px;
+  color: #999;
+}
+
+.map-container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#map {
+  height: 500px;
+  width: 100%;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.map-hint {
+  font-size: 12px;
+  color: #666;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.report-card {
+  padding: 15px;
+  background: #fff3cd;
+  border-radius: 8px;
+  border-left: 4px solid #ffc107;
+}
+
+.report-text {
+  font-style: italic;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.report-meta {
+  font-size: 12px;
+  color: #666;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 18px;
+  color: #666;
+}
+
+@media (max-width: 1024px) {
+  .content-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .right-content {
+    position: static;
+  }
+}

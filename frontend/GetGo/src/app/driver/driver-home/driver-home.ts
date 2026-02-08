@@ -12,6 +12,7 @@ import {
 } from '../../service/ride/ride.service';
 import { WebSocketService } from '../../service/websocket/websocket.service';
 import { AuthService } from '../../service/auth-service/auth.service';
+import { SnackBarService } from '../../service/snackBar/snackBar.service';
 import { Subscription } from 'rxjs';
 import {FormsModule} from '@angular/forms';
 
@@ -47,6 +48,8 @@ export class DriverHome implements OnInit {
   private statusSubscription?: Subscription;
   private completionSubscription?: Subscription;
 
+  private panicAlreadySent = false;
+
   @ViewChild(RideTrackingMapComponent, { read: ElementRef, static: false })
    private mapComponent?: ElementRef<HTMLElement>;
 
@@ -54,7 +57,8 @@ export class DriverHome implements OnInit {
     private rideService: RideService,
     private webSocketService: WebSocketService,
     private authService: AuthService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private snackBarService: SnackBarService
   ) {}
 
   async ngOnInit() {
@@ -346,15 +350,21 @@ export class DriverHome implements OnInit {
       return;
     }
 
+    if (this.panicAlreadySent) {
+      this.snackBarService.show('Panic alert already sent for this ride');
+      return;
+    }
+
     this.rideService.createPanic(this.activeRide.rideId).subscribe({
       next: () => {
         console.log('Driver PANIC alert sent');
-        this.successMessage = 'Emergency alert sent!';
+        this.panicAlreadySent = true;
+        this.snackBarService.show('Emergency alert sent successfully!');
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to send driver PANIC', err);
-        this.errorMessage = 'Failed to send emergency alert.';
+        this.snackBarService.show('Failed to send emergency alert');
         this.cdr.detectChanges();
       }
     });
@@ -457,6 +467,7 @@ export class DriverHome implements OnInit {
     console.log('Acknowledging ride completion');
     this.rideCompletion = null;
     this.activeRide = null;
+    this.panicAlreadySent = false;
     this.resetMap();
 //     this.loadActiveRide(); // Check for next ride
   }
@@ -482,13 +493,13 @@ export class DriverHome implements OnInit {
     this.errorMessage = null;
 
     const rideId = this.activeRide.rideId;
-//     this.activeRide = null;
 
     this.rideService.endRide(rideId).subscribe({
       next: () => {
         this.isEnding = false;
         this.successMessage = 'Ride ended successfully!';
         this.activeRide = null;
+        this.panicAlreadySent = false;
         this.resetMap();
         this.cdr.detectChanges();
 

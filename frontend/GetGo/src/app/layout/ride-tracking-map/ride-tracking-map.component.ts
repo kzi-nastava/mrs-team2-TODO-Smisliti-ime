@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, ElementRef, EventEmitter, Output } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, EventEmitter, Output, Input, effect } from '@angular/core';
 import * as L from 'leaflet';
 import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
@@ -11,18 +11,25 @@ import { DriverService, GetActiveDriverLocationDTO } from '../../service/driver/
   templateUrl: './ride-tracking-map.component.html',
   styleUrl: './ride-tracking-map.component.css',
 })
-export class RideTrackingMapComponent implements AfterViewInit{
+export class RideTrackingMapComponent implements AfterViewInit {
+  @Input() driverPosition: { lat: number; lng: number } | null = null;
+  @Input() waypoints: { lat: number; lng: number }[] = [];
+
   @Output() estimatedTimeChange = new EventEmitter<number>();
+
   private map: any;
   private driverMarker: L.Marker | null = null;
   private routeControl: any = null;
   initialEstimatedMinutes: number = 0;
+  private mapInitialized: boolean = false;
 
   constructor(
       private http: HttpClient,
       private driverService: DriverService,
       private elementRef: ElementRef<HTMLElement>
-    ) {}
+    ) {
+
+      }
 
   ngAfterViewInit(): void {
     // Set default marker icon
@@ -33,8 +40,31 @@ export class RideTrackingMapComponent implements AfterViewInit{
       iconAnchor: [12, 41]
     });
 
+    console.log('RideTrackingMap INITED');
     this.initMap();
+    this.mapInitialized = true;
+
+    if (this.mapInitialized) {
+      if (this.driverPosition) this.updateDriverMarker(this.driverPosition.lat, this.driverPosition.lng);
+      if (this.waypoints.length > 1) this.drawRoute(this.waypoints);
+    }
     this.setupEventListeners();
+  }
+
+  ngOnInit() {
+    this.elementRef.nativeElement.addEventListener('update-driver-position', (ev: Event) => {
+      const ce = ev as CustomEvent<{ lat: number; lng: number }>;
+      console.log('Received event in map:', ce.detail);
+      this.updateDriverMarker(ce.detail.lat, ce.detail.lng);
+    });
+  }
+
+
+  ngOnChanges(): void {
+
+    if (!this.mapInitialized) return;
+    if (this.driverPosition) this.updateDriverMarker(this.driverPosition.lat, this.driverPosition.lng);
+    if (this.waypoints.length > 1) this.drawRoute(this.waypoints);
   }
 
   private initMap(): void {
@@ -52,6 +82,10 @@ export class RideTrackingMapComponent implements AfterViewInit{
       }
     );
     tiles.addTo(this.map);
+
+    setTimeout(() => {
+        this.map.invalidateSize();
+      }, 300);
   }
 
   private setupEventListeners(): void {

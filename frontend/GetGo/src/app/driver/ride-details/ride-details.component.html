@@ -10,7 +10,7 @@
   <p><b>End time:</b> {{ ride()!.finishedTime | date:'HH:mm' }}</p>
   <p><b>Panic activated:</b> {{ ride()!.panicActivated ? 'Yes' : 'No' }}</p>
 
-  <h2>Price: {{ ride()!.price }}rsd</h2>
+  <h2>Price: {{ ride()!.price | number:'1.0-0' }}rsd</h2>
 
   <p><b>Passengers:</b></p>
   <ul class="passenger-list">

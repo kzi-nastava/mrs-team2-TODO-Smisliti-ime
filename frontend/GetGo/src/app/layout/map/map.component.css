@@ -23,3 +23,44 @@
   height: 600px;
 }
 
+.panic-marker {
+  background: transparent;
+  border: none;
+}
+
+.panic-marker-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.panic-marker svg {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  animation: panicPulse 2s ease-in-out infinite;
+}
+
+.panic-marker-icon svg {
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+  animation: panicPulse 2s ease-in-out infinite;
+}
+
+@keyframes panicPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes panicPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.85;
+  }
+}

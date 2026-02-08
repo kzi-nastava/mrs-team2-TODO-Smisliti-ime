@@ -33,7 +33,6 @@ public class RideController {
     private final RideService rideService;
     private final RideTrackingService rideTrackingService;
     private final ScheduledRideService scheduledRideService;
-    private final CompletedRideService completedRideService;
     private final FavoriteRideService favoriteRideService;
 
 
@@ -41,13 +40,11 @@ public class RideController {
                           RideService rideService,
                           RideTrackingService rideTrackingService,
                           ScheduledRideService scheduledRideService,
-                          CompletedRideService completedRideService,
                           FavoriteRideService favoriteRideService) {
         this.rideEstimateService = rideEstimateService;
         this.rideService = rideService;
         this.rideTrackingService = rideTrackingService;
         this.scheduledRideService = scheduledRideService;
-        this.completedRideService = completedRideService;
         this.favoriteRideService = favoriteRideService;
     }
 

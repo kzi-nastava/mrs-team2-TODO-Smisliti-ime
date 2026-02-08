@@ -1,11 +1,13 @@
 package rs.getgo.backend.services;
 
+import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.passenger.GetPassengerDTO;
 import rs.getgo.backend.dtos.passenger.UpdatePassengerDTO;
 import rs.getgo.backend.dtos.passenger.UpdatedPassengerDTO;
+import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.dtos.user.UpdatedProfilePictureDTO;
 
@@ -18,7 +20,8 @@ public interface PassengerService {
     UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO dto);
     UpdatedProfilePictureDTO uploadProfilePicture(String email, MultipartFile file);
 
-    List<GetRideDTO> getPassengerRides(String email, LocalDate startDate);
+    Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size);
 
-    GetRideDTO getPassengerRideById(String email, Long rideId);
+    GetPassengerDTO getPassengerById(Long passengerId);
+    GetReorderRideDTO getPassengerRideById(String email, Long rideId);
 }

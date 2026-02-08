@@ -12,6 +12,7 @@ import rs.getgo.backend.model.entities.User;
 import rs.getgo.backend.repositories.UserRepository;
 import rs.getgo.backend.services.impl.AuthServiceImpl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.getgo.backend.dtos.user.ForgotPasswordDTO;
@@ -47,7 +48,7 @@ public class AuthController {
 
     // 2.2.1 – Login
     @PostMapping("/login")
-    public ResponseEntity<CreatedLoginDTO> login(@RequestBody CreateLoginDTO request) {
+    public ResponseEntity<CreatedLoginDTO> login(@Valid @RequestBody CreateLoginDTO request) {
         CreatedLoginDTO response = authService.login(request);
         return ResponseEntity.ok(response);
     }
@@ -109,5 +110,100 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("activated", false, "message", "Invalid or expired activation token"));
         }
+    }
+
+    // Mobile/browser entry point for activation (email link)
+    @GetMapping(value = "/activate-mobile", produces = {MediaType.TEXT_HTML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<?> activateAccountMobileEntry(
+            @RequestParam("token") String token,
+            @RequestHeader(value = "Accept", required = false) String accept
+    ) {
+        boolean activated = authService.activateAccount(token);
+
+        if (accept != null && accept.contains(MediaType.APPLICATION_JSON_VALUE)) {
+            if (activated) {
+                return ResponseEntity.ok(Map.of("activated", true, "message", "Account activated"));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("activated", false, "message", "Invalid or expired activation token"));
+        }
+
+        String title = activated ? "GetGo - Account activated" : "GetGo - Activation failed";
+        String deepLink = "getgo://activate/?token=" + token;
+
+        String body = activated
+                ? ("<h2>Your account has been activated!</h2>"
+                + "<p>Open the GetGo app to log in.</p>"
+                + "<p><a href='" + deepLink + "' style='display:inline-block;padding:12px 24px;background:#667eea;color:white;text-decoration:none;border-radius:6px;margin:16px 0;'>Open GetGo App</a></p>"
+                + "<script>window.location.href='" + deepLink + "';</script>"
+                + "<p style='margin-top:24px;color:#666;'>If the app doesn't open automatically, tap the button above.</p>")
+                : ("<h2>Activation link is invalid or expired.</h2>"
+                + "<p>Please register again or contact support.</p>");
+
+        String html =
+                "<!doctype html><html><head><meta charset='utf-8'/>" +
+                        "<meta name='viewport' content='width=device-width, initial-scale=1'/>" +
+                        "<title>" + title + "</title>" +
+                        "<style>body{font-family:Arial,sans-serif;padding:24px;text-align:center;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;min-height:100vh;display:flex;flex-direction:column;justify-content:center;}</style>" +
+                        "</head><body>" +
+                        "<div style='background:rgba(255,255,255,0.95);color:#333;padding:32px;border-radius:12px;max-width:500px;margin:0 auto;'>" +
+                        body +
+                        "</div></body></html>";
+
+        return ResponseEntity
+                .status(activated ? HttpStatus.OK : HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.TEXT_HTML)
+                .body(html);
+    }
+
+    // Mobile/browser entry point for password reset (email link)
+    // - Browser: shows simple HTML + deep link into app
+    // - App/API: returns JSON about token validity
+    @GetMapping(value = "/reset-password-mobile", produces = {MediaType.TEXT_HTML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<?> resetPasswordMobileEntry(
+            @RequestParam("token") String token,
+            @RequestHeader(value = "Accept", required = false) String accept
+    ) {
+        boolean valid;
+        try {
+            authService.verifyResetToken(token); // throws / returns userId; we only care it’s valid
+            valid = true;
+        } catch (Exception ex) {
+            valid = false;
+        }
+
+        // If client explicitly wants JSON (mobile app calling), return JSON.
+        if (accept != null && accept.contains(MediaType.APPLICATION_JSON_VALUE)) {
+            if (valid) {
+                return ResponseEntity.ok(Map.of("valid", true, "token", token));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("valid", false, "message", "Invalid or expired reset token"));
+        }
+
+        // Default: browser-friendly HTML
+        String title = valid ? "GetGo - Reset password" : "GetGo - Reset link invalid";
+        String deepLink = "getgo://reset-password/?token=" + token;
+
+        String body = valid
+                ? ("<p>Open the GetGo app to set a new password.</p>"
+                   + "<p><a href='" + deepLink + "'>Open in GetGo app</a></p>"
+                   + "<p>If the app doesn’t open, copy this token into the app reset screen:</p>"
+                   + "<pre style='padding:12px;background:#f5f5f5;border-radius:6px;\">" + token + "</pre>")
+                : "<p>This reset link is invalid or expired. Please request a new password reset.</p>";
+
+        String html =
+                "<!doctype html><html><head><meta charset='utf-8'/>" +
+                        "<meta name='viewport' content='width=device-width, initial-scale=1'/>" +
+                        "<title>" + title + "</title></head>" +
+                        "<body style='font-family: Arial, sans-serif; padding: 24px;'>" +
+                        "<h1>" + title + "</h1>" +
+                        body +
+                        "</body></html>";
+
+        return ResponseEntity
+                .status(valid ? HttpStatus.OK : HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.TEXT_HTML)
+                .body(html);
     }
 }

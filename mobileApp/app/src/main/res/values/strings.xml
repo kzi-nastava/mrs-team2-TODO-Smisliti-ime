@@ -21,6 +21,7 @@
     <string name="settings">Settings</string>
     <string name="logout">Logout</string>
     <string name="other">Other</string>
+    <string name="driver_requests">Driver Requests</string>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="Password">Password</string>
@@ -47,7 +48,7 @@
     <string name="driver_tab">Driver</string>
     <string name="vehicle_tab">Vehicle</string>
     <string name="recent_hours_placeholder">Recent hours active: 0</string>
-    <string name="recent_hours_format">Recent hours active: %d</string>
+    <string name="recent_hours_format">Recent hours active: %.2f</string>
     <string name="vehicle_model_hint">Vehicle Model</string>
     <string name="vehicle_type_hint">Vehicle Type</string>
     <string name="registration_number_hint">Registration Number</string>
@@ -93,10 +94,84 @@
     <string name="ride_tracking">Ride tracking</string>
     <string name="panic">PANIC</string>
 
+    <!-- Order ride -->
+    <string name="order_ride">Order Ride</string>
+    <string name="cancel_ride">Cancel</string>
+    <string name="ride_start_point">Starting point</string>
+    <string name="ride_destination">Destination</string>
+    <string name="remove_waypoint">Remove Waypoint</string>
+    <string name="add_waypoint">Add Waypoint</string>
+    <string name="vehicle_type">Vehicle Type</string>
+    <string name="pick_order_time">Order Timing</string>
+    <string name="passenger_pets">I have pets</string>
+    <string name="passenger_baby">I have a baby</string>
+    <string name="scheduled_order_time">Scheduled Time</string>
+    <string name="remove_friend">Remove Friend</string>
+    <string name="add_friend">Add Friend</string>
+    <string name="waypoint_hint">Waypoint</string>
+    <string name="friend_email_hint">Friend email</string>
+
+    <!-- Driver home -->
+    <string name="ride_received">Ride Received</string>
+    <string name="start_ride">Start Ride</string>
+    <string name="arriving_at_start_point">Arriving at Start Point</string>
+    <string name="ride_in_progress">Ride in Progress</string>
+    <string name="arrived_at_destination">Arrived at Destination</string>
+    <string name="ride_completed">Ride Completed!</string>
+
+    <!-- Button labels -->
+    <string name="accept_ride">Accept Ride</string>
+    <string name="start_ride_button">Start Ride</string>
+    <string name="stop_ride">Stop Ride</string>
+    <string name="end_ride">End Ride</string>
+    <string name="cancel_ride_button">Cancel Ride</string>
+    <string name="panic_button">Panic</string>
+    <string name="ok">OK</string>
+
+    <!-- Loading states -->
+    <string name="accepting">Accepting…</string>
+    <string name="starting">Starting…</string>
+    <string name="stopping">Stopping…</string>
+    <string name="ending">Ending…</string>
+    <string name="cancelling">Cancelling…</string>
+
+    <!-- Toast messages -->
+    <string name="ride_accepted">Ride accepted</string>
+    <string name="ride_started">Ride started</string>
+    <string name="ride_finished">Ride finished</string>
+    <string name="ride_cancelled">Ride cancelled</string>
+    <string name="failed_to_accept_ride">Failed to accept ride</string>
+    <string name="failed_to_start_ride">Failed to start ride</string>
+    <string name="failed_to_finish_ride">Failed to finish ride</string>
+    <string name="failed_to_cancel_ride">Failed to cancel ride</string>
+    <string name="stop_ride_not_implemented">Stop ride not yet implemented</string>
+    <string name="panic_not_implemented">Panic not yet implemented</string>
+
+    <!-- Info labels -->
+    <string name="ride_id_label">Ride ID:</string>
+    <string name="status_label">Status:</string>
+    <string name="starting_point_label">Starting Point:</string>
+    <string name="destination_label">Destination:</string>
+    <string name="passenger_label">Passenger:</string>
+    <string name="total_passengers_label">Total Passengers:</string>
+    <string name="estimated_time_label">Estimated Time:</string>
+    <string name="estimated_price_label">Estimated Price:</string>
+    <string name="scheduled_label">Scheduled:</string>
+    <string name="price_label_completion">Price</string>
+    <string name="duration_label">Duration</string>
+    <string name="minutes_format">%d minutes</string>
+    <string name="price_format">%.2f RSD</string>
+    <string name="time_format">%.0f min</string>
+    <string name="loading_ride_info">Loading ride information…</string>
+    <string name="no_ride_assigned">No ride assigned. Wait for a passenger to request a ride.</string>
+
 
     <!-- Maps -->
     <string name="mapbox_access_token">pk.eyJ1IjoibWVyaXMxMCIsImEiOiJjbWpxandnNmIwd2piM2dzYzVlc3N6NXExIn0.-OX2bzr7c8eGfjaUX-gwZw</string>
 
 <!--    this is for google maps api-->
 <!--    AIzaSyCBpfJRsfmQwttGjqAApSL8EjTaB4guK5c-->
+
+    <string name="driver_active">Active</string>
+    <string name="driver_inactive">Inactive</string>
 </resources>

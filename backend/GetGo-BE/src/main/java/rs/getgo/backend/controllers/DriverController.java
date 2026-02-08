@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
@@ -36,21 +37,22 @@ public class DriverController {
     }
 
     // 2.9.2 - Get driver rides
-    @PreAuthorize("hasRole('DRIVER')")
+//    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/rides", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Page<GetRideDTO>> getDriverRides(
+    public ResponseEntity<?> getDriverRides(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
             @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate
     ) {
+
         String email = AuthUtils.getCurrentUserEmail();
+//        String email = "d@gmail.com"; // Currently hardcoded
 
         Page<GetRideDTO> rides =
                 driverService.getDriverRides(email, startDate, page, size);
 
         return ResponseEntity.ok(rides);
     }
-
 
     // 2.2.3 - Driver registration (validate activation token)
     @GetMapping(value = "/activate/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -70,12 +72,20 @@ public class DriverController {
         return ResponseEntity.ok(response);
     }
 
-    // 2.3 - User profile (GET)
+    // 2.3 - User profile (GET) current authenticated driver
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/profile", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GetDriverDTO> getProfile() {
         String email = AuthUtils.getCurrentUserEmail();
         GetDriverDTO response = driverService.getDriver(email);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2.3 - User profile (GET) by driver id for admin/passenger
+    @PreAuthorize("hasRole('ADMIN') or hasRole('PASSENGER')")
+    @GetMapping(value = "/profile/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GetDriverDTO> getProfileById(@PathVariable("id") Long driverId) {
+        GetDriverDTO response = driverService.findDriverById(driverId);
         return ResponseEntity.ok(response);
     }
 

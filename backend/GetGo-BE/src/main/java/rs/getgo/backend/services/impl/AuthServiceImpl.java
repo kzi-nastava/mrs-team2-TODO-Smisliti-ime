@@ -1,5 +1,6 @@
 package rs.getgo.backend.services.impl;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import rs.getgo.backend.model.entities.Passenger;
 import rs.getgo.backend.model.enums.UserRole;
@@ -279,4 +280,11 @@ public class AuthServiceImpl implements AuthService {
         Optional<Driver> driver = driverRepo.findById(user.getId());
         return driver.map(value -> Boolean.FALSE.equals(value.getActive())).orElse(true);
     }
+
+    public User getUserFromAuth(Authentication auth) {
+        String email = auth.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
 }

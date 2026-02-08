@@ -33,7 +33,7 @@ public class CompletedRideController {
         return ResponseEntity.ok(driverId);
     }
 
-    @PreAuthorize("hasRole('DRIVER')")
+//    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/{rideId}/inconsistencies", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<GetInconsistencyReportDTO>> getInconsistencyReport(@PathVariable Long rideId) throws Exception {
         List<GetInconsistencyReportDTO> reports = completedRideService.getInconsistencyReportsByRideId(rideId);

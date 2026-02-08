@@ -557,14 +557,48 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     }
 
     private void triggerPanic() {
+        if (currentRide == null) {
+            Toast.makeText(requireContext(), "No active ride", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (panicSent) {
             Toast.makeText(requireContext(), "Emergency alert already sent", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // TODO: Implement panic API call
-        panicSent = true;
-        Toast.makeText(requireContext(), "Emergency alert sent!", Toast.LENGTH_SHORT).show();
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Emergency Alert")
+                .setMessage("Are you sure you want to trigger a panic alert? This will notify authorities.")
+                .setPositiveButton("Yes, Send Alert", (dialog, which) -> {
+                    btnPanic.setEnabled(false);
+
+                    rideApiService.triggerPanic(currentRide.getRideId()).enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call, Response<Void> response) {
+                            requireActivity().runOnUiThread(() -> {
+                                btnPanic.setEnabled(true);
+                                if (response.isSuccessful()) {
+                                    panicSent = true;
+                                    Toast.makeText(requireContext(), "Emergency alert sent!", Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(requireContext(), "Failed to send panic alert", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(Call<Void> call, Throwable t) {
+                            Log.e(TAG, "Failed to trigger panic", t);
+                            requireActivity().runOnUiThread(() -> {
+                                btnPanic.setEnabled(true);
+                                Toast.makeText(requireContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void handleFinishedRideOkClick() {

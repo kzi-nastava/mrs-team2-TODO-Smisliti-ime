@@ -59,4 +59,7 @@ public interface RideApiService {
 
     @POST("api/rides/{rideId}/stop")
     Call<RideCompletionDTO> stopRide(@Path("rideId") Long rideId, @Body StopRideDTO request);
+
+    @POST("api/rides/{rideId}/panic")
+    Call<Void> triggerPanic(@Path("rideId") Long rideId);
 }

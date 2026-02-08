@@ -16,6 +16,7 @@ import com.example.getgo.dtos.ride.PageResponse;
 import java.util.List;
 
 import okhttp3.MultipartBody;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -24,7 +25,6 @@ import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Part;
-import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface DriverApiService {
@@ -64,4 +64,10 @@ public interface DriverApiService {
     // Get driver by ID (for admin/passenger viewing driver details)
     @GET("api/drivers/profile/{id}")
     Call<GetDriverDTO> getDriverProfileById(@Path("id") Long driverId);
+
+    @GET("api/drivers/status")
+    Call<Boolean> getDriverStatus();
+
+    @PUT("api/drivers/status")
+    Call<ResponseBody> updateDriverStatus(@Query("isActive") boolean isActive);
 }

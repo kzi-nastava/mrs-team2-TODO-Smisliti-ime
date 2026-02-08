@@ -171,4 +171,7 @@
 
 <!--    this is for google maps api-->
 <!--    AIzaSyCBpfJRsfmQwttGjqAApSL8EjTaB4guK5c-->
+
+    <string name="driver_active">Active</string>
+    <string name="driver_inactive">Inactive</string>
 </resources>

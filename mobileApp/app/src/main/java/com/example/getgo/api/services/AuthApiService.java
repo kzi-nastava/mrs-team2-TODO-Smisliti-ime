@@ -71,10 +71,8 @@ public interface AuthApiService {
     /**
      * POST /api/auth/logout
      * Checks if logout is allowed for the current user (e.g. driver not on active ride).
-     * Backend: AuthController.logout()
-     * Requires Authorization header (JWT token).
+     * Returns true if logout allowed, false if blocked.
      */
     @POST("api/auth/logout")
-    Call<ResponseBody> logout();
+    Call<Boolean> canLogout();
 }
-

@@ -193,5 +193,7 @@ export class WebSocketService {
     this.chatMessages.get(chatId)!.next(msg);
   }
 
-
+  subscribeToPassengerRideCancelled(rideId: number) {
+    return this.createSubscription(`/socket-publisher/ride/${rideId}/ride-cancelled`);
+  }
 }

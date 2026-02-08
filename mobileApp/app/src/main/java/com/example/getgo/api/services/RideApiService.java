@@ -43,6 +43,9 @@ public interface RideApiService {
     @POST("api/rides/{rideId}/cancel/driver")
     Call<Void> cancelRideByDriver(@Path("rideId") Long rideId, @Body CancelRideRequestDTO request);
 
+    @POST("api/rides/{rideId}/cancel/passenger")
+    Call<Void> cancelRideByPassenger(@Path("rideId") Long rideId, @Body CancelRideRequestDTO request);
+
     @GET("api/rides/{id}/tracking")
     Call<GetRideTrackingDTO> trackRide(@Path("id") Long id);
 

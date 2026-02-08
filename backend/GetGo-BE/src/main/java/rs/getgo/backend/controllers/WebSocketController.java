@@ -9,6 +9,7 @@ import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideStatusUpdateDTO;
 import rs.getgo.backend.dtos.ride.GetRideFinishedDTO;
 import rs.getgo.backend.dtos.ride.GetRideStoppedEarlyDTO;
+import rs.getgo.backend.dtos.ride.GetRideCancelledDTO;
 
 import java.time.LocalDateTime;
 
@@ -160,6 +161,42 @@ public class WebSocketController {
         messagingTemplate.convertAndSend(
                 "/socket-publisher/chat/" + chatId,
                 messageDto
+        );
+    }
+
+    /**
+     * Notify about ride cancellation
+     */
+    public void notifyRideCancelled(Long rideId, String cancelledBy, String reason) {
+        GetRideCancelledDTO cancellation = new GetRideCancelledDTO(
+                rideId,
+                "CANCELLED",
+                cancelledBy,
+                reason,
+                LocalDateTime.now()
+        );
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/ride/" + rideId + "/ride-cancelled",
+                cancellation
+        );
+    }
+
+    /**
+     * Notify driver about ride cancellation
+     */
+    public void notifyDriverRideCancelled(String driverEmail, Long rideId, String cancelledBy, String reason) {
+        GetRideCancelledDTO cancellation = new GetRideCancelledDTO(
+                rideId,
+                "CANCELLED",
+                cancelledBy,
+                reason,
+                LocalDateTime.now()
+        );
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/driver/" + driverEmail + "/ride-cancelled",
+                cancellation
         );
     }
 }

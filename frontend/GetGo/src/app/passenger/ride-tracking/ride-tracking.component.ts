@@ -49,6 +49,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   private statusSubscription?: Subscription;
   private completionSubscription?: Subscription;
   private stopSubscription?: Subscription;
+  private cancelSubscription?: Subscription;
 
   @ViewChild(RideTrackingMapComponent, { read: ElementRef, static: false })
   private mapComponent?: ElementRef<HTMLElement>;
@@ -81,6 +82,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     if (this.statusSubscription) this.statusSubscription.unsubscribe();
     if (this.completionSubscription) this.completionSubscription.unsubscribe();
     if (this.stopSubscription) this.stopSubscription.unsubscribe();
+    if (this.cancelSubscription) this.cancelSubscription.unsubscribe();
 
     this.webSocketService.disconnect();
   }
@@ -176,6 +178,23 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         },
         error: (err) => console.error('Error receiving ride stopped:', err)
+      });
+
+    // Subscribe to ride cancellation
+    this.cancelSubscription = this.webSocketService
+      .subscribeToPassengerRideCancelled(rideId)
+      .subscribe({
+        next: (data: any) => {
+          console.log('❌ Ride cancelled:', data);
+          if (this.activeRide) {
+            this.activeRide.status = 'CANCELLED';
+            this.statusMessage = data.reason
+              ? `Ride has been cancelled. Reason: ${data.reason}`
+              : 'Ride has been cancelled.';
+          }
+          this.cdr.detectChanges();
+        },
+        error: (err) => console.error('Error receiving ride cancellation:', err)
       });
   }
 

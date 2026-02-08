@@ -58,6 +58,8 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
     private String driverEmail;
     private boolean pendingDrawRoute = false;
 
+    private int estimatedTime = 0;
+
 
     public DriverHomeFragment() {}
 
@@ -231,6 +233,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         tvDestination.setText(currentRide.getEndingPoint());
         tvPassengerInfo.setText(currentRide.getPassengerName());
         tvPassengerCount.setText(String.valueOf(currentRide.getPassengerCount()));
+        estimatedTime = (int) Math.round(currentRide.getEstimatedTimeMin());
         tvEstimatedTime.setText(getString(R.string.time_format, currentRide.getEstimatedTimeMin()));
         tvEstimatedPrice.setText(String.format(Locale.ENGLISH, getString(R.string.price_format), currentRide.getEstimatedPrice()));
 
@@ -486,7 +489,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         layoutRideCompleted.setVisibility(View.VISIBLE);
 
         tvFinalPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD", finished.getPrice()));
-        tvDuration.setText(String.format(Locale.ENGLISH,"%d minutes", finished.getDurationMinutes()));
+        tvDuration.setText(String.format(Locale.ENGLISH,"%d minutes", estimatedTime));
     }
 
     @Override

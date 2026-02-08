@@ -90,7 +90,8 @@ public class DriverRideDetailFragment extends Fragment {
             setStyledText(start, "Start location:", ride.getStartPoint());
             setStyledText(end, "End location:", ride.getEndPoint());
 
-            setStyledText(price, "Price:", "$" + ride.getPrice());
+            String formattedPrice = String.format("%.2f RSD", ride.getPrice());
+            setStyledText(price, "Price:", formattedPrice);
             setStyledText(tvPanicActivated, "Panic Activated:",
                     ride.getPanicActivated() != null && ride.getPanicActivated() ? "Yes" : "No");
 

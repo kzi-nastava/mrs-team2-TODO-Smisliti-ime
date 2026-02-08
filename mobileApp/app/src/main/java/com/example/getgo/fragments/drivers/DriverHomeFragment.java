@@ -24,7 +24,9 @@ import androidx.fragment.app.Fragment;
 import com.example.getgo.R;
 import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideFinishedDTO;
+import com.example.getgo.dtos.ride.RideCompletionDTO;
 import com.example.getgo.dtos.ride.UpdatedRideDTO;
+import com.example.getgo.dtos.ride.StopRideDTO;
 import com.example.getgo.repositories.RideRepository;
 import com.example.getgo.utils.JwtUtils;
 import com.example.getgo.utils.MapManager;
@@ -37,6 +39,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -356,8 +359,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                 startRide();
                 break;
             case "ACTIVE":
-                // TODO: Implement stop ride
-                Toast.makeText(requireContext(), "Stop ride not yet implemented", Toast.LENGTH_SHORT).show();
+                stopRide();
                 break;
             case "DRIVER_ARRIVED_AT_DESTINATION":
                 finishRide();
@@ -492,6 +494,73 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         }).start();
     }
 
+    private void stopRide() {
+        if (currentRide == null) return;
+
+        btnPrimaryAction.setEnabled(false);
+
+        com.example.getgo.api.services.RideApiService service =
+                com.example.getgo.api.ApiClient.getClient().create(com.example.getgo.api.services.RideApiService.class);
+
+        // Get current timestamp in ISO format
+        String stoppedAt = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
+        // Try to get last known driver position, fallback to 0.0
+        double lat = 0.0;
+        double lon = 0.0;
+        try {
+            if (mMap != null && ContextCompat.checkSelfPermission(requireContext(),
+                    Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                android.location.Location location = mMap.getMyLocation();
+                if (location != null) {
+                    lat = location.getLatitude();
+                    lon = location.getLongitude();
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Cannot access location for stop ride", e);
+        }
+
+        StopRideDTO dto = new StopRideDTO(lat, lon, stoppedAt);
+
+        Log.d(TAG, "Stopping ride: " + currentRide.getRideId() + " at " + lat + "," + lon + " time: " + stoppedAt);
+
+        service.stopRide(currentRide.getRideId(), dto).enqueue(new Callback<RideCompletionDTO>() {
+            @Override
+            public void onResponse(Call<RideCompletionDTO> call, Response<RideCompletionDTO> response) {
+                requireActivity().runOnUiThread(() -> {
+                    btnPrimaryAction.setEnabled(true);
+                    if (response.isSuccessful() && response.body() != null) {
+                        RideCompletionDTO completion = response.body();
+                        Log.d(TAG, "Stop ride success: " + completion.getRideId());
+                        showRideCompleted(completion);
+                        currentRide = null;
+                        if (mapManager != null) mapManager.reset();
+                        Toast.makeText(requireContext(), "Ride stopped", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Log.e(TAG, "Stop ride failed: " + response.code() + " " + response.message());
+                        try {
+                            String errorBody = response.errorBody() != null ? response.errorBody().string() : "No error body";
+                            Log.e(TAG, "Error body: " + errorBody);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Cannot read error body", e);
+                        }
+                        Toast.makeText(requireContext(), "Failed to stop ride: " + response.code(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Call<RideCompletionDTO> call, Throwable t) {
+                Log.e(TAG, "Stop ride network error", t);
+                requireActivity().runOnUiThread(() -> {
+                    btnPrimaryAction.setEnabled(true);
+                    Toast.makeText(requireContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
     private void finishRide() {
         btnPrimaryAction.setEnabled(false);
 
@@ -538,6 +607,16 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
 
         tvFinalPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD", finished.getPrice()));
         tvDuration.setText(String.format(Locale.ENGLISH,"%d minutes", finished.getDurationMinutes()));
+    }
+
+    // Overload for RideCompletionDTO
+    private void showRideCompleted(RideCompletionDTO completion) {
+        layoutNoRide.setVisibility(View.GONE);
+        layoutRideInfo.setVisibility(View.GONE);
+        layoutRideCompleted.setVisibility(View.VISIBLE);
+
+        tvFinalPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD", completion.getPrice()));
+        tvDuration.setText(String.format(Locale.ENGLISH, "%d minutes", completion.getDurationMinutes()));
     }
 
     @Override

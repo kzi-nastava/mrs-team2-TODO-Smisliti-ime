@@ -28,11 +28,11 @@ public class ApiClient {
     private static String currentBaseUrl;
     private static Context appContext;
 
-    // private static final String DEFAULT_BASE_URL = "http://10.0.2.2:8080/";
+     private static final String DEFAULT_BASE_URL = "http://10.0.2.2:8080/";
     public static final String SERVER_URL = "http://10.0.2.2:8080"; // For fetching images
     private static final String PREFS_NAME = "getgo_prefs";
     private static final String PREF_JWT = "jwt_token";
-    private static final String DEFAULT_BASE_URL = "https://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
+//    private static final String DEFAULT_BASE_URL = "https://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
 
     public static void init(Context context) {
         appContext = context.getApplicationContext();

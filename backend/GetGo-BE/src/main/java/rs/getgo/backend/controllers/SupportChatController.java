@@ -43,19 +43,19 @@ public class SupportChatController {
     }
 
 
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/chats")
     public List<GetChatDTO> getAllChats() {
         return service.getAllChatsDTO();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/messages/{chatId}")
     public List<GetMessageDTO> getChatMessages(@PathVariable Long chatId) {
         return service.getChatMessagesDTO(chatId);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/messages/{chatId}")
     public ResponseEntity<GetMessageDTO> sendMessageAdmin(
             @PathVariable Long chatId,

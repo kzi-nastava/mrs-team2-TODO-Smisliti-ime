@@ -11,6 +11,8 @@ import com.example.getgo.dtos.ride.GetPassengerActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideTrackingDTO;
 import com.example.getgo.dtos.ride.UpdateRideDTO;
 import com.example.getgo.dtos.ride.UpdatedRideDTO;
+import com.example.getgo.dtos.ride.RideCompletionDTO;
+import com.example.getgo.dtos.ride.StopRideDTO;
 
 import java.util.List;
 
@@ -55,4 +57,6 @@ public interface RideApiService {
     @GET("api/completed-rides/{rideId}/inconsistencies")
     Call<List<GetInconsistencyReportDTO>> getInconsistencyReports(@Path("rideId") Long rideId);
 
+    @POST("api/rides/{rideId}/stop")
+    Call<RideCompletionDTO> stopRide(@Path("rideId") Long rideId, @Body StopRideDTO request);
 }

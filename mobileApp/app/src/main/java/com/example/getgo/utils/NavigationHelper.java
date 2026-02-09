@@ -6,11 +6,13 @@ import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
 import com.example.getgo.fragments.admins.AdminDriverRegistrationFragment;
+import com.example.getgo.fragments.admins.AdminChatListFragment;
 import com.example.getgo.fragments.admins.AdminProfileInfoFragment;
 import com.example.getgo.fragments.admins.AdminReviewDriverRequestsFragment;
 import com.example.getgo.fragments.drivers.DriverHomeFragment;
 import com.example.getgo.fragments.drivers.DriverProfileInfoFragment;
 import com.example.getgo.fragments.guests.GuestHomeFragment;
+import com.example.getgo.fragments.layouts.SupportChatFragment;
 import com.example.getgo.fragments.passengers.PassengerProfileInfoFragment;
 import com.example.getgo.fragments.passengers.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.drivers.DriverRideHistoryFragment;
@@ -85,6 +87,8 @@ public class NavigationHelper {
             return new DriverRideHistoryFragment();
         } else if (itemId == R.id.nav_bottom_profile) {
             return DriverProfileInfoFragment.newInstance();
+        } else if (itemId == R.id.nav_drawer_support) {
+            return SupportChatFragment.newInstance("DRIVER");
         }
 
         return null;
@@ -99,6 +103,8 @@ public class NavigationHelper {
             return new PassengerRateDriverVehicleFragment();
         } else if (itemId == R.id.nav_bottom_ride_tracking) {
             return new PassengerRideTrackingFragment();
+        } else if (itemId == R.id.nav_drawer_support) {
+            return SupportChatFragment.newInstance("PASSENGER");
         }
         return null;
     }
@@ -112,6 +118,8 @@ public class NavigationHelper {
             return AdminReviewDriverRequestsFragment.newInstance();
         } else if (itemId == R.id.nav_register_driver) {
             return AdminDriverRegistrationFragment.newInstance();
+        } else if (itemId == R.id.nav_drawer_support_chats) {
+            return new AdminChatListFragment();
         }
 
         return null;

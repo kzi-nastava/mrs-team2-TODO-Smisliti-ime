@@ -3,11 +3,14 @@ package com.example.getgo.utils;
 import android.content.Context;
 import android.util.Log;
 
+import com.example.getgo.callbacks.SupportChatMessageListener;
 import com.example.getgo.dtos.driver.GetDriverLocationDTO;
 import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideFinishedDTO;
 import com.example.getgo.dtos.ride.GetRideStatusUpdateDTO;
 import com.example.getgo.dtos.ride.GetRideStoppedEarlyDTO;
+import com.example.getgo.dtos.supportChat.GetMessageDTO;
+import com.example.getgo.model.ChatMessage;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -252,4 +255,24 @@ public class WebSocketManager {
         }
         compositeDisposable.clear();
     }
+
+    public void subscribeToChat(Long chatId, String currentUserType, SupportChatMessageListener listener) {
+        if (stompClient == null) return;
+
+        String topic = "/socket-publisher/chat/" + chatId;
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    GetMessageDTO dto = gson.fromJson(topicMessage.getPayload(), GetMessageDTO.class);
+
+                    ChatMessage message = new ChatMessage(dto, currentUserType);
+
+                    listener.onNewMessage(message);
+                }, throwable -> {
+                    Log.e(TAG, "Chat socket error", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
 }

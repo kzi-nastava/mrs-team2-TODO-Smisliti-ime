@@ -9,17 +9,33 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.TextView;
 
 import com.example.getgo.R;
+import com.example.getgo.adapters.SupportChatAdapter;
+import com.example.getgo.callbacks.SupportChatMessageListener;
+import com.example.getgo.dtos.supportChat.CreateMessageRequestDTO;
+import com.example.getgo.model.ChatMessage;
+import com.example.getgo.repositories.SupportChatRepository;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class SupportChatFragment extends Fragment {
 
-    private RecyclerView recyclerView;
-    private TextInputEditText inputMessage;
-    private MaterialButton sendButton;
+    private RecyclerView rvMessages;
+    private EditText etMessage;
+    private ImageButton btnSend;
+    private TextView tvChatTitle;
+    private SupportChatAdapter adapter;
+    private SupportChatRepository repository;
+    private String userType;
+
 
 
     public SupportChatFragment() {
@@ -28,45 +44,82 @@ public class SupportChatFragment extends Fragment {
 
 
 
-    public static SupportChatFragment newInstance(String param1, String param2) {
+    public static SupportChatFragment newInstance(String userType) {
         SupportChatFragment fragment = new SupportChatFragment();
         Bundle args = new Bundle();
-
+        args.putString("USER_TYPE", userType); // "PASSENGER" ili "DRIVER"
         fragment.setArguments(args);
         return fragment;
     }
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-
+            userType = getArguments().getString("USER_TYPE", "PASSENGER"); // default
         }
     }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_support_chat, container, false);
 
-        recyclerView = view.findViewById(R.id.support_chat_recycler);
-        inputMessage = view.findViewById(R.id.support_chat_input);
-        sendButton = view.findViewById(R.id.support_chat_send);
+        tvChatTitle = view.findViewById(R.id.tvChatTitle);
+        rvMessages = view.findViewById(R.id.rvMessages);
+        etMessage = view.findViewById(R.id.etMessage);
+        btnSend = view.findViewById(R.id.btnSend);
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        // TODO: recyclerView.setAdapter(chatAdapter);
+        tvChatTitle.setText("Chat with Admin");
 
-        sendButton.setOnClickListener(v -> {
-            String message = inputMessage.getText() != null
-                    ? inputMessage.getText().toString().trim()
-                    : "";
+        repository = SupportChatRepository.getInstance();
 
-            if (!message.isEmpty()) {
-                // TODO: send message to backend / websocket
-                inputMessage.setText("");
-            }
+        adapter = new SupportChatAdapter(new ArrayList<>());
+        rvMessages.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvMessages.setAdapter(adapter);
+
+        loadMessages();
+
+        btnSend.setOnClickListener(v -> {
+            String text = etMessage.getText().toString().trim();
+            if (!text.isEmpty()) sendMessage(text);
         });
 
         return view;
+    }
+
+    private void loadMessages() {
+        new Thread(() -> {
+            try {
+                List<ChatMessage> messages = repository.getMyMessages(userType);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        adapter.setMessages(messages);
+                        rvMessages.scrollToPosition(messages.size() - 1);
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+
+    private void sendMessage(String text) {
+        new Thread(() -> {
+            try {
+                repository.sendMessage(new CreateMessageRequestDTO(text));
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        etMessage.setText("");
+                        loadMessages();
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 }

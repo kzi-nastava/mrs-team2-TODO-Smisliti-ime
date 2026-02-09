@@ -9,8 +9,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.example.getgo.R;
+import com.example.getgo.adapters.AdminChatListAdapter;
+import com.example.getgo.dtos.supportChat.ChatSummary;
+import com.example.getgo.repositories.SupportChatRepository;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -19,7 +26,9 @@ import com.example.getgo.R;
  */
 public class AdminChatListFragment extends Fragment {
 
-    private RecyclerView recyclerView;
+    private RecyclerView rvChats;
+    private AdminChatListAdapter adapter;
+    private SupportChatRepository repository;
 
     public AdminChatListFragment() {
         // Required empty public constructor
@@ -46,11 +55,46 @@ public class AdminChatListFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_admin_chat_list, container, false);
 
-        recyclerView = view.findViewById(R.id.admin_chat_list_recycler);
-        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvChats = view.findViewById(R.id.rvChats);
+        repository = SupportChatRepository.getInstance();
 
-        // TODO: recyclerView.setAdapter(adminChatListAdapter);
+        adapter = new AdminChatListAdapter(new ArrayList<>(), chatId -> openChat(chatId));
+        rvChats.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvChats.setAdapter(adapter);
 
+        loadChats();
         return view;
+    }
+
+    private void loadChats() {
+        new Thread(() -> {
+            try {
+                List<ChatSummary> chats = repository.getAllChats();
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> adapter.setChats(chats));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() ->
+                            Toast.makeText(getContext(), "Failed to load chats", Toast.LENGTH_SHORT).show()
+                    );
+                }
+            }
+        }).start();
+    }
+
+
+    private void openChat(int chatId) {
+        AdminSupportChatFragment fragment = new AdminSupportChatFragment();
+        Bundle args = new Bundle();
+        args.putInt("CHAT_ID", chatId);
+        fragment.setArguments(args);
+
+        getParentFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 }

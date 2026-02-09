@@ -9,19 +9,33 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.getgo.R;
+import com.example.getgo.adapters.SupportChatAdapter;
+import com.example.getgo.dtos.supportChat.CreateMessageRequestDTO;
+import com.example.getgo.model.ChatMessage;
+import com.example.getgo.repositories.SupportChatRepository;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class AdminSupportChatFragment extends Fragment {
 
-    private static final String ARG_CHAT_ID = "chat_id";
+    private RecyclerView rvMessages;
+    private EditText etMessage;
+    private ImageButton btnSend;
+    private TextView tvChatTitle;
+    private SupportChatAdapter adapter;
+    private SupportChatRepository repository;
 
-    private RecyclerView recyclerView;
-    private TextInputEditText inputMessage;
-    private MaterialButton sendButton;
+    private int chatId;
 
     public AdminSupportChatFragment() {
         // Required empty public constructor
@@ -47,24 +61,65 @@ public class AdminSupportChatFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_admin_support_chat, container, false);
 
-        recyclerView = view.findViewById(R.id.admin_support_chat_recycler);
-        inputMessage = view.findViewById(R.id.admin_support_chat_input);
-        sendButton = view.findViewById(R.id.admin_support_chat_send);
+        tvChatTitle = view.findViewById(R.id.tvChatTitle);
+        rvMessages = view.findViewById(R.id.rvMessages);
+        etMessage = view.findViewById(R.id.etMessage);
+        btnSend = view.findViewById(R.id.btnSend);
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        // TODO: recyclerView.setAdapter(adminChatAdapter);
+        chatId = getArguments() != null ? getArguments().getInt("CHAT_ID") : -1;
 
-        sendButton.setOnClickListener(v -> {
-            String message = inputMessage.getText() != null
-                    ? inputMessage.getText().toString().trim()
-                    : "";
+        repository = SupportChatRepository.getInstance();
 
-            if (!message.isEmpty()) {
-                // TODO: send admin message
-                inputMessage.setText("");
-            }
+        tvChatTitle.setText("Chat with User " + chatId);
+
+        adapter = new SupportChatAdapter(new ArrayList<>());
+        rvMessages.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvMessages.setAdapter(adapter);
+
+        loadMessages();
+
+        btnSend.setOnClickListener(v -> {
+            String text = etMessage.getText().toString().trim();
+            if (!text.isEmpty()) sendMessage(text);
         });
 
         return view;
+    }
+
+    private void loadMessages() {
+        new Thread(() -> {
+            try {
+                List<ChatMessage> messages = repository.getMessages(chatId);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        adapter.setMessages(messages);
+                        rvMessages.scrollToPosition(messages.size() - 1);
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private void sendMessage(String text) {
+        new Thread(() -> {
+            try {
+                repository.sendMessage(new CreateMessageRequestDTO(chatId, text));
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        etMessage.setText("");
+                        loadMessages();
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() ->
+                            Toast.makeText(getContext(), "Failed to send message", Toast.LENGTH_SHORT).show()
+                    );
+                }
+            }
+        }).start();
     }
 }

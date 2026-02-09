@@ -87,7 +87,7 @@ public class NavigationHelper {
         } else if (itemId == R.id.nav_bottom_profile) {
             return DriverProfileInfoFragment.newInstance();
         } else if (itemId == R.id.nav_drawer_support) {
-            return new SupportChatFragment();
+            return SupportChatFragment.newInstance("DRIVER");
         }
 
         return null;
@@ -103,7 +103,7 @@ public class NavigationHelper {
         } else if (itemId == R.id.nav_bottom_ride_tracking) {
             return new PassengerRideTrackingFragment();
         } else if (itemId == R.id.nav_drawer_support) {
-            return new SupportChatFragment();
+            return SupportChatFragment.newInstance("PASSENGER");
         }
         return null;
     }

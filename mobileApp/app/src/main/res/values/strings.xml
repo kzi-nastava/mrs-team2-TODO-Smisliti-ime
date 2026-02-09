@@ -21,6 +21,7 @@
     <string name="settings">Settings</string>
     <string name="logout">Logout</string>
     <string name="other">Other</string>
+    <string name="driver_requests">Driver Requests</string>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="Password">Password</string>
@@ -47,7 +48,7 @@
     <string name="driver_tab">Driver</string>
     <string name="vehicle_tab">Vehicle</string>
     <string name="recent_hours_placeholder">Recent hours active: 0</string>
-    <string name="recent_hours_format">Recent hours active: %d</string>
+    <string name="recent_hours_format">Recent hours active: %.2f</string>
     <string name="vehicle_model_hint">Vehicle Model</string>
     <string name="vehicle_type_hint">Vehicle Type</string>
     <string name="registration_number_hint">Registration Number</string>
@@ -170,4 +171,7 @@
 
 <!--    this is for google maps api-->
 <!--    AIzaSyCBpfJRsfmQwttGjqAApSL8EjTaB4guK5c-->
+
+    <string name="driver_active">Active</string>
+    <string name="driver_inactive">Inactive</string>
 </resources>

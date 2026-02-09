@@ -3,23 +3,45 @@
   <div class="content-wrapper">
     <p class="main-title">Driver Change Requests</p>
 
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'personal'"
+        (click)="setActiveTab('personal')">
+        Personal Info ({{ personalTotal }})
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'vehicle'"
+        (click)="setActiveTab('vehicle')">
+        Vehicle Info ({{ vehicleTotal }})
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'avatar'"
+        (click)="setActiveTab('avatar')">
+        Profile Picture ({{ avatarTotal }})
+      </button>
+    </div>
+
     @if (isLoading) {
     <p class="pagination-info">Loading requests...</p>
-    } @else if (allRequests.length === 0) {
+    } @else if (currentRequests.length === 0) {
     <p class="pagination-info">No pending requests</p>
     } @else {
-    <p class="pagination-info">Showing {{ startIndex + 1 }}-{{ endIndex }} of {{ totalRequests }} request{{totalRequests !== 1 ? 's' : ''}}</p>
+    <p class="pagination-info">Showing {{ startIndex + 1 }}-{{ endIndex }} of {{ currentTotal }} request{{currentTotal !== 1 ? 's' : ''}}</p>
 
     <div class="navigation-buttons">
       <button
         class="btn-nav btn-previous"
-        [disabled]="currentPage === 1"
+        [disabled]="currentPage === 0"
         (click)="previousPage()">
         Previous
       </button>
       <button
         class="btn-nav btn-next"
-        [disabled]="currentPage === totalPages"
+        [disabled]="currentPage >= currentTotalPages - 1"
         (click)="nextPage()">
         Next
       </button>
@@ -27,7 +49,7 @@
 
     <!-- Requests List -->
     <div class="requests-container">
-      @for (request of paginatedRequests; track request.id) {
+      @for (request of currentRequests; track request.id) {
       <div class="request-card">
         <div class="request-header">
           <div class="request-type-badge">{{ request.type }}</div>
@@ -39,7 +61,7 @@
           <div class="driver-email">{{ request.driverEmail }}</div>
         </div>
 
-        @if (request.type !== 'Profile Picture' && request.changes) {
+        @if (request.type !== 'Profile Picture' && 'changes' in request) {
         <div class="changes-section">
           <div class="section-title">Requested Changes:</div>
           @for (change of request.changes; track change.label) {
@@ -53,7 +75,7 @@
         </div>
         }
 
-        @if (request.type === 'Profile Picture') {
+        @if (request.type === 'Profile Picture' && 'currentPicture' in request) {
         <div class="changes-section">
           <div class="section-title">Requested Profile Picture:</div>
           <div class="picture-comparison">
@@ -76,21 +98,6 @@
         </div>
       </div>
       }
-    </div>
-
-    <div class="navigation-buttons">
-      <button
-        class="btn-nav btn-previous"
-        [disabled]="currentPage === 1"
-        (click)="previousPage()">
-        Previous
-      </button>
-      <button
-        class="btn-nav btn-next"
-        [disabled]="currentPage === totalPages"
-        (click)="nextPage()">
-        Next
-      </button>
     </div>
     }
   </div>

@@ -22,13 +22,26 @@ import com.example.getgo.fragments.admins.AdminRideHistoryFragment;
 import com.example.getgo.fragments.passengers.PassengerRideHistoryFragment;
 import com.example.getgo.utils.NavigationHelper;
 import com.example.getgo.model.UserRole;
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.api.services.DriverApiService;
+import com.example.getgo.api.services.AuthApiService;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.switchmaterial.SwitchMaterial;
+import android.widget.TextView;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
     private UserRole currentUserRole;
     private DrawerLayout drawer;
     private NavigationHelper navigationHelper;
+    private SwitchMaterial driverActiveSwitch;
+    private TextView tvDriverStatus;
+    private View driverStatusLayout;
+    private DriverApiService driverApiService;
+    private boolean isDriverActive = false; // Cache driver active status
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,20 +107,31 @@ public class MainActivity extends AppCompatActivity {
                     startActivity(new Intent(this, RegisterActivity.class)));
 
         } else {
-
+            // Standard toolbar for all authenticated users
             View toolbarView = getLayoutInflater()
                     .inflate(R.layout.standard_toolbar, toolbarContainer, true);
 
             Toolbar toolbar = toolbarView.findViewById(R.id.toolbar);
             setSupportActionBar(toolbar);
 
-            drawer = findViewById(R.id.drawer_layout);
+            // Get driver status views
+            driverStatusLayout = toolbarView.findViewById(R.id.driverStatusLayout);
+            driverActiveSwitch = toolbarView.findViewById(R.id.switchDriverActive);
+            tvDriverStatus = toolbarView.findViewById(R.id.tvDriverStatus);
 
+            // Show toggle only for drivers
+            if (currentUserRole == UserRole.DRIVER) {
+                driverStatusLayout.setVisibility(View.VISIBLE);
+                setupDriverStatusToggle();
+            } else {
+                driverStatusLayout.setVisibility(View.GONE);
+            }
+
+            drawer = findViewById(R.id.drawer_layout);
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                     this, drawer, toolbar,
                     R.string.drawer_open, R.string.drawer_close
             );
-
             drawer.addDrawerListener(toggle);
             toggle.syncState();
             toggle.getDrawerArrowDrawable()
@@ -116,6 +140,76 @@ public class MainActivity extends AppCompatActivity {
             setupBottomNavigation();
             setupDrawerNavigation();
         }
+    }
+
+    private void setupDriverStatusToggle() {
+        driverApiService = ApiClient.getDriverApiService();
+
+        // Load current status
+        loadDriverStatus();
+
+        // Handle toggle changes
+        driverActiveSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (!buttonView.isPressed()) return; // Ignore programmatic changes
+            updateDriverStatus(isChecked);
+        });
+    }
+
+    private void loadDriverStatus() {
+        driverApiService.getDriverStatus().enqueue(new Callback<Boolean>() {
+            @Override
+            public void onResponse(Call<Boolean> call, Response<Boolean> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    isDriverActive = response.body();
+                    driverActiveSwitch.setChecked(isDriverActive);
+                    updateStatusText(isDriverActive);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Boolean> call, Throwable t) {
+                Log.e("MainActivity", "Failed to load driver status", t);
+            }
+        });
+    }
+
+    private void updateDriverStatus(boolean isActive) {
+        driverActiveSwitch.setEnabled(false);
+
+        driverApiService.updateDriverStatus(isActive).enqueue(new Callback<okhttp3.ResponseBody>() {
+            @Override
+            public void onResponse(Call<okhttp3.ResponseBody> call, Response<okhttp3.ResponseBody> response) {
+                driverActiveSwitch.setEnabled(true);
+
+                if (response.isSuccessful()) {
+                    isDriverActive = isActive; // Update cached status
+                    updateStatusText(isActive);
+                    Toast.makeText(MainActivity.this,
+                            isActive ? "You are now active" : "You are now inactive",
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    // Revert switch on failure
+                    driverActiveSwitch.setChecked(!isActive);
+                    Toast.makeText(MainActivity.this,
+                            "Failed to update status",
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<okhttp3.ResponseBody> call, Throwable t) {
+                driverActiveSwitch.setEnabled(true);
+                driverActiveSwitch.setChecked(!isActive);
+                Toast.makeText(MainActivity.this,
+                        "Network error",
+                        Toast.LENGTH_SHORT).show();
+                Log.e("MainActivity", "Failed to update driver status", t);
+            }
+        });
+    }
+
+    private void updateStatusText(boolean isActive) {
+        tvDriverStatus.setText(isActive ? R.string.driver_active : R.string.driver_inactive);
     }
 
     private void setupBottomNavigation() {
@@ -206,7 +300,60 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleLogout() {
-        Toast.makeText(this, "Logging out...", Toast.LENGTH_SHORT).show();
+        // If user is a driver, check active status before allowing logout
+        if (currentUserRole == UserRole.DRIVER) {
+            // First try to use cached status
+            if (isDriverActive) {
+                Toast.makeText(this,
+                        "Cannot logout while you are active. Please deactivate first.",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            // Double-check with backend to ensure status is current
+            AuthApiService authService = ApiClient.getAuthApiService();
+            authService.canLogout().enqueue(new Callback<Boolean>() {
+                @Override
+                public void onResponse(Call<Boolean> call, Response<Boolean> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        boolean canLogout = response.body();
+
+                        if (canLogout) {
+                            performLogout();
+                        } else {
+                            Toast.makeText(MainActivity.this,
+                                    "Cannot logout while active or on a ride. Please deactivate first.",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    } else {
+                        Toast.makeText(MainActivity.this,
+                                "Failed to verify logout status",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<Boolean> call, Throwable t) {
+                    Log.e("MainActivity", "Logout check failed", t);
+                    Toast.makeText(MainActivity.this,
+                            "Network error during logout check",
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            // Non-driver users can logout immediately
+            performLogout();
+        }
+    }
+
+    private void performLogout() {
+        // Clear JWT token
+        getSharedPreferences("getgo_prefs", MODE_PRIVATE)
+                .edit()
+                .remove("jwt_token")
+                .apply();
+
+        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
         redirectToLogin();
     }
 
@@ -259,7 +406,4 @@ public class MainActivity extends AppCompatActivity {
         Log.d("NOTIF_TEST", "onNewIntent called");
         handleNotificationIntent(intent);
     }
-
-
-
 }

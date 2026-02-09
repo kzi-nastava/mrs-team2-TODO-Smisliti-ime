@@ -1,6 +1,7 @@
 package com.example.getgo.fragments.admins;
 
 import android.os.Bundle;
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,8 +10,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.getgo.R;
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.api.services.AdminApiService;
+import com.example.getgo.dtos.admin.GetAdminDTO;
+import com.example.getgo.dtos.admin.UpdateAdminDTO;
+import com.example.getgo.dtos.admin.UpdatedAdminDTO;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class AdminProfileInfoFragment extends Fragment {
 
@@ -22,6 +32,8 @@ public class AdminProfileInfoFragment extends Fragment {
     private TextView tvChangePassword;
     private MaterialButton btnSave;
 
+    private AdminApiService adminApiService;
+
     public AdminProfileInfoFragment() {}
 
     public static AdminProfileInfoFragment newInstance() {
@@ -31,15 +43,14 @@ public class AdminProfileInfoFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        adminApiService = ApiClient.getClient().create(AdminApiService.class);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_admin_profile_info, container, false);
 
-        // Initialize views
         etEmail = view.findViewById(R.id.etEmail);
         etFirstName = view.findViewById(R.id.etFirstName);
         etLastName = view.findViewById(R.id.etLastName);
@@ -48,38 +59,53 @@ public class AdminProfileInfoFragment extends Fragment {
         tvChangePassword = view.findViewById(R.id.tvChangePassword);
         btnSave = view.findViewById(R.id.btnSave);
 
-        // Load existing user data
+        etEmail.setEnabled(false);
+
         loadUserData();
 
-        // Set up click listeners
         tvChangePassword.setOnClickListener(v -> {
-            // TODO: implement password reset
-            Toast.makeText(requireContext(), "Change password not implemented yet", Toast.LENGTH_SHORT).show();
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragmentContainer, AdminChangePasswordFragment.newInstance())
+                    .addToBackStack(null)
+                    .commit();
         });
+
         btnSave.setOnClickListener(v -> saveUserData());
 
         return view;
     }
 
     private void loadUserData() {
-        // TODO: Load actual user data from backend/database
-        // For now, using placeholder data
-        etEmail.setText("admin@getgo.com");
-        etFirstName.setText("Admin");
-        etLastName.setText("User");
-        etPhone.setText("+381 11 123 4567");
-        etAddress.setText("Belgrade, Serbia");
+        adminApiService.getProfile().enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<GetAdminDTO> call, @NonNull Response<GetAdminDTO> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    GetAdminDTO admin = response.body();
+
+                    etEmail.setText(admin.getEmail());
+                    etFirstName.setText(admin.getName());
+                    etLastName.setText(admin.getSurname());
+                    etPhone.setText(admin.getPhone());
+                    etAddress.setText(admin.getAddress());
+                } else {
+                    Toast.makeText(requireContext(), "Failed to load profile", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<GetAdminDTO> call, @NonNull Throwable t) {
+                Toast.makeText(requireContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void saveUserData() {
-        // Get values from input fields
-        String email = etEmail.getText().toString().trim();
-        String firstName = etFirstName.getText().toString().trim();
-        String lastName = etLastName.getText().toString().trim();
-        String phone = etPhone.getText().toString().trim();
-        String address = etAddress.getText().toString().trim();
+        String email = String.valueOf(etEmail.getText()).trim();
+        String firstName = String.valueOf(etFirstName.getText()).trim();
+        String lastName = String.valueOf(etLastName.getText()).trim();
+        String phone = String.valueOf(etPhone.getText()).trim();
+        String address = String.valueOf(etAddress.getText()).trim();
 
-        // Basic validation
         if (email.isEmpty() || firstName.isEmpty() || lastName.isEmpty() ||
                 phone.isEmpty() || address.isEmpty()) {
             Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
@@ -91,7 +117,28 @@ public class AdminProfileInfoFragment extends Fragment {
             return;
         }
 
-        // TODO: Send data to backend API
-        Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show();
+        btnSave.setEnabled(false);
+
+        UpdateAdminDTO updateDTO = new UpdateAdminDTO(firstName, lastName, phone, address);
+
+        adminApiService.updateProfile(updateDTO).enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<UpdatedAdminDTO> call, @NonNull Response<UpdatedAdminDTO> response) {
+                btnSave.setEnabled(true);
+
+                if (response.isSuccessful() && response.body() != null) {
+                    Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show();
+                    loadUserData();
+                } else {
+                    Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<UpdatedAdminDTO> call, @NonNull Throwable t) {
+                btnSave.setEnabled(true);
+                Toast.makeText(requireContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

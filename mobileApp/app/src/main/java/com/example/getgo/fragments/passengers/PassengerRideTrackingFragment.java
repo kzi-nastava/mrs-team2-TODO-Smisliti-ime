@@ -1,6 +1,7 @@
 package com.example.getgo.fragments.passengers;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -47,6 +48,8 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,6 +87,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     private boolean panicSent = false;
     private int totalRouteDistanceMeters = 0;
     private Long finishedRideDriverId;
+
+    private int estimatedTime = 0;
 
 
     public PassengerRideTrackingFragment() {}
@@ -364,6 +369,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         tvStartPoint.setText(currentRide.getStartingPoint());
         tvDestination.setText(currentRide.getEndingPoint());
         tvDriverName.setText(currentRide.getDriverName() != null ? currentRide.getDriverName() : "Assigning...");
+        estimatedTime = (int) Math.round(currentRide.getEstimatedTimeMin());
         tvEstimatedTime.setText(String.format(Locale.ENGLISH, "%.0f min", currentRide.getEstimatedTimeMin()));
         tvEstimatedPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD", currentRide.getEstimatedPrice()));
 
@@ -470,45 +476,132 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 //        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
     }
 
-
     private void cancelRide() {
         if (currentRide == null) return;
 
-        btnCancelRide.setEnabled(false);
+        // Debug: Log current ride details
+        Log.d(TAG, "Current ride ID: " + currentRide.getRideId());
+        Log.d(TAG, "Scheduled time: " + currentRide.getScheduledTime());
+        Log.d(TAG, "Current time: " + LocalDateTime.now());
 
-        new Thread(() -> {
-            try {
-                RideRepository repo = RideRepository.getInstance();
-                repo.cancelRide(currentRide.getRideId(), "Passenger cancelled");
+        // Check scheduled time - use startingTime if scheduledTime doesn't exist
+        LocalDateTime scheduled = currentRide.getScheduledTime();
 
-                requireActivity().runOnUiThread(() -> {
-                    btnCancelRide.setEnabled(true);
-                    Toast.makeText(requireContext(), "Ride cancelled", Toast.LENGTH_SHORT).show();
-                    currentRide = null;
-                    showNoRide();
-                    if (mapManager != null) {
-                        mapManager.reset();
-                    }
-                });
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to cancel ride", e);
-                requireActivity().runOnUiThread(() -> {
-                    btnCancelRide.setEnabled(true);
-                    Toast.makeText(requireContext(), "Cannot cancel ride at this time", Toast.LENGTH_SHORT).show();
-                });
-            }
-        }).start();
+        if (scheduled == null) {
+            Toast.makeText(requireContext(), "Cannot cancel: ride already started or not scheduled", Toast.LENGTH_SHORT).show();
+            Log.w(TAG, "No scheduled or starting time found");
+            return;
+        }
+
+        long minutesUntilStart;
+        try {
+            minutesUntilStart = Duration.between(LocalDateTime.now(), scheduled).toMinutes();
+            Log.d(TAG, "Minutes until start: " + minutesUntilStart);
+        } catch (Exception ex) {
+            Log.e(TAG, "Error calculating time difference", ex);
+            minutesUntilStart = Long.MIN_VALUE;
+        }
+
+        if (minutesUntilStart < 10) {
+            String msg = String.format(Locale.ENGLISH,
+                "Cannot cancel: only %d minutes until start (min 10 required)", minutesUntilStart);
+            Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show();
+            Log.w(TAG, msg);
+            return;
+        }
+
+        // Ask for reason
+        EditText input = new EditText(requireContext());
+        input.setHint("Reason for cancellation (required)");
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Cancel ride")
+                .setMessage("Please provide a reason for cancelling the ride:")
+                .setView(input)
+                .setPositiveButton("Cancel ride", (dialog, which) -> {
+                    String reason = input.getText() != null ? input.getText().toString().trim() : "";
+                    if (reason.isEmpty()) reason = "Passenger cancelled";
+
+                    btnCancelRide.setEnabled(false);
+
+                    // Call passenger cancel endpoint
+                    rideApiService.cancelRideByPassenger(currentRide.getRideId(),
+                            new com.example.getgo.dtos.ride.CancelRideRequestDTO(reason))
+                            .enqueue(new Callback<Void>() {
+                                @Override
+                                public void onResponse(Call<Void> call, Response<Void> response) {
+                                    requireActivity().runOnUiThread(() -> {
+                                        btnCancelRide.setEnabled(true);
+                                        if (response.isSuccessful()) {
+                                            Toast.makeText(requireContext(), "Ride cancelled", Toast.LENGTH_SHORT).show();
+                                            currentRide = null;
+                                            showNoRide();
+                                            if (mapManager != null) mapManager.reset();
+                                        } else {
+                                            Toast.makeText(requireContext(), "Failed to cancel ride", Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                }
+
+                                @Override
+                                public void onFailure(Call<Void> call, Throwable t) {
+                                    requireActivity().runOnUiThread(() -> {
+                                        btnCancelRide.setEnabled(true);
+                                        Toast.makeText(requireContext(), "Failed to cancel ride", Toast.LENGTH_SHORT).show();
+                                    });
+                                }
+                            });
+
+                })
+                .setNegativeButton("Dismiss", (d, w) -> {
+                    // do nothing
+                })
+                .show();
     }
 
     private void triggerPanic() {
+        if (currentRide == null) {
+            Toast.makeText(requireContext(), "No active ride", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (panicSent) {
             Toast.makeText(requireContext(), "Emergency alert already sent", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // TODO: Implement panic API call
-        panicSent = true;
-        Toast.makeText(requireContext(), "Emergency alert sent!", Toast.LENGTH_SHORT).show();
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Emergency Alert")
+                .setMessage("Are you sure you want to trigger a panic alert? This will notify authorities.")
+                .setPositiveButton("Yes, Send Alert", (dialog, which) -> {
+                    btnPanic.setEnabled(false);
+
+                    rideApiService.triggerPanic(currentRide.getRideId()).enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call, Response<Void> response) {
+                            requireActivity().runOnUiThread(() -> {
+                                btnPanic.setEnabled(true);
+                                if (response.isSuccessful()) {
+                                    panicSent = true;
+                                    Toast.makeText(requireContext(), "Emergency alert sent!", Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(requireContext(), "Failed to send panic alert", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(Call<Void> call, Throwable t) {
+                            Log.e(TAG, "Failed to trigger panic", t);
+                            requireActivity().runOnUiThread(() -> {
+                                btnPanic.setEnabled(true);
+                                Toast.makeText(requireContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void handleFinishedRideOkClick() {
@@ -550,7 +643,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         layoutRideCompleted.setVisibility(View.VISIBLE);
 
         tvFinalPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD", finished.getPrice()));
-        tvDuration.setText(String.format(Locale.ENGLISH, "%d minutes", finished.getDurationMinutes()));
+        tvDuration.setText(String.format(Locale.ENGLISH, "%d minutes", estimatedTime));
 
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
         tvStartTime.setText(finished.getStartTime().format(timeFormatter));
@@ -616,7 +709,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
                 .setSmallIcon(R.drawable.ic_car)
                 .setContentTitle("Ride Finished")
                 .setContentText(String.format(Locale.ENGLISH,
-                        "Your ride has finished. Price: %.2f RSD", finished.getPrice()))
+                        "Your ride has finished. Price: %.2f RSD. Tap to rate your driver!", finished.getPrice()))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent);

@@ -17,12 +17,16 @@ import com.example.getgo.R;
 import com.example.getgo.adapters.SupportChatAdapter;
 import com.example.getgo.callbacks.SupportChatMessageListener;
 import com.example.getgo.dtos.supportChat.CreateMessageRequestDTO;
+import com.example.getgo.dtos.supportChat.GetMessageDTO;
 import com.example.getgo.model.ChatMessage;
+import com.example.getgo.model.MessageType;
 import com.example.getgo.repositories.SupportChatRepository;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 
@@ -30,11 +34,12 @@ public class SupportChatFragment extends Fragment {
 
     private RecyclerView rvMessages;
     private EditText etMessage;
-    private ImageButton btnSend;
+    private MaterialButton btnSend;
     private TextView tvChatTitle;
     private SupportChatAdapter adapter;
     private SupportChatRepository repository;
     private String userType;
+
 
 
 
@@ -67,12 +72,10 @@ public class SupportChatFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_support_chat, container, false);
 
+        rvMessages = view.findViewById(R.id.support_chat_recycler);
+        etMessage = view.findViewById(R.id.support_chat_input);
+        btnSend   = view.findViewById(R.id.support_chat_send);
         tvChatTitle = view.findViewById(R.id.tvChatTitle);
-        rvMessages = view.findViewById(R.id.rvMessages);
-        etMessage = view.findViewById(R.id.etMessage);
-        btnSend = view.findViewById(R.id.btnSend);
-
-        tvChatTitle.setText("Chat with Admin");
 
         repository = SupportChatRepository.getInstance();
 
@@ -93,7 +96,28 @@ public class SupportChatFragment extends Fragment {
     private void loadMessages() {
         new Thread(() -> {
             try {
-                List<ChatMessage> messages = repository.getMyMessages(userType);
+                List<GetMessageDTO> dtos = repository.getMessagesDTO();
+                List<ChatMessage> messages = new ArrayList<>();
+
+                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+
+                for (GetMessageDTO dto : dtos) {
+                    boolean isMine = dto.getSenderType().equalsIgnoreCase(
+                            userType.equals("PASSENGER") ? "USER" : userType.equals("DRIVER") ? "DRIVER" : "ADMIN"
+                    );
+
+                    String timestamp = dto.getTimestamp();
+                    if (timestamp.contains(".")) {
+                        timestamp = timestamp.substring(0, timestamp.indexOf("."));
+                    }
+
+                    Date date = isoFormat.parse(timestamp);
+                    String time = sdf.format(date);
+
+                    messages.add(new ChatMessage(dto.getText(), isMine, time, MessageType.TEXT));
+                }
+
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         adapter.setMessages(messages);

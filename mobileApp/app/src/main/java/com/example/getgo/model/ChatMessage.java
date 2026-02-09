@@ -1,5 +1,7 @@
 package com.example.getgo.model;
 
+import com.example.getgo.dtos.supportChat.GetMessageDTO;
+
 public class ChatMessage {
     private String text;
     private boolean mine;
@@ -11,6 +13,13 @@ public class ChatMessage {
         this.mine = mine;
         this.time = time;
         this.type = type;
+    }
+
+    public ChatMessage(GetMessageDTO dto, String currentUserType) {
+        this.text = dto.getText();
+        this.time = dto.getTimestamp();
+        // If the sender type matches the current user type, then this message is mine
+        this.mine = dto.getSenderType().equals(currentUserType);
     }
 
     public ChatMessage() {}

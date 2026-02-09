@@ -69,8 +69,6 @@ public class SupportChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         notifyDataSetChanged();
     }
 
-    // --- ViewHolders ---
-
     static class MineViewHolder extends RecyclerView.ViewHolder {
         TextView textMessage, textTime;
 

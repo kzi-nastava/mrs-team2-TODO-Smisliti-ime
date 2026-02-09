@@ -13,11 +13,13 @@ import com.example.getgo.dtos.supportChat.GetMessageDTO;
 import com.example.getgo.model.ChatMessage;
 import com.example.getgo.model.MessageType;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import retrofit2.Call;
 import retrofit2.Response;
 
 public class SupportChatRepository {
@@ -71,13 +73,22 @@ public class SupportChatRepository {
         if (response.isSuccessful() && response.body() != null) {
             List<GetMessageDTO> dtos = response.body();
             List<ChatMessage> messages = new ArrayList<>();
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
             for (GetMessageDTO dto : dtos) {
                 boolean isMine = dto.getSenderType().equalsIgnoreCase(myUserType);
-                Date date = isoFormat.parse(dto.getTimestamp());
+
+                String timestamp = dto.getTimestamp();
+                if (timestamp.contains(".")) {
+
+                    timestamp = timestamp.substring(0, timestamp.indexOf("."));
+                }
+
+                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                Date date = isoFormat.parse(timestamp);
+
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
                 String time = sdf.format(date);
+
                 MessageType type = MessageType.TEXT;
                 messages.add(new ChatMessage(dto.getText(), isMine, time, type));
             }
@@ -88,6 +99,7 @@ public class SupportChatRepository {
             throw new Exception("Failed to fetch messages");
         }
     }
+
 
     public void sendMessage(CreateMessageRequestDTO request) throws Exception {
         SupportChatApiService service = ApiClient.getClient().create(SupportChatApiService.class);
@@ -132,13 +144,23 @@ public class SupportChatRepository {
         if (response.isSuccessful() && response.body() != null) {
             List<GetMessageDTO> dtos = response.body();
             List<ChatMessage> messages = new ArrayList<>();
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
 
             for (GetMessageDTO dto : dtos) {
                 boolean isMine = dto.getSenderType().equalsIgnoreCase("ADMIN");
-                Date date = isoFormat.parse(dto.getTimestamp());
+                String timestamp = dto.getTimestamp();
+                if (timestamp.contains(".")) {
+
+                    timestamp = timestamp.substring(0, timestamp.indexOf("."));
+                }
+
+                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                Date date = isoFormat.parse(timestamp);
+
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
                 String time = sdf.format(date);
+
+
                 MessageType type = MessageType.TEXT;
                 messages.add(new ChatMessage(dto.getText(), isMine, time, type));
             }
@@ -149,6 +171,13 @@ public class SupportChatRepository {
             throw new Exception("Failed to fetch messages");
         }
     }
+
+    public List<GetMessageDTO> getMessagesDTO() throws IOException {
+        SupportChatApiService service = ApiClient.getClient().create(SupportChatApiService.class);
+        Call<List<GetMessageDTO>> call = service.getMyMessages();
+        return call.execute().body();
+    }
+
 
 
 }

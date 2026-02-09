@@ -4,6 +4,8 @@ import android.util.Log;
 
 import com.example.getgo.api.ApiClient;
 import com.example.getgo.api.services.AdminApiService;
+import com.example.getgo.dtos.driver.CreateDriverDTO;
+import com.example.getgo.dtos.driver.CreatedDriverDTO;
 import com.example.getgo.dtos.general.Page;
 import com.example.getgo.dtos.request.AcceptDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.GetDriverAvatarChangeRequestDTO;
@@ -24,6 +26,20 @@ public class AdminRepository {
             instance = new AdminRepository();
         }
         return instance;
+    }
+
+    public CreatedDriverDTO registerDriver(CreateDriverDTO dto) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<CreatedDriverDTO> response = service.registerDriver(dto).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            Log.d(TAG, "Driver registered: " + response.body().getEmail());
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to register driver: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to register driver: " + errBody);
+        }
     }
 
     public Page<GetPersonalDriverChangeRequestDTO> getPendingPersonalRequests(int page, int size) throws Exception {

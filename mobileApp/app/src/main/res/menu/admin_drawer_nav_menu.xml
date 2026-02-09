@@ -42,6 +42,14 @@
             android:icon="@drawable/ic_settings"
             android:title="@string/driver_requests"
             />
+
+        <item
+            android:id="@+id/nav_register_driver"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/driver_register"
+            />
+
+
     </group>
 
     <item android:title="@string/other">

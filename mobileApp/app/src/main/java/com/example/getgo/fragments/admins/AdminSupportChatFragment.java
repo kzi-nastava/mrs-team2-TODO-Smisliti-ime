@@ -94,11 +94,34 @@ public class AdminSupportChatFragment extends Fragment {
                     if (getActivity() == null) return;
 
                     getActivity().runOnUiThread(() -> {
-                        adapter.addMessage(message);
-                        rvMessages.scrollToPosition(adapter.getItemCount() - 1);
+                        try {
+                            String timestamp = message.getTime();
+                            if (timestamp.contains(".")) {
+                                timestamp = timestamp.substring(0, timestamp.indexOf("."));
+                            }
+
+                            java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                            java.util.Date date = isoFormat.parse(timestamp);
+                            String time = new java.text.SimpleDateFormat("HH:mm").format(date);
+
+                            ChatMessage formattedMessage = new ChatMessage(
+                                    message.getText(),
+                                    message.isMine(),
+                                    time,
+                                    message.getType()
+                            );
+
+                            adapter.addMessage(formattedMessage);
+                            rvMessages.scrollToPosition(adapter.getItemCount() - 1);
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            adapter.addMessage(message);
+                        }
                     });
                 }
         );
+
 
         btnSend.setOnClickListener(v -> {
             String text = etMessage.getText().toString().trim();

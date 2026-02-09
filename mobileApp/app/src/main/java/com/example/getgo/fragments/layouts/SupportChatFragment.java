@@ -93,14 +93,34 @@ public class SupportChatFragment extends Fragment {
         webSocketManager.subscribeToChat(
                 null,
                 userType.equals("PASSENGER") ? "USER" : "DRIVER",
-                message -> {
-                    if (getActivity() == null) return;
+                message -> getActivity().runOnUiThread(() -> {
 
-                    getActivity().runOnUiThread(() -> {
-                        adapter.addMessage(message);
+                    try {
+                        String timestamp = message.getTime();
+                        if (timestamp.contains(".")) {
+                            timestamp = timestamp.substring(0, timestamp.indexOf("."));
+                        }
+
+                        SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                        Date date = isoFormat.parse(timestamp);
+                        String time = new SimpleDateFormat("HH:mm").format(date);
+
+                        ChatMessage formattedMessage = new ChatMessage(
+                                message.getText(),
+                                message.isMine(),
+                                time,
+                                message.getType()
+                        );
+
+                        adapter.addMessage(formattedMessage);
                         rvMessages.scrollToPosition(adapter.getItemCount() - 1);
-                    });
-                }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        adapter.addMessage(message); // fallback
+                    }
+
+                })
         );
 
 
@@ -184,10 +204,33 @@ public class SupportChatFragment extends Fragment {
                                 (long) chatId,
                                 userType.equals("PASSENGER") ? "USER" : "DRIVER",
                                 message -> getActivity().runOnUiThread(() -> {
-                                    adapter.addMessage(message);
-                                    rvMessages.scrollToPosition(adapter.getItemCount() - 1);
+                                    try {
+                                        String timestamp = message.getTime();
+                                        if (timestamp.contains(".")) {
+                                            timestamp = timestamp.substring(0, timestamp.indexOf("."));
+                                        }
+
+                                        java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                                        java.util.Date date = isoFormat.parse(timestamp);
+                                        String time = new java.text.SimpleDateFormat("HH:mm").format(date);
+
+                                        ChatMessage formattedMessage = new ChatMessage(
+                                                message.getText(),
+                                                message.isMine(),
+                                                time,
+                                                message.getType()
+                                        );
+
+                                        adapter.addMessage(formattedMessage);
+                                        rvMessages.scrollToPosition(adapter.getItemCount() - 1);
+
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                        adapter.addMessage(message);
+                                    }
                                 })
                         );
+
                     });
                 }
             } catch (Exception e) {

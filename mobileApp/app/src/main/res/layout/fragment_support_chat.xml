@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:background="#8FABD4">
 
+
     <TextView
         android:id="@+id/tvChatTitle"
         android:layout_width="0dp"
@@ -14,8 +15,6 @@
         android:textSize="18sp"
         android:textStyle="bold"
         android:padding="12dp"
-        android:background="#133E87"
-        android:textColor="@android:color/white"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>

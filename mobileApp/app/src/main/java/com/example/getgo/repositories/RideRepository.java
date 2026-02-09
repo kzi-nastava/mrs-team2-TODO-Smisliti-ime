@@ -6,11 +6,15 @@ import com.example.getgo.api.ApiClient;
 import com.example.getgo.api.services.RideApiService;
 import com.example.getgo.dtos.ride.CancelRideRequestDTO;
 import com.example.getgo.dtos.ride.CreateRideRequestDTO;
+import com.example.getgo.dtos.ride.CreatedFavoriteRideDTO;
 import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
 import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
+import com.example.getgo.dtos.ride.GetFavoriteRideDTO;
 import com.example.getgo.dtos.ride.GetPassengerActiveRideDTO;
 import com.example.getgo.dtos.ride.UpdateRideDTO;
 import com.example.getgo.dtos.ride.UpdatedRideDTO;
+
+import java.util.List;
 
 import retrofit2.Response;
 
@@ -25,6 +29,46 @@ public class RideRepository {
             instance = new RideRepository();
         }
         return instance;
+    }
+
+    public List<GetFavoriteRideDTO> getFavoriteRides() throws Exception {
+        RideApiService service = ApiClient.getClient().create(RideApiService.class);
+        Response<List<GetFavoriteRideDTO>> response = service.getFavoriteRides().execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            Log.d(TAG, "Fetched " + response.body().size() + " favorite rides");
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to fetch favorites: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to fetch favorite rides");
+        }
+    }
+
+    public CreatedFavoriteRideDTO favoriteRide(Long completedRideId) throws Exception {
+        RideApiService service = ApiClient.getClient().create(RideApiService.class);
+        Response<CreatedFavoriteRideDTO> response = service.favoriteRide(completedRideId).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            Log.d(TAG, "Ride favorited: " + completedRideId);
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to favorite ride: " + response.code() + " - " + errBody);
+            throw new Exception(errBody);
+        }
+    }
+
+    public void unfavoriteRide(Long completedRideId) throws Exception {
+        RideApiService service = ApiClient.getClient().create(RideApiService.class);
+        Response<Void> response = service.unfavoriteRide(completedRideId).execute();
+
+        if (!response.isSuccessful()) {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to unfavorite ride: " + response.code() + " - " + errBody);
+            throw new Exception(errBody);
+        }
+        Log.d(TAG, "Ride unfavorited: " + completedRideId);
     }
 
     public CreatedRideResponseDTO orderRide(CreateRideRequestDTO request) throws Exception {

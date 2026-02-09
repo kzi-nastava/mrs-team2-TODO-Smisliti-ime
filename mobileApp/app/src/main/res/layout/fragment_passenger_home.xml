@@ -45,6 +45,36 @@
                 android:textColor="#133E87"
                 android:layout_marginBottom="16dp"/>
 
+            <!-- Favorite Rides Section -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnToggleFavorites"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Favorites"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#133E87"
+                android:layout_marginBottom="8dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cvFavoritesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@android:color/white">
+
+                <LinearLayout
+                    android:id="@+id/layoutFavoritesList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"/>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Starting Point -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"

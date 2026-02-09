@@ -9,16 +9,18 @@ public class GetRideFinishedDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Long durationMinutes;
+    private Long driverId;
 
     public GetRideFinishedDTO() {}
 
-    public GetRideFinishedDTO(Long rideId, String status, Double price, LocalDateTime startTime, LocalDateTime endTime, Long durationMinutes) {
+    public GetRideFinishedDTO(Long rideId, String status, Double price, LocalDateTime startTime, LocalDateTime endTime, Long durationMinutes, Long driverId) {
         this.rideId = rideId;
         this.status = status;
         this.price = price;
         this.startTime = startTime;
         this.endTime = endTime;
         this.durationMinutes = durationMinutes;
+        this.driverId = driverId;
     }
 
     public Long getRideId() { return rideId; }
@@ -38,4 +40,7 @@ public class GetRideFinishedDTO {
 
     public Long getDurationMinutes() { return durationMinutes; }
     public void setDurationMinutes(Long durationMinutes) { this.durationMinutes = durationMinutes; }
+
+    public Long getDriverId() { return driverId; }
+    public void setDriverId(Long driverId) { this.driverId = driverId; }
 }

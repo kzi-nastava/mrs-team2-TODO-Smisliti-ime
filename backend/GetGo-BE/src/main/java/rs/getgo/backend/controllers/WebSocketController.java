@@ -9,6 +9,7 @@ import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideStatusUpdateDTO;
 import rs.getgo.backend.dtos.ride.GetRideFinishedDTO;
 import rs.getgo.backend.dtos.ride.GetRideStoppedEarlyDTO;
+import rs.getgo.backend.dtos.ride.GetRideCancelledDTO;
 
 import java.time.LocalDateTime;
 
@@ -66,14 +67,15 @@ public class WebSocketController {
     }
 
     public void notifyDriverRideFinished(String driverEmail, Long rideId, Double price,
-                                         LocalDateTime startTime, LocalDateTime endTime) {
+                                         LocalDateTime startTime, LocalDateTime endTime, Long driverId) {
         GetRideFinishedDTO completion = new GetRideFinishedDTO(
                 rideId,
                 "FINISHED",
                 price,
                 startTime,
                 endTime,
-                java.time.Duration.between(startTime, endTime).toMinutes()
+                java.time.Duration.between(startTime, endTime).toMinutes(),
+                driverId
         );
 
         messagingTemplate.convertAndSend(
@@ -96,14 +98,15 @@ public class WebSocketController {
         );
     }
 
-    public void notifyPassengerRideFinished(Long rideId, Double price, LocalDateTime startTime, LocalDateTime endTime) {
+    public void notifyPassengerRideFinished(Long rideId, Double price, LocalDateTime startTime, LocalDateTime endTime, Long driverId) {
         GetRideFinishedDTO completion = new GetRideFinishedDTO(
                 rideId,
                 "FINISHED",
                 price,
                 startTime,
                 endTime,
-                java.time.Duration.between(startTime, endTime).toMinutes()
+                java.time.Duration.between(startTime, endTime).toMinutes(),
+                driverId
         );
 
         messagingTemplate.convertAndSend(
@@ -115,7 +118,8 @@ public class WebSocketController {
     public void notifyPassengerRideStoppedEarly(Long rideId,
                                                 Double price,
                                                 LocalDateTime startTime,
-                                                LocalDateTime endTime) {
+                                                LocalDateTime endTime,
+                                                Long driverId) {
         GetRideStoppedEarlyDTO payload = new GetRideStoppedEarlyDTO(
                 rideId,
                 "STOPPED_EARLY",
@@ -124,7 +128,8 @@ public class WebSocketController {
                 endTime,
                 java.time.Duration.between(startTime, endTime).toMinutes(),
                 "Ride was stopped early at passenger request.",
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                driverId
         );
 
         messagingTemplate.convertAndSend(
@@ -156,6 +161,42 @@ public class WebSocketController {
         messagingTemplate.convertAndSend(
                 "/socket-publisher/chat/" + chatId,
                 messageDto
+        );
+    }
+
+    /**
+     * Notify about ride cancellation
+     */
+    public void notifyRideCancelled(Long rideId, String cancelledBy, String reason) {
+        GetRideCancelledDTO cancellation = new GetRideCancelledDTO(
+                rideId,
+                "CANCELLED",
+                cancelledBy,
+                reason,
+                LocalDateTime.now()
+        );
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/ride/" + rideId + "/ride-cancelled",
+                cancellation
+        );
+    }
+
+    /**
+     * Notify driver about ride cancellation
+     */
+    public void notifyDriverRideCancelled(String driverEmail, Long rideId, String cancelledBy, String reason) {
+        GetRideCancelledDTO cancellation = new GetRideCancelledDTO(
+                rideId,
+                "CANCELLED",
+                cancelledBy,
+                reason,
+                LocalDateTime.now()
+        );
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/driver/" + driverEmail + "/ride-cancelled",
+                cancellation
         );
     }
 }

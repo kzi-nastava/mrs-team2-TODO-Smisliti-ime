@@ -51,6 +51,7 @@ public class MapManager {
 
     // ===== ROUTE =====
     private Polyline routePolyline;
+    private List<LatLng> currentRoute = new ArrayList<>();
 
     // ===== INTERFACES =====
     public interface AddressCallback {
@@ -256,6 +257,7 @@ public class MapManager {
 
     // ===== ROUTING =====
     public void drawRoute(List<LatLng> waypoints, RouteCallback callback) {
+        Log.d("ROUTE_DEBUG", "drawRoute STARTED");
         Log.d(TAG, "drawRoute called with " + waypoints.size() + " waypoints");
 
         if (waypoints == null || waypoints.size() < 2) {
@@ -273,6 +275,7 @@ public class MapManager {
         httpClient.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e("ROUTE_DEBUG", "HTTP FAILURE", e);
                 handleRouteError(callback, "Failed to fetch route: " + e.getMessage());
             }
 
@@ -331,6 +334,10 @@ public class MapManager {
             String responseBody = response.body().string();
             JSONObject json = new JSONObject(responseBody);
 
+            Log.d("ROUTE_DEBUG", "Directions status: " + json.getString("status"));
+            Log.d("ROUTE_DEBUG", "Full response: " + responseBody);
+
+
             if (!json.getString("status").equals("OK")) {
                 handleRouteError(callback, "Route not found: " + json.getString("status"));
                 return;
@@ -357,6 +364,8 @@ public class MapManager {
         int[] totals = calculateTotals(route.getJSONArray("legs"));
 
         ((android.app.Activity) context).runOnUiThread(() -> {
+            currentRoute = new ArrayList<>(decodedPath);
+
             PolylineOptions options = new PolylineOptions()
                     .addAll(decodedPath)
                     .color(Color.parseColor("#3B82F6"))
@@ -442,4 +451,120 @@ public class MapManager {
 
         return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
+
+    public void drawRouteOSRM(List<LatLng> waypoints, RouteCallback callback) {
+        if (waypoints == null || waypoints.size() < 2) {
+            if (callback != null) callback.onError("Need at least 2 waypoints");
+            return;
+        }
+
+        clearRoute();
+
+        // Build OSRM URL
+        StringBuilder url = new StringBuilder("https://router.project-osrm.org/route/v1/driving/");
+        for (int i = 0; i < waypoints.size(); i++) {
+            LatLng wp = waypoints.get(i);
+            url.append(wp.longitude).append(",").append(wp.latitude);
+            if (i < waypoints.size() - 1) url.append(";");
+        }
+        url.append("?overview=full&geometries=polyline");
+
+        Request request = new Request.Builder().url(url.toString()).build();
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "OSRM HTTP FAILURE", e);
+                handleRouteError(callback, "Failed to fetch route: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    handleRouteError(callback, "OSRM API error: " + response.code());
+                    return;
+                }
+
+                try {
+                    String responseBody = response.body().string();
+                    JSONObject json = new JSONObject(responseBody);
+                    JSONArray routes = json.getJSONArray("routes");
+                    if (routes.length() == 0) {
+                        handleRouteError(callback, "No routes found");
+                        return;
+                    }
+
+                    JSONObject route = routes.getJSONObject(0);
+
+                    // Polyline
+                    String encodedPolyline = route.getString("geometry");
+                    List<LatLng> decodedPath = decodePolyline(encodedPolyline);
+
+                    // Distance & Duration (in meters and seconds)
+                    int totalDistance = route.getInt("distance"); // meters
+                    int totalDuration = route.getInt("duration"); // seconds
+
+                    ((android.app.Activity) context).runOnUiThread(() -> {
+                        currentRoute = new ArrayList<>(decodedPath);
+                        PolylineOptions options = new PolylineOptions()
+                                .addAll(decodedPath)
+                                .color(Color.parseColor("#3B82F6"))
+                                .width(10f);
+
+                        routePolyline = map.addPolyline(options);
+
+                        if (callback != null) {
+                            callback.onRouteFound(totalDistance, totalDuration);
+                        }
+                    });
+
+                } catch (Exception e) {
+                    handleRouteError(callback, "Failed to parse OSRM response: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    public double getDistanceAlongRoute(LatLng currentPosition) {
+        if (currentRoute == null || currentRoute.size() < 2) return 0;
+
+        double distance = 0;
+
+
+        for (int i = 0; i < currentRoute.size() - 1; i++) {
+            LatLng start = currentRoute.get(i);
+            LatLng end = currentRoute.get(i + 1);
+
+            double segmentDistance = distanceBetween(start, end);
+
+            if (isPointNearSegment(currentPosition, start, end)) {
+                double partial = distanceBetween(start, currentPosition);
+                distance += partial;
+                break;
+            } else {
+                distance += segmentDistance;
+            }
+        }
+
+        return distance;
+    }
+
+    private double distanceBetween(LatLng a, LatLng b) {
+        float[] results = new float[1];
+        android.location.Location.distanceBetween(
+                a.latitude, a.longitude,
+                b.latitude, b.longitude,
+                results
+        );
+        return results[0];
+    }
+
+    private boolean isPointNearSegment(LatLng point, LatLng start, LatLng end) {
+        double threshold = 30; // 30 meters tolerance
+        double distToStart = distanceBetween(point, start);
+        double distToEnd = distanceBetween(point, end);
+        double segmentLength = distanceBetween(start, end);
+        return distToStart + distToEnd <= segmentLength + threshold;
+    }
+
 }
+

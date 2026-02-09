@@ -19,6 +19,7 @@ import com.example.getgo.adapters.SupportChatAdapter;
 import com.example.getgo.dtos.supportChat.CreateMessageRequestDTO;
 import com.example.getgo.model.ChatMessage;
 import com.example.getgo.repositories.SupportChatRepository;
+import com.example.getgo.utils.WebSocketManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -35,7 +36,11 @@ public class AdminSupportChatFragment extends Fragment {
     private SupportChatAdapter adapter;
     private SupportChatRepository repository;
 
+    private WebSocketManager webSocketManager;
+
+
     private int chatId;
+    private String username;
 
     public AdminSupportChatFragment() {
         // Required empty public constructor
@@ -67,16 +72,33 @@ public class AdminSupportChatFragment extends Fragment {
         btnSend = view.findViewById(R.id.btnSend);
 
         chatId = getArguments() != null ? getArguments().getInt("CHAT_ID") : -1;
+        username = getArguments() != null ? getArguments().getString("CHAT_USER_NAME") : "noName";
 
         repository = SupportChatRepository.getInstance();
 
-        tvChatTitle.setText("Chat with User " + chatId);
+        tvChatTitle.setText(username);
 
         adapter = new SupportChatAdapter(new ArrayList<>());
         rvMessages.setLayoutManager(new LinearLayoutManager(getContext()));
         rvMessages.setAdapter(adapter);
 
         loadMessages();
+
+        webSocketManager = new WebSocketManager();
+        webSocketManager.connect();
+
+        webSocketManager.subscribeToChat(
+                (long) chatId,
+                "ADMIN",
+                message -> {
+                    if (getActivity() == null) return;
+
+                    getActivity().runOnUiThread(() -> {
+                        adapter.addMessage(message);
+                        rvMessages.scrollToPosition(adapter.getItemCount() - 1);
+                    });
+                }
+        );
 
         btnSend.setOnClickListener(v -> {
             String text = etMessage.getText().toString().trim();
@@ -109,7 +131,6 @@ public class AdminSupportChatFragment extends Fragment {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         etMessage.setText("");
-                        loadMessages();
                     });
                 }
             } catch (Exception e) {
@@ -122,4 +143,13 @@ public class AdminSupportChatFragment extends Fragment {
             }
         }).start();
     }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (webSocketManager != null) {
+            webSocketManager.disconnect();
+        }
+    }
+
 }

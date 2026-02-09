@@ -4,6 +4,7 @@ import com.example.getgo.dtos.supportChat.CreateMessageRequestDTO;
 import com.example.getgo.dtos.supportChat.GetChatDTO;
 import com.example.getgo.dtos.supportChat.GetChatIdDTO;
 import com.example.getgo.dtos.supportChat.GetMessageDTO;
+import com.example.getgo.dtos.supportChat.GetUserChatDTO;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ import retrofit2.http.Path;
 
 public interface SupportChatApiService {
     @GET("/api/support/chat/my")
-    Call<GetChatIdDTO> getMyChat();
+    Call<GetUserChatDTO> getMyChat();
 
     @GET("/api/support/messages")
     Call<List<GetMessageDTO>> getMyMessages();

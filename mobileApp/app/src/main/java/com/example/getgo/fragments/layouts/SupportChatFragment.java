@@ -17,10 +17,13 @@ import com.example.getgo.R;
 import com.example.getgo.adapters.SupportChatAdapter;
 import com.example.getgo.callbacks.SupportChatMessageListener;
 import com.example.getgo.dtos.supportChat.CreateMessageRequestDTO;
+import com.example.getgo.dtos.supportChat.GetChatIdDTO;
 import com.example.getgo.dtos.supportChat.GetMessageDTO;
+import com.example.getgo.dtos.supportChat.GetUserChatDTO;
 import com.example.getgo.model.ChatMessage;
 import com.example.getgo.model.MessageType;
 import com.example.getgo.repositories.SupportChatRepository;
+import com.example.getgo.utils.WebSocketManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -40,8 +43,7 @@ public class SupportChatFragment extends Fragment {
     private SupportChatRepository repository;
     private String userType;
 
-
-
+    private WebSocketManager webSocketManager;
 
     public SupportChatFragment() {
         // Required empty public constructor
@@ -83,7 +85,24 @@ public class SupportChatFragment extends Fragment {
         rvMessages.setLayoutManager(new LinearLayoutManager(getContext()));
         rvMessages.setAdapter(adapter);
 
-        loadMessages();
+        webSocketManager = new WebSocketManager();
+        webSocketManager.connect();
+
+        initChat();
+
+        webSocketManager.subscribeToChat(
+                null,
+                userType.equals("PASSENGER") ? "USER" : "DRIVER",
+                message -> {
+                    if (getActivity() == null) return;
+
+                    getActivity().runOnUiThread(() -> {
+                        adapter.addMessage(message);
+                        rvMessages.scrollToPosition(adapter.getItemCount() - 1);
+                    });
+                }
+        );
+
 
         btnSend.setOnClickListener(v -> {
             String text = etMessage.getText().toString().trim();
@@ -138,7 +157,6 @@ public class SupportChatFragment extends Fragment {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         etMessage.setText("");
-                        loadMessages();
                     });
                 }
             } catch (Exception e) {
@@ -146,4 +164,65 @@ public class SupportChatFragment extends Fragment {
             }
         }).start();
     }
+
+    private void initChat() {
+        new Thread(() -> {
+            try {
+
+                GetUserChatDTO chatResponse = repository.getMyChat();
+                int chatId = chatResponse.getId().intValue();
+
+                List<GetMessageDTO> dtos = repository.getMessagesForChatDTO(chatId);
+                List<ChatMessage> messages = mapDtosToMessages(dtos);
+
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        adapter.setMessages(messages);
+                        rvMessages.scrollToPosition(messages.size() - 1);
+
+                        webSocketManager.subscribeToChat(
+                                (long) chatId,
+                                userType.equals("PASSENGER") ? "USER" : "DRIVER",
+                                message -> getActivity().runOnUiThread(() -> {
+                                    adapter.addMessage(message);
+                                    rvMessages.scrollToPosition(adapter.getItemCount() - 1);
+                                })
+                        );
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private List<ChatMessage> mapDtosToMessages(List<GetMessageDTO> dtos) {
+        List<ChatMessage> messages = new ArrayList<>();
+        SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+
+        for (GetMessageDTO dto : dtos) {
+            boolean isMine = dto.getSenderType().equalsIgnoreCase(
+                    userType.equals("PASSENGER") ? "USER" :
+                            userType.equals("DRIVER") ? "DRIVER" : "ADMIN"
+            );
+
+            String timestamp = dto.getTimestamp();
+            if (timestamp.contains(".")) {
+                timestamp = timestamp.substring(0, timestamp.indexOf("."));
+            }
+
+            try {
+                Date date = isoFormat.parse(timestamp);
+                String time = sdf.format(date);
+                messages.add(new ChatMessage(dto.getText(), isMine, time, MessageType.TEXT));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        return messages;
+    }
+
+
 }

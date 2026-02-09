@@ -10,6 +10,7 @@ import com.example.getgo.dtos.supportChat.CreateMessageRequestDTO;
 import com.example.getgo.dtos.supportChat.GetChatDTO;
 import com.example.getgo.dtos.supportChat.GetChatIdDTO;
 import com.example.getgo.dtos.supportChat.GetMessageDTO;
+import com.example.getgo.dtos.supportChat.GetUserChatDTO;
 import com.example.getgo.model.ChatMessage;
 import com.example.getgo.model.MessageType;
 
@@ -53,9 +54,9 @@ public class SupportChatRepository {
         return instance;
     }
 
-    public GetChatIdDTO getMyChat() throws Exception {
+    public GetUserChatDTO getMyChat() throws Exception {
         SupportChatApiService service = ApiClient.getClient().create(SupportChatApiService.class);
-        Response<GetChatIdDTO> response = service.getMyChat().execute();
+        Response<GetUserChatDTO > response = service.getMyChat().execute();
 
         if (response.isSuccessful() && response.body() != null) {
             return response.body();
@@ -208,6 +209,12 @@ public class SupportChatRepository {
             ChatMessage msg = new ChatMessage(dto.getText(), isMine, time, MessageType.TEXT);
             notifyNewMessage(msg);
         }
+    }
+
+    public List<GetMessageDTO> getMessagesForChatDTO(int chatId) throws IOException {
+        SupportChatApiService service = ApiClient.getClient().create(SupportChatApiService.class);
+        Call<List<GetMessageDTO>> call = service.getChatMessagesAdmin(chatId);
+        return call.execute().body();
     }
 
 

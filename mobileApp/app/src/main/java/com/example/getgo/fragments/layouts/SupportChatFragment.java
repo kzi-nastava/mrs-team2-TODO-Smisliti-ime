@@ -37,7 +37,7 @@ public class SupportChatFragment extends Fragment {
 
     private RecyclerView rvMessages;
     private EditText etMessage;
-    private MaterialButton btnSend;
+    private ImageButton btnSend;
     private TextView tvChatTitle;
     private SupportChatAdapter adapter;
     private SupportChatRepository repository;

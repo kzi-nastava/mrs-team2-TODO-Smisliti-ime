@@ -23,7 +23,7 @@ public interface SupportChatApiService {
     @GET("/api/support/chat/{chatId}/messages")
     Call<List<GetMessageDTO>> getMessagesForChat(@Path("chatId") int chatId);
 
-    @GET("/api/support/chats")
+    @GET("/api/support/admin/chats")
     Call<List<GetChatDTO>> getAllChats();
 
     @POST("/api/support/messages")

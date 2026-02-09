@@ -58,7 +58,7 @@ public class AdminChatListFragment extends Fragment {
         rvChats = view.findViewById(R.id.rvChats);
         repository = SupportChatRepository.getInstance();
 
-        adapter = new AdminChatListAdapter(new ArrayList<>(), chatId -> openChat(chatId));
+        adapter = new AdminChatListAdapter(new ArrayList<>(), (chatId, userName) -> openChat(chatId, userName));
         rvChats.setLayoutManager(new LinearLayoutManager(getContext()));
         rvChats.setAdapter(adapter);
 
@@ -85,10 +85,11 @@ public class AdminChatListFragment extends Fragment {
     }
 
 
-    private void openChat(int chatId) {
+    private void openChat(int chatId, String userName) {
         AdminSupportChatFragment fragment = new AdminSupportChatFragment();
         Bundle args = new Bundle();
         args.putInt("CHAT_ID", chatId);
+        args.putString("CHAT_USER_NAME", userName);
         fragment.setArguments(args);
 
         getParentFragmentManager()

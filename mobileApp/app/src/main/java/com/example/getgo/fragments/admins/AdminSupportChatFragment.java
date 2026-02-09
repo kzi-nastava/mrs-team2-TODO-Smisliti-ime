@@ -105,7 +105,7 @@ public class AdminSupportChatFragment extends Fragment {
     private void sendMessage(String text) {
         new Thread(() -> {
             try {
-                repository.sendMessage(new CreateMessageRequestDTO(chatId, text));
+                repository.sendMessageAdmin(chatId, text);
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         etMessage.setText("");

@@ -1,29 +1,20 @@
 package com.example.getgo.dtos.supportChat;
 
 public class GetChatDTO {
-    private int id;
-    private String userName;
+    private Long id;
+    private GetUserChatDTO user;
 
-    public GetChatDTO(int id, String userName) {
-        this.id = id;
-        this.userName = userName;
-    }
-
-
-
-    public int getId() {
-        return id;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setId(int id) {
+    public GetChatDTO(GetUserChatDTO user, Long id) {
+        this.user = user;
         this.id = id;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public GetChatDTO() {
     }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public GetUserChatDTO getUser() { return user; }
+    public void setUser(GetUserChatDTO user) { this.user = user; }
 }

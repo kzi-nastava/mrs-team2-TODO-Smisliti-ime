@@ -19,7 +19,7 @@ public class AdminChatListAdapter extends RecyclerView.Adapter<AdminChatListAdap
     private final ChatClickListener listener;
 
     public interface ChatClickListener {
-        void onChatClick(int chatId);
+        void onChatClick(int chatId, String userName);
     }
 
     public AdminChatListAdapter(List<ChatSummary> chats, ChatClickListener listener) {
@@ -49,10 +49,16 @@ public class AdminChatListAdapter extends RecyclerView.Adapter<AdminChatListAdap
             int position
     ) {
         ChatSummary chat = chats.get(position);
-        holder.tvName.setText(chat.getUserName());
-        holder.itemView.setOnClickListener(
-                v -> listener.onChatClick(chat.getId())
-        );
+
+
+        String name = chat.getUserName() != null && !chat.getUserName().isEmpty()
+                ? chat.getUserName()
+                : "User " + chat.getId();
+        holder.tvName.setText(name);
+
+        android.util.Log.d("AdminChatAdapter", "Chat id=" + chat.getId() + ", userName='" + name);
+
+        holder.itemView.setOnClickListener(v -> listener.onChatClick(chat.getId(), name));
     }
 
     @Override

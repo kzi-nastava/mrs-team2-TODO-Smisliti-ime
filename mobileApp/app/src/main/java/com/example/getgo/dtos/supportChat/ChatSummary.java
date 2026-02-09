@@ -4,6 +4,7 @@ public class ChatSummary {
     private int id;
     private String userName;
 
+
     public ChatSummary(int id, String userName) {
         this.id = id;
         this.userName = userName;
@@ -26,4 +27,5 @@ public class ChatSummary {
     public void setUserName(String userName) {
         this.userName = userName;
     }
+
 }

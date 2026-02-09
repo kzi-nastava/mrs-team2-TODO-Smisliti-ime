@@ -126,7 +126,11 @@ public class SupportChatRepository {
             List<GetChatDTO> dtos = response.body();
             List<ChatSummary> chats = new ArrayList<>();
             for (GetChatDTO dto : dtos) {
-                chats.add(new ChatSummary(dto.getId(), dto.getUserName()));
+                String userName = dto.getUser() != null && dto.getUser().getName() != null
+                        ? dto.getUser().getName()
+                        : null;
+
+                chats.add(new ChatSummary(dto.getId().intValue(), userName));
             }
             return chats;
         } else {
@@ -177,6 +181,35 @@ public class SupportChatRepository {
         Call<List<GetMessageDTO>> call = service.getMyMessages();
         return call.execute().body();
     }
+
+    public void sendMessageAdmin(int chatId, String text) throws Exception {
+        SupportChatApiService service = ApiClient.getClient().create(SupportChatApiService.class);
+
+        CreateMessageRequestDTO request = new CreateMessageRequestDTO(chatId, text);
+
+        Response<GetMessageDTO> response = service.sendMessageAdmin(chatId, request).execute();
+
+        if (!response.isSuccessful() || response.body() == null) {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to send admin message: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to send admin message");
+        } else {
+
+            GetMessageDTO dto = response.body();
+            boolean isMine = true;
+            String timestamp = dto.getTimestamp();
+            if (timestamp.contains(".")) {
+                timestamp = timestamp.substring(0, timestamp.indexOf("."));
+            }
+            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            Date date = isoFormat.parse(timestamp);
+            String time = new SimpleDateFormat("HH:mm").format(date);
+
+            ChatMessage msg = new ChatMessage(dto.getText(), isMine, time, MessageType.TEXT);
+            notifyNewMessage(msg);
+        }
+    }
+
 
 
 

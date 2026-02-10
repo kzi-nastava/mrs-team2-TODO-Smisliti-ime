@@ -5,6 +5,7 @@ import android.util.Log;
 import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
+import com.example.getgo.fragments.admins.AdminActiveRidesFragment;
 import com.example.getgo.fragments.admins.AdminDriverRegistrationFragment;
 import com.example.getgo.fragments.admins.AdminChatListFragment;
 import com.example.getgo.fragments.admins.AdminProfileInfoFragment;
@@ -120,6 +121,8 @@ public class NavigationHelper {
             return AdminDriverRegistrationFragment.newInstance();
         } else if (itemId == R.id.nav_drawer_support_chats) {
             return new AdminChatListFragment();
+        } else if (itemId == R.id.nav_drawer_active_rides) {
+            return new AdminActiveRidesFragment();
         }
 
         return null;

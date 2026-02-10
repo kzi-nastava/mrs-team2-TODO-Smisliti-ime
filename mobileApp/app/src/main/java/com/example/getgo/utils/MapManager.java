@@ -566,5 +566,10 @@ public class MapManager {
         return distToStart + distToEnd <= segmentLength + threshold;
     }
 
+    public GoogleMap getGoogleMap() {
+        return map;
+    }
+
+
 }
 

@@ -42,6 +42,12 @@
             android:icon="@drawable/ic_settings"
             android:title="@string/driver_requests"
             />
+        <item
+            android:id="@+id/nav_drawer_active_rides"
+            android:icon="@drawable/ic_car"
+            android:title="Active rides"/>
+
+
 
         <item
             android:id="@+id/nav_register_driver"

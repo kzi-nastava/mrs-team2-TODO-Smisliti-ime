@@ -33,6 +33,7 @@ public class AdminActiveRideDetailsFragment extends Fragment {
 
 
     private WebSocketManager webSocketManager;
+    private int durationSec = 0;
 
 
     public AdminActiveRideDetailsFragment() {
@@ -142,7 +143,7 @@ public class AdminActiveRideDetailsFragment extends Fragment {
                     tvVehicleType.setText("Vehicle: " + rideDetails.getVehicleType());
                     tvScheduledTime.setText("Scheduled Start: " + rideDetails.getScheduledTime());
                     tvActualStartTime.setText("Actual Start: " + rideDetails.getActualStartTime());
-                    tvEstimatedDuration.setText("Estimated Duration: " + rideDetails.getEstimatedDurationMin() + " min");
+                    tvEstimatedDuration.setText("Estimated Duration: " + (durationSec / 60) + " min");
                     tvEstimatedPrice.setText(String.format("Estimated Price: %.2f RSD", rideDetails.getEstimatedPrice()));
                     tvCurrentAddress.setText("Current Address: " + rideDetails.getCurrentAddress());
                     tvPayingPassenger.setText("Paying Passenger: " + rideDetails.getPayingPassenger());
@@ -165,6 +166,7 @@ public class AdminActiveRideDetailsFragment extends Fragment {
                             @Override
                             public void onRouteFound(int distanceMeters, int durationSeconds) {
                                 Log.d("AdminRideDetails", "OSRM Route drawn. Distance=" + distanceMeters + "m, Duration=" + durationSeconds + "s");
+                                durationSec = durationSeconds;
                                 if (routePoints.size() > 0) {
                                     LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
                                     for (LatLng point : routePoints) {

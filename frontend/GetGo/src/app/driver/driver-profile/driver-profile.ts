@@ -17,6 +17,8 @@ export class DriverProfile implements OnInit {
   selectedFile: File | null = null;
   activeTab: string = 'driver';
   recentHoursWorked: number = 0;
+  blocked: boolean = false;
+  blockReason: string | null = null;
 
   driverData = {
     id: 0,
@@ -73,6 +75,9 @@ export class DriverProfile implements OnInit {
         }
 
         this.recentHoursWorked = data.recentHoursWorked || 0;
+
+        this.blocked = data.blocked || false;
+        this.blockReason = data.blockReason || null;
 
         this.cdr.detectChanges();
       },

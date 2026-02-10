@@ -280,7 +280,10 @@ public class RideServiceImpl implements RideService {
             String reason = blockNoteRepository.findByUserAndUnblockedAtIsNull(payingPassenger)
                     .map(BlockNote::getReason)
                     .orElse("You have been blocked.");
-            return new CreatedRideResponseDTO("blocked", reason, null);
+            return new CreatedRideResponseDTO(
+                    "blocked",
+                    "Cannot order ride: user is blocked. Reason: " + reason,
+                    null);
         }
 
         // Parse scheduled time

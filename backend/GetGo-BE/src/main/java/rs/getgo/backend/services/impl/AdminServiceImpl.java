@@ -19,6 +19,7 @@ import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.dtos.user.BlockUserRequestDTO;
 import rs.getgo.backend.dtos.user.BlockUserResponseDTO;
+import rs.getgo.backend.dtos.user.UserEmailDTO;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
 import rs.getgo.backend.model.enums.UserRole;
@@ -821,5 +822,23 @@ public class AdminServiceImpl implements AdminService {
                 null,
                 null
         );
+    }
+
+    @Override
+    public Page<UserEmailDTO> getUnblockedUsers(String search, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("email").ascending());
+        Page<User> users = search.isEmpty()
+                ? userRepository.findByIsBlocked(false, pageable)
+                : userRepository.findByIsBlockedAndEmailContaining(false, search, pageable);
+        return users.map(u -> new UserEmailDTO(u.getId(), u.getEmail(), u.getRole().toString()));
+    }
+
+    @Override
+    public Page<UserEmailDTO> getBlockedUsers(String search, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("email").ascending());
+        Page<User> users = search.isEmpty()
+                ? userRepository.findByIsBlocked(true, pageable)
+                : userRepository.findByIsBlockedAndEmailContaining(true, search, pageable);
+        return users.map(u -> new UserEmailDTO(u.getId(), u.getEmail(), u.getRole().toString()));
     }
 }

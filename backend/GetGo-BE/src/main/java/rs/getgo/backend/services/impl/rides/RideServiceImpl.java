@@ -330,7 +330,7 @@ public class RideServiceImpl implements RideService {
         ride.setRoute(route);
         ride.setScheduledTime(scheduledTime);
         ride.setEstimatedPrice(estimatedPrice);
-//        ride.setVehicleType(vehicleType);
+        ride.setVehicleType(vehicleType);
         ride.setNeedsBabySeats(createRideRequestDTO.getHasBaby() != null && createRideRequestDTO.getHasBaby());
         ride.setNeedsPetFriendly(createRideRequestDTO.getHasPets() != null && createRideRequestDTO.getHasPets());
         ride.setPayingPassenger(payingPassenger);

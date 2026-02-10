@@ -463,6 +463,7 @@ public class DriverServiceImpl implements DriverService {
 
         List<Driver> candidates = driverRepository.findByIsActive(true)
                 .stream()
+                .filter(d -> !d.isBlocked())
                 .filter(d -> isVehicleTypeMatch(d, ride))
                 .filter(d -> !hasExceededWorkingHours(d))
                 .toList();

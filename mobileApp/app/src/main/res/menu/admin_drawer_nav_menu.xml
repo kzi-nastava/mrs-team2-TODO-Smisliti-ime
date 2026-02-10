@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_bottom_dashboard"
@@ -42,6 +43,12 @@
             android:icon="@drawable/ic_settings"
             android:title="@string/driver_requests"
             />
+        <item
+            android:id="@+id/nav_drawer_active_rides"
+            android:icon="@drawable/ic_car"
+            android:title="Active rides"/>
+
+
     </group>
 
     <item android:title="@string/other">

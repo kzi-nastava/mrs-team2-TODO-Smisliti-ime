@@ -4,12 +4,16 @@ import android.util.Log;
 
 import com.example.getgo.api.ApiClient;
 import com.example.getgo.api.services.AdminApiService;
+import com.example.getgo.dtos.activeRide.GetActiveRideAdminDTO;
+import com.example.getgo.dtos.activeRide.GetActiveRideAdminDetailsDTO;
 import com.example.getgo.dtos.general.Page;
 import com.example.getgo.dtos.request.AcceptDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.GetDriverAvatarChangeRequestDTO;
 import com.example.getgo.dtos.request.GetDriverVehicleChangeRequestDTO;
 import com.example.getgo.dtos.request.GetPersonalDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.RejectDriverChangeRequestDTO;
+
+import java.util.List;
 
 import retrofit2.Response;
 
@@ -158,6 +162,32 @@ public class AdminRepository {
             String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
             Log.e(TAG, "Failed to reject avatar request: " + response.code() + " - " + errBody);
             throw new Exception("Failed to reject avatar request");
+        }
+    }
+
+    public List<GetActiveRideAdminDTO> getActiveRides() throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<List<GetActiveRideAdminDTO>> response = service.getActiveRides().execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to fetch active rides: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to fetch active rides");
+        }
+    }
+
+    public GetActiveRideAdminDetailsDTO getActiveRideDetails(int rideId) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<GetActiveRideAdminDetailsDTO> response = service.getActiveRideDetails(rideId).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to fetch ride details: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to fetch active ride details");
         }
     }
 }

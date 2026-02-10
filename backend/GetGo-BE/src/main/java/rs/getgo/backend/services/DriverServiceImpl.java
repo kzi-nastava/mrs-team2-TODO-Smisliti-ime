@@ -187,30 +187,31 @@ public class DriverServiceImpl implements DriverService {
         );
     }
 
+    private DriverActivationToken validateAndGetToken(String token) {
+        DriverActivationToken activationToken = driverActivationTokenRepo.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid activation token"));
+
+        if (activationToken.isUsed()) {
+            throw new RuntimeException("Activation token has already been used");
+        }
+
+        if (activationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Activation token has expired");
+        }
+
+        return activationToken;
+    }
+
 
     @Override
     public GetActivationTokenDTO validateActivationToken(String token) {
-        Optional<DriverActivationToken> tokenOptional = driverActivationTokenRepo.findByToken(token);
-
-        if (tokenOptional.isEmpty()) {
-            return new GetActivationTokenDTO(false, null, "Invalid activation token");
+        try {
+            DriverActivationToken activationToken = validateAndGetToken(token);
+            Driver driver = activationToken.getDriver();
+            return new GetActivationTokenDTO(true, driver.getEmail(), null);
+        } catch (RuntimeException e) {
+            return new GetActivationTokenDTO(false, null, e.getMessage());
         }
-
-        DriverActivationToken activationToken = tokenOptional.get();
-
-        // Check if already used
-        if (activationToken.isUsed()) {
-            return new GetActivationTokenDTO(false, null, "Activation token has already been used");
-        }
-
-        // Check if expired
-        if (activationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return new GetActivationTokenDTO(false, null, "Activation token has expired");
-        }
-
-        // Token is valid
-        Driver driver = activationToken.getDriver();
-        return new GetActivationTokenDTO(true, driver.getEmail(), null);
     }
 
     @Override
@@ -219,31 +220,24 @@ public class DriverServiceImpl implements DriverService {
             return new UpdatedPasswordDTO(false, "Passwords do not match");
         }
 
-        Optional<DriverActivationToken> tokenOpt =
-                driverActivationTokenRepo.findByToken(passwordDTO.getToken());
-        if (tokenOpt.isEmpty()) {
-            return new UpdatedPasswordDTO(false, "Invalid activation token");
-        }
-        DriverActivationToken activationToken = tokenOpt.get();
-        if (activationToken.isUsed()) {
-            return new UpdatedPasswordDTO(false, "Activation token has already been used");
-        }
-        if (activationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return new UpdatedPasswordDTO(false, "Activation token expired");
-        }
+        try {
+            DriverActivationToken activationToken = validateAndGetToken(passwordDTO.getToken());
 
-        // Set password and activate driver
-        Driver driver = activationToken.getDriver();
-        driver.setPassword(passwordEncoder.encode(passwordDTO.getPassword()));
-        driver.setActivated(true);
-        driverRepository.save(driver);
+            // Set password and activate driver
+            Driver driver = activationToken.getDriver();
+            driver.setPassword(passwordEncoder.encode(passwordDTO.getPassword()));
+            driver.setActivated(true);
+            driverRepository.save(driver);
 
-        // Mark token as used
-        activationToken.setUsed(true);
-        activationToken.setUsedAt(LocalDateTime.now());
-        driverActivationTokenRepo.save(activationToken);
+            // Mark token as used
+            activationToken.setUsed(true);
+            activationToken.setUsedAt(LocalDateTime.now());
+            driverActivationTokenRepo.save(activationToken);
 
-        return new UpdatedPasswordDTO(true, "Password set successfully. You can now log in.");
+            return new UpdatedPasswordDTO(true, "Password set successfully. You can now log in.");
+        } catch (RuntimeException e) {
+            return new UpdatedPasswordDTO(false, e.getMessage());
+        }
     }
 
     @Override
@@ -391,7 +385,19 @@ public class DriverServiceImpl implements DriverService {
         Driver driver = driverRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Driver not found with id: " + email));
 
-        // Check for existing pending request
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("Profile picture file is required");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new RuntimeException("File must be an image");
+        }
+
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new RuntimeException("File size must not exceed 5MB");
+        }
+
         if (avatarChangeRequestRepo.existsByDriverAndStatus(driver, RequestStatus.PENDING)) {
             throw new RuntimeException("You already have a pending profile picture change request");
         }

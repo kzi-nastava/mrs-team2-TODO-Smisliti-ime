@@ -583,21 +583,6 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public void blockUser() {
-        // TODO
-    }
-
-    @Override
-    public void unblockUser() {
-        // TODO
-    }
-
-    @Override
-    public void getReports() {
-        // TODO
-    }
-
-    @Override
     public Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction) {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
@@ -840,5 +825,10 @@ public class AdminServiceImpl implements AdminService {
                 ? userRepository.findByIsBlocked(true, pageable)
                 : userRepository.findByIsBlockedAndEmailContaining(true, search, pageable);
         return users.map(u -> new UserEmailDTO(u.getId(), u.getEmail(), u.getRole().toString()));
+    }
+
+    @Override
+    public void getReports() {
+        // TODO
     }
 }

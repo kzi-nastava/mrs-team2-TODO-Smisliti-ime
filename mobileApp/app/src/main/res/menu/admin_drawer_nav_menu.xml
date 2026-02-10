@@ -49,6 +49,12 @@
             android:title="@string/driver_register"
             />
 
+        <item
+            android:id="@+id/nav_block_users"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/block_users"
+            />
+
 
     </group>
 

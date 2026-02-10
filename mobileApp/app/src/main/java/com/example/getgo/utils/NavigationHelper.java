@@ -5,6 +5,7 @@ import android.util.Log;
 import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
+import com.example.getgo.fragments.admins.AdminBlockUsersFragment;
 import com.example.getgo.fragments.admins.AdminDriverRegistrationFragment;
 import com.example.getgo.fragments.admins.AdminProfileInfoFragment;
 import com.example.getgo.fragments.admins.AdminReviewDriverRequestsFragment;
@@ -112,6 +113,8 @@ public class NavigationHelper {
             return AdminReviewDriverRequestsFragment.newInstance();
         } else if (itemId == R.id.nav_register_driver) {
             return AdminDriverRegistrationFragment.newInstance();
+        } else if (itemId == R.id.nav_block_users) {
+            return AdminBlockUsersFragment.newInstance();
         }
 
         return null;

@@ -13,9 +13,12 @@ import com.example.getgo.dtos.request.GetDriverAvatarChangeRequestDTO;
 import com.example.getgo.dtos.request.GetDriverVehicleChangeRequestDTO;
 import com.example.getgo.dtos.request.GetPersonalDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.RejectDriverChangeRequestDTO;
+import com.example.getgo.dtos.user.BlockUserRequestDTO;
+import com.example.getgo.dtos.user.BlockUserResponseDTO;
 import com.example.getgo.dtos.user.CreatedUserDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.dtos.ride.PageResponse;
+import com.example.getgo.dtos.user.UserEmailDTO;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -26,6 +29,26 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface AdminApiService {
+
+    @PUT("api/admin/users/{id}/block")
+    Call<BlockUserResponseDTO> blockUser(@Path("id") Long id, @Body BlockUserRequestDTO dto);
+
+    @PUT("api/admin/users/{id}/unblock")
+    Call<BlockUserResponseDTO> unblockUser(@Path("id") Long id);
+
+    @GET("api/admin/users/unblocked")
+    Call<Page<UserEmailDTO>> getUnblockedUsers(
+            @Query("search") String search,
+            @Query("page") int page,
+            @Query("size") int size
+    );
+
+    @GET("api/admin/users/blocked")
+    Call<Page<UserEmailDTO>> getBlockedUsers(
+            @Query("search") String search,
+            @Query("page") int page,
+            @Query("size") int size
+    );
 
     @GET("api/admin/rides/passenger")
     Call<PageResponse<GetRideDTO>> getPassengerRides(
@@ -58,12 +81,6 @@ public interface AdminApiService {
             @Path("rideId") Long rideId,
             @Query("email") String email
     );
-
-    @PUT("api/admin/users/{id}/block")
-    Call<CreatedUserDTO> blockUser(@Path("id") Long id);
-
-    @PUT("api/admin/users/{id}/unblock")
-    Call<CreatedUserDTO> unblockUser(@Path("id") Long id);
 
     @GET("api/admin/profile")
     Call<GetAdminDTO> getProfile();

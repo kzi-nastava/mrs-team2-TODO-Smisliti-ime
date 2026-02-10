@@ -1,0 +1,31 @@
+<div class="price-container">
+  <h2>Definisanje cene vožnje</h2>
+
+  <form (ngSubmit)="savePrice()">
+
+    <label>Tip vozila</label>
+    <select [(ngModel)]="selectedVehicleType" name="vehicleType" required>
+      <option value="STANDARD">Standardno</option>
+      <option value="LUXURY">Luksuzno</option>
+      <option value="VAN">Kombi</option>
+    </select>
+
+    <label>Cena po kilometru (RSD)</label>
+    <input
+      type="number"
+      [(ngModel)]="pricePerKm"
+      name="price"
+      min="0"
+      required
+    />
+
+    <button type="submit">Sačuvaj cenu</button>
+  </form>
+
+  <div class="current-price" *ngIf="currentPrice">
+    <p>
+      Trenutna cena za <b>{{ selectedVehicleType }}</b> iznosi:
+      <b>{{ currentPrice }} RSD/km</b>
+    </p>
+  </div>
+</div>

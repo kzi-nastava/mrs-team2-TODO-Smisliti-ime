@@ -38,6 +38,7 @@ public class RideServiceImpl implements RideService {
     private final RouteRepository routeRepository;
     private final DriverRepository driverRepository;
     private final CompletedRideRepository completedRideRepository;
+    private final BlockNoteRepository blockNoteRepository;
     private final EmailService emailService;
     private final DriverService driverService;
     private final MapboxRoutingService routingService;
@@ -65,6 +66,7 @@ public class RideServiceImpl implements RideService {
                            MapboxRoutingService mapboxRoutingService,
                            WebSocketController webSocketController,
                            CompletedRideRepository completedRideRepository,
+                           BlockNoteRepository blockNoteRepository,
                            EmailService emailService,
                            InconsistencyReportRepository reportRepository,
                            PanicNotifierService panicNotifierService) {
@@ -77,6 +79,7 @@ public class RideServiceImpl implements RideService {
         this.driverRepository = driverRepository;
         this.driverService = driverService;
         this.completedRideRepository = completedRideRepository;
+        this.blockNoteRepository = blockNoteRepository;
         this.emailService = emailService;
         this.routingService = mapboxRoutingService;
         this.webSocketController = webSocketController;
@@ -272,6 +275,12 @@ public class RideServiceImpl implements RideService {
                     "Passenger account not found",
                     null
             );
+        }
+        if (payingPassenger.isBlocked()) {
+            String reason = blockNoteRepository.findByUserAndUnblockedAtIsNull(payingPassenger)
+                    .map(BlockNote::getReason)
+                    .orElse("You have been blocked.");
+            return new CreatedRideResponseDTO("blocked", reason, null);
         }
 
         // Parse scheduled time

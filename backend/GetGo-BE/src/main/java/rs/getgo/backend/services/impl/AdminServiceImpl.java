@@ -17,6 +17,8 @@ import rs.getgo.backend.dtos.passenger.GetRidePassengerDTO;
 import rs.getgo.backend.dtos.request.*;
 import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
+import rs.getgo.backend.dtos.user.BlockUserRequestDTO;
+import rs.getgo.backend.dtos.user.BlockUserResponseDTO;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
 import rs.getgo.backend.model.enums.UserRole;
@@ -41,12 +43,11 @@ public class AdminServiceImpl implements AdminService {
     private final VehicleChangeRequestRepository vehicleChangeRequestRepo;
     private final AvatarChangeRequestRepository avatarChangeRequestRepo;
     private final DriverActivationTokenRepository driverActivationTokenRepo;
+    private final BlockNoteRepository blockNoteRepository;
     private final FileStorageService fileStorageService;
     private final EmailService emailService;
     private final ModelMapper modelMapper;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final PassengerService passengerService;
-    private final DriverService driverService;
     private final CompletedRideRepository completedRideRepo;
     private final PassengerRepository passengerRepo;
     private final UserRepository userRepository;
@@ -60,10 +61,9 @@ public class AdminServiceImpl implements AdminService {
             VehicleChangeRequestRepository vehicleChangeRequestRepo,
             AvatarChangeRequestRepository avatarChangeRequestRepo,
             DriverActivationTokenRepository driverActivationTokenRepo,
+            BlockNoteRepository blockNoteRepository,
             FileStorageService fileStorageService,
             EmailService emailService,
-            PassengerServiceImpl passengerService,
-            DriverServiceImpl driverService,
             ModelMapper modelMapper,
             BCryptPasswordEncoder passwordEncoder,
             UserRepository userRepository
@@ -76,12 +76,11 @@ public class AdminServiceImpl implements AdminService {
         this.vehicleChangeRequestRepo = vehicleChangeRequestRepo;
         this.avatarChangeRequestRepo = avatarChangeRequestRepo;
         this.driverActivationTokenRepo = driverActivationTokenRepo;
+        this.blockNoteRepository = blockNoteRepository;
         this.fileStorageService = fileStorageService;
         this.emailService = emailService;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
-        this.passengerService = passengerService;
-        this.driverService = driverService;
         this.userRepository = userRepository;
     }
 
@@ -769,6 +768,58 @@ public class AdminServiceImpl implements AdminService {
                 r.getEstTime(),
                 cancelledUserEmail,
                 r.getCancelReason()
+        );
+    }
+
+    @Override
+    public BlockUserResponseDTO blockUser(Long userId, String adminEmail, BlockUserRequestDTO dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Administrator admin = adminRepo.findByEmail(adminEmail)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        user.setBlocked(true);
+        userRepository.save(user);
+
+        BlockNote note = new BlockNote();
+        note.setUser(user);
+        note.setAdmin(admin);
+        note.setReason(dto.getReason());
+        note.setBlockedAt(LocalDateTime.now());
+        blockNoteRepository.save(note);
+
+        return new BlockUserResponseDTO(
+                user.getId(),
+                user.getEmail(),
+                true,
+                dto.getReason(),
+                note.getBlockedAt()
+        );
+    }
+
+    @Override
+    public BlockUserResponseDTO unblockUser(Long userId, String adminEmail) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setBlocked(false);
+        userRepository.save(user);
+
+        BlockNote activeNote = blockNoteRepository.findByUserAndUnblockedAtIsNull(user)
+                .orElse(null);
+
+        if (activeNote != null) {
+            activeNote.setUnblockedAt(LocalDateTime.now());
+            blockNoteRepository.save(activeNote);
+        }
+
+        return new BlockUserResponseDTO(
+                user.getId(),
+                user.getEmail(),
+                false,
+                null,
+                null
         );
     }
 }

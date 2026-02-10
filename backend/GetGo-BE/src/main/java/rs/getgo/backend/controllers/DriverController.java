@@ -45,8 +45,8 @@ public class DriverController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate
     ) {
 
-//        String email = AuthUtils.getCurrentUserEmail();
-        String email = "d@gmail.com"; // Currently hardcoded
+        String email = AuthUtils.getCurrentUserEmail();
+//        String email = "d@gmail.com"; // Currently hardcoded
 
         Page<GetRideDTO> rides =
                 driverService.getDriverRides(email, startDate, page, size);

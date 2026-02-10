@@ -18,4 +18,5 @@ public class GetRideFinishedDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Long durationMinutes;
+    private Long driverId;
 }

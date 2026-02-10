@@ -1,5 +1,7 @@
 package com.example.getgo.api.services;
 
+import com.example.getgo.dtos.activeRide.GetActiveRideAdminDTO;
+import com.example.getgo.dtos.activeRide.GetActiveRideAdminDetailsDTO;
 import com.example.getgo.dtos.admin.GetAdminDTO;
 import com.example.getgo.dtos.admin.UpdateAdminDTO;
 import com.example.getgo.dtos.admin.UpdatedAdminDTO;
@@ -19,6 +21,8 @@ import com.example.getgo.dtos.user.CreatedUserDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.dtos.ride.PageResponse;
 import com.example.getgo.dtos.user.UserEmailDTO;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -138,4 +142,10 @@ public interface AdminApiService {
             @Path("requestId") Long requestId,
             @Body RejectDriverChangeRequestDTO rejectDriverChangeRequestDTO
     );
+
+    @GET("api/admin/active-rides")
+    Call<List<GetActiveRideAdminDTO>> getActiveRides();
+
+    @GET("api/admin/active-rides/{id}")
+    Call<GetActiveRideAdminDetailsDTO> getActiveRideDetails(@Path("id") int id);
 }

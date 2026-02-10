@@ -93,7 +93,7 @@ public class DriverRideHistoryFragment extends Fragment {
         Spinner spinnerPageSize = view.findViewById(R.id.spinnerPageSize);
         Integer[] pageSizes = {5, 10, 20};
         ArrayAdapter<Integer> adapterSpinner = new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_item, pageSizes);
+                R.layout.spinner_item_white, pageSizes);
         adapterSpinner.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerPageSize.setAdapter(adapterSpinner);
 

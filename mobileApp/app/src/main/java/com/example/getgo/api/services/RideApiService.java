@@ -13,6 +13,8 @@ import com.example.getgo.dtos.ride.GetPassengerActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideTrackingDTO;
 import com.example.getgo.dtos.ride.UpdateRideDTO;
 import com.example.getgo.dtos.ride.UpdatedRideDTO;
+import com.example.getgo.dtos.ride.RideCompletionDTO;
+import com.example.getgo.dtos.ride.StopRideDTO;
 
 import java.util.List;
 
@@ -56,6 +58,9 @@ public interface RideApiService {
     @POST("api/rides/{rideId}/cancel/driver")
     Call<Void> cancelRideByDriver(@Path("rideId") Long rideId, @Body CancelRideRequestDTO request);
 
+    @POST("api/rides/{rideId}/cancel/passenger")
+    Call<Void> cancelRideByPassenger(@Path("rideId") Long rideId, @Body CancelRideRequestDTO request);
+
     @GET("api/rides/{id}/tracking")
     Call<GetRideTrackingDTO> trackRide(@Path("id") Long id);
 
@@ -65,4 +70,9 @@ public interface RideApiService {
     @GET("api/completed-rides/{rideId}/inconsistencies")
     Call<List<GetInconsistencyReportDTO>> getInconsistencyReports(@Path("rideId") Long rideId);
 
+    @POST("api/rides/{rideId}/stop")
+    Call<RideCompletionDTO> stopRide(@Path("rideId") Long rideId, @Body StopRideDTO request);
+
+    @POST("api/rides/{rideId}/panic")
+    Call<Void> triggerPanic(@Path("rideId") Long rideId);
 }

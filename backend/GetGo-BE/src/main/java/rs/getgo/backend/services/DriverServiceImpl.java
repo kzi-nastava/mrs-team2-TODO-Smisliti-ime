@@ -444,6 +444,20 @@ public class DriverServiceImpl implements DriverService {
         Driver driver = driverRepository.findByEmail(driverEmail)
                 .orElseThrow(() -> new RuntimeException("Driver not found"));
 
+        // Check if driver has any active rides before allowing status change
+        if (!isActive) {
+            boolean hasActiveRide = activeRideRepository.existsByDriverAndStatusIn(
+                    driver,
+                    List.of(RideStatus.DRIVER_READY, RideStatus.DRIVER_INCOMING,
+                            RideStatus.DRIVER_ARRIVED, RideStatus.ACTIVE,
+                            RideStatus.DRIVER_ARRIVED_AT_DESTINATION)
+            );
+
+            if (hasActiveRide) {
+                throw new RuntimeException("Cannot change status. Driver has an active ride.");
+            }
+        }
+
         driver.setActive(isActive);
         driverRepository.save(driver);
     }

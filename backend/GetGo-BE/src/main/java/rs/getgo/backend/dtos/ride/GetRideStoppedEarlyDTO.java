@@ -20,4 +20,5 @@ public class GetRideStoppedEarlyDTO {
     private Long durationMinutes;
     private String message;
     private LocalDateTime timestamp;
+    private Long driverId;
 }

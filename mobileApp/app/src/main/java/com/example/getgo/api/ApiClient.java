@@ -4,18 +4,23 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.example.getgo.api.services.AuthApiService;
+import com.example.getgo.api.services.DriverApiService;
 import com.example.getgo.utils.LocalDateTimeDeserializer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import okhttp3.Request;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializer;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClient {
 
@@ -23,7 +28,7 @@ public class ApiClient {
     private static String currentBaseUrl;
     private static Context appContext;
 
-    private static final String DEFAULT_BASE_URL = "http://10.0.2.2:8080/";
+     private static final String DEFAULT_BASE_URL = "http://10.0.2.2:8080/";
     public static final String SERVER_URL = "http://10.0.2.2:8080"; // For fetching images
     private static final String PREFS_NAME = "getgo_prefs";
     private static final String PREF_JWT = "jwt_token";
@@ -47,6 +52,16 @@ public class ApiClient {
 
         if (retrofit == null || currentBaseUrl == null || !currentBaseUrl.equals(baseUrl)) {
 
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer())
+                    .registerTypeAdapter(LocalDateTime.class,
+                            (JsonDeserializer<LocalDateTime>) (json, type, context) ->
+                                    LocalDateTime.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                    .registerTypeAdapter(LocalDateTime.class,
+                            (JsonSerializer<LocalDateTime>) (src, type, context) ->
+                                    new JsonPrimitive(src.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
+                    .create();
+
             OkHttpClient client = new OkHttpClient.Builder()
                     .addInterceptor(createLoggingInterceptor())
                     .addInterceptor(createAuthInterceptor())
@@ -54,10 +69,6 @@ public class ApiClient {
                     .readTimeout(25, TimeUnit.SECONDS)
                     .writeTimeout(25, TimeUnit.SECONDS)
                     .build();
-
-            Gson gson = new GsonBuilder()
-                    .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer())
-                    .create();
 
             retrofit = new Retrofit.Builder()
                     .baseUrl(baseUrl)
@@ -111,11 +122,19 @@ public class ApiClient {
     }
 
     private static AuthApiService authApiService;
+    private static DriverApiService driverApiService;
 
     public static AuthApiService getAuthApiService() {
         if (authApiService == null) {
             authApiService = getClient().create(AuthApiService.class);
         }
         return authApiService;
+    }
+
+    public static DriverApiService getDriverApiService() {
+        if (driverApiService == null) {
+            driverApiService = getClient().create(DriverApiService.class);
+        }
+        return driverApiService;
     }
 }

@@ -11,11 +11,12 @@ public class GetRideStoppedEarlyDTO {
     private Long durationMinutes;
     private String message;
     private LocalDateTime timestamp;
+    private Long driverId;
 
     public GetRideStoppedEarlyDTO() {}
 
     public GetRideStoppedEarlyDTO(Long rideId, String status, Double price, LocalDateTime startTime,
-                                  LocalDateTime endTime, Long durationMinutes, String message, LocalDateTime timestamp) {
+                                  LocalDateTime endTime, Long durationMinutes, String message, LocalDateTime timestamp, Long driverId) {
         this.rideId = rideId;
         this.status = status;
         this.price = price;
@@ -24,6 +25,7 @@ public class GetRideStoppedEarlyDTO {
         this.durationMinutes = durationMinutes;
         this.message = message;
         this.timestamp = timestamp;
+        this.driverId = driverId;
     }
 
     public Long getRideId() { return rideId; }
@@ -49,4 +51,7 @@ public class GetRideStoppedEarlyDTO {
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+
+    public Long getDriverId() { return driverId; }
+    public void setDriverId(Long driverId) { this.driverId = driverId; }
 }

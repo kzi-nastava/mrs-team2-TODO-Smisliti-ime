@@ -6,16 +6,15 @@ import { environment } from '../../../env/environment';
   providedIn: 'root',
 })
 export class RidePriceService {
-  private apiUrl = `${environment.apiHost}/api/ride-price`;
+ private apiUrl = `${environment.apiHost}/api/ride-price`;
 
-  constructor(private http: HttpClient) {}
+   constructor(private http: HttpClient) {}
 
-  updatePrice(vehicleType: string, price: number) {
-    return this.http.put(`${this.apiUrl}/prices/${vehicleType}`,{ pricePerKm: price });
-  }
+   getPrice(vehicleType: string) {
+     return this.http.get<{ pricePerKm?: number; startPrice?: number }>(`${this.apiUrl}/prices/${vehicleType}`);
+   }
 
-  getPrice(vehicleType: string) {
-    return this.http.get<number>(`${this.apiUrl}/prices/${vehicleType}`);
-  }
-
+   updatePrice(vehicleType: string, data: { pricePerKm: number | null; startPrice: number | null }) {
+     return this.http.put(`${this.apiUrl}/prices/${vehicleType}`, data);
+   }
 }

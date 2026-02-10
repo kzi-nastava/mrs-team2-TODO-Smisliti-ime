@@ -1,31 +1,22 @@
-<div class="price-container">
-  <h2>Definisanje cene vožnje</h2>
+<div class="ride-pricing-wrapper">
+  <h2>Ride pricing</h2>
 
-  <form (ngSubmit)="savePrice()">
-
-    <label>Tip vozila</label>
-    <select [(ngModel)]="selectedVehicleType" name="vehicleType" required>
-      <option value="STANDARD">Standardno</option>
-      <option value="LUXURY">Luksuzno</option>
-      <option value="VAN">Kombi</option>
-    </select>
-
-    <label>Cena po kilometru (RSD)</label>
-    <input
-      type="number"
-      [(ngModel)]="pricePerKm"
-      name="price"
-      min="0"
-      required
-    />
-
-    <button type="submit">Sačuvaj cenu</button>
-  </form>
-
-  <div class="current-price" *ngIf="currentPrice">
-    <p>
-      Trenutna cena za <b>{{ selectedVehicleType }}</b> iznosi:
-      <b>{{ currentPrice }} RSD/km</b>
-    </p>
-  </div>
+  <table class="price-table">
+    <thead>
+    <tr>
+      <th>Vehicle type</th>
+      <th>Price per km (RSD)</th>
+      <th>Start price (RSD)</th>
+      <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let row of prices()">
+      <td>{{ row.vehicleType }}</td>
+      <td><input type="number" [(ngModel)]="row.pricePerKm" placeholder="--" min="0"/></td>
+      <td><input type="number" [(ngModel)]="row.startPrice" placeholder="--" min="0"/></td>
+      <td><button (click)="save(row)">Save</button></td>
+    </tr>
+    </tbody>
+  </table>
 </div>

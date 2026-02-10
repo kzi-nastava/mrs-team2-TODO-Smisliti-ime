@@ -5,8 +5,10 @@ import com.example.getgo.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
 import com.example.getgo.dtos.inconsistencyReport.GetInconsistencyReportDTO;
 import com.example.getgo.dtos.ride.CancelRideRequestDTO;
 import com.example.getgo.dtos.ride.CreateRideRequestDTO;
+import com.example.getgo.dtos.ride.CreatedFavoriteRideDTO;
 import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
 import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
+import com.example.getgo.dtos.ride.GetFavoriteRideDTO;
 import com.example.getgo.dtos.ride.GetPassengerActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideTrackingDTO;
 import com.example.getgo.dtos.ride.UpdateRideDTO;
@@ -18,12 +20,23 @@ import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 
 public interface RideApiService {
+
+    @POST("api/rides/{completedRideId}/favorite")
+    Call<CreatedFavoriteRideDTO> favoriteRide(@Path("completedRideId") Long completedRideId);
+
+    @DELETE("api/rides/{completedRideId}/favorite")
+    Call<Void> unfavoriteRide(@Path("completedRideId") Long completedRideId);
+
+    @GET("api/rides/favorites")
+    Call<List<GetFavoriteRideDTO>> getFavoriteRides();
+
     @POST("api/rides/order")
     Call<CreatedRideResponseDTO> orderRide(@Body CreateRideRequestDTO request);
 

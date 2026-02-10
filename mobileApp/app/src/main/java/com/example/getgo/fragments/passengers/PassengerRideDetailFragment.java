@@ -1,50 +1,52 @@
 package com.example.getgo.fragments.passengers;
 
 import android.os.Bundle;
-import android.text.Html;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.fragment.app.Fragment;
+
 import com.example.getgo.R;
 import com.example.getgo.api.ApiClient;
-import com.example.getgo.api.services.DriverApiService;
 import com.example.getgo.api.services.PassengerApiService;
-import com.example.getgo.api.services.RatingApiService;
-import com.example.getgo.api.services.RideApiService;
-import com.example.getgo.dtos.driver.GetDriverDTO;
-import com.example.getgo.dtos.inconsistencyReport.GetInconsistencyReportDTO;
 import com.example.getgo.dtos.passenger.GetRidePassengerDTO;
-import com.example.getgo.dtos.rating.GetRatingDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
-import com.example.getgo.dtos.route.RouteDTO;
+import com.example.getgo.repositories.RideRepository;
 import com.example.getgo.utils.MapManager;
 import com.example.getgo.utils.RideDetailHelper;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.PolylineOptions;
-import org.json.JSONArray;
-import org.json.JSONException;
-import java.time.LocalDateTime;
+
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class PassengerRideDetailFragment extends Fragment {
-    private GetRideDTO ride;
+    private static final String TAG = "PassengerRideDetail";
     private static final String ARG_RIDE = "arg_ride";
+
+    private GetRideDTO ride;
     private GoogleMap mMap;
     private MapManager mapManager;
+
+    private Button btnFavoriteRide, btnUnfavoriteRide;
+    private PassengerApiService passengerService;
+    private RideRepository rideRepository;
+    private ExecutorService executor;
+    private Handler mainHandler;
 
     public PassengerRideDetailFragment() {}
 
@@ -56,18 +58,24 @@ public class PassengerRideDetailFragment extends Fragment {
         return fragment;
     }
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             ride = (GetRideDTO) getArguments().getSerializable(ARG_RIDE);
         }
+        passengerService = ApiClient.getClient().create(PassengerApiService.class);
+        rideRepository = RideRepository.getInstance();
+        executor = Executors.newSingleThreadExecutor();
+        mainHandler = new Handler(Looper.getMainLooper());
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_passenger_ride_detail, container, false);
+
+        btnFavoriteRide = view.findViewById(R.id.btnFavoriteRide);
+        btnUnfavoriteRide = view.findViewById(R.id.btnUnfavoriteRide);
 
         Long rideId = getArguments() != null ? getArguments().getLong("RIDE_ID") : null;
         if (rideId == null) {
@@ -75,7 +83,6 @@ public class PassengerRideDetailFragment extends Fragment {
             return view;
         }
 
-        PassengerApiService passengerService = ApiClient.getClient().create(PassengerApiService.class);
         passengerService.getRideForReorder(rideId).enqueue(new Callback<GetRideDTO>() {
             @Override
             public void onResponse(Call<GetRideDTO> call, Response<GetRideDTO> response) {
@@ -103,6 +110,54 @@ public class PassengerRideDetailFragment extends Fragment {
         });
 
         return view;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        executor.shutdown();
+    }
+
+    private void favoriteRide() {
+        btnFavoriteRide.setEnabled(false);
+
+        executor.execute(() -> {
+            try {
+                rideRepository.favoriteRide(ride.getId());
+                mainHandler.post(() -> {
+                    if (!isAdded()) return;
+                    btnFavoriteRide.setEnabled(true);
+                    Toast.makeText(requireContext(), "Ride added to favorites", Toast.LENGTH_SHORT).show();
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> {
+                    if (!isAdded()) return;
+                    btnFavoriteRide.setEnabled(true);
+                    Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void unfavoriteRide() {
+        btnUnfavoriteRide.setEnabled(false);
+
+        executor.execute(() -> {
+            try {
+                rideRepository.unfavoriteRide(ride.getId());
+                mainHandler.post(() -> {
+                    if (!isAdded()) return;
+                    btnUnfavoriteRide.setEnabled(true);
+                    Toast.makeText(requireContext(), "Ride removed from favorites", Toast.LENGTH_SHORT).show();
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> {
+                    if (!isAdded()) return;
+                    btnUnfavoriteRide.setEnabled(true);
+                    Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void displayBasicRideInfo(View view) {
@@ -199,6 +254,9 @@ public class PassengerRideDetailFragment extends Fragment {
         if (btnReorderRide != null) {
             btnReorderRide.setOnClickListener(v -> reorderRide(ride));
         }
+
+        btnFavoriteRide.setOnClickListener(v -> favoriteRide());
+        btnUnfavoriteRide.setOnClickListener(v -> unfavoriteRide());
     }
 
     private void reorderRide(GetRideDTO ride) {

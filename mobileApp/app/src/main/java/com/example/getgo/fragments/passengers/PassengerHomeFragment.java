@@ -1,9 +1,8 @@
 package com.example.getgo.fragments.passengers;
 
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,12 +12,17 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
 import com.example.getgo.dtos.driver.GetActiveDriverLocationDTO;
 import com.example.getgo.dtos.ride.CreateRideRequestDTO;
 import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
+import com.example.getgo.dtos.ride.GetFavoriteRideDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.repositories.DriverRepository;
 import com.example.getgo.repositories.RideRepository;
@@ -28,12 +32,17 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PassengerHomeFragment extends Fragment implements OnMapReadyCallback {
 
@@ -47,6 +56,16 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
     private TextInputEditText etScheduledTime;
     private Button btnOrderRide, btnCancel, btnAddWaypoint, btnRemoveWaypoint, btnAddFriendEmail, btnRemoveFriendEmail;
 
+    private MaterialButton btnToggleFavorites;
+    private MaterialCardView cvFavoritesContainer;
+    private LinearLayout layoutFavoritesList;
+    private boolean showFavorites = false;
+    private List<GetFavoriteRideDTO> favoriteRides = new ArrayList<>();
+
+    private RideRepository rideRepository;
+    private ExecutorService executor;
+    private Handler mainHandler;
+
     private List<TextInputEditText> waypointInputs = new ArrayList<>();
     private List<LatLng> waypointCoords = new ArrayList<>();
     private List<TextInputEditText> friendEmailInputs = new ArrayList<>();
@@ -54,7 +73,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
     private LatLng startPointCoord = null;
     private LatLng destinationCoord = null;
 
-    private Integer activeInputIndex = null; // -1 start, -2 dest, 0... waypoint
+    private Integer activeInputIndex = null;
 
     public PassengerHomeFragment() {}
 
@@ -67,10 +86,15 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
                              Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_passenger_home, container, false);
 
+        rideRepository = RideRepository.getInstance();
+        executor = Executors.newSingleThreadExecutor();
+        mainHandler = new Handler(Looper.getMainLooper());
+
         initializeViews(root);
         setupMap();
         setupDropdowns();
         setupListeners();
+        loadFavoriteRides();
 
         // Check for re-order data
         if (getArguments() != null && getArguments().containsKey("REORDER_RIDE")) {
@@ -78,6 +102,12 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
             prefillRideData(reorderRide);
         }
         return root;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        executor.shutdown();
     }
 
     private void prefillRideData(GetRideDTO ride) {
@@ -111,6 +141,10 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         btnRemoveWaypoint = root.findViewById(R.id.btnRemoveWaypoint);
         btnAddFriendEmail = root.findViewById(R.id.btnAddFriendEmail);
         btnRemoveFriendEmail = root.findViewById(R.id.btnRemoveFriendEmail);
+
+        btnToggleFavorites = root.findViewById(R.id.btnToggleFavorites);
+        cvFavoritesContainer = root.findViewById(R.id.cvFavoritesContainer);
+        layoutFavoritesList = root.findViewById(R.id.layoutFavoritesList);
     }
 
     private void setupDropdowns() {
@@ -179,6 +213,137 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
         btnOrderRide.setOnClickListener(v -> orderRide());
         btnCancel.setOnClickListener(v -> resetForm());
+
+        btnToggleFavorites.setOnClickListener(v -> toggleFavorites());
+    }
+
+    private void loadFavoriteRides() {
+        executor.execute(() -> {
+            try {
+                List<GetFavoriteRideDTO> favorites = rideRepository.getFavoriteRides();
+
+                mainHandler.post(() -> {
+                    favoriteRides = favorites;
+                    btnToggleFavorites.setText(favorites.isEmpty()
+                            ? "Favorites"
+                            : String.format(Locale.ENGLISH, "Favorites (%d)", favorites.size()));
+                });
+            } catch (Exception e) {
+                Log.e("PassengerHome", "Failed to load favorites", e);
+            }
+        });
+    }
+
+    private void toggleFavorites() {
+        showFavorites = !showFavorites;
+
+        if (showFavorites) {
+            btnToggleFavorites.setText("Hide");
+            cvFavoritesContainer.setVisibility(View.VISIBLE);
+            populateFavoritesList();
+        } else {
+            btnToggleFavorites.setText(favoriteRides.isEmpty()
+                    ? "Favorites"
+                    : String.format(Locale.ENGLISH, "Favorites (%d)", favoriteRides.size()));
+            cvFavoritesContainer.setVisibility(View.GONE);
+        }
+    }
+
+    private void populateFavoritesList() {
+        layoutFavoritesList.removeAllViews();
+
+        if (favoriteRides.isEmpty()) {
+            TextView tvEmpty = new TextView(requireContext());
+            tvEmpty.setText("No favorite rides yet");
+            tvEmpty.setTextColor(0xFF133E87);
+            tvEmpty.setPadding(16, 16, 16, 16);
+            layoutFavoritesList.addView(tvEmpty);
+            return;
+        }
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        for (GetFavoriteRideDTO favorite : favoriteRides) {
+            View itemView = inflater.inflate(R.layout.item_favorite_ride, layoutFavoritesList, false);
+
+            TextView tvStart = itemView.findViewById(R.id.tvFavStart);
+            TextView tvDest = itemView.findViewById(R.id.tvFavDestination);
+            TextView tvBadges = itemView.findViewById(R.id.tvFavBadges);
+
+            List<String> addresses = favorite.getAddresses();
+            tvStart.setText("Start: " + addresses.get(0));
+            tvDest.setText("Dest: " + addresses.get(addresses.size() - 1));
+
+            StringBuilder badges = new StringBuilder();
+            if (favorite.isNeedsBabySeats()) badges.append("BABY  ");
+            if (favorite.isNeedsPetFriendly()) badges.append("PETS  ");
+            if (favorite.getVehicleType() != null && !favorite.getVehicleType().equals("ANY")) {
+                badges.append(favorite.getVehicleType());
+            }
+            tvBadges.setText(badges.toString().trim());
+            tvBadges.setVisibility(badges.length() > 0 ? View.VISIBLE : View.GONE);
+
+            itemView.setOnClickListener(v -> loadFavoriteRide(favorite));
+            layoutFavoritesList.addView(itemView);
+        }
+    }
+
+    private void loadFavoriteRide(GetFavoriteRideDTO favorite) {
+        resetForm();
+
+        List<String> addresses = favorite.getAddresses();
+        List<Double> lats = favorite.getLatitudes();
+        List<Double> lngs = favorite.getLongitudes();
+
+        // Set start point with marker
+        etStartPoint.setText(addresses.get(0));
+        startPointCoord = new LatLng(lats.get(0), lngs.get(0));
+        mapManager.addWaypointMarker(startPointCoord, 0, "Start Point");
+
+        // Set destination with marker
+        etDestination.setText(addresses.get(addresses.size() - 1));
+        destinationCoord = new LatLng(lats.get(lats.size() - 1), lngs.get(lngs.size() - 1));
+        mapManager.addWaypointMarker(destinationCoord, 100, "Destination");
+
+        // Add waypoints (intermediate points between start and destination)
+        for (int i = 1; i < addresses.size() - 1; i++) {
+            addWaypoint();
+            int waypointIndex = i - 1;
+            waypointInputs.get(waypointIndex).setText(addresses.get(i));
+            LatLng waypointCoord = new LatLng(lats.get(i), lngs.get(i));
+            waypointCoords.set(waypointIndex, waypointCoord);
+            mapManager.addWaypointMarker(waypointCoord, waypointIndex + 1, "Waypoint " + (waypointIndex + 1));
+        }
+
+        // Set vehicle type
+        String vehicleType = favorite.getVehicleType();
+        if (vehicleType != null && !vehicleType.equals("ANY")) {
+            actvVehicleType.setText(vehicleType, false);
+        }
+
+        // Set preferences
+        cbHasBaby.setChecked(favorite.isNeedsBabySeats());
+        cbHasPets.setChecked(favorite.isNeedsPetFriendly());
+
+        // Set friend emails if any
+        List<String> emails = favorite.getLinkedPassengerEmails();
+        if (emails != null && !emails.isEmpty()) {
+            actvTravelOption.setText("With friends", false);
+            layoutFriendEmails.setVisibility(View.VISIBLE);
+            for (String email : emails) {
+                addFriendEmail();
+                friendEmailInputs.get(friendEmailInputs.size() - 1).setText(email);
+            }
+        }
+
+        // Draw the complete route on the map
+        drawRouteIfReady();
+
+        // Hide favorites panel
+        showFavorites = false;
+        cvFavoritesContainer.setVisibility(View.GONE);
+        btnToggleFavorites.setText(String.format(Locale.ENGLISH, "Favorites (%d)", favoriteRides.size()));
+
+        Toast.makeText(requireContext(), "Favorite ride loaded", Toast.LENGTH_SHORT).show();
     }
 
     private void setupMap() {
@@ -231,7 +396,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
             @Override
             public void onError(String error) {
-                String displayValue = String.format("%.5f, %.5f", latLng.latitude, latLng.longitude);
+                String displayValue = String.format(Locale.ENGLISH, "%.5f, %.5f", latLng.latitude, latLng.longitude);
                 setLocationForActiveInput(latLng, displayValue);
                 activeInputIndex = null;
                 Toast.makeText(requireContext(), "Location set (geocoding failed)", Toast.LENGTH_SHORT).show();
@@ -245,47 +410,30 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
             etStartPoint.setText(displayText);
             etStartPoint.clearFocus();
             mapManager.addWaypointMarker(coordinates, 0, "Start Point");
-
         } else if (activeInputIndex == -2) {
             destinationCoord = coordinates;
             etDestination.setText(displayText);
             etDestination.clearFocus();
             mapManager.addWaypointMarker(coordinates, 100, "Destination");
-
         } else if (activeInputIndex >= 0 && activeInputIndex < waypointInputs.size()) {
             waypointCoords.set(activeInputIndex, coordinates);
             waypointInputs.get(activeInputIndex).setText(displayText);
             waypointInputs.get(activeInputIndex).clearFocus();
-            mapManager.addWaypointMarker(coordinates, activeInputIndex + 1, "Waypoint " + (activeInputIndex + 1)); // CHANGED: +1 to avoid overlap with start
+            mapManager.addWaypointMarker(coordinates, activeInputIndex + 1, "Waypoint " + (activeInputIndex + 1));
         }
     }
 
     private void drawRouteIfReady() {
         List<LatLng> allPoints = new ArrayList<>();
 
-        if (startPointCoord != null) {
-            allPoints.add(startPointCoord);
-            Log.d("PassengerHome", "Added start point: " + startPointCoord);
-        }
+        if (startPointCoord != null) allPoints.add(startPointCoord);
         for (LatLng waypoint : waypointCoords) {
-            if (waypoint != null) {
-                allPoints.add(waypoint);
-                Log.d("PassengerHome", "Added waypoint: " + waypoint);
-            }
+            if (waypoint != null) allPoints.add(waypoint);
         }
-        if (destinationCoord != null) {
-            allPoints.add(destinationCoord);
-            Log.d("PassengerHome", "Added destination: " + destinationCoord);
-        }
+        if (destinationCoord != null) allPoints.add(destinationCoord);
 
-        Log.d("PassengerHome", "Total points for route: " + allPoints.size());
+        if (allPoints.size() < 2) return;
 
-        if (allPoints.size() < 2) {
-            Log.d("PassengerHome", "Not enough points to draw route");
-            return;
-        }
-
-        Log.d("PassengerHome", "Calling mapManager.drawRoute()");
         mapManager.drawRoute(allPoints, null);
     }
 
@@ -362,7 +510,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         timePicker.addOnPositiveButtonClickListener(v -> {
             int hour = timePicker.getHour();
             int minute = timePicker.getMinute();
-            String time = String.format("%02d:%02d", hour, minute);
+            String time = String.format(Locale.ENGLISH, "%02d:%02d", hour, minute);
             etScheduledTime.setText(time);
         });
 
@@ -509,8 +657,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
         new Thread(() -> {
             try {
-                RideRepository repo = RideRepository.getInstance();
-                CreatedRideResponseDTO response = repo.orderRide(request);
+                CreatedRideResponseDTO response = rideRepository.orderRide(request);
 
                 requireActivity().runOnUiThread(() -> {
                     btnOrderRide.setEnabled(true);
@@ -582,5 +729,10 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         layoutFriendEmails.setVisibility(View.GONE);
 
         activeInputIndex = null;
+
+        if (mapManager != null) {
+            mapManager.clearWaypoints();
+            mapManager.clearRoute();
+        }
     }
 }

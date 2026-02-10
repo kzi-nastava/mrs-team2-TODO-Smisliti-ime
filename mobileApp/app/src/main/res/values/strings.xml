@@ -22,6 +22,7 @@
     <string name="logout">Logout</string>
     <string name="other">Other</string>
     <string name="driver_requests">Driver Requests</string>
+    <string name="driver_register">Register Driver</string>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="Password">Password</string>

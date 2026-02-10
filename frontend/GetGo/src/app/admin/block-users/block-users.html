@@ -1,0 +1,121 @@
+<app-admin-nav-bar></app-admin-nav-bar>
+<div class="page-container">
+  <div class="content-card">
+    <p class="page-title">Block / Unblock Users</p>
+
+    @if (successMessage) {
+    <div class="message success">{{ successMessage }}</div>
+    }
+    @if (errorMessage) {
+    <div class="message error">{{ errorMessage }}</div>
+    }
+
+    <!-- Block users -->
+    <div class="section">
+      <h2 class="section-title">Block a User</h2>
+
+      <div class="search-row">
+        <input
+          type="text"
+          class="form-input search-input"
+          placeholder="Search by email..."
+          [(ngModel)]="unblockedSearch"
+          (keyup.enter)="searchUnblocked()"
+        />
+        <button class="btn btn-primary" (click)="searchUnblocked()">Search</button>
+      </div>
+
+      <table class="user-table">
+        <thead>
+        <tr>
+          <th></th>
+          <th>Email</th>
+          <th>Role</th>
+        </tr>
+        </thead>
+        <tbody>
+        @for (user of unblockedUsers; track user.id) {
+        <tr
+          [class.selected]="selectedUserToBlock?.id === user.id"
+          (click)="selectToBlock(user)"
+        >
+          <td><input type="radio" [checked]="selectedUserToBlock?.id === user.id" /></td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.role }}</td>
+        </tr>
+        }
+        @if (unblockedUsers.length === 0) {
+        <tr><td colspan="3" class="empty-row">No users found</td></tr>
+        }
+        </tbody>
+      </table>
+
+      <div class="pagination">
+        <button class="btn btn-page" [disabled]="unblockedPage === 0" (click)="unblockedPrev()">Prev</button>
+        <span>Page {{ unblockedPage + 1 }} / {{ unblockedTotalPages || 1 }}</span>
+        <button class="btn btn-page" [disabled]="unblockedPage >= unblockedTotalPages - 1" (click)="unblockedNext()">Next</button>
+      </div>
+
+      <div class="action-row">
+        <textarea
+          class="form-input reason-input"
+          placeholder="Block reason..."
+          [(ngModel)]="blockReason"
+          rows="2"
+        ></textarea>
+        <button class="btn btn-primary" (click)="blockUser()">Block User</button>
+      </div>
+    </div>
+
+    <!-- Unblock users -->
+    <div class="section">
+      <h2 class="section-title">Unblock a User</h2>
+
+      <div class="search-row">
+        <input
+          type="text"
+          class="form-input search-input"
+          placeholder="Search by email..."
+          [(ngModel)]="blockedSearch"
+          (keyup.enter)="searchBlocked()"
+        />
+        <button class="btn btn-primary" (click)="searchBlocked()">Search</button>
+      </div>
+
+      <table class="user-table">
+        <thead>
+        <tr>
+          <th></th>
+          <th>Email</th>
+          <th>Role</th>
+        </tr>
+        </thead>
+        <tbody>
+        @for (user of blockedUsers; track user.id) {
+        <tr
+          [class.selected]="selectedUserToUnblock?.id === user.id"
+          (click)="selectToUnblock(user)"
+        >
+          <td><input type="radio" [checked]="selectedUserToUnblock?.id === user.id" /></td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.role }}</td>
+        </tr>
+        }
+        @if (blockedUsers.length === 0) {
+        <tr><td colspan="3" class="empty-row">No blocked users</td></tr>
+        }
+        </tbody>
+      </table>
+
+      <div class="pagination">
+        <button class="btn btn-page" [disabled]="blockedPage === 0" (click)="blockedPrev()">Prev</button>
+        <span>Page {{ blockedPage + 1 }} / {{ blockedTotalPages || 1 }}</span>
+        <button class="btn btn-page" [disabled]="blockedPage >= blockedTotalPages - 1" (click)="blockedNext()">Next</button>
+      </div>
+
+      <div class="action-row action-row-right">
+        <button class="btn btn-primary" (click)="unblockUser()">Unblock User</button>
+      </div>
+    </div>
+  </div>
+</div>

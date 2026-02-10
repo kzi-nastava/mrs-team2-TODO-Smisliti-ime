@@ -72,7 +72,18 @@ public class RideEstimateServiceImpl implements RideEstimateService {
         // approximate road meters and compute totals
         double approxRoadMeters = totalStraightMeters * ROUTE_FACTOR;
         double km = Math.round((approxRoadMeters / 1000.0) * 100.0) / 100.0;
-        double price = Math.round((BASE_FARE + PER_KM_RATE * km) * 100.0) / 100.0;
+
+        // Calculate base price using same formula as RideServiceImpl
+        double basePrice = BASE_FARE + (PER_KM_RATE * km);
+
+        // Calculate average price across all vehicle types (SEDAN=1.0, SUV=1.3, VAN=1.5)
+        double sedanPrice = basePrice * 1.0;
+        double suvPrice = basePrice * 1.3;
+        double vanPrice = basePrice * 1.5;
+        double averagePrice = (sedanPrice + suvPrice + vanPrice) / 3.0;
+
+        // Round to 2 decimal places
+        double price = Math.round(averagePrice * 100.0) / 100.0;
 
         // persist entity with start = first coord and dest = last coord
         var start = request.getCoordinates().get(0);
@@ -113,13 +124,6 @@ public class RideEstimateServiceImpl implements RideEstimateService {
         }
     }
 
-    private String requireNotBlank(String value, String field) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(field + " must not be null or blank");
-        }
-        return value;
-    }
-
     private double haversineMeters(double lat1, double lon1, double lat2, double lon2) {
         final int R = 6371000;
         double dLat = Math.toRadians(lat2 - lat1);
@@ -130,3 +134,4 @@ public class RideEstimateServiceImpl implements RideEstimateService {
         return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     }
 }
+

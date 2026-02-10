@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rs.getgo.backend.dtos.user.UserEmailDTO;
 import rs.getgo.backend.services.AdminService;
 import rs.getgo.backend.utils.AuthUtils;
 
@@ -34,6 +35,24 @@ public class AdminController {
 
     public AdminController(AdminService adminService) {
         this.adminService = adminService;
+    }
+
+    @GetMapping("/users/unblocked")
+    public ResponseEntity<Page<UserEmailDTO>> getUnblockedUsers(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<UserEmailDTO> users = adminService.getUnblockedUsers(search, page, size);
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/users/blocked")
+    public ResponseEntity<Page<UserEmailDTO>> getBlockedUsers(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<UserEmailDTO> users = adminService.getBlockedUsers(search, page, size);
+        return ResponseEntity.ok(users);
     }
 
     // 2.9.3 – Block user

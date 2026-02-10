@@ -11,6 +11,7 @@ import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.dtos.user.BlockUserRequestDTO;
 import rs.getgo.backend.dtos.user.BlockUserResponseDTO;
+import rs.getgo.backend.dtos.user.UserEmailDTO;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -68,4 +69,8 @@ public interface AdminService {
     BlockUserResponseDTO blockUser(Long userId, String adminEmail, BlockUserRequestDTO dto);
 
     BlockUserResponseDTO unblockUser(Long userId, String adminEmail);
+
+    Page<UserEmailDTO> getUnblockedUsers(String search, int page, int size);
+
+    Page<UserEmailDTO> getBlockedUsers(String search, int page, int size);
 }

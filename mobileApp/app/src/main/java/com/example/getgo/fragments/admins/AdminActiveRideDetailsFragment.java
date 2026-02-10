@@ -29,7 +29,8 @@ public class AdminActiveRideDetailsFragment extends Fragment {
     private MapManager mapManager;
     private TextView tvDriverName, tvDriverEmail, tvStatus, tvVehicleType,
             tvScheduledTime, tvActualStartTime, tvEstimatedDuration, tvEstimatedPrice,
-            tvCurrentAddress;
+            tvCurrentAddress, tvPayingPassenger, tvLinkedPassengers, tvNeedsBabySeat, tvPetFriendly;
+
 
     private WebSocketManager webSocketManager;
 
@@ -83,6 +84,10 @@ public class AdminActiveRideDetailsFragment extends Fragment {
         tvEstimatedDuration = view.findViewById(R.id.tvEstimatedDuration);
         tvEstimatedPrice = view.findViewById(R.id.tvEstimatedPrice);
         tvCurrentAddress = view.findViewById(R.id.tvCurrentAddress);
+        tvPayingPassenger = view.findViewById(R.id.tvPayingPassenger);
+        tvLinkedPassengers = view.findViewById(R.id.tvLinkedPassengers);
+        tvNeedsBabySeat = view.findViewById(R.id.tvNeedsBabySeat);
+        tvPetFriendly = view.findViewById(R.id.tvPetFriendly);
 
         rideId = getArguments().getLong("rideId");
 
@@ -138,8 +143,12 @@ public class AdminActiveRideDetailsFragment extends Fragment {
                     tvScheduledTime.setText("Scheduled Start: " + rideDetails.getScheduledTime());
                     tvActualStartTime.setText("Actual Start: " + rideDetails.getActualStartTime());
                     tvEstimatedDuration.setText("Estimated Duration: " + rideDetails.getEstimatedDurationMin() + " min");
-                    tvEstimatedPrice.setText("Estimated Price: " + rideDetails.getEstimatedPrice() + " RSD");
+                    tvEstimatedPrice.setText(String.format("Estimated Price: %.2f RSD", rideDetails.getEstimatedPrice()));
                     tvCurrentAddress.setText("Current Address: " + rideDetails.getCurrentAddress());
+                    tvPayingPassenger.setText("Paying Passenger: " + rideDetails.getPayingPassenger());
+                    tvLinkedPassengers.setText("Linked Passengers: " + String.join(", ", rideDetails.getLinkedPassengers()));
+                    tvNeedsBabySeat.setText("Needs Baby Seat: " + (rideDetails.isNeedsBabySeats() ? "Yes" : "No"));
+                    tvPetFriendly.setText("Pet Friendly: " + (rideDetails.isNeedsPetFriendly() ? "Yes" : "No"));
 
                     if (rideDetails.getLatitudes() != null && rideDetails.getLongitudes() != null
                             && rideDetails.getLatitudes().size() == rideDetails.getLongitudes().size()) {

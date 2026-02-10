@@ -19,9 +19,12 @@ public class RidePrice {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true)
     private VehicleType vehicleType;
 
-    @Column(nullable = false)
-    private double pricePerKm;
+    private Double pricePerKm;
+    private Double startPrice;
+
+    public RidePrice(VehicleType vehicleType) {
+        this.vehicleType = vehicleType;
+    }
 }

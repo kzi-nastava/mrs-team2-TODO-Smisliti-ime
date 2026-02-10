@@ -3,6 +3,8 @@ package rs.getgo.backend.controllers;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import rs.getgo.backend.dtos.ridePrice.GetRidePriceDTO;
+import rs.getgo.backend.dtos.ridePrice.UpdateRidePriceDTO;
 import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.services.RidePriceService;
 
@@ -17,8 +19,8 @@ public class RidePriceController {
     }
 
     @GetMapping("/prices/{vehicleType}")
-    public ResponseEntity<Double> getPrice(@PathVariable VehicleType vehicleType) {
-        return ResponseEntity.ok(ridePriceService.getPrice(vehicleType));
+    public ResponseEntity<GetRidePriceDTO> getPrice(@PathVariable VehicleType vehicleType) {
+        return ResponseEntity.ok( ridePriceService.getPrices(vehicleType));
     }
 
     @PutMapping("/prices/{vehicleType}")
@@ -26,7 +28,12 @@ public class RidePriceController {
             @PathVariable VehicleType vehicleType,
             @RequestBody UpdateRidePriceDTO dto) {
 
-        ridePriceService.updatePrice(vehicleType, dto.getPricePerKm());
+        ridePriceService.updatePrice(
+                vehicleType,
+                dto.getPricePerKm(),
+                dto.getStartPrice()
+        );
+
         return ResponseEntity.ok().build();
     }
 }

@@ -1,6 +1,7 @@
 package rs.getgo.backend.services.impl;
 
 import org.springframework.stereotype.Service;
+import rs.getgo.backend.dtos.ridePrice.GetRidePriceDTO;
 import rs.getgo.backend.model.entities.RidePrice;
 import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.RidePriceRepository;
@@ -15,20 +16,33 @@ public class RidePriceServiceImpl implements RidePriceService {
     }
 
     @Override
-    public double getPrice(VehicleType vehicleType) {
+    public GetRidePriceDTO getPrices(VehicleType vehicleType) {
+
         return ridePriceRepository
                 .findByVehicleType(vehicleType)
-                .orElseThrow(() -> new RuntimeException("Price not defined"))
-                .getPricePerKm();
+                .map(price -> new GetRidePriceDTO(
+                        price.getPricePerKm(),
+                        price.getStartPrice()
+                ))
+                .orElse(new GetRidePriceDTO(null, null));
     }
+
 
     @Override
-    public void updatePrice(VehicleType vehicleType, double pricePerKm) {
+    public void updatePrice(VehicleType type, Double pricePerKm, Double startPrice) {
         RidePrice price = ridePriceRepository
-                .findByVehicleType(vehicleType)
-                .orElse(new RidePrice(null, vehicleType, pricePerKm));
+                .findByVehicleType(type)
+                .orElse(new RidePrice(type));
 
-        price.setPricePerKm(pricePerKm);
+        if (pricePerKm != null) {
+            price.setPricePerKm(pricePerKm);
+        }
+
+        if (startPrice != null) {
+            price.setStartPrice(startPrice);
+        }
+
         ridePriceRepository.save(price);
     }
+
 }

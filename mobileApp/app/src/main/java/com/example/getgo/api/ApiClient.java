@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 
 import com.example.getgo.api.services.AuthApiService;
 import com.example.getgo.api.services.DriverApiService;
+import com.example.getgo.api.services.PanicApiService;
 import com.example.getgo.api.services.UserApiService;
 import com.example.getgo.utils.LocalDateTimeDeserializer;
 import com.google.gson.Gson;
@@ -29,11 +30,11 @@ public class ApiClient {
     private static String currentBaseUrl;
     private static Context appContext;
 
-    // private static final String DEFAULT_BASE_URL = "http://10.0.2.2:8080/";
+    private static final String DEFAULT_BASE_URL = "http://10.0.2.2:8080/";
     public static final String SERVER_URL = "http://10.0.2.2:8080"; // For fetching images
     private static final String PREFS_NAME = "getgo_prefs";
     private static final String PREF_JWT = "jwt_token";
-    private static final String DEFAULT_BASE_URL = "https://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
+    // private static final String DEFAULT_BASE_URL = "https://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
 
     public static void init(Context context) {
         appContext = context.getApplicationContext();
@@ -125,6 +126,7 @@ public class ApiClient {
     private static AuthApiService authApiService;
     private static DriverApiService driverApiService;
     private static UserApiService userApiService;
+    private static PanicApiService panicApiService;
 
     public static AuthApiService getAuthApiService() {
         if (authApiService == null) {
@@ -145,5 +147,12 @@ public class ApiClient {
             userApiService = getClient().create(UserApiService.class);
         }
         return userApiService;
+    }
+
+    public static PanicApiService getPanicApiService() {
+        if (panicApiService == null) {
+            panicApiService = getClient().create(PanicApiService.class);
+        }
+        return panicApiService;
     }
 }

@@ -62,30 +62,32 @@ public class AdminActiveRidesAdapter
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         GetActiveRideAdminDTO ride = filtered.get(position);
-        holder.bind(ride);
+
+        holder.tvStatus.setText("Status: " + ride.getStatus());
+        holder.tvDriverName.setText("🚗 " + ride.getDriverName());
+        holder.tvActualStartTime.setText("Start: " + ride.getActualStartTime());
+        holder.tvScheduledTime.setText("Scheduled: " + ride.getScheduledTime());
+        holder.tvVehicleType.setText("Vehicle: " + ride.getVehicleType());
+        holder.tvEstimatedPrice.setText(String.format("%.2f RSD", ride.getEstimatedPrice()));
+
+        holder.itemView.setOnClickListener(v -> listener.onRideClick(ride));
     }
 
+
+
     class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvDriverName, tvStatus, tvTime;
+        TextView tvDriverName, tvStatus, tvActualStartTime, tvScheduledTime, tvVehicleType, tvEstimatedPrice;
 
         ViewHolder(View itemView) {
             super(itemView);
             tvDriverName = itemView.findViewById(R.id.tvDriverName);
             tvStatus = itemView.findViewById(R.id.tvStatus);
-            tvTime = itemView.findViewById(R.id.tvTime);
-
-            itemView.setOnClickListener(v -> {
-                if (listener != null && getAdapterPosition() != RecyclerView.NO_POSITION) {
-                    listener.onRideClick(filtered.get(getAdapterPosition()));
-                }
-            });
-        }
-
-        void bind(GetActiveRideAdminDTO ride) {
-            tvDriverName.setText(ride.getDriverName());
-            tvStatus.setText(ride.getStatus());
-            tvTime.setText(ride.getScheduledTime());
+            tvActualStartTime = itemView.findViewById(R.id.tvActualStartTime);
+            tvScheduledTime = itemView.findViewById(R.id.tvScheduledTime);
+            tvVehicleType = itemView.findViewById(R.id.tvVehicleType);
+            tvEstimatedPrice = itemView.findViewById(R.id.tvEstimatedPrice);
         }
     }
+
 }
 

@@ -12,8 +12,10 @@ import android.widget.TextView;
 
 import com.example.getgo.R;
 import com.example.getgo.dtos.activeRide.GetActiveRideAdminDetailsDTO;
+import com.example.getgo.dtos.driver.GetDriverLocationDTO;
 import com.example.getgo.repositories.AdminRepository;
 import com.example.getgo.utils.MapManager;
+import com.example.getgo.utils.WebSocketManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -28,6 +30,9 @@ public class AdminActiveRideDetailsFragment extends Fragment {
     private TextView tvDriverName, tvDriverEmail, tvStatus, tvVehicleType,
             tvScheduledTime, tvActualStartTime, tvEstimatedDuration, tvEstimatedPrice,
             tvCurrentAddress;
+
+    private WebSocketManager webSocketManager;
+
 
     public AdminActiveRideDetailsFragment() {
         // Required empty public constructor
@@ -51,6 +56,10 @@ public class AdminActiveRideDetailsFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+        webSocketManager = new WebSocketManager();
+        webSocketManager.connect();
+
         View view = inflater.inflate(R.layout.fragment_admin_active_ride_details, container, false);
 
         if (getArguments() == null) {
@@ -78,6 +87,19 @@ public class AdminActiveRideDetailsFragment extends Fragment {
         rideId = getArguments().getLong("rideId");
 
         setupMap();
+
+        webSocketManager.subscribeToRideDriverLocation(rideId, new WebSocketManager.DriverLocationListener() {
+            @Override
+            public void onLocationUpdate(GetDriverLocationDTO location) {
+                requireActivity().runOnUiThread(() -> {
+                    LatLng driverLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    if (mapManager != null) {
+                        mapManager.updateDriverPosition(driverLatLng);
+                    }
+                });
+            }
+        });
+
 
         Log.d("AdminRideDetails", "Prosao sam setupMap");
 

@@ -10,6 +10,7 @@ import com.example.getgo.fragments.admins.AdminDriverRegistrationFragment;
 import com.example.getgo.fragments.admins.AdminChatListFragment;
 import com.example.getgo.fragments.admins.AdminProfileInfoFragment;
 import com.example.getgo.fragments.admins.AdminReviewDriverRequestsFragment;
+import com.example.getgo.fragments.admins.AdminRidePricingFragment;
 import com.example.getgo.fragments.drivers.DriverHomeFragment;
 import com.example.getgo.fragments.drivers.DriverProfileInfoFragment;
 import com.example.getgo.fragments.guests.GuestHomeFragment;
@@ -123,6 +124,8 @@ public class NavigationHelper {
             return new AdminChatListFragment();
         } else if (itemId == R.id.nav_drawer_active_rides) {
             return new AdminActiveRidesFragment();
+        } else if (itemId == R.id.nav_drawer_pricing) {
+            return new AdminRidePricingFragment();
         }
 
         return null;

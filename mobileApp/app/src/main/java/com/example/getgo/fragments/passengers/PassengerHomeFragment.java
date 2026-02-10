@@ -148,7 +148,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
     }
 
     private void setupDropdowns() {
-        String[] vehicleTypes = {"Any", "SUV", "SEDAN", "LUXURY"};
+        String[] vehicleTypes = {"VAN", "STANDARD", "LUXURY"};
         ArrayAdapter<String> vehicleAdapter = new ArrayAdapter<>(
                 requireContext(),
                 android.R.layout.simple_dropdown_item_1line,

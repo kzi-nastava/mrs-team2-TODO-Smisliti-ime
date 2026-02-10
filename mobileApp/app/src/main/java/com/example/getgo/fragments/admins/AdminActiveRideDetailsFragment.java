@@ -141,8 +141,8 @@ public class AdminActiveRideDetailsFragment extends Fragment {
                     tvDriverEmail.setText(rideDetails.getDriverEmail());
                     tvStatus.setText("Status: " + rideDetails.getStatus());
                     tvVehicleType.setText("Vehicle: " + rideDetails.getVehicleType());
-                    tvScheduledTime.setText("Scheduled Start: " + rideDetails.getScheduledTime());
-                    tvActualStartTime.setText("Actual Start: " + rideDetails.getActualStartTime());
+                    tvScheduledTime.setText("Scheduled Start: " + formatTime(rideDetails.getScheduledTime()));
+                    tvActualStartTime.setText("Actual Start: " + formatTime(rideDetails.getActualStartTime()));
                     tvEstimatedDuration.setText("Estimated Duration: " + (durationSec / 60) + " min");
                     tvEstimatedPrice.setText(String.format("Estimated Price: %.2f RSD", rideDetails.getEstimatedPrice()));
                     tvCurrentAddress.setText("Current Address: " + rideDetails.getCurrentAddress());
@@ -167,6 +167,7 @@ public class AdminActiveRideDetailsFragment extends Fragment {
                             public void onRouteFound(int distanceMeters, int durationSeconds) {
                                 Log.d("AdminRideDetails", "OSRM Route drawn. Distance=" + distanceMeters + "m, Duration=" + durationSeconds + "s");
                                 durationSec = durationSeconds;
+                                tvEstimatedDuration.setText("Estimated Duration: " + (durationSec / 60) + " min");
                                 if (routePoints.size() > 0) {
                                     LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
                                     for (LatLng point : routePoints) {
@@ -196,6 +197,17 @@ public class AdminActiveRideDetailsFragment extends Fragment {
         }).start();
     }
 
+    private String formatTime(String dateTimeStr) {
+        if (dateTimeStr == null || dateTimeStr.isEmpty()) return "";
+        try {
+            java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(dateTimeStr);
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+            return ldt.format(formatter);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
 
 
 

@@ -65,8 +65,8 @@ public class AdminActiveRidesAdapter
 
         holder.tvStatus.setText("Status: " + ride.getStatus());
         holder.tvDriverName.setText("🚗 " + ride.getDriverName());
-        holder.tvActualStartTime.setText("Start: " + ride.getActualStartTime());
-        holder.tvScheduledTime.setText("Scheduled: " + ride.getScheduledTime());
+        holder.tvActualStartTime.setText("Start: " + formatTime(ride.getActualStartTime()));
+        holder.tvScheduledTime.setText("Scheduled: " + formatTime(ride.getScheduledTime()));
         holder.tvVehicleType.setText("Vehicle: " + ride.getVehicleType());
         holder.tvEstimatedPrice.setText(String.format("%.2f RSD", ride.getEstimatedPrice()));
 
@@ -86,6 +86,19 @@ public class AdminActiveRidesAdapter
             tvScheduledTime = itemView.findViewById(R.id.tvScheduledTime);
             tvVehicleType = itemView.findViewById(R.id.tvVehicleType);
             tvEstimatedPrice = itemView.findViewById(R.id.tvEstimatedPrice);
+        }
+    }
+
+
+    private String formatTime(String dateTimeStr) {
+        if (dateTimeStr == null || dateTimeStr.isEmpty()) return "";
+        try {
+            java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(dateTimeStr);
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+            return ldt.format(formatter);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
         }
     }
 

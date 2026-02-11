@@ -7,6 +7,7 @@ import com.example.getgo.api.services.AuthApiService;
 import com.example.getgo.api.services.DriverApiService;
 import com.example.getgo.api.services.PanicApiService;
 import com.example.getgo.api.services.UserApiService;
+import com.example.getgo.api.services.NotificationApiService;
 import com.example.getgo.utils.LocalDateTimeDeserializer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -129,6 +130,7 @@ public class ApiClient {
     private static DriverApiService driverApiService;
     private static UserApiService userApiService;
     private static PanicApiService panicApiService;
+    private static NotificationApiService notificationApiService;
 
     public static AuthApiService getAuthApiService() {
         if (authApiService == null) {
@@ -156,5 +158,12 @@ public class ApiClient {
             panicApiService = getClient().create(PanicApiService.class);
         }
         return panicApiService;
+    }
+
+    public static NotificationApiService getNotificationApiService() {
+        if (notificationApiService == null) {
+            notificationApiService = getClient().create(NotificationApiService.class);
+        }
+        return notificationApiService;
     }
 }

@@ -13,6 +13,7 @@ import com.example.getgo.dtos.ride.GetFavoriteRideDTO;
 import com.example.getgo.dtos.ride.GetPassengerActiveRideDTO;
 import com.example.getgo.dtos.ride.UpdateRideDTO;
 import com.example.getgo.dtos.ride.UpdatedRideDTO;
+import com.example.getgo.dtos.ride.RideCompletionDTO;
 
 import java.util.List;
 
@@ -143,13 +144,17 @@ public class RideRepository {
         }
     }
 
-    public void cancelRide(Long rideId, String reason) throws Exception {
+    public RideCompletionDTO cancelRide(Long rideId, String reason) throws Exception {
         RideApiService service = ApiClient.getClient().create(RideApiService.class);
         CancelRideRequestDTO request = new CancelRideRequestDTO(reason);
-        Response<Void> response = service.cancelRideByDriver(rideId, request).execute();
+        Response<RideCompletionDTO> response = service.cancelRideByDriver(rideId, request).execute();
 
-        if (!response.isSuccessful()) {
-            throw new Exception("Failed to cancel ride");
+        if (response.isSuccessful() && response.body() != null) {
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to cancel ride: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to cancel ride: " + errBody);
         }
     }
 

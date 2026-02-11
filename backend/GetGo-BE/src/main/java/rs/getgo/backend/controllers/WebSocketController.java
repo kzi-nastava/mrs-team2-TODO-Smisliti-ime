@@ -12,6 +12,7 @@ import rs.getgo.backend.dtos.ride.GetRideStoppedEarlyDTO;
 import rs.getgo.backend.dtos.ride.GetRideCancelledDTO;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Controller
 public class WebSocketController {
@@ -164,9 +165,14 @@ public class WebSocketController {
         );
     }
 
-    /**
-     * Notify about ride cancellation
-     */
+    // Notify single user about a new notification
+    public void notifyUserNotification(Long userId, Object payload) {
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/user/" + userId + "/notification",
+                payload
+        );
+    }
+
     public void notifyRideCancelled(Long rideId, String cancelledBy, String reason) {
         GetRideCancelledDTO cancellation = new GetRideCancelledDTO(
                 rideId,
@@ -182,9 +188,6 @@ public class WebSocketController {
         );
     }
 
-    /**
-     * Notify driver about ride cancellation
-     */
     public void notifyDriverRideCancelled(String driverEmail, Long rideId, String cancelledBy, String reason) {
         GetRideCancelledDTO cancellation = new GetRideCancelledDTO(
                 rideId,

@@ -27,6 +27,7 @@ import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.repositories.DriverRepository;
 import com.example.getgo.repositories.RideRepository;
 import com.example.getgo.utils.MapManager;
+import com.example.getgo.utils.ToastHelper;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -343,7 +344,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         cvFavoritesContainer.setVisibility(View.GONE);
         btnToggleFavorites.setText(String.format(Locale.ENGLISH, "Favorites (%d)", favoriteRides.size()));
 
-        Toast.makeText(requireContext(), "Favorite ride loaded", Toast.LENGTH_SHORT).show();
+        ToastHelper.showShort(requireContext(), "Favorite ride loaded");
     }
 
     private void setupMap() {
@@ -598,7 +599,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
             @Override
             public void onError(String error) {
-                Toast.makeText(requireContext(), "Failed to geocode: " + error, Toast.LENGTH_SHORT).show();
+                ToastHelper.showError(requireContext(), "Failed to geocode", error);
             }
         });
     }
@@ -615,7 +616,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
             @Override
             public void onError(String error) {
-                Toast.makeText(requireContext(), "Failed to geocode waypoint: " + error, Toast.LENGTH_SHORT).show();
+                ToastHelper.showError(requireContext(), "Failed to geocode waypoint", error);
             }
         });
     }
@@ -662,24 +663,18 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
                 requireActivity().runOnUiThread(() -> {
                     btnOrderRide.setEnabled(true);
                     if ("blocked".equals(response.getStatus())) {
-                        Toast.makeText(requireContext(), response.getMessage(), Toast.LENGTH_LONG).show();
+                        ToastHelper.showShort(requireContext(), response.getMessage() != null ? response.getMessage() : "Blocked");
                     } else if ("SUCCESS".equals(response.getStatus())) {
-                        Toast.makeText(requireContext(),
-                                "Ride ordered successfully! ID: " + response.getRideId(),
-                                Toast.LENGTH_LONG).show();
+                        ToastHelper.showShort(requireContext(), "Ride ordered");
                         resetForm();
                     } else {
-                        Toast.makeText(requireContext(),
-                                response.getMessage(),
-                                Toast.LENGTH_LONG).show();
+                        ToastHelper.showShort(requireContext(), response.getMessage() != null ? response.getMessage() : "Order failed");
                     }
                 });
             } catch (Exception e) {
                 requireActivity().runOnUiThread(() -> {
                     btnOrderRide.setEnabled(true);
-                    Toast.makeText(requireContext(),
-                            "Failed to order ride: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
+                    ToastHelper.showError(requireContext(), "Failed to order ride", e.getMessage());
                 });
             }
         }).start();

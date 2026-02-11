@@ -4,10 +4,12 @@
     android:layout_height="wrap_content"
     android:padding="6dp"
     android:gravity="end"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:layout_marginTop="6dp"
+    android:layout_marginBottom="6dp">
 
     <LinearLayout
-        android:id="@+id/bubble_mine"
+         android:id="@+id/bubble_mine"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_message_user"
@@ -15,21 +17,21 @@
         android:padding="10dp"
         android:maxWidth="250dp">
 
-        <TextView
-            android:id="@+id/text_message"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
-            android:textSize="16sp" />
+         <TextView
+             android:id="@+id/text_message"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:textColor="#222222"
+             android:textSize="16sp" />
 
-        <TextView
-            android:id="@+id/text_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#DDDDDD"
-            android:textSize="10sp"
-            android:layout_gravity="end"
-            android:paddingTop="2dp"/>
-    </LinearLayout>
+         <TextView
+             android:id="@+id/text_time"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:textColor="#666666"
+             android:textSize="10sp"
+             android:layout_gravity="end"
+             android:paddingTop="2dp"/>
+     </LinearLayout>
 
-</LinearLayout>
+ </LinearLayout>

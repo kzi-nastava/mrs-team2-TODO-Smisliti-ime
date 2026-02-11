@@ -111,11 +111,15 @@ public class RideController {
     // Driver cancels assigned ride before passengers enter
     @PreAuthorize("hasRole('DRIVER')")
     @PostMapping("/{rideId}/cancel/driver")
-    public ResponseEntity<Void> cancelRideByDriver(@PathVariable Long rideId,
+    public ResponseEntity<RideCompletionDTO> cancelRideByDriver(@PathVariable Long rideId,
                                                    @RequestBody CancelRideRequestDTO body) {
         try {
-            rideService.cancelRideByDriver(rideId, body.getReason());
-            return ResponseEntity.ok().build();
+            rs.getgo.backend.model.entities.Notification notif = rideService.cancelRideByDriver(rideId, body.getReason());
+            RideCompletionDTO dto = new RideCompletionDTO();
+            dto.setRideId(rideId);
+            dto.setStatus("CANCELED");
+            dto.setNotificationMessage(notif != null ? notif.getMessage() : null);
+            return ResponseEntity.ok(dto);
         } catch (IllegalStateException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception ex) {
@@ -126,11 +130,15 @@ public class RideController {
     // Passenger cancels ride at least 10 minutes before start
     @PreAuthorize("hasRole('PASSENGER')")
     @PostMapping("/{rideId}/cancel/passenger")
-    public ResponseEntity<Void> cancelRideByPassenger(@PathVariable Long rideId,
+    public ResponseEntity<RideCompletionDTO> cancelRideByPassenger(@PathVariable Long rideId,
                                                       @RequestBody CancelRideRequestDTO body) {
         try {
-            rideService.cancelRideByPassenger(rideId, body.getReason());
-            return ResponseEntity.ok().build();
+            rs.getgo.backend.model.entities.Notification notif = rideService.cancelRideByPassenger(rideId, body.getReason());
+            RideCompletionDTO dto = new RideCompletionDTO();
+            dto.setRideId(rideId);
+            dto.setStatus("CANCELED");
+            dto.setNotificationMessage(notif != null ? notif.getMessage() : null);
+            return ResponseEntity.ok(dto);
         } catch (IllegalStateException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception ex) {
@@ -149,10 +157,10 @@ public class RideController {
     // 2.6.3 - PANIC button
     @PreAuthorize("hasRole('DRIVER') or hasRole('PASSENGER')")
     @PostMapping("/{rideId}/panic")
-    public ResponseEntity<Void> createPanic(@PathVariable Long rideId) {
+    public ResponseEntity<Object> createPanic(@PathVariable Long rideId) {
         String email = AuthUtils.getCurrentUserEmail();
         rideService.triggerPanic(rideId, email);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(java.util.Map.of("message", "Panic triggered and notifications sent."));
     }
 
     // 2.4.1 - Calling a ride

@@ -16,6 +16,7 @@ import com.example.getgo.fragments.drivers.DriverHomeFragment;
 import com.example.getgo.fragments.drivers.DriverProfileInfoFragment;
 import com.example.getgo.fragments.guests.GuestHomeFragment;
 import com.example.getgo.fragments.layouts.SupportChatFragment;
+import com.example.getgo.fragments.layouts.NotificationsFragment;
 import com.example.getgo.fragments.passengers.PassengerProfileInfoFragment;
 import com.example.getgo.fragments.passengers.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.drivers.DriverRideHistoryFragment;
@@ -92,6 +93,8 @@ public class NavigationHelper {
             return DriverProfileInfoFragment.newInstance();
         } else if (itemId == R.id.nav_drawer_support) {
             return SupportChatFragment.newInstance("DRIVER");
+        } else if (itemId == R.id.nav_drawer_notifications) {
+            return new NotificationsFragment();
         }
 
         return null;
@@ -108,6 +111,8 @@ public class NavigationHelper {
             return new PassengerRideTrackingFragment();
         } else if (itemId == R.id.nav_drawer_support) {
             return SupportChatFragment.newInstance("PASSENGER");
+        } else if (itemId == R.id.nav_drawer_notifications) {
+            return new NotificationsFragment();
         }
         return null;
     }

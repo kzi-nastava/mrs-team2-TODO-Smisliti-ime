@@ -141,6 +141,8 @@ public class EmailService {
     public void sendLinkedPassengerEmail(Passenger passenger, ActiveRide ride) {
         if (passenger == null || ride == null) return;
 
+        String redirectUrl = webBaseUrl + "/passenger/ride-tracking?rideId=" + ride.getId();
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
         message.setTo(passenger.getEmail());
@@ -149,10 +151,8 @@ public class EmailService {
         String text = "Hi " + passenger.getName() + ",\n\n" +
                 "You have been added to a ride (ID: " + ride.getId() + ").\n" +
                 "The driver has accepted the ride!\n\n" +
-                "Pickup location: " + ride.getRoute().getStartingPoint() + "\n" +
-                "Destination: " + ride.getRoute().getEndingPoint() + "\n" +
-                (ride.getScheduledTime() != null ? "Scheduled time: " + ride.getScheduledTime() + "\n\n" : "\n") +
-                "You can track the ride in the app.\n\n" +
+                "You can track your ride using this link :\n" +
+                redirectUrl + "\n\n" +
                 "Best regards,\n" +
                 "GetGo Team";
 
@@ -160,5 +160,6 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
 
 }

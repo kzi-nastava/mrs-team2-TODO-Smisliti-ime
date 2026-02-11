@@ -567,12 +567,31 @@ public class RideServiceImpl implements RideService {
                 "Driver is on the way to pick you up!"
         );
 
+        notifyLinkedPassengersRideAccepted(ride);
+
         UpdatedRideDTO response = new UpdatedRideDTO();
         response.setId(ride.getId());
         response.setStatus(RideStatus.DRIVER_INCOMING.toString());
         response.setStartTime(null);
 
         return response;
+    }
+
+    private void notifyLinkedPassengersRideAccepted(ActiveRide ride) {
+        if (ride.getLinkedPassengers() == null || ride.getLinkedPassengers().isEmpty() || ride.getDriver() == null) {
+            return;
+        }
+
+        for (Passenger p : ride.getLinkedPassengers()) {
+            if (!p.equals(ride.getPayingPassenger())) {
+                emailService.sendLinkedPassengerEmail(p, ride);
+
+//                pushNotificationService.sendNotification(
+//                        p.getId(),
+//                        "You have been added to a ride and the driver has accepted it!"
+//                );
+            }
+        }
     }
 
     private void initializeDriverToPickupMovement(ActiveRide ride) {

@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import rs.getgo.backend.model.entities.ActiveRide;
+import rs.getgo.backend.model.entities.Passenger;
 
 @Service
 public class EmailService {
@@ -90,6 +92,7 @@ public class EmailService {
 
         String webLink = resetUrl;
 
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
         message.setTo(toEmail);
@@ -134,4 +137,28 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    public void sendLinkedPassengerEmail(Passenger passenger, ActiveRide ride) {
+        if (passenger == null || ride == null) return;
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(passenger.getEmail());
+        message.setSubject("You have been added to a ride!");
+
+        String text = "Hi " + passenger.getName() + ",\n\n" +
+                "You have been added to a ride (ID: " + ride.getId() + ").\n" +
+                "The driver has accepted the ride!\n\n" +
+                "Pickup location: " + ride.getRoute().getStartingPoint() + "\n" +
+                "Destination: " + ride.getRoute().getEndingPoint() + "\n" +
+                (ride.getScheduledTime() != null ? "Scheduled time: " + ride.getScheduledTime() + "\n\n" : "\n") +
+                "You can track the ride in the app.\n\n" +
+                "Best regards,\n" +
+                "GetGo Team";
+
+        message.setText(text);
+
+        mailSender.send(message);
+    }
+
 }

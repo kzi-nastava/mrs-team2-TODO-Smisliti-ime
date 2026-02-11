@@ -661,10 +661,18 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
                 requireActivity().runOnUiThread(() -> {
                     btnOrderRide.setEnabled(true);
-                    Toast.makeText(requireContext(),
-                            "Ride ordered successfully! ID: " + response.getRideId(),
-                            Toast.LENGTH_LONG).show();
-                    resetForm();
+                    if ("blocked".equals(response.getStatus())) {
+                        Toast.makeText(requireContext(), response.getMessage(), Toast.LENGTH_LONG).show();
+                    } else if ("SUCCESS".equals(response.getStatus())) {
+                        Toast.makeText(requireContext(),
+                                "Ride ordered successfully! ID: " + response.getRideId(),
+                                Toast.LENGTH_LONG).show();
+                        resetForm();
+                    } else {
+                        Toast.makeText(requireContext(),
+                                response.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
                 });
             } catch (Exception e) {
                 requireActivity().runOnUiThread(() -> {

@@ -36,6 +36,7 @@ public class RideServiceImpl implements RideService {
     private final RouteRepository routeRepository;
     private final DriverRepository driverRepository;
     private final CompletedRideRepository completedRideRepository;
+    private final BlockNoteRepository blockNoteRepository;
     private final EmailService emailService;
     private final DriverService driverService;
     private final MapboxRoutingService routingService;
@@ -64,6 +65,7 @@ public class RideServiceImpl implements RideService {
                            MapboxRoutingService mapboxRoutingService,
                            WebSocketController webSocketController,
                            CompletedRideRepository completedRideRepository,
+                           BlockNoteRepository blockNoteRepository,
                            EmailService emailService,
                            InconsistencyReportRepository reportRepository,
                            PanicNotifierService panicNotifierService,
@@ -77,6 +79,7 @@ public class RideServiceImpl implements RideService {
         this.driverRepository = driverRepository;
         this.driverService = driverService;
         this.completedRideRepository = completedRideRepository;
+        this.blockNoteRepository = blockNoteRepository;
         this.emailService = emailService;
         this.routingService = mapboxRoutingService;
         this.webSocketController = webSocketController;
@@ -295,6 +298,15 @@ public class RideServiceImpl implements RideService {
                     null
             );
         }
+        if (payingPassenger.isBlocked()) {
+            String reason = blockNoteRepository.findByUserAndUnblockedAtIsNull(payingPassenger)
+                    .map(BlockNote::getReason)
+                    .orElse("You have been blocked.");
+            return new CreatedRideResponseDTO(
+                    "blocked",
+                    "Cannot order ride: user is blocked. Reason: " + reason,
+                    null);
+        }
 
         // Parse scheduled time
         LocalDateTime scheduledTime = null;
@@ -343,7 +355,7 @@ public class RideServiceImpl implements RideService {
         ride.setRoute(route);
         ride.setScheduledTime(scheduledTime);
         ride.setEstimatedPrice(estimatedPrice);
-//        ride.setVehicleType(vehicleType);
+        ride.setVehicleType(vehicleType);
         ride.setNeedsBabySeats(createRideRequestDTO.getHasBaby() != null && createRideRequestDTO.getHasBaby());
         ride.setNeedsPetFriendly(createRideRequestDTO.getHasPets() != null && createRideRequestDTO.getHasPets());
         ride.setPayingPassenger(payingPassenger);

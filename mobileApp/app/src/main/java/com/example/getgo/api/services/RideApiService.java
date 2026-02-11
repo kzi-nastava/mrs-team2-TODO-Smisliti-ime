@@ -15,6 +15,8 @@ import com.example.getgo.dtos.ride.UpdateRideDTO;
 import com.example.getgo.dtos.ride.UpdatedRideDTO;
 import com.example.getgo.dtos.ride.RideCompletionDTO;
 import com.example.getgo.dtos.ride.StopRideDTO;
+import com.example.getgo.dtos.ride.CreateRideEstimateDTO;
+import com.example.getgo.dtos.ride.CreatedRideEstimateDTO;
 
 import java.util.List;
 
@@ -75,4 +77,7 @@ public interface RideApiService {
 
     @POST("api/rides/{rideId}/panic")
     Call<Void> triggerPanic(@Path("rideId") Long rideId);
+
+    @POST("api/rides/estimate")
+    Call<CreatedRideEstimateDTO> estimateRide(@Body CreateRideEstimateDTO request);
 }

@@ -19,6 +19,7 @@ import { AdminHome } from './admin/admin-home/admin-home'
 import { AdminProfile } from './admin/admin-profile/admin-profile';
 import { AdminChangePassword } from './admin/admin-change-password/admin-change-password';
 import { AdminReviewDriverRequests } from './admin/admin-review-driver-requests/admin-review-driver-requests'
+import { BlockUsers } from './admin/block-users/block-users'
 import { DriverRegistration } from './admin/driver-registration/driver-registration';
 import { FavoriteRides } from './passenger/favorite-rides/favorite-rides';
 import { RatingVehicleDriverComponent } from './passenger/rating-vehicle-driver/rating-vehicle-driver.component';
@@ -76,6 +77,7 @@ export const routes: Routes = [
   { path: 'admin/active-rides', component: AdminActiveRidesComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/active-rides/:id', component: ActiveRideDetailsComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/ride-price', component: AdminRidePriceComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] }},
+  { path: 'admin/block-users', component: BlockUsers, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'favorite-rides', component: FavoriteRides, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'support-chat', component: SupportChatComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger, UserRole.Driver, UserRole.Admin] } },
   { path: 'admin/support-chat', component: AdminSupportChatComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },

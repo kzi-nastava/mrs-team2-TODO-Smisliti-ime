@@ -1,0 +1,22 @@
+<div class="ride-pricing-wrapper">
+  <h2>Ride pricing</h2>
+
+  <table class="price-table">
+    <thead>
+    <tr>
+      <th>Vehicle type</th>
+      <th>Price per km (RSD)</th>
+      <th>Start price (RSD)</th>
+      <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let row of prices()">
+      <td>{{ row.vehicleType }}</td>
+      <td><input type="number" [(ngModel)]="row.pricePerKm" placeholder="--" min="0"/></td>
+      <td><input type="number" [(ngModel)]="row.startPrice" placeholder="--" min="0"/></td>
+      <td><button (click)="save(row)">Save</button></td>
+    </tr>
+    </tbody>
+  </table>
+</div>

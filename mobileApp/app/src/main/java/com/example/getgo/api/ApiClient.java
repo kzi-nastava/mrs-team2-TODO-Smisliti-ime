@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 
 import com.example.getgo.api.services.AuthApiService;
 import com.example.getgo.api.services.DriverApiService;
+import com.example.getgo.api.services.UserApiService;
 import com.example.getgo.utils.LocalDateTimeDeserializer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -123,6 +124,7 @@ public class ApiClient {
 
     private static AuthApiService authApiService;
     private static DriverApiService driverApiService;
+    private static UserApiService userApiService;
 
     public static AuthApiService getAuthApiService() {
         if (authApiService == null) {
@@ -136,5 +138,12 @@ public class ApiClient {
             driverApiService = getClient().create(DriverApiService.class);
         }
         return driverApiService;
+    }
+
+    public static UserApiService getUserApiService() {
+        if (userApiService == null) {
+            userApiService = getClient().create(UserApiService.class);
+        }
+        return userApiService;
     }
 }

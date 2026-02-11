@@ -25,10 +25,17 @@ import com.example.getgo.model.UserRole;
 import com.example.getgo.api.ApiClient;
 import com.example.getgo.api.services.DriverApiService;
 import com.example.getgo.api.services.AuthApiService;
+import com.example.getgo.api.services.UserApiService;
+import com.example.getgo.model.UserProfile;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import android.widget.TextView;
+
+import com.bumptech.glide.Glide;
+
+import de.hdodenhof.circleimageview.CircleImageView;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -42,6 +49,9 @@ public class MainActivity extends AppCompatActivity {
     private View driverStatusLayout;
     private DriverApiService driverApiService;
     private boolean isDriverActive = false; // Cache driver active status
+    private UserApiService userApiService;
+    private TextView tvUserName;
+    private CircleImageView ivUserProfile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +62,11 @@ public class MainActivity extends AppCompatActivity {
         initUserRole();
         setupGuestRestrictions();
         setupToolbarAndNavigation();
+
+        // Load user profile for authenticated users
+        if (currentUserRole != UserRole.GUEST) {
+            loadUserProfile();
+        }
 
         Intent intent = getIntent();
         boolean openRate = intent.getBooleanExtra("OPEN_RATE_FRAGMENT", false);
@@ -113,6 +128,10 @@ public class MainActivity extends AppCompatActivity {
 
             Toolbar toolbar = toolbarView.findViewById(R.id.toolbar);
             setSupportActionBar(toolbar);
+
+            // Get user profile views
+            tvUserName = toolbarView.findViewById(R.id.tvUserName);
+            ivUserProfile = toolbarView.findViewById(R.id.ivUserProfile);
 
             // Get driver status views
             driverStatusLayout = toolbarView.findViewById(R.id.driverStatusLayout);
@@ -396,6 +415,39 @@ public class MainActivity extends AppCompatActivity {
                     .beginTransaction()
                     .replace(R.id.fragmentContainer, fragment)
                     .commit();
+        }
+    }
+
+    private void loadUserProfile() {
+        userApiService = ApiClient.getUserApiService();
+
+        userApiService.getUserProfile().enqueue(new Callback<UserProfile>() {
+            @Override
+            public void onResponse(Call<UserProfile> call, Response<UserProfile> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    UserProfile profile = response.body();
+                    updateUserProfileUI(profile);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<UserProfile> call, Throwable t) {
+                Log.e("MainActivity", "Failed to load user profile", t);
+            }
+        });
+    }
+
+    private void updateUserProfileUI(UserProfile profile) {
+        if (tvUserName != null) {
+            tvUserName.setText(profile.getFullName());
+        }
+
+        if (ivUserProfile != null && profile.getProfilePictureUrl() != null) {
+            Glide.with(this)
+                    .load(profile.getProfilePictureUrl())
+                    .placeholder(R.drawable.ic_profile_placeholder)
+                    .error(R.drawable.ic_profile_placeholder)
+                    .into(ivUserProfile);
         }
     }
 

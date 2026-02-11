@@ -434,7 +434,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
         if (allPoints.size() < 2) return;
 
-        mapManager.drawRoute(allPoints, null);
+        mapManager.drawRouteOSRM(allPoints, null);
     }
 
     private void addWaypoint() {

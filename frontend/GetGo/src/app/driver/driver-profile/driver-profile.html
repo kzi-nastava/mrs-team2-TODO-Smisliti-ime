@@ -24,7 +24,7 @@
 
     @if (activeTab === 'driver') {
       <form class="profile-form">
-        <input type="email" placeholder="E-mail" class="form-input" [(ngModel)]="driverData.email" name="email" />
+        <input type="email" placeholder="E-mail" class="form-input" [(ngModel)]="driverData.email" name="email" [disabled]="true" />
         <input type="text" placeholder="First Name" class="form-input" [(ngModel)]="driverData.firstName" name="firstName" />
         <input type="text" placeholder="Last Name" class="form-input" [(ngModel)]="driverData.lastName" name="lastName" />
         <input type="tel" placeholder="Phone" class="form-input" [(ngModel)]="driverData.phone" name="phone" />

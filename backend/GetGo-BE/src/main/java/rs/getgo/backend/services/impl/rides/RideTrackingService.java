@@ -35,23 +35,24 @@ public class RideTrackingService {
         Passenger passenger = passengerRepository.findByEmail(passengerEmail)
                 .orElseThrow(() -> new RuntimeException("Passenger not found"));
 
-        ActiveRide ride = activeRideRepository.findByPayingPassengerAndStatusIn(
-                passenger,
-                List.of(
-                        RideStatus.SCHEDULED,
-                        RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE,
-                        RideStatus.DRIVER_READY,
-                        RideStatus.DRIVER_INCOMING,
-                        RideStatus.DRIVER_ARRIVED,
-                        RideStatus.ACTIVE,
-                        RideStatus.DRIVER_ARRIVED_AT_DESTINATION
-                )
-        ).stream().findFirst().orElse(null);
+        List<RideStatus> activeStatuses = List.of(
+                RideStatus.SCHEDULED,
+                RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE,
+                RideStatus.DRIVER_READY,
+                RideStatus.DRIVER_INCOMING,
+                RideStatus.DRIVER_ARRIVED,
+                RideStatus.ACTIVE,
+                RideStatus.DRIVER_ARRIVED_AT_DESTINATION
+        );
+
+        ActiveRide ride = activeRideRepository.findActiveRideForPassenger(passenger, activeStatuses)
+                .orElse(null);
 
         if (ride == null) return null;
 
         return buildGetPassengerActiveRideDTO(ride);
     }
+
 
     public GetPassengerActiveRideDTO buildGetPassengerActiveRideDTO(ActiveRide ride) {
         GetPassengerActiveRideDTO dto = new GetPassengerActiveRideDTO();
@@ -106,64 +107,35 @@ public class RideTrackingService {
         return route.getEstTimeMin();
     }
 
-//    public CreatedInconsistencyReportDTO saveInconsistencyReport(long rideId, CreateInconsistencyReportDTO dto) throws Exception {
-//        ActiveRide activeRide = activeRideRepository.findById(rideId).orElseThrow(() -> new Exception("Active ride not found"));
-//
-//        InconsistencyReport report = new InconsistencyReport();
-//        report.setText(dto.getText());
-//
-//        // Will be set later when completed ride is implemented
-////        Passenger loggedInPassenger = securityService.getLoggedInPassenger();
-////        Passenger passenger = passengerRepository.findById(1L)
-////                .orElseThrow(() -> new Exception("Passenger not found"));
-//        String email = AuthUtils.getCurrentUserEmail();
-//        Passenger passenger = passengerRepository.findByEmail(email)
-//                .orElseThrow(() -> new Exception("Passenger not found"));
-//
-////        report.setPassenger(loggedInPassenger);
-//        report.setPassenger(passenger);
-//
-//        report.setCompletedRide(null); // ride is not over yet
-//
-//        if (!activeRide.getPayingPassenger().getId().equals(passenger.getId())) {
-//            throw new Exception("Passenger not part of this ride");
-//        }
-//
-//        InconsistencyReport saved = reportRepository.save(report);
-//
-//        return new CreatedInconsistencyReportDTO(
-//                saved.getId(),
-//                activeRide.getId(),
-//                saved.getPassenger() != null ? saved.getPassenger().getId() : null,
-//                saved.getText()
-//        );
-//    }
-//
-public CreatedInconsistencyReportDTO saveInconsistencyReport(long rideId, CreateInconsistencyReportDTO dto) throws Exception {
+    public CreatedInconsistencyReportDTO saveInconsistencyReport(long rideId, CreateInconsistencyReportDTO dto) throws Exception {
 
-    ActiveRide activeRide = activeRideRepository.findById(rideId)
-            .orElseThrow(() -> new Exception("Active ride not found"));
+        ActiveRide activeRide = activeRideRepository.findById(rideId)
+                .orElseThrow(() -> new Exception("Active ride not found"));
 
-    String email = AuthUtils.getCurrentUserEmail();
-    Passenger passenger = passengerRepository.findByEmail(email)
-            .orElseThrow(() -> new Exception("Passenger not found"));
+        String email = AuthUtils.getCurrentUserEmail();
+        Passenger passenger = passengerRepository.findByEmail(email)
+                .orElseThrow(() -> new Exception("Passenger not found"));
 
-    if (!activeRide.getPayingPassenger().getId().equals(passenger.getId())) {
-        throw new Exception("Passenger not part of this ride");
-    }
+        boolean isPassengerInRide = activeRide.getPayingPassenger().getId().equals(passenger.getId())
+                || activeRide.getLinkedPassengers().stream()
+                .anyMatch(p -> p.getId().equals(passenger.getId()));
 
-    InconsistencyReport report = new InconsistencyReport();
-    report.setText(dto.getText());
-    report.setPassenger(passenger);
-    report.setCompletedRide(null);
+        if (!isPassengerInRide) {
+            throw new Exception("Passenger not part of this ride");
+        }
 
-    InconsistencyReport saved = reportRepository.save(report);
+        InconsistencyReport report = new InconsistencyReport();
+        report.setText(dto.getText());
+        report.setPassenger(passenger);
+        report.setCompletedRide(null);
 
-    return new CreatedInconsistencyReportDTO(
-            saved.getId(),
-            activeRide.getId(),
-            saved.getPassenger().getId(),
-            saved.getText()
+        InconsistencyReport saved = reportRepository.save(report);
+
+        return new CreatedInconsistencyReportDTO(
+                saved.getId(),
+                activeRide.getId(),
+                saved.getPassenger().getId(),
+                saved.getText()
         );
     }
 

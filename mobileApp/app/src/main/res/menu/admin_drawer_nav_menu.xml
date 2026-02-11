@@ -23,7 +23,7 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_drawer_pricing"
-            android:icon="@drawable/ic_settings"
+            android:icon="@drawable/ic_ride_pricing"
             android:title="@string/manage_pricing"/>
         <item
             android:id="@+id/nav_drawer_search"

@@ -49,7 +49,7 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
       friendEmails: this.fb.array([]),
       hasBaby: [false],
       hasPets: [false],
-      vehicleType: ['']
+      vehicleType: ['VAN']
     });
   }
 

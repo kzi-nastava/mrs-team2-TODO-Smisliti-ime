@@ -7,6 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import rs.getgo.backend.controllers.WebSocketController;
 import rs.getgo.backend.dtos.panic.PanicAlertDTO;
 import rs.getgo.backend.dtos.ride.*;
+import rs.getgo.backend.dtos.ridePrice.GetRidePriceDTO;
+import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RideOrderStatus;
 import rs.getgo.backend.model.enums.RideStatus;
@@ -42,6 +44,7 @@ public class RideServiceImpl implements RideService {
     private final InconsistencyReportRepository reportRepository;
     private final PanicNotifierService panicNotifierService;
     private final NotificationService notificationService;
+    private final RidePriceRepository ridePriceRepository;
 
     @Value("${driver.default.latitude}")
     private Double defaultDriverLatitude;
@@ -67,7 +70,8 @@ public class RideServiceImpl implements RideService {
                            EmailService emailService,
                            InconsistencyReportRepository reportRepository,
                            PanicNotifierService panicNotifierService,
-                           NotificationService notificationService) {
+                           NotificationService notificationService,
+                           RidePriceRepository ridePriceRepository) {
         this.cancellationRepository = cancellationRepository;
         this.panicRepository = panicRepository;
         this.activeRideRepository = activeRideRepository;
@@ -84,6 +88,7 @@ public class RideServiceImpl implements RideService {
         this.reportRepository = reportRepository;
         this.panicNotifierService = panicNotifierService;
         this.notificationService = notificationService;
+        this.ridePriceRepository = ridePriceRepository;
     }
 
     @Override
@@ -512,22 +517,28 @@ public class RideServiceImpl implements RideService {
     }
 
     private double calculatePrice(Route route, String vehicleTypeStr) {
-        double basePrice = getBasePrice(vehicleTypeStr);
-        return basePrice + (route.getEstDistanceKm() * 120);
+        VehicleType vehicleType = parseVehicleType(vehicleTypeStr);
+        GetRidePriceDTO priceDTO = getPricesWithDefaults(vehicleType);
+        return priceDTO.getStartPrice() + (route.getEstDistanceKm() * priceDTO.getPricePerKm());
     }
 
-    private double getBasePrice(String vehicleTypeStr) {
-        if (vehicleTypeStr == null || vehicleTypeStr.isEmpty()) {
-            return 200;
+    private GetRidePriceDTO getPricesWithDefaults(VehicleType vehicleType) {
+        // Default values if not set in database
+        double defaultStartPrice;
+        double defaultPricePerKm;
+
+        switch (vehicleType) {
+            case STANDARD -> { defaultStartPrice = 200; defaultPricePerKm = 120; }
+            case VAN -> { defaultStartPrice = 500; defaultPricePerKm = 150; }
+            case LUXURY -> { defaultStartPrice = 800; defaultPricePerKm = 200; }
+            default -> { defaultStartPrice = 200; defaultPricePerKm = 100; }
         }
 
-        // TODO: PULL FROM DATABASE BASE PRICE PER VEHICLE TYPE WHEN IMPLEMENTED
-        return switch (vehicleTypeStr.toUpperCase()) {
-            case "SUV" -> 300;
-            case "VAN" -> 500;
-            default -> 200;
-        };
+        return ridePriceRepository.findByVehicleType(vehicleType)
+                .map(p -> new GetRidePriceDTO(p.getPricePerKm(), p.getStartPrice()))
+                .orElse(new GetRidePriceDTO(defaultPricePerKm, defaultStartPrice));
     }
+
 
     private VehicleType parseVehicleType(String vehicleTypeStr) {
         try {
@@ -536,7 +547,7 @@ public class RideServiceImpl implements RideService {
             return null;
         }
 //        if (vehicleTypeStr == null) {
-//            return VehicleType.SEDAN; // default
+//            return VehicleType.STANDARD; // default
 //        }
 //
 //        return VehicleType.valueOf(vehicleTypeStr.toUpperCase());

@@ -12,16 +12,18 @@ import rs.getgo.backend.dtos.report.GetReportDTO;
 import rs.getgo.backend.dtos.request.*;
 import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
+import rs.getgo.backend.dtos.user.BlockUserRequestDTO;
+import rs.getgo.backend.dtos.user.BlockUserResponseDTO;
 import rs.getgo.backend.dtos.user.CreatedUserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rs.getgo.backend.dtos.user.UserEmailDTO;
 import rs.getgo.backend.services.AdminService;
 import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDate;
-import java.util.Collection;
 import java.util.List;
 
 @PreAuthorize("hasRole('ADMIN')")
@@ -35,19 +37,41 @@ public class AdminController {
         this.adminService = adminService;
     }
 
+    @GetMapping("/users/unblocked")
+    public ResponseEntity<Page<UserEmailDTO>> getUnblockedUsers(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<UserEmailDTO> users = adminService.getUnblockedUsers(search, page, size);
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/users/blocked")
+    public ResponseEntity<Page<UserEmailDTO>> getBlockedUsers(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<UserEmailDTO> users = adminService.getBlockedUsers(search, page, size);
+        return ResponseEntity.ok(users);
+    }
+
     // 2.9.3 – Block user
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/users/{id}/block")
-    public ResponseEntity<CreatedUserDTO> blockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", true, null);
+    public ResponseEntity<BlockUserResponseDTO> blockUser(
+            @PathVariable Long id,
+            @RequestBody BlockUserRequestDTO blockUserRequestDTO) {
+        String email = AuthUtils.getCurrentUserEmail();
+        BlockUserResponseDTO response = adminService.blockUser(id, email, blockUserRequestDTO);
         return ResponseEntity.ok(response);
     }
 
     // 2.9.3 – Unblock user
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/users/{id}/unblock")
-    public ResponseEntity<CreatedUserDTO> unblockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", false, null);
+    public ResponseEntity<BlockUserResponseDTO> unblockUser(@PathVariable Long id) {
+        String email = AuthUtils.getCurrentUserEmail();
+        BlockUserResponseDTO response = adminService.unblockUser(id, email);
         return ResponseEntity.ok(response);
     }
 

@@ -14,6 +14,9 @@ import com.example.getgo.dtos.request.GetDriverAvatarChangeRequestDTO;
 import com.example.getgo.dtos.request.GetDriverVehicleChangeRequestDTO;
 import com.example.getgo.dtos.request.GetPersonalDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.RejectDriverChangeRequestDTO;
+import com.example.getgo.dtos.user.BlockUserRequestDTO;
+import com.example.getgo.dtos.user.BlockUserResponseDTO;
+import com.example.getgo.dtos.user.UserEmailDTO;
 
 import java.util.List;
 
@@ -30,6 +33,61 @@ public class AdminRepository {
             instance = new AdminRepository();
         }
         return instance;
+    }
+
+    public BlockUserResponseDTO blockUser(Long userId, String reason) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        BlockUserRequestDTO dto = new BlockUserRequestDTO(reason);
+        Response<BlockUserResponseDTO> response = service.blockUser(userId, dto).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            Log.d(TAG, "User blocked: " + userId);
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to block user: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to block user: " + errBody);
+        }
+    }
+
+    public BlockUserResponseDTO unblockUser(Long userId) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<BlockUserResponseDTO> response = service.unblockUser(userId).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            Log.d(TAG, "User unblocked: " + userId);
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to unblock user: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to unblock user: " + errBody);
+        }
+    }
+
+    public Page<UserEmailDTO> getUnblockedUsers(String search, int page, int size) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<Page<UserEmailDTO>> response = service.getUnblockedUsers(search, page, size).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to fetch unblocked users: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to fetch unblocked users");
+        }
+    }
+
+    public Page<UserEmailDTO> getBlockedUsers(String search, int page, int size) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<Page<UserEmailDTO>> response = service.getBlockedUsers(search, page, size).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to fetch blocked users: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to fetch blocked users");
+        }
     }
 
     public CreatedDriverDTO registerDriver(CreateDriverDTO dto) throws Exception {

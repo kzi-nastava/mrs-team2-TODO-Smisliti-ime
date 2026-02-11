@@ -1,6 +1,16 @@
 <app-driver-nav-bar></app-driver-nav-bar>
 <div class="user-info">
     <p class="profile-title">Edit Personal Information</p>
+
+    @if (blocked) {
+    <div class="blocked-banner">
+      <strong>Your account has been blocked.</strong>
+      @if (blockReason) {
+      <p>Reason: {{ blockReason }}</p>
+      }
+    </div>
+    }
+
     <div class="profile-picture">
         <img [src]="profileImageUrl" alt="Profile Picture" class="avatar-image" (click)="onImageClick()" />
         <input type="file" id="fileInput" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />

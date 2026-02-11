@@ -56,6 +56,12 @@ public class DataInitializer {
             driverRepository.save(driver2);
             log.info("Created driver: {}", driver2.getEmail());
 
+            Driver driver3 = createDriver3();
+            Vehicle vehicle3 = createVehicle3();
+            driver3.setVehicle(vehicle3);
+            driverRepository.save(driver3);
+            log.info("Created driver: {}", driver3.getEmail());
+
             // Create Passengers
             Passenger passenger1 = createPassenger1();
             passengerRepository.save(passenger1);
@@ -66,14 +72,6 @@ public class DataInitializer {
             log.info("Created passenger: {}", passenger2.getEmail());
 
             log.info("Database initialization completed successfully!");
-            log.info("=".repeat(50));
-            log.info("Default credentials:");
-            log.info("Admin - Email: admin@getgo.com, Password: Admin123!");
-            log.info("Driver 1 - Email: driver1@getgo.com, Password: Driver123!");
-            log.info("Driver 2 - Email: driver2@getgo.com, Password: Driver123!");
-            log.info("Passenger 1 - Email: passenger1@getgo.com, Password: Pass123!");
-            log.info("Passenger 2 - Email: passenger2@getgo.com, Password: Pass123!");
-            log.info("=".repeat(50));
         };
     }
 
@@ -128,11 +126,30 @@ public class DataInitializer {
         return driver;
     }
 
+    private Driver createDriver3() {
+        Driver driver = new Driver();
+        driver.setEmail("g@gmail.com");
+        driver.setPassword(passwordEncoder.encode("gggggggg"));
+        driver.setName("Driver Three");
+        driver.setSurname("Drivthree");
+        driver.setAddress("Driver3 Address 456");
+        driver.setPhone("0654987321");
+        driver.setRole(UserRole.DRIVER);
+        driver.setBlocked(false);
+        driver.setActive(false);
+        driver.setActivated(true);
+        driver.setProfilePictureUrl(null);
+        driver.setCurrentLatitude(45.2400);
+        driver.setCurrentLongitude(19.8200);
+        driver.setLastLocationUpdate(LocalDateTime.now());
+        return driver;
+    }
+
     private Vehicle createVehicle1() {
         Vehicle vehicle = new Vehicle();
         vehicle.setModel("Toyota Corolla");
         vehicle.setType(VehicleType.VAN);
-        vehicle.setLicensePlate("NS-123-AB");
+        vehicle.setLicensePlate("123456");
         vehicle.setNumberOfSeats(4);
         vehicle.setIsBabyFriendly(true);
         vehicle.setIsPetFriendly(false);
@@ -144,9 +161,21 @@ public class DataInitializer {
         Vehicle vehicle = new Vehicle();
         vehicle.setModel("Volkswagen Passat");
         vehicle.setType(VehicleType.SUV);
-        vehicle.setLicensePlate("NS-456-CD");
+        vehicle.setLicensePlate("456789");
         vehicle.setNumberOfSeats(4);
         vehicle.setIsBabyFriendly(false);
+        vehicle.setIsPetFriendly(true);
+        vehicle.setIsAvailable(true);
+        return vehicle;
+    }
+
+    private Vehicle createVehicle3() {
+        Vehicle vehicle = new Vehicle();
+        vehicle.setModel("BMW X5");
+        vehicle.setType(VehicleType.SEDAN);
+        vehicle.setLicensePlate("789012");
+        vehicle.setNumberOfSeats(5);
+        vehicle.setIsBabyFriendly(true);
         vehicle.setIsPetFriendly(true);
         vehicle.setIsAvailable(true);
         return vehicle;

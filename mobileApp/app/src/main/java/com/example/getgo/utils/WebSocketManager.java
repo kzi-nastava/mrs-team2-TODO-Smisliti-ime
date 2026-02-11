@@ -24,8 +24,8 @@ import ua.naiksoftware.stomp.StompClient;
 public class WebSocketManager {
     private static final String TAG = "WebSocketManager";
 
-    // public static final String API_SOCKET_URL = "http://10.0.2.2:8080/";
-    public static final String WS_URL = "wss://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
+    public static final String WS_URL = "http://10.0.2.2:8080/";
+    // public static final String WS_URL = "wss://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
 
     private StompClient stompClient;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();

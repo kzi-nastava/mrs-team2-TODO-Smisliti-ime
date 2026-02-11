@@ -40,7 +40,7 @@ public class CreateDriverDTO {
     private String vehicleModel;
 
     @NotBlank(message = "Vehicle type is required")
-    @Pattern(regexp = "^(SEDAN|SUV|VAN|LUXURY)$", message = "Vehicle type must be SEDAN, SUV, VAN, or LUXURY")
+    @Pattern(regexp = "^(STANDARD|VAN|LUXURY)$", message = "Vehicle type must be STANDARD, VAN, or LUXURY")
     private String vehicleType;
 
     @NotBlank(message = "Vehicle license plate is required")

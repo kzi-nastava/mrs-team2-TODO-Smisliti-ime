@@ -143,7 +143,7 @@ public class DataInitializer {
     private Vehicle createVehicle2() {
         Vehicle vehicle = new Vehicle();
         vehicle.setModel("Volkswagen Passat");
-        vehicle.setType(VehicleType.SUV);
+        vehicle.setType(VehicleType.STANDARD);
         vehicle.setLicensePlate("NS-456-CD");
         vehicle.setNumberOfSeats(4);
         vehicle.setIsBabyFriendly(false);

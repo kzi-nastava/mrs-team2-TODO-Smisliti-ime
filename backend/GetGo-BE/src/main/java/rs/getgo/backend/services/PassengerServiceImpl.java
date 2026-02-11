@@ -104,21 +104,7 @@ public class PassengerServiceImpl implements PassengerService {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
-        // Validate file
-        if (file == null || file.isEmpty()) {
-            throw new RuntimeException("Profile picture file is required");
-        }
-
-        // Validate file type
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new RuntimeException("File must be an image");
-        }
-
-        // Validate file size (5MB max)
-        if (file.getSize() > 5 * 1024 * 1024) {
-            throw new RuntimeException("File size must not exceed 5MB");
-        }
+        fileStorageService.validateImageFile(file);
 
         // Delete old picture if exists
         if (passenger.getProfilePictureUrl() != null) {

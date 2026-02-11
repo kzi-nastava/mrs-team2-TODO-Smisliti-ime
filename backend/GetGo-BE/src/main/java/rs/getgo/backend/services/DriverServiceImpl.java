@@ -385,22 +385,11 @@ public class DriverServiceImpl implements DriverService {
         Driver driver = driverRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Driver not found with id: " + email));
 
-        if (file == null || file.isEmpty()) {
-            throw new RuntimeException("Profile picture file is required");
-        }
-
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new RuntimeException("File must be an image");
-        }
-
-        if (file.getSize() > 5 * 1024 * 1024) {
-            throw new RuntimeException("File size must not exceed 5MB");
-        }
-
         if (avatarChangeRequestRepo.existsByDriverAndStatus(driver, RequestStatus.PENDING)) {
             throw new RuntimeException("You already have a pending profile picture change request");
         }
+
+        fileStorageService.validateImageFile(file);
 
         // Store file temporarily until approval/rejection
         String filename = fileStorageService.storeFile(file, "driver_pending_" + driver.getId());

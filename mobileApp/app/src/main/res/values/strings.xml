@@ -23,6 +23,7 @@
     <string name="other">Other</string>
     <string name="driver_requests">Driver Requests</string>
     <string name="driver_register">Register Driver</string>
+    <string name="block_users">Block Users</string>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="Password">Password</string>
@@ -175,4 +176,6 @@
 
     <string name="driver_active">Active</string>
     <string name="driver_inactive">Inactive</string>
+    <string name="plus">+</string>
+    <string name="minus">-</string>
 </resources>

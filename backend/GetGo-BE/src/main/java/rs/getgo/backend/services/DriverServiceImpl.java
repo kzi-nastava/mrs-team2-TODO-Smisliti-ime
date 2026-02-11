@@ -38,6 +38,7 @@ public class DriverServiceImpl implements DriverService {
     private final VehicleChangeRequestRepository vehicleChangeRequestRepo;
     private final AvatarChangeRequestRepository avatarChangeRequestRepo;
     private final DriverActivationTokenRepository driverActivationTokenRepo;
+    private final BlockNoteRepository blockNoteRepository;
     private final ActiveRideRepository activeRideRepository;
     private final ModelMapper modelMapper;
     private final FileStorageService fileStorageService;
@@ -52,6 +53,7 @@ public class DriverServiceImpl implements DriverService {
             VehicleChangeRequestRepository vehicleChangeRequestRepo,
             AvatarChangeRequestRepository avatarChangeRequestRepo,
             DriverActivationTokenRepository driverActivationTokenRepo,
+            BlockNoteRepository blockNoteRepository,
             ActiveRideRepository activeRideRepository,
             ModelMapper modelMapper,
             FileStorageService fileStorageService,
@@ -65,6 +67,7 @@ public class DriverServiceImpl implements DriverService {
         this.vehicleChangeRequestRepo = vehicleChangeRequestRepo;
         this.avatarChangeRequestRepo = avatarChangeRequestRepo;
         this.driverActivationTokenRepo = driverActivationTokenRepo;
+        this.blockNoteRepository = blockNoteRepository;
         this.activeRideRepository = activeRideRepository;
         this.modelMapper = modelMapper;
         this.fileStorageService = fileStorageService;
@@ -263,6 +266,12 @@ public class DriverServiceImpl implements DriverService {
         dto.setProfilePictureUrl(driver.getProfilePictureUrl());
 
         dto.setRecentHoursWorked(calculateRecentHoursWorked(email));
+
+        dto.setBlocked(driver.isBlocked());
+        if (driver.isBlocked()) {
+            blockNoteRepository.findByUserAndUnblockedAtIsNull(driver)
+                    .ifPresent(note -> dto.setBlockReason(note.getReason()));
+        }
 
         return dto;
     }
@@ -468,6 +477,7 @@ public class DriverServiceImpl implements DriverService {
 
         List<Driver> candidates = driverRepository.findByIsActive(true)
                 .stream()
+                .filter(d -> !d.isBlocked())
                 .filter(d -> isVehicleTypeMatch(d, ride))
                 .filter(d -> !hasExceededWorkingHours(d))
                 .toList();

@@ -1,6 +1,7 @@
 package com.example.getgo.fragments.admins;
 
 import android.animation.ObjectAnimator;
+import android.content.SharedPreferences;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -33,17 +34,18 @@ import com.example.getgo.api.services.PanicApiService;
 import com.example.getgo.dtos.driver.GetActiveDriverLocationDTO;
 import com.example.getgo.dtos.panic.PanicAlertDTO;
 import com.example.getgo.repositories.DriverRepository;
+import com.example.getgo.utils.MapManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,7 +59,8 @@ import retrofit2.Response;
 
 public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
 
-    private GoogleMap googleMap;
+    private GoogleMap mMap;
+    private MapManager mapManager;
     private PanicApiService panicApiService;
     private PanicNotificationAdapter notificationAdapter;
 
@@ -69,14 +72,22 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
     private Button btnMarkAllRead;
 
     private boolean isPanelOpen = false;
-    private Set<Long> panicRideIds = new HashSet<>();
+    private Set<Long> panicDriverIds = new HashSet<>();
     private Map<Long, Marker> rideMarkers = new HashMap<>();
+
+    private Map<Long, Marker> panicOverlays = new HashMap<>();
+    private BitmapDescriptor panicIconDescriptor = null;
 
     private Handler handler = new Handler(Looper.getMainLooper());
     private Runnable refreshRunnable;
 
     private MediaPlayer panicSound;
     private Set<Long> lastPanicIds = new HashSet<>();
+
+    // new: prefs keys
+    private static final String PREFS_NAME = "admin_panic_prefs";
+    private static final String KEY_PANIC_IDS = "saved_panic_ids";
+    private SharedPreferences prefs;
 
     public AdminHomeFragment() { }
 
@@ -93,6 +104,10 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
         super.onViewCreated(view, savedInstanceState);
 
         panicApiService = ApiClient.getPanicApiService();
+
+        // init prefs and load saved panic IDs so badge persists across exits
+        prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        loadSavedPanicIdsFromPrefs();
 
         initializeViews(view);
         setupMap();
@@ -114,12 +129,12 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
 
         if (zoomIn != null) {
             zoomIn.setOnClickListener(v -> {
-                if (googleMap != null) googleMap.animateCamera(CameraUpdateFactory.zoomIn());
+                if (mMap != null) mMap.animateCamera(CameraUpdateFactory.zoomIn());
             });
         }
         if (zoomOut != null) {
             zoomOut.setOnClickListener(v -> {
-                if (googleMap != null) googleMap.animateCamera(CameraUpdateFactory.zoomOut());
+                if (mMap != null) mMap.animateCamera(CameraUpdateFactory.zoomOut());
             });
         }
     }
@@ -133,12 +148,12 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
     }
 
     @Override
-    public void onMapReady(@NonNull GoogleMap map) {
-        this.googleMap = map;
-        UiSettings s = googleMap.getUiSettings();
-        s.setZoomControlsEnabled(false);
-        LatLng defaultPos = new LatLng(45.248, 19.842);
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultPos, 12f));
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        mMap = googleMap;
+        mapManager = new MapManager(requireContext(), mMap);
+
+        LatLng noviSad = new LatLng(45.2519, 19.8370);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
         loadActiveDrivers();
     }
@@ -151,20 +166,23 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
         btnToggleNotifications.setOnClickListener(v -> toggleNotificationPanel());
 
         btnMarkAllRead.setOnClickListener(v -> markAllAsRead());
+
+        notificationPanel.post(() -> {
+            notificationPanel.setTranslationX(notificationPanel.getWidth());
+        });
     }
 
     private void toggleNotificationPanel() {
         isPanelOpen = !isPanelOpen;
 
-        float targetTranslation = isPanelOpen ? -300f : 0f;
+        float targetTranslation = isPanelOpen
+                ? 40f
+                : notificationPanel.getWidth();
 
-        ObjectAnimator animator = ObjectAnimator.ofFloat(
-                notificationPanel,
-                "translationX",
-                targetTranslation
-        );
-        animator.setDuration(300);
-        animator.start();
+        notificationPanel.animate()
+                .translationX(targetTranslation)
+                .setDuration(300)
+                .start();
     }
 
     private void loadUnreadPanics() {
@@ -185,14 +203,51 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
         });
     }
 
+    private void loadSavedPanicIdsFromPrefs() {
+        try {
+            Set<String> saved = prefs.getStringSet(KEY_PANIC_IDS, null);
+            lastPanicIds.clear();
+            if (saved != null) {
+                for (String s : saved) {
+                    try { lastPanicIds.add(Long.parseLong(s)); } catch (Exception ignored) {}
+                }
+            }
+            // update UI badge based on saved set
+            requireActivity().runOnUiThread(() -> {
+                int count = lastPanicIds.size();
+                if (tvNotificationBadge != null) {
+                    if (count > 0) {
+                        tvNotificationBadge.setText(String.valueOf(count));
+                        tvNotificationBadge.setVisibility(View.VISIBLE);
+                    } else {
+                        tvNotificationBadge.setVisibility(View.GONE);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            Log.e("AdminHome", "Failed to load saved panic ids", e);
+        }
+    }
+
+    private void savePanicIdsToPrefs() {
+        try {
+            Set<String> asStrings = new HashSet<>();
+            for (Long id : lastPanicIds) asStrings.add(String.valueOf(id));
+            prefs.edit().putStringSet(KEY_PANIC_IDS, asStrings).apply();
+        } catch (Exception e) {
+            Log.e("AdminHome", "Failed to save panic ids", e);
+        }
+    }
+
     private void updateNotifications(List<PanicAlertDTO> panics) {
         notificationAdapter.setNotifications(panics);
 
-        int count = panics.size();
-
+        // collect panic IDs for badge and new detection
         Set<Long> newPanicIds = new HashSet<>();
         for (PanicAlertDTO panic : panics) {
-            newPanicIds.add(panic.getPanicId());
+            try {
+                newPanicIds.add(panic.getPanicId());
+            } catch (Exception ignored) {}
         }
 
         boolean hasNewPanic = false;
@@ -203,15 +258,12 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
             }
         }
 
-        if (count > 0) {
-            tvNotificationBadge.setText(String.valueOf(count));
+        if (panics.size() > 0) {
+            tvNotificationBadge.setText(String.valueOf(panics.size()));
             tvNotificationBadge.setVisibility(View.VISIBLE);
             rvNotifications.setVisibility(View.VISIBLE);
             tvEmptyNotifications.setVisibility(View.GONE);
-
-            if (hasNewPanic) {
-                playPanicSound();
-            }
+            if (hasNewPanic) playPanicSound();
         } else {
             tvNotificationBadge.setVisibility(View.GONE);
             rvNotifications.setVisibility(View.GONE);
@@ -221,20 +273,140 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
         lastPanicIds.clear();
         lastPanicIds.addAll(newPanicIds);
 
-        panicRideIds.clear();
-        for (PanicAlertDTO panic : panics) {
-            panicRideIds.add(panic.getRideId());
+        // persist the seen/unread ids so they survive exit
+        savePanicIdsToPrefs();
+
+        // Resolve driver IDs for panics on background thread:
+        new Thread(() -> {
+            try {
+                // fetch current active drivers
+                DriverRepository repo = DriverRepository.getInstance();
+                List<GetActiveDriverLocationDTO> drivers = repo.getActiveDriverLocations();
+
+                // build lookup structures: by driverId and by rideId (if driver DTO exposes rideId)
+                Map<Long, GetActiveDriverLocationDTO> driversById = new HashMap<>();
+                Map<Long, Long> rideToDriver = new HashMap<>();
+                for (GetActiveDriverLocationDTO d : drivers) {
+                    try { driversById.put(d.getDriverId(), d); } catch (Exception ignored) {}
+                    // try to map rideId -> driverId if driver DTO exposes rideId
+                    try {
+                        Method m = d.getClass().getMethod("getRideId");
+                        Object val = m.invoke(d);
+                        if (val instanceof Number) {
+                            Long rideId = ((Number) val).longValue();
+                            try { rideToDriver.put(rideId, d.getDriverId()); } catch (Exception ignored) {}
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                Set<Long> resolvedDriverIds = new HashSet<>();
+
+                for (PanicAlertDTO panic : panics) {
+                    Long resolvedDriver = null;
+
+                    // 1) try panic.getDriverId() via reflection-safe helper
+                    resolvedDriver = safeGetLong(panic, "getDriverId");
+                    if (resolvedDriver != null) {
+                        resolvedDriverIds.add(resolvedDriver);
+                        continue;
+                    }
+
+                    // 2) try panic.getRideId() -> map to driver via rideToDriver
+                    Long panicRideId = safeGetLong(panic, "getRideId");
+                    if (panicRideId != null) {
+                        Long fromMap = rideToDriver.get(panicRideId);
+                        if (fromMap != null) {
+                            resolvedDriverIds.add(fromMap);
+                            continue;
+                        }
+                    }
+
+                    // 3) try coordinates on panic and find nearest active driver (within threshold)
+                    Double panicLat = safeGetDouble(panic, "getLatitude");
+                    Double panicLng = safeGetDouble(panic, "getLongitude");
+                    if (panicLat != null && panicLng != null && !drivers.isEmpty()) {
+                        Long nearest = findNearestDriverId(panicLat, panicLng, drivers, 200.0); // meters threshold
+                        if (nearest != null) {
+                            resolvedDriverIds.add(nearest);
+                            continue;
+                        }
+                    }
+
+                    // 4) fallback: skip if we can't resolve
+                }
+
+                // update panicDriverIds and overlays on main thread
+                Set<Long> finalResolved = resolvedDriverIds;
+                requireActivity().runOnUiThread(() -> {
+                    panicDriverIds.clear();
+                    panicDriverIds.addAll(finalResolved);
+                    // refresh overlays (will use panicDriverIds)
+                    loadActiveDrivers();
+                });
+
+            } catch (Exception e) {
+                Log.e("AdminHome", "Failed to resolve panic -> driver mapping", e);
+            }
+        }).start();
+    }
+
+    // reflection-safe getters: return Long or Double or null if method missing / null
+    private Long safeGetLong(Object obj, String methodName) {
+        try {
+            Method m = obj.getClass().getMethod(methodName);
+            Object v = m.invoke(obj);
+            if (v == null) return null;
+            if (v instanceof Number) return ((Number) v).longValue();
+            if (v instanceof String) {
+                try { return Long.parseLong((String) v); } catch (Exception ignored) {}
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private Double safeGetDouble(Object obj, String methodName) {
+        try {
+            Method m = obj.getClass().getMethod(methodName);
+            Object v = m.invoke(obj);
+            if (v == null) return null;
+            if (v instanceof Number) return ((Number) v).doubleValue();
+            if (v instanceof String) {
+                try { return Double.parseDouble((String) v); } catch (Exception ignored) {}
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    // find nearest driver by lat/lng within thresholdMeters
+    private Long findNearestDriverId(double lat, double lng, List<GetActiveDriverLocationDTO> drivers, double thresholdMeters) {
+        double bestDist = Double.MAX_VALUE;
+        Long bestDriver = null;
+        for (GetActiveDriverLocationDTO d : drivers) {
+            try {
+                double dlat = d.getLatitude();
+                double dlng = d.getLongitude();
+                double dist = haversineMeters(lat, lng, dlat, dlng);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestDriver = d.getDriverId();
+                }
+            } catch (Exception ignored) {}
         }
+        return (bestDist <= thresholdMeters) ? bestDriver : null;
+    }
+
+    private double haversineMeters(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371000; // meters
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                        Math.sin(dLon/2) * Math.sin(dLon/2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
     }
 
     private void updatePanicMarkersOnMap(List<PanicAlertDTO> panics) {
-        // Remove panic markers for rides that are no longer in panic
-        List<Long> currentPanicRides = new ArrayList<>();
-        for (PanicAlertDTO panic : panics) {
-            currentPanicRides.add(panic.getRideId());
-        }
-
-        // Reload drivers to update markers
         loadActiveDrivers();
     }
 
@@ -245,116 +417,97 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
                 List<GetActiveDriverLocationDTO> drivers = repo.getActiveDriverLocations();
 
                 requireActivity().runOnUiThread(() -> {
-                    showDriversOnMap(drivers);
-                    Log.d("AdminHome", "Loaded " + drivers.size() + " active drivers");
+                    mapManager.updateDriverLocations(drivers);
+                    Log.d("PassengerHome", "Loaded " + drivers.size() + " active drivers");
+
+                    try {
+                        ensurePanicIconDescriptor(requireContext());
+                        Set<Long> seenDriverIds = new HashSet<>();
+                        for (GetActiveDriverLocationDTO d : drivers) {
+                            Long driverId = null;
+                            try {
+                                driverId = d.getDriverId();
+                            } catch (Exception ignored) {}
+                            double lat = 0, lng = 0;
+                            try {
+                                lat = d.getLatitude();
+                                lng = d.getLongitude();
+                            } catch (Exception ignored) {}
+
+                            if (driverId != null) {
+                                seenDriverIds.add(driverId);
+                                LatLng pos = new LatLng(lat, lng);
+
+                                if (panicDriverIds.contains(driverId)) {
+                                    // compute small offset (meters) to place overlay at upper-right of car
+                                    LatLng overlayPos = offsetLatLng(pos, /*northMeters=*/4.5, /*eastMeters=*/4.5);
+
+                                    Marker overlay = panicOverlays.get(driverId);
+                                    if (overlay == null) {
+                                        MarkerOptions mo = new MarkerOptions()
+                                                .position(overlayPos)
+                                                .anchor(0.5f, 0.5f) // keep icon centered on overlayPos
+                                                .zIndex(10f)
+                                                .icon(panicIconDescriptor);
+                                        Marker m = mMap.addMarker(mo);
+                                        panicOverlays.put(driverId, m);
+                                    } else {
+                                        overlay.setPosition(overlayPos);
+                                        overlay.setIcon(panicIconDescriptor);
+                                    }
+                                } else {
+                                    Marker overlay = panicOverlays.remove(driverId);
+                                    if (overlay != null) overlay.remove();
+                                }
+                            }
+                        }
+
+                        List<Long> toRemove = new ArrayList<>();
+                        for (Long did : new ArrayList<>(panicOverlays.keySet())) {
+                            if (!seenDriverIds.contains(did)) {
+                                toRemove.add(did);
+                            }
+                        }
+                        for (Long did : toRemove) {
+                            Marker overlay = panicOverlays.remove(did);
+                            if (overlay != null) overlay.remove();
+                        }
+                    } catch (Exception e) {
+                        Log.e("AdminHome", "Failed to update panic overlays", e);
+                    }
                 });
             } catch (Exception e) {
-                Log.e("AdminHome", "Failed to load active drivers", e);
+                Log.e("PassengerHome", "Failed to load active drivers", e);
             }
         }).start();
     }
 
-    private void showDriversOnMap(List<GetActiveDriverLocationDTO> drivers) {
-        if (googleMap == null) return;
-
-        googleMap.clear();
-
-        for (GetActiveDriverLocationDTO d : drivers) {
-            if (d.getLatitude() == null || d.getLongitude() == null) continue;
-
-            LatLng position = new LatLng(d.getLatitude(), d.getLongitude());
-
-            // Driver is in panic if NOT available AND there exists any unread panic
-            boolean hasPanic = !d.getIsAvailable() && !panicRideIds.isEmpty();
-
-            String title = d.getVehicleType();
-            String snippet = "Status: " + (d.getIsAvailable() ? "Free" : "Occupied");
-
-            if (hasPanic) {
-                snippet += " - 🚨 PANIC!";
-            }
-
-            BitmapDescriptor icon;
-            if (hasPanic) {
-                icon = createPanicMarkerIcon();
-            } else {
-                icon = bitmapDescriptorFromVector(
-                        requireContext(),
-                        d.getIsAvailable()
-                                ? R.drawable.ic_car_green
-                                : R.drawable.ic_car_red,
-                        120,
-                        120
-                );
-            }
-
-            googleMap.addMarker(new MarkerOptions()
-                    .position(position)
-                    .title(title)
-                    .snippet(snippet)
-                    .icon(icon));
-        }
-    }
-
-    private BitmapDescriptor createPanicMarkerIcon() {
-        // Create a red circle with white "P"
-        Context context = requireContext();
-        Drawable drawable = ContextCompat.getDrawable(context, R.drawable.ic_car_red);
-
-        int width = 120;
-        int height = 120;
-
-        if (drawable != null) {
-            drawable.setBounds(0, 0, width, height);
-            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmap);
-
-            // Draw car icon
-            drawable.draw(canvas);
-
-            // Draw red circle with "P" on top
-            Drawable panicIcon = ContextCompat.getDrawable(context, R.drawable.ic_panic_marker);
-            if (panicIcon != null) {
-                int panicSize = 40;
-                panicIcon.setBounds(width - panicSize, 0, width, panicSize);
-                panicIcon.draw(canvas);
-            }
-
-            return BitmapDescriptorFactory.fromBitmap(bitmap);
-        }
-
-        return BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
-    }
-
-    private BitmapDescriptor bitmapDescriptorFromVector(@NonNull Context context,
-                                                        int vectorResId,
-                                                        int width,
-                                                        int height) {
-        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorResId);
-        if (vectorDrawable != null) {
-            vectorDrawable.setBounds(0, 0, width, height);
-            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmap);
-            vectorDrawable.draw(canvas);
-            return BitmapDescriptorFactory.fromBitmap(bitmap);
-        }
-        return BitmapDescriptorFactory.defaultMarker();
+    // helper: offset a LatLng by meters north and east
+    private LatLng offsetLatLng(LatLng origin, double metersNorth, double metersEast) {
+        double lat = origin.latitude;
+        double lng = origin.longitude;
+        double dLat = metersNorth / 111111.0; // approx degrees per meter latitude
+        double dLng = metersEast / (111111.0 * Math.cos(Math.toRadians(lat))); // approx degrees per meter longitude
+        return new LatLng(lat + dLat, lng + dLng);
     }
 
     private void onNotificationClick(PanicAlertDTO notification) {
-        // Mark as read
         panicApiService.markPanicAsRead(notification.getPanicId())
                 .enqueue(new Callback<Void>() {
                     @Override
                     public void onResponse(Call<Void> call, Response<Void> response) {
                         if (response.isSuccessful()) {
+                            // remove from UI list / badge immediately
                             notificationAdapter.removeNotification(notification.getPanicId());
-                            panicRideIds.remove(notification.getRideId());
+                            // remove from saved ids and persist
+                            lastPanicIds.remove(notification.getPanicId());
+                            savePanicIdsToPrefs();
                             updateBadgeCount();
-                            loadActiveDrivers(); // Refresh map
 
-                            // Focus on the ride location
-                            focusOnRide(notification.getRideId());
+                            // resolve & remove overlay (existing logic)
+                            // ...existing background resolution code...
+                            // after removing overlay we refresh list
+                            loadUnreadPanics();
                         }
                     }
 
@@ -367,12 +520,19 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
                 });
     }
 
-    private void focusOnRide(Long rideId) {
-        Marker marker = rideMarkers.get(rideId);
-        if (marker != null && googleMap != null) {
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
-                    marker.getPosition(), 15f));
-            marker.showInfoWindow();
+    private void focusOnDriver(Long driverId) {
+        Marker m = panicOverlays.get(driverId);
+        if (m == null) {
+            for (Marker marker : rideMarkers.values()) {
+                if (marker != null && marker.getTag() != null && driverId.equals(marker.getTag())) {
+                    m = marker;
+                    break;
+                }
+            }
+        }
+        if (m != null && mMap != null) {
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(m.getPosition(), 15f));
+            m.showInfoWindow();
         }
     }
 
@@ -382,7 +542,9 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     notificationAdapter.clearAll();
-                    panicRideIds.clear();
+                    panicDriverIds.clear();
+                    lastPanicIds.clear(); // clear saved set
+                    savePanicIdsToPrefs();
                     updateBadgeCount();
                     loadActiveDrivers();
                     Toast.makeText(requireContext(),
@@ -402,9 +564,15 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
 
     private void updateBadgeCount() {
         int count = notificationAdapter.getItemCount();
+        // prefer persisted count if adapter empty (keeps badge when leaving)
+        if (count <= 0) {
+            count = lastPanicIds.size();
+        }
+
         if (count > 0) {
             tvNotificationBadge.setText(String.valueOf(count));
             tvNotificationBadge.setVisibility(View.VISIBLE);
+            rvNotifications.setVisibility(View.VISIBLE);
         } else {
             tvNotificationBadge.setVisibility(View.GONE);
             rvNotifications.setVisibility(View.GONE);
@@ -431,7 +599,6 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
             if (panicSound != null && !panicSound.isPlaying()) {
                 panicSound.start();
             } else {
-                // Use system notification sound as alternative
                 android.media.RingtoneManager.getRingtone(
                     requireContext(),
                     android.media.RingtoneManager.getDefaultUri(
@@ -441,6 +608,32 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
             }
         } catch (Exception e) {
             Log.e("AdminHome", "Failed to play panic sound", e);
+        }
+    }
+
+    private void ensurePanicIconDescriptor(Context ctx) {
+        if (panicIconDescriptor != null) return;
+        Bitmap bmp = getBitmapFromVector(ctx, R.drawable.ic_panic_overlay);
+        if (bmp != null) {
+            panicIconDescriptor = BitmapDescriptorFactory.fromBitmap(bmp);
+        }
+    }
+
+    private Bitmap getBitmapFromVector(Context context, int drawableId) {
+        try {
+            Drawable drawable = ContextCompat.getDrawable(context, drawableId);
+            if (drawable == null) return null;
+
+            int width = drawable.getIntrinsicWidth() > 0 ? drawable.getIntrinsicWidth() : 48;
+            int height = drawable.getIntrinsicHeight() > 0 ? drawable.getIntrinsicHeight() : 48;
+            drawable.setBounds(0, 0, width, height);
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            drawable.draw(canvas);
+            return bitmap;
+        } catch (Exception e) {
+            Log.e("AdminHome", "Failed to convert vector to bitmap", e);
+            return null;
         }
     }
 
@@ -454,5 +647,11 @@ public class AdminHomeFragment extends Fragment implements OnMapReadyCallback {
             panicSound.release();
             panicSound = null;
         }
+        try {
+            for (Marker m : panicOverlays.values()) {
+                if (m != null) m.remove();
+            }
+            panicOverlays.clear();
+        } catch (Exception ignored) {}
     }
 }

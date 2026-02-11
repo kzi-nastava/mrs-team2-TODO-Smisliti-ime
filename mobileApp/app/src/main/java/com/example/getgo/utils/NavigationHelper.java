@@ -5,9 +5,11 @@ import android.util.Log;
 import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
+import com.example.getgo.fragments.admins.AdminBlockUsersFragment;
 import com.example.getgo.fragments.admins.AdminActiveRidesFragment;
 import com.example.getgo.fragments.admins.AdminDriverRegistrationFragment;
 import com.example.getgo.fragments.admins.AdminChatListFragment;
+import com.example.getgo.fragments.admins.AdminHomeFragment;
 import com.example.getgo.fragments.admins.AdminProfileInfoFragment;
 import com.example.getgo.fragments.admins.AdminReviewDriverRequestsFragment;
 import com.example.getgo.fragments.drivers.DriverHomeFragment;
@@ -75,7 +77,7 @@ public class NavigationHelper {
             case PASSENGER:
                 return new PassengerHomeFragment();
             case ADMIN:
-                return new DriverHomeFragment(); // TODO: Create AdminDashboardFragment
+                return new AdminHomeFragment();
             default:
                 return new DriverHomeFragment();
         }
@@ -112,13 +114,15 @@ public class NavigationHelper {
 
     private Fragment getAdminFragment(int itemId) {
         if (itemId == R.id.nav_bottom_dashboard) {
-            return new DriverHomeFragment();
+            return new AdminHomeFragment();
         } else if (itemId == R.id.nav_bottom_profile) {
             return new AdminProfileInfoFragment();
         } else if (itemId == R.id.nav_review_requests) {
             return AdminReviewDriverRequestsFragment.newInstance();
         } else if (itemId == R.id.nav_register_driver) {
             return AdminDriverRegistrationFragment.newInstance();
+        } else if (itemId == R.id.nav_block_users) {
+            return AdminBlockUsersFragment.newInstance();
         } else if (itemId == R.id.nav_drawer_support_chats) {
             return new AdminChatListFragment();
         } else if (itemId == R.id.nav_drawer_active_rides) {

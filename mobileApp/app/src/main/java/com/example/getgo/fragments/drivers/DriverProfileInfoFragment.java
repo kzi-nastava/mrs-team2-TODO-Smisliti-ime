@@ -250,6 +250,7 @@ public class DriverProfileInfoFragment extends Fragment {
 
                     tvRecentHours.setText(getString(R.string.recent_hours_format, driver.getRecentHoursWorked()));
 
+                    // Get profile picture by url
                     if (driver.getProfilePictureUrl() != null && !driver.getProfilePictureUrl().isEmpty()) {
                         String imageUrl = ApiClient.SERVER_URL + driver.getProfilePictureUrl();
                         Glide.with(requireContext())
@@ -258,6 +259,19 @@ public class DriverProfileInfoFragment extends Fragment {
                                 .error(R.drawable.unregistered_profile)
                                 .circleCrop()
                                 .into(ivProfilePicture);
+                    }
+
+                    // Show field with block message if driver is blocked
+                    View blockedBanner = getView().findViewById(R.id.cvBlockedBanner);
+                    TextView tvBlockedReason = getView().findViewById(R.id.tvBlockedReason);
+                    if (driver.getBlocked() != null && driver.getBlocked()) {
+                        blockedBanner.setVisibility(View.VISIBLE);
+                        if (driver.getBlockReason() != null && !driver.getBlockReason().isEmpty()) {
+                            tvBlockedReason.setText("Reason: " + driver.getBlockReason());
+                            tvBlockedReason.setVisibility(View.VISIBLE);
+                        }
+                    } else {
+                        blockedBanner.setVisibility(View.GONE);
                     }
                 });
             } catch (Exception e) {

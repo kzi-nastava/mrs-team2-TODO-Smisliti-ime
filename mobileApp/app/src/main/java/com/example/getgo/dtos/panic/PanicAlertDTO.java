@@ -5,16 +5,22 @@ import java.time.LocalDateTime;
 public class PanicAlertDTO {
     private Long panicId;
     private Long rideId;
+    private Long driverId;
     private Long triggeredByUserId;
     private LocalDateTime triggeredAt;
     private Boolean status;
 
-    public Long getPanicId() {
-        return panicId;
+    public PanicAlertDTO(Long panicId, Long rideId, Long driverId, Long triggerByUserId, LocalDateTime triggerAt, Boolean status) {
+        this.panicId = panicId;
+        this.rideId = rideId;
+        this.driverId = driverId;
+        this.triggeredAt = triggerAt;
+        this.triggeredByUserId = triggerByUserId;
+        this.status = status;
     }
 
-    public void setPanicId(Long panicId) {
-        this.panicId = panicId;
+    public Long getPanicId() {
+        return panicId;
     }
 
     public Long getRideId() {
@@ -29,16 +35,8 @@ public class PanicAlertDTO {
         return triggeredByUserId;
     }
 
-    public void setTriggeredByUserId(Long triggeredByUserId) {
-        this.triggeredByUserId = triggeredByUserId;
-    }
-
     public LocalDateTime getTriggeredAt() {
         return triggeredAt;
-    }
-
-    public void setTriggeredAt(LocalDateTime triggeredAt) {
-        this.triggeredAt = triggeredAt;
     }
 
     public Boolean getStatus() {
@@ -47,6 +45,10 @@ public class PanicAlertDTO {
 
     public void setStatus(Boolean status) {
         this.status = status;
+    }
+
+    public Long getDriverId() {
+        return this.driverId;
     }
 }
 

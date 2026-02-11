@@ -442,11 +442,17 @@ public class MainActivity extends AppCompatActivity {
             tvUserName.setText(profile.getFullName());
         }
 
-        if (ivUserProfile != null && profile.getProfilePictureUrl() != null) {
+        if (ivUserProfile != null && profile.getProfilePictureUrl() != null && !profile.getProfilePictureUrl().isEmpty()) {
+            // Build final image URL the same way as PassengerProfileInfoFragment:
+            // if returned URL is absolute, use it; otherwise prefix with ApiClient.SERVER_URL
+            String rawUrl = profile.getProfilePictureUrl();
+            String imageUrl = rawUrl.startsWith("http") ? rawUrl : ApiClient.SERVER_URL + rawUrl;
+
             Glide.with(this)
-                    .load(profile.getProfilePictureUrl())
-                    .placeholder(R.drawable.ic_profile_placeholder)
-                    .error(R.drawable.ic_profile_placeholder)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.unregistered_profile) // same placeholder as passenger fragment
+                    .error(R.drawable.unregistered_profile)
+                    .circleCrop()
                     .into(ivUserProfile);
         }
     }

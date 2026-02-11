@@ -11,13 +11,13 @@ import retrofit2.http.Path;
 
 public interface PanicApiService {
 
-    @GET("api/panic/admin/unread")
+    @GET("/api/panic/admin/unread")
     Call<List<PanicAlertDTO>> getUnreadPanics();
 
-    @PUT("api/panic/admin/read/{panicId}")
+    @PUT("/api/panic/admin/read/{panicId}")
     Call<Void> markPanicAsRead(@Path("panicId") Long panicId);
 
-    @PUT("api/panic/admin/read-all")
+    @PUT("/api/panic/admin/read-all")
     Call<Void> markAllPanicsAsRead();
 }
 

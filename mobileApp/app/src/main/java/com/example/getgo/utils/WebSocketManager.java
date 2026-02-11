@@ -1,6 +1,5 @@
 package com.example.getgo.utils;
 
-import android.content.Context;
 import android.util.Log;
 
 import com.example.getgo.callbacks.SupportChatMessageListener;
@@ -24,7 +23,9 @@ import ua.naiksoftware.stomp.StompClient;
 
 public class WebSocketManager {
     private static final String TAG = "WebSocketManager";
-    private static final String WS_URL = "http://10.0.2.2:8080/socket/websocket";
+
+    // public static final String API_SOCKET_URL = "http://10.0.2.2:8080/";
+    public static final String WS_URL = "wss://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
 
     private StompClient stompClient;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();

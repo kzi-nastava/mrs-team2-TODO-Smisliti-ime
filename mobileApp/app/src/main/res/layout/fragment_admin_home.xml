@@ -16,38 +16,45 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
+    <!-- Zoom buttons: moved to left/start side, visible + / - styling -->
     <LinearLayout
         android:id="@+id/zoom_buttons_layout"
         android:orientation="vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="8dp"
-        app:layout_constraintTop_toTopOf="@id/map_fragment"
-        app:layout_constraintEnd_toEndOf="@id/map_fragment"
-        android:layout_margin="16dp"
+        app:layout_constraintBottom_toBottomOf="@id/map_fragment"
+        app:layout_constraintStart_toStartOf="@id/map_fragment"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
         android:elevation="10dp"
         android:background="@android:color/transparent">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_zoom_in"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/dark_blue"
+            android:insetTop="0dp"
+            android:insetBottom="10dp"
             android:text="+"
-            android:textColor="@android:color/white"
-            android:textSize="18sp"
-            android:backgroundTint="@android:color/holo_blue_dark"
-            android:elevation="12dp"/>
+            android:textColor="@color/white"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            app:cornerRadius="24dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_zoom_out"
-            android:layout_width="48dp"
+            android:layout_width="62dp"
             android:layout_height="48dp"
+            android:backgroundTint="@color/dark_blue"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
             android:text="-"
-            android:textColor="@android:color/white"
-            android:textSize="18sp"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="@android:color/holo_blue_dark"
-            android:elevation="12dp"/>
+            android:textColor="@color/white"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            app:cornerRadius="24dp" />
     </LinearLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -66,11 +73,11 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:src="@drawable/ic_notifications"
-            app:tint="@color/white"
-            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/white" />
 
         <TextView
             android:id="@+id/tvNotificationBadge"
@@ -90,13 +97,13 @@
 
     <androidx.cardview.widget.CardView
         android:id="@+id/notificationPanel"
-        android:layout_width="300dp"
+        android:layout_width="340dp"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        android:layout_marginEnd="-300dp"
         android:elevation="8dp"
         app:cardCornerRadius="8dp"
+        app:cardUseCompatPadding="true"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -139,7 +146,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:padding="8dp"/>
+                android:padding="8dp" />
 
             <TextView
                 android:id="@+id/tvEmptyNotifications"

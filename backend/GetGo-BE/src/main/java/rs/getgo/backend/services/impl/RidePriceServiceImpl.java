@@ -20,6 +20,9 @@ public class RidePriceServiceImpl implements RidePriceService {
     @Override
     public double calculateRidePrice(VehicleType vehicleType, double distanceKm) {
         GetRidePriceDTO prices = getPrices(vehicleType);
+        if (prices.getPricePerKm() == null || prices.getStartPrice() == null) {
+            prices = new GetRidePriceDTO(120.0, 500.0);
+        }
         return prices.getStartPrice() + (distanceKm * prices.getPricePerKm());
     }
 

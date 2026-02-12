@@ -225,10 +225,10 @@ public class DataInitializer {
 
     private Double getDefaultPricePerKm(VehicleType type) {
         return switch (type) {
-            case STANDARD -> 50.0;
-            case SEDAN -> 60.0;
-            case VAN -> 70.0;
-            case SUV -> 80.0;
+            case STANDARD -> 120.0;
+            case SEDAN -> 120.0;
+            case VAN -> 120.0;
+            case SUV -> 120.0;
             case LUXURY -> 120.0;
         };
     }

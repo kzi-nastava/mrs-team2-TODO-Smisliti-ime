@@ -1,5 +1,6 @@
 package rs.getgo.backend.services.impl.rides;
 
+import org.springframework.stereotype.Service;
 import rs.getgo.backend.model.entities.ActiveRide;
 import rs.getgo.backend.model.entities.Driver;
 import rs.getgo.backend.model.entities.Vehicle;
@@ -13,6 +14,7 @@ import rs.getgo.backend.services.DriverService;
 import java.util.List;
 import java.util.Optional;
 
+@Service
 public class DriverMatchingServiceImpl implements DriverMatchingService {
 
     private final DriverRepository driverRepository;

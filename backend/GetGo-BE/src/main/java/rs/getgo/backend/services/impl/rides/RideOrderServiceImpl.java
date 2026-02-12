@@ -85,7 +85,7 @@ public class RideOrderServiceImpl implements RideOrderService {
                 scheduledTime, payingPassenger, linkedPassengers);
 
         if (scheduledTime == null) {
-            CreatedRideResponseDTO driverError = assignDriverForImmediateRide(ride, route);
+            CreatedRideResponseDTO driverError = assignDriverForImmediateRide(ride, route, requestedVehicleType);
             if (driverError != null) return driverError;
         } else {
             ride.setVehicleType(requestedVehicleType);
@@ -238,7 +238,10 @@ public class RideOrderServiceImpl implements RideOrderService {
         return ride;
     }
 
-    private CreatedRideResponseDTO assignDriverForImmediateRide(ActiveRide ride, Route route) {
+    private CreatedRideResponseDTO assignDriverForImmediateRide(ActiveRide ride, Route route, VehicleType requestedVehicleType) {
+        // Set ride vehicle type before driver is picked
+        ride.setVehicleType(requestedVehicleType);
+
         Driver driver = driverMatchingService.findAvailableDriver(ride);
 
         if (driver == null) {
@@ -250,10 +253,7 @@ public class RideOrderServiceImpl implements RideOrderService {
         }
 
         ride.setDriver(driver);
-
-        VehicleType actualVehicleType = driver.getVehicle().getType();
-        ride.setVehicleType(actualVehicleType);
-        ride.setEstimatedPrice(ridePriceService.calculateRidePrice(actualVehicleType, route.getEstDistanceKm()));
+        ride.setEstimatedPrice(ridePriceService.calculateRidePrice(requestedVehicleType, route.getEstDistanceKm()));
 
         if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
             ride.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);

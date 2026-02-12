@@ -10,6 +10,7 @@ import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.ridePrice.GetRidePriceDTO;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
 import rs.getgo.backend.model.entities.*;
+import rs.getgo.backend.model.enums.NotificationType;
 import rs.getgo.backend.model.enums.RideOrderStatus;
 import rs.getgo.backend.model.enums.RideStatus;
 import rs.getgo.backend.model.enums.VehicleType;
@@ -603,6 +604,13 @@ public class RideServiceImpl implements RideService {
 //                        p.getId(),
 //                        "You have been added to a ride and the driver has accepted it!"
 //                );
+                notificationService.createAndNotify(
+                        p.getId(),
+                        NotificationType.RIDE_ACCEPTED,
+                        "Ride accepted",
+                        "You have been added to a ride. The driver has accepted it!",
+                        LocalDateTime.now()
+                );
             }
         }
     }

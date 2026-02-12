@@ -10,7 +10,6 @@ import rs.getgo.backend.repositories.DriverRepository;
 import rs.getgo.backend.services.DriverMatchingService;
 import rs.getgo.backend.services.DriverService;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,15 +18,18 @@ public class DriverMatchingServiceImpl implements DriverMatchingService {
     private final DriverRepository driverRepository;
     private final ActiveRideRepository activeRideRepository;
     private final DriverService driverService;
+    private final MapboxRoutingService routingService;
 
     public DriverMatchingServiceImpl(
             DriverRepository driverRepository,
             ActiveRideRepository activeRideRepository,
-            DriverService driverService
+            DriverService driverService,
+            MapboxRoutingService routingService
     ) {
         this.driverRepository = driverRepository;
         this.activeRideRepository = activeRideRepository;
         this.driverService = driverService;
+        this.routingService = routingService;
     }
 
     @Override
@@ -108,19 +110,26 @@ public class DriverMatchingServiceImpl implements DriverMatchingService {
         ActiveRide currentRide = activeRideRepository
                 .findByDriverAndStatus(driver, RideStatus.ACTIVE)
                 .orElse(null);
-        if (currentRide == null || currentRide.getActualStartTime() == null) {
-            return false; // Not in an active ride or hasn't started yet
+
+        if (currentRide == null || driver.getCurrentLatitude() == null || driver.getCurrentLongitude() == null) {
+            return false;
         }
 
-        // Calculate elapsed time
-        long elapsedMinutes = java.time.Duration.between(
-                currentRide.getActualStartTime(),
-                LocalDateTime.now()
-        ).toMinutes();
+        // Get remaining waypoints (those not yet reached)
+        List<WayPoint> remainingWaypoints = currentRide.getRoute().getWaypoints().stream()
+                .filter(wp -> wp.getReachedAt() == null)
+                .toList();
 
-        // Estimate remaining time
-        double estimatedTotalMinutes = currentRide.getRoute().getEstTimeMin();
-        double remainingMinutes = estimatedTotalMinutes - elapsedMinutes;
+        if (remainingWaypoints.isEmpty()) {
+            return true; // Already at destination
+        }
+
+        // Calculate remaining time from driver's current location
+        double remainingMinutes = routingService.calculateRemainingTime(
+                driver.getCurrentLatitude(),
+                driver.getCurrentLongitude(),
+                remainingWaypoints
+        );
 
         return remainingMinutes <= 10;
     }

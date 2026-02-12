@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import rs.getgo.backend.model.entities.WayPoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,6 +78,40 @@ public class MapboxRoutingService {
                 mockDurationSeconds,
                 distanceMeters / 1000.0 // Convert to km
         );
+    }
+
+    public double calculateRemainingTime(
+            double currentLat,
+            double currentLng,
+            List<WayPoint> remainingWaypoints
+    ) {
+        if (remainingWaypoints.isEmpty()) {
+            return 0.0;
+        }
+
+        double totalTime = 0.0;
+
+        // From current location to first remaining waypoint
+        WayPoint firstWaypoint = remainingWaypoints.getFirst();
+        RouteResponse firstSegment = getRoute(
+                currentLat, currentLng,
+                firstWaypoint.getLatitude(), firstWaypoint.getLongitude()
+        );
+        totalTime += firstSegment.realDurationSeconds() / 60.0;
+
+        // Between remaining waypoints
+        for (int i = 0; i < remainingWaypoints.size() - 1; i++) {
+            WayPoint from = remainingWaypoints.get(i);
+            WayPoint to = remainingWaypoints.get(i + 1);
+
+            RouteResponse segment = getRoute(
+                    from.getLatitude(), from.getLongitude(),
+                    to.getLatitude(), to.getLongitude()
+            );
+            totalTime += segment.realDurationSeconds() / 60.0;
+        }
+
+        return totalTime;
     }
 
     public String convertCoordinatesToJson(List<Coordinate> coordinates) {

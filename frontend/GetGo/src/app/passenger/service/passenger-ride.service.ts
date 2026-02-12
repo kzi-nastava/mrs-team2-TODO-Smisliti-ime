@@ -1,8 +1,7 @@
 import { Injectable, signal } from '@angular/core';
-import { Ride, GetRideDTO } from '../../model/ride.model';
+import { GetRideDTO } from '../../model/ride.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../env/environment';
-import { Signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { GetInconsistencyReportDTO } from '../../model/inconsistency-report.model';
 import { GetRatingDTO } from '../../model/rating.model';
@@ -35,9 +34,16 @@ export class RideService {
   loadRides(
     page: number = 0,
     size: number = 5,
-    startDate?: Date
+    startDate?: Date,
+    sort: string = 'startTime',
+    direction: string = 'DESC'
   ): Observable<PageResponse<GetRideDTO>> {
-    let params: any = {page, size};
+    let params: any = {
+      page: page.toString(),
+      size: size.toString(),
+      sort,
+      direction
+    };
 
     if (startDate) {
       const day = startDate.getDate().toString().padStart(2,'0');

@@ -10,21 +10,25 @@ import rs.getgo.backend.dtos.ride.GetRideStatusUpdateDTO;
 import rs.getgo.backend.dtos.ride.GetRideFinishedDTO;
 import rs.getgo.backend.dtos.ride.GetRideStoppedEarlyDTO;
 import rs.getgo.backend.dtos.ride.GetRideCancelledDTO;
+import rs.getgo.backend.dtos.notification.NotificationDTO;
+import rs.getgo.backend.repositories.NotificationRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class WebSocketController {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationRepository notificationRepository;
 
-    public WebSocketController(SimpMessagingTemplate messagingTemplate) {
+    public WebSocketController(SimpMessagingTemplate messagingTemplate,
+                               NotificationRepository notificationRepository) {
         this.messagingTemplate = messagingTemplate;
+        this.notificationRepository = notificationRepository;
     }
 
-    /**
-     * Notify specific driver about ride assignment
-     */
     public void notifyDriverRideAssigned(String driverEmail, GetDriverActiveRideDTO rideDTO) {
         messagingTemplate.convertAndSend(
                 "/socket-publisher/driver/" + driverEmail + "/ride-assigned",
@@ -32,9 +36,6 @@ public class WebSocketController {
         );
     }
 
-    /**
-     * Broadcast driver location update
-     */
     public void broadcastDriverLocation(String driverEmail, GetDriverLocationDTO locationDTO) {
         messagingTemplate.convertAndSend(
                 "/socket-publisher/driver/" + driverEmail + "/location",
@@ -42,9 +43,6 @@ public class WebSocketController {
         );
     }
 
-    /**
-     * Broadcast driver location to ride (for passengers tracking)
-     */
     public void broadcastDriverLocationToRide(Long rideId, GetDriverLocationDTO locationDTO) {
         messagingTemplate.convertAndSend(
                 "/socket-publisher/ride/" + rideId + "/driver-location",
@@ -164,39 +162,30 @@ public class WebSocketController {
         );
     }
 
-    /**
-     * Notify about ride cancellation
-     */
-    public void notifyRideCancelled(Long rideId, String cancelledBy, String reason) {
-        GetRideCancelledDTO cancellation = new GetRideCancelledDTO(
-                rideId,
-                "CANCELLED",
-                cancelledBy,
-                reason,
-                LocalDateTime.now()
-        );
-
+    // Notify single user about a new notification
+    public void notifyUserNotification(Long userId, Object payload) {
         messagingTemplate.convertAndSend(
-                "/socket-publisher/ride/" + rideId + "/ride-cancelled",
-                cancellation
+                "/socket-publisher/user/" + userId + "/notification",
+                payload
         );
     }
 
-    /**
-     * Notify driver about ride cancellation
-     */
-    public void notifyDriverRideCancelled(String driverEmail, Long rideId, String cancelledBy, String reason) {
-        GetRideCancelledDTO cancellation = new GetRideCancelledDTO(
-                rideId,
-                "CANCELLED",
-                cancelledBy,
-                reason,
-                LocalDateTime.now()
-        );
+    public void getUserNotifications(Long userId) {
+        if (userId == null) {
+            return;
+        }
+
+        List<NotificationDTO> unread = notificationRepository
+                .findByUserIdOrderByTimestampDesc(userId)
+                .stream()
+                .filter(n -> !n.isRead())
+                .map(n -> new NotificationDTO(n.getId(), n.getType(), n.getTitle(), n.getMessage(), n.isRead(), n.getTimestamp()))
+                .collect(Collectors.toList());
 
         messagingTemplate.convertAndSend(
-                "/socket-publisher/driver/" + driverEmail + "/ride-cancelled",
-                cancellation
+                "/socket-publisher/user/" + userId + "/notifications",
+                unread
         );
     }
 }
+

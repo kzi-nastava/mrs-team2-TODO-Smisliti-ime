@@ -38,6 +38,8 @@ public class RideServiceImpl implements RideService {
     private final InconsistencyReportRepository reportRepository;
     private final PanicNotifierService panicNotifierService;
     private final RideMapper rideMapper;
+    private final NotificationService notificationService;
+    private final RidePriceRepository ridePriceRepository;
 
     @Value("${driver.default.latitude}")
     private Double defaultDriverLatitude;
@@ -61,7 +63,9 @@ public class RideServiceImpl implements RideService {
                            EmailService emailService,
                            InconsistencyReportRepository reportRepository,
                            PanicNotifierService panicNotifierService,
-                           RideMapper rideMapper) {
+                           RideMapper rideMapper,
+                           NotificationService notificationService,
+                           RidePriceRepository ridePriceRepository) {
         this.cancellationRepository = cancellationRepository;
         this.panicRepository = panicRepository;
         this.activeRideRepository = activeRideRepository;
@@ -76,10 +80,12 @@ public class RideServiceImpl implements RideService {
         this.reportRepository = reportRepository;
         this.panicNotifierService = panicNotifierService;
         this.rideMapper = rideMapper;
+        this.notificationService = notificationService;
+        this.ridePriceRepository = ridePriceRepository;
     }
 
     @Override
-    public void cancelRide(ActiveRide ride, CancelRideDTO req) {
+    public Notification cancelRide(ActiveRide ride, CancelRideDTO req) {
         String role = req.getRole() != null ? req.getRole().toUpperCase() : "PASSENGER";
 
         if ("DRIVER".equals(role)) {
@@ -138,7 +144,20 @@ public class RideServiceImpl implements RideService {
         completedRide.setStoppedEarly(false);
         completedRide.setPanicPressed(false);
 
+        // Save completed ride first
         completedRide = completedRideRepository.save(completedRide);
+
+        // Set notification message so passengers/drivers can read it via Notification entity
+        String cancelledBy = "DRIVER".equals(role) ? "Driver" : "Passenger";
+        // Short, clear notification without ride id
+        String notifMsg = String.format("%s canceled the ride. Reason: %s", cancelledBy, req.getReason() != null ? req.getReason() : "No reason provided");
+
+        // Create notifications to passenger and driver with the message and return the notification for caller
+        Driver driver = ride.getDriver();
+        rs.getgo.backend.model.entities.Notification passengerNotif = notificationService.createAndNotify(ride.getPayingPassenger().getId(), rs.getgo.backend.model.enums.NotificationType.RIDE_CANCELLED, "Ride canceled", notifMsg, LocalDateTime.now());
+        if (driver != null) {
+            notificationService.createAndNotify(driver.getId(), rs.getgo.backend.model.enums.NotificationType.RIDE_CANCELLED, "Ride canceled", notifMsg, LocalDateTime.now());
+        }
 
         // Link panic records to completed ride if any exist
         List<Panic> ridePanics = panicRepository.findAll().stream()
@@ -169,41 +188,24 @@ public class RideServiceImpl implements RideService {
             }
         }
 
+        for (Passenger p : allPassengers) {
+            notificationService.createAndNotify(p.getId(), rs.getgo.backend.model.enums.NotificationType.RIDE_CANCELLED, "Ride canceled", notifMsg, LocalDateTime.now());
+        }
+
         // Release driver if assigned
-        Driver driver = ride.getDriver();
         if (driver != null) {
             driver.setActive(true);
             driverRepository.save(driver);
         }
 
-        // Notify via WebSocket about ride cancellation
-        String cancelledBy = "DRIVER".equals(role) ? "Driver" : "Passenger";
-
-        // Notify all participants about cancellation
-        webSocketController.notifyRideCancelled(
-                ride.getId(),
-                cancelledBy,
-                req.getReason() != null ? req.getReason() : "No reason provided"
-        );
-
-        // If driver exists, notify driver specifically
-        if (driver != null) {
-            webSocketController.notifyDriverRideCancelled(
-                    driver.getEmail(),
-                    ride.getId(),
-                    cancelledBy,
-                    req.getReason() != null ? req.getReason() : "No reason provided"
-            );
-        }
-
         activeRideRepository.delete(ride);
 
-        new CreatedRideStatusDTO(ride.getId(), "CANCELED");
+        return passengerNotif;
     }
 
     // low‑level helper already existing – leave as is
     @Override
-    public void cancelRideByDriver(Long rideId, String reason) {
+    public Notification cancelRideByDriver(Long rideId, String reason) {
         String email = AuthUtils.getCurrentUserEmail();
         Long driverId = driverRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("Driver not found"))
@@ -231,11 +233,11 @@ public class RideServiceImpl implements RideService {
         dto.setPassengersEntered(false);
         dto.setScheduledStartTime(ride.getScheduledTime());
 
-        cancelRide(ride, dto);
+        return cancelRide(ride, dto);
     }
 
     @Override
-    public void cancelRideByPassenger(Long rideId, String reason) {
+    public Notification cancelRideByPassenger(Long rideId, String reason) {
         ActiveRide ride = activeRideRepository.findById(rideId)
                 .orElseThrow(() -> new IllegalStateException("Ride not found"));
 
@@ -262,7 +264,7 @@ public class RideServiceImpl implements RideService {
         dto.setPassengersEntered(false);
         dto.setScheduledStartTime(scheduled);
 
-        cancelRide(ride, dto);
+        return cancelRide(ride, dto);
     }
 
     @Override
@@ -527,10 +529,19 @@ public class RideServiceImpl implements RideService {
         PanicAlertDTO dto = new PanicAlertDTO();
         dto.setPanicId(panic.getId());
         dto.setRideId(ride.getId());
+        dto.setDriverId(ride.getDriver().getId());
         dto.setTriggeredByUserId(userId);
         dto.setTriggeredAt(triggeredAt);
         dto.setStatus(false);
         panicNotifierService.notifyAdmins(dto);
+
+        // Create Notification for driver and passenger(s)
+        // Short panic notification without ride id
+        String msg = "PANIC button pressed — immediate attention required";
+        if (ride.getDriver() != null) {
+            notificationService.createAndNotify(ride.getDriver().getId(), rs.getgo.backend.model.enums.NotificationType.PANIC_ALERT, "Panic triggered", msg, triggeredAt);
+        }
+        notificationService.createAndNotify(ride.getPayingPassenger().getId(), rs.getgo.backend.model.enums.NotificationType.PANIC_ALERT, "Panic triggered", msg, triggeredAt);
     }
 
     @Override
@@ -687,6 +698,27 @@ public class RideServiceImpl implements RideService {
         long durationMinutes = java.time.Duration.between(startTime, endTime).toMinutes();
         double actualPrice = calculateStoppedRidePrice(ride, durationMinutes);
 
+        // If stop coordinates provided, update route's ending point and completed ride route
+        if (stopRideDTO != null) {
+            double lat = stopRideDTO.getLatitude();
+            double lng = stopRideDTO.getLongitude();
+            // Update currentLocation and route end
+            ride.setCurrentLocation(new rs.getgo.backend.model.entities.WayPoint() {{ setLatitude(lat); setLongitude(lng); setAddress(null); }});
+            // Update route ending point string
+            if (ride.getRoute() != null) {
+                ride.getRoute().setEndingPoint("Stopped location");
+                // also update last waypoint coordinates if waypoints exist
+                List<rs.getgo.backend.model.entities.WayPoint> wps = ride.getRoute().getWaypoints();
+                if (wps != null && !wps.isEmpty()) {
+                    rs.getgo.backend.model.entities.WayPoint last = wps.get(wps.size() - 1);
+                    last.setLatitude(lat);
+                    last.setLongitude(lng);
+                    last.setAddress("Stopped location");
+                }
+                routeRepository.save(ride.getRoute());
+            }
+        }
+
         CompletedRide completedRide = new CompletedRide();
         completedRide.setRoute(ride.getRoute());
         completedRide.setScheduledTime(ride.getScheduledTime());
@@ -757,6 +789,14 @@ public class RideServiceImpl implements RideService {
                 ride.getDriver().getId()
         );
 
+        // Create notifications to passenger and driver
+        // Short stop notification without ride id
+        String stopMsg = "Ride stopped early at the provided location.";
+        notificationService.createAndNotify(ride.getPayingPassenger().getId(), rs.getgo.backend.model.enums.NotificationType.RIDE_CANCELLED, "Ride stopped early", stopMsg, endTime);
+        if (ride.getDriver() != null) {
+            notificationService.createAndNotify(ride.getDriver().getId(), rs.getgo.backend.model.enums.NotificationType.RIDE_CANCELLED, "Ride stopped early", stopMsg, endTime);
+        }
+
         RideCompletionDTO response = new RideCompletionDTO();
         response.setRideId(completedRide.getId());
         response.setStatus("STOPPED_EARLY");
@@ -764,6 +804,7 @@ public class RideServiceImpl implements RideService {
         response.setStartTime(startTime);
         response.setEndTime(endTime);
         response.setDurationMinutes(durationMinutes);
+        response.setNotificationMessage(stopMsg);
 
         return response;
     }

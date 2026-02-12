@@ -48,6 +48,9 @@ public class GetPassengerActiveRideDTO {
     public List<String> getAddresses() { return addresses; }
     public void setAddresses(List<String> addresses) { this.addresses = addresses; }
 
-    public LocalDateTime getScheduledTime() { return scheduledTime; }
+    public LocalDateTime getScheduledTime() {
+        return this.scheduledTime;
+    }
+
     public void setScheduledTime(LocalDateTime scheduledTime) { this.scheduledTime = scheduledTime; }
 }

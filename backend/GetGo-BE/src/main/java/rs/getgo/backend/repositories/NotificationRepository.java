@@ -4,4 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import rs.getgo.backend.model.entities.Notification;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
+    java.util.List<Notification> findByUserIdOrderByTimestampDesc(Long userId);
 }

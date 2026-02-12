@@ -121,11 +121,12 @@ public class PassengerServiceImpl implements PassengerService {
     }
 
     @Override
-    public Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size) {
+    public Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction) {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
 
         Page<CompletedRide> ridesPage;
         if (startDate != null) {

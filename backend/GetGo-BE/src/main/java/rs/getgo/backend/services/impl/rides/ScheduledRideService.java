@@ -6,11 +6,14 @@ import org.springframework.transaction.annotation.Transactional;
 import rs.getgo.backend.controllers.WebSocketController;
 import rs.getgo.backend.dtos.ride.GetActiveRideDTO;
 import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
+import rs.getgo.backend.mappers.RideMapper;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RideStatus;
+import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.ActiveRideRepository;
 import rs.getgo.backend.repositories.RideCancellationRepository;
 import rs.getgo.backend.services.DriverMatchingService;
+import rs.getgo.backend.services.RidePriceService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,7 +24,9 @@ public class ScheduledRideService {
     private final ActiveRideRepository activeRideRepository;
     private final RideCancellationRepository rideCancellationRepository;
     private final DriverMatchingService driverMatchingService;
+    private final RidePriceService ridePriceService;
     private final WebSocketController webSocketController;
+    private final RideMapper rideMapper;
 
     // How many minutes before scheduled ride start should ride be activates
     private static final long ACTIVATION_MINUTES_BEFORE = 15L;
@@ -33,12 +38,16 @@ public class ScheduledRideService {
             ActiveRideRepository activeRideRepository,
             RideCancellationRepository rideCancellationRepository,
             DriverMatchingService driverMatchingService,
-            WebSocketController webSocketController
+            RidePriceService ridePriceService,
+            WebSocketController webSocketController,
+            RideMapper rideMapper
     ) {
         this.activeRideRepository = activeRideRepository;
         this.rideCancellationRepository = rideCancellationRepository;
         this.driverMatchingService = driverMatchingService;
+        this.ridePriceService = ridePriceService;
         this.webSocketController = webSocketController;
+        this.rideMapper = rideMapper;
     }
 
     @Scheduled(fixedRate = 60000)
@@ -51,43 +60,8 @@ public class ScheduledRideService {
     public List<GetActiveRideDTO> getScheduledRides() {
         List<ActiveRide> rides = activeRideRepository.findByStatus(RideStatus.SCHEDULED);
         return rides.stream()
-                .map(this::mapToGetActiveRideDTO)
+                .map(rideMapper::toGetActiveRideDTO)
                 .toList();
-    }
-
-    private GetActiveRideDTO mapToGetActiveRideDTO(ActiveRide ride) {
-        GetActiveRideDTO dto = new GetActiveRideDTO();
-
-        dto.setId(ride.getId());
-        dto.setStartingPoint(ride.getRoute().getStartingPoint());
-        dto.setEndingPoint(ride.getRoute().getEndingPoint());
-        dto.setWaypointAddresses(
-                ride.getRoute().getWaypoints().stream()
-                        .map(WayPoint::getAddress)
-                        .toList()
-        );
-
-        // Don't set driver info as scheduled rides don't have driver
-
-        dto.setPayingPassengerEmail(ride.getPayingPassenger().getEmail());
-        dto.setLinkedPassengerEmails(
-                ride.getLinkedPassengers() != null
-                        ? ride.getLinkedPassengers().stream()
-                        .map(Passenger::getEmail)
-                        .toList()
-                        : List.of()
-        );
-
-        dto.setEstimatedPrice(ride.getEstimatedPrice());
-        dto.setSetEstimatedDurationMin(ride.getEstimatedDurationMin());
-        dto.setScheduledTime(ride.getScheduledTime());
-        dto.setActualStartTime(ride.getActualStartTime());
-        dto.setStatus(ride.getStatus().toString());
-        dto.setVehicleType(ride.getVehicleType() != null ? ride.getVehicleType().toString() : "ANY");
-        dto.setNeedsBabySeats(ride.isNeedsBabySeats());
-        dto.setNeedsPetFriendly(ride.isNeedsPetFriendly());
-
-        return dto;
     }
 
     private void activateScheduledRides() {
@@ -117,6 +91,14 @@ public class ScheduledRideService {
 
         ride.setDriver(driver);
 
+        // If vehicle type was 'ANY', set driver's vehicle type as ride vehicle type and calculate price
+        if (ride.getVehicleType() == null) {
+            VehicleType vehicleType = driver.getVehicle().getType();
+            double routeEstDistanceKm = ride.getRoute().getEstDistanceKm();
+            ride.setVehicleType(vehicleType);
+            ride.setEstimatedPrice(ridePriceService.calculateRidePrice(vehicleType, routeEstDistanceKm));
+        }
+
         if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
             ride.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
         } else {
@@ -127,7 +109,7 @@ public class ScheduledRideService {
 
         // Notify driver if ready
         if (ride.getStatus() == RideStatus.DRIVER_READY) {
-            GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(ride);
+            GetDriverActiveRideDTO rideDTO = rideMapper.toDriverActiveRideDTO(ride);
             webSocketController.notifyDriverRideAssigned(driver.getEmail(), rideDTO);
         }
 
@@ -139,31 +121,6 @@ public class ScheduledRideService {
                         ? "Driver assigned, your scheduled ride will start soon"
                         : "Driver assigned, waiting for driver to finish previous ride..."
         );
-    }
-
-    private GetDriverActiveRideDTO buildDriverActiveRideDTO(ActiveRide ride) {
-        GetDriverActiveRideDTO dto = new GetDriverActiveRideDTO();
-        dto.setRideId(ride.getId());
-        dto.setStartingPoint(ride.getRoute().getStartingPoint());
-        dto.setEndingPoint(ride.getRoute().getEndingPoint());
-        dto.setEstimatedPrice(ride.getEstimatedPrice());
-        dto.setEstimatedTimeMin(ride.getRoute().getEstTimeMin());
-        dto.setPassengerName(ride.getPayingPassenger().getName() + " " + ride.getPayingPassenger().getSurname());
-        dto.setPassengerCount(1 + (ride.getLinkedPassengers() != null ? ride.getLinkedPassengers().size() : 0));
-        dto.setStatus(ride.getStatus().toString());
-        dto.setScheduledTime(ride.getScheduledTime());
-
-        dto.setLatitudes(ride.getRoute().getWaypoints().stream()
-                .map(WayPoint::getLatitude)
-                .toList());
-        dto.setLongitudes(ride.getRoute().getWaypoints().stream()
-                .map(WayPoint::getLongitude)
-                .toList());
-        dto.setAddresses(ride.getRoute().getWaypoints().stream()
-                .map(WayPoint::getAddress)
-                .toList());
-
-        return dto;
     }
 
     private void cancelOverdueScheduledRides() {
@@ -178,14 +135,14 @@ public class ScheduledRideService {
 
         for (ActiveRide ride : overdueRides) {
             try {
-                cancelOverdueRide(ride);
+                cancelOverdueScheduledRide(ride);
             } catch (Exception e) {
                 System.err.println("Failed to cancel overdue ride " + ride.getId() + ": " + e.getMessage());
             }
         }
     }
 
-    private void cancelOverdueRide(ActiveRide ride) {
+    private void cancelOverdueScheduledRide(ActiveRide ride) {
         // Create and save ride cancellation
         RideCancellation cancellation = new RideCancellation();
         cancellation.setRideId(ride.getId());

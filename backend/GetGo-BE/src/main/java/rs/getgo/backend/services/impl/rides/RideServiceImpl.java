@@ -413,7 +413,7 @@ public class RideServiceImpl implements RideService {
             activeRideRepository.save(waitingRide);
 
             // Notify driver about next ride
-            GetDriverActiveRideDTO rideDTO = rideMapper.buildDriverActiveRideDTO(waitingRide);
+            GetDriverActiveRideDTO rideDTO = rideMapper.toDriverActiveRideDTO(waitingRide);
             webSocketController.notifyDriverRideAssigned(driver.getEmail(), rideDTO);
             // Notify passenger
             webSocketController.notifyPassengerRideStatusUpdate(
@@ -497,7 +497,7 @@ public class RideServiceImpl implements RideService {
                 .orElse(null);
         if (ride == null) return null;
 
-        return rideMapper.buildDriverActiveRideDTO(ride);
+        return rideMapper.toDriverActiveRideDTO(ride);
     }
 
     @Override

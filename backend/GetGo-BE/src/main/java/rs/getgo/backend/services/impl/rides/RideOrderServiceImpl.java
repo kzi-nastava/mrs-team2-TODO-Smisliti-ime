@@ -5,7 +5,6 @@ import rs.getgo.backend.controllers.WebSocketController;
 import rs.getgo.backend.dtos.ride.CreateRideRequestDTO;
 import rs.getgo.backend.dtos.ride.CreatedRideResponseDTO;
 import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
-import rs.getgo.backend.dtos.ridePrice.GetRidePriceDTO;
 import rs.getgo.backend.mappers.RideMapper;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RideOrderStatus;
@@ -14,6 +13,7 @@ import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.DriverMatchingService;
 import rs.getgo.backend.services.RideOrderService;
+import rs.getgo.backend.services.RidePriceService;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -27,7 +27,7 @@ public class RideOrderServiceImpl implements RideOrderService {
     private final BlockNoteRepository blockNoteRepository;
     private final RouteRepository routeRepository;
     private final ActiveRideRepository activeRideRepository;
-    private final RidePriceRepository ridePriceRepository;
+    private final RidePriceService ridePriceService;
     private final MapboxRoutingService routingService;
     private final DriverMatchingService driverMatchingService;
     private final RideMapper rideMapper;
@@ -38,7 +38,7 @@ public class RideOrderServiceImpl implements RideOrderService {
             BlockNoteRepository blockNoteRepository,
             RouteRepository routeRepository,
             ActiveRideRepository activeRideRepository,
-            RidePriceRepository ridePriceRepository,
+            RidePriceService ridePriceService,
             MapboxRoutingService routingService,
             DriverMatchingService driverMatchingService,
             RideMapper rideMapper
@@ -48,7 +48,7 @@ public class RideOrderServiceImpl implements RideOrderService {
         this.blockNoteRepository = blockNoteRepository;
         this.routeRepository = routeRepository;
         this.activeRideRepository = activeRideRepository;
-        this.ridePriceRepository = ridePriceRepository;
+        this.ridePriceService = ridePriceService;
         this.routingService = routingService;
         this.driverMatchingService = driverMatchingService;
         this.rideMapper = rideMapper;
@@ -253,7 +253,7 @@ public class RideOrderServiceImpl implements RideOrderService {
 
         VehicleType actualVehicleType = driver.getVehicle().getType();
         ride.setVehicleType(actualVehicleType);
-        ride.setEstimatedPrice(calculatePrice(route, actualVehicleType.toString()));
+        ride.setEstimatedPrice(ridePriceService.calculateRidePrice(actualVehicleType, route.getEstDistanceKm()));
 
         if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
             ride.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
@@ -266,7 +266,7 @@ public class RideOrderServiceImpl implements RideOrderService {
 
     private void notifyDriverIfReady(ActiveRide savedRide) {
         if (savedRide.getStatus() == RideStatus.DRIVER_READY) {
-            GetDriverActiveRideDTO rideDTO = rideMapper.buildDriverActiveRideDTO(savedRide);
+            GetDriverActiveRideDTO rideDTO = rideMapper.toDriverActiveRideDTO(savedRide);
             webSocketController.notifyDriverRideAssigned(savedRide.getDriver().getEmail(), rideDTO);
         }
     }
@@ -333,28 +333,6 @@ public class RideOrderServiceImpl implements RideOrderService {
         route.setEncodedPolyline(polylineJson);
 
         return route;
-    }
-
-    private double calculatePrice(Route route, String vehicleTypeStr) {
-        VehicleType vehicleType = parseVehicleType(vehicleTypeStr);
-        GetRidePriceDTO priceDTO = getPricesWithDefaults(vehicleType);
-        return priceDTO.getStartPrice() + (route.getEstDistanceKm() * priceDTO.getPricePerKm());
-    }
-
-    private GetRidePriceDTO getPricesWithDefaults(VehicleType vehicleType) {
-        double defaultStartPrice;
-        double defaultPricePerKm;
-
-        switch (vehicleType) {
-            case STANDARD -> { defaultStartPrice = 200; defaultPricePerKm = 120; }
-            case VAN -> { defaultStartPrice = 500; defaultPricePerKm = 150; }
-            case LUXURY -> { defaultStartPrice = 800; defaultPricePerKm = 200; }
-            default -> { defaultStartPrice = 200; defaultPricePerKm = 100; }
-        }
-
-        return ridePriceRepository.findByVehicleType(vehicleType)
-                .map(p -> new GetRidePriceDTO(p.getPricePerKm(), p.getStartPrice()))
-                .orElse(new GetRidePriceDTO(defaultPricePerKm, defaultStartPrice));
     }
 
     private VehicleType parseVehicleType(String vehicleTypeStr) {

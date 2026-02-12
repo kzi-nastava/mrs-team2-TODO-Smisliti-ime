@@ -278,7 +278,6 @@ public class AdminBlockUsersFragment extends Fragment {
 
         String reason = etBlockReason.getText() != null
                 ? etBlockReason.getText().toString().trim() : "";
-        if (reason.isEmpty()) return;
 
         btnBlockUser.setEnabled(false);
 

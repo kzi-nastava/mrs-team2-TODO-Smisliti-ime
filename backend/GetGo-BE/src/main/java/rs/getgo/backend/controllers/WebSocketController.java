@@ -5,14 +5,12 @@ import org.springframework.stereotype.Controller;
 import rs.getgo.backend.dtos.driver.GetDriverLocationDTO;
 import rs.getgo.backend.dtos.panic.GetPanicAlertDTO;
 import rs.getgo.backend.dtos.message.GetMessageDTO;
-import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
-import rs.getgo.backend.dtos.ride.GetRideStatusUpdateDTO;
-import rs.getgo.backend.dtos.ride.GetRideFinishedDTO;
-import rs.getgo.backend.dtos.ride.GetRideStoppedEarlyDTO;
-import rs.getgo.backend.dtos.ride.GetRideCancelledDTO;
+import rs.getgo.backend.dtos.ride.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class WebSocketController {
@@ -200,6 +198,16 @@ public class WebSocketController {
         messagingTemplate.convertAndSend(
                 "/socket-publisher/driver/" + driverEmail + "/ride-cancelled",
                 cancellation
+        );
+    }
+
+    public void notifyPassengerLinkedRideAccepted(Long passengerId, Long rideId, String driverName) {
+
+        LinkedRideAcceptedDTO linkedRideAccepted = new LinkedRideAcceptedDTO(rideId, driverName);
+
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/user/" + passengerId + "/linked-ride-accepted",
+                linkedRideAccepted
         );
     }
 }

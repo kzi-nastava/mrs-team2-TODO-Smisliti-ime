@@ -611,6 +611,12 @@ public class RideServiceImpl implements RideService {
                         "You have been added to a ride. The driver has accepted it!",
                         LocalDateTime.now()
                 );
+
+                webSocketController.notifyPassengerLinkedRideAccepted(
+                        p.getId(),
+                        ride.getId(),
+                        ride.getDriver().getName()
+                );
             }
         }
     }

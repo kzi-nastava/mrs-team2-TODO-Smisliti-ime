@@ -180,10 +180,8 @@ public class WebSocketManager {
         compositeDisposable.add(lifecycleDisposable);
 
         Log.d(TAG, "Connecting to WebSocket at: " + WS_URL);
-        stompClient.connect();
-        Log.d(TAG, "WebSocketManager: user should now subscribe to topics for notifications");
 
-        // Build connect headers if auth token present
+// Build connect headers if auth token present
         if (authToken != null && !authToken.isEmpty()) {
             List<StompHeader> headers = new ArrayList<>();
             headers.add(new StompHeader("Authorization", "Bearer " + authToken));

@@ -35,8 +35,8 @@ import ua.naiksoftware.stomp.dto.StompHeader;
 public class WebSocketManager {
     private static final String TAG = "WebSocketManager";
 
-    // public static final String WS_URL = "http://10.0.2.2:8080/socket/websocket";
-    public static final String WS_URL = "wss://nonpossibly-nonderivable-teddy.ngrok-free.dev/socket/websocket";
+    public static final String WS_URL = "http://10.0.2.2:8080/socket/websocket";
+    // public static final String WS_URL = "wss://nonpossibly-nonderivable-teddy.ngrok-free.dev/socket/websocket";
 
     private StompClient stompClient;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();

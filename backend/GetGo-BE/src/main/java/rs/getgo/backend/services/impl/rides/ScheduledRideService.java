@@ -10,7 +10,7 @@ import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RideStatus;
 import rs.getgo.backend.repositories.ActiveRideRepository;
 import rs.getgo.backend.repositories.RideCancellationRepository;
-import rs.getgo.backend.services.DriverService;
+import rs.getgo.backend.services.DriverMatchingService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,7 +20,7 @@ public class ScheduledRideService {
 
     private final ActiveRideRepository activeRideRepository;
     private final RideCancellationRepository rideCancellationRepository;
-    private final DriverService driverService;
+    private final DriverMatchingService driverMatchingService;
     private final WebSocketController webSocketController;
 
     // How many minutes before scheduled ride start should ride be activates
@@ -32,12 +32,12 @@ public class ScheduledRideService {
     public ScheduledRideService(
             ActiveRideRepository activeRideRepository,
             RideCancellationRepository rideCancellationRepository,
-            DriverService driverService,
+            DriverMatchingService driverMatchingService,
             WebSocketController webSocketController
     ) {
         this.activeRideRepository = activeRideRepository;
         this.rideCancellationRepository = rideCancellationRepository;
-        this.driverService = driverService;
+        this.driverMatchingService = driverMatchingService;
         this.webSocketController = webSocketController;
     }
 
@@ -111,7 +111,7 @@ public class ScheduledRideService {
     }
 
     private void activateScheduledRide(ActiveRide ride) {
-        Driver driver = driverService.findAvailableDriver(ride);
+        Driver driver = driverMatchingService.findAvailableDriver(ride);
         // If no drivers were found, try in next scheduled run
         if (driver == null) return;
 

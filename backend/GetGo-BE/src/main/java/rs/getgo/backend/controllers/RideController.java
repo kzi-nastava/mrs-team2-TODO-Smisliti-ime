@@ -37,7 +37,6 @@ public class RideController {
     private final ScheduledRideService scheduledRideService;
     private final FavoriteRideService favoriteRideService;
 
-
     public RideController(RideEstimateService rideEstimateService,
                           RideService rideService,
                           RideOrderService rideOrderService,

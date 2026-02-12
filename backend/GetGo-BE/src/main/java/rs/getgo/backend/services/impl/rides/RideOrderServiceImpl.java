@@ -56,151 +56,44 @@ public class RideOrderServiceImpl implements RideOrderService {
 
     @Override
     public CreatedRideResponseDTO orderRide(CreateRideRequestDTO createRideRequestDTO, String userEmail) {
-        // Validate request
-        if (createRideRequestDTO.getLatitudes().size() < 2 ||
-                createRideRequestDTO.getLatitudes().size() != createRideRequestDTO.getLongitudes().size() ||
-                createRideRequestDTO.getLatitudes().size() != createRideRequestDTO.getAddresses().size()) {
-            return new CreatedRideResponseDTO(
-                    "INVALID_REQUEST",
-                    "Invalid coordinates or addresses",
-                    null
-            );
-        }
+        CreatedRideResponseDTO coordinatesError = validateCoordinates(createRideRequestDTO);
+        if (coordinatesError != null) return coordinatesError;
 
-        // Find paying passenger
-        Passenger payingPassenger = passengerRepository.findByEmail(userEmail)
-                .orElse(null);
-        if (payingPassenger == null) {
-            return new CreatedRideResponseDTO(
-                    RideOrderStatus.PASSENGER_NOT_FOUND.toString(),
-                    "Passenger account not found",
-                    null
-            );
-        }
-        if (payingPassenger.isBlocked()) {
-            String reason = blockNoteRepository.findByUserAndUnblockedAtIsNull(payingPassenger)
-                    .map(BlockNote::getReason)
-                    .orElse("You have been blocked.");
-            return new CreatedRideResponseDTO(
-                    "blocked",
-                    "Cannot order ride: user is blocked. Reason: " + reason,
-                    null);
-        }
+        Passenger payingPassenger = passengerRepository.findByEmail(userEmail).orElse(null);
+        CreatedRideResponseDTO passengerError = validatePayingPassenger(payingPassenger);
+        if (passengerError != null) return passengerError;
 
-        // Check if paying passenger already has an active ride
-        boolean hasActiveRide = activeRideRepository.existsByPayingPassengerOrLinkedPassengersContaining(
-                payingPassenger, payingPassenger
-        );
-        if (hasActiveRide) {
-            return new CreatedRideResponseDTO(
-                    "PASSENGER_HAS_ACTIVE_RIDE",
-                    "You already have an active ride",
-                    null
-            );
-        }
-
-        // Parse scheduled time
         LocalDateTime scheduledTime = null;
         if (createRideRequestDTO.getScheduledTime() != null && !createRideRequestDTO.getScheduledTime().isEmpty()) {
             scheduledTime = parseScheduledTime(createRideRequestDTO.getScheduledTime());
-
-            if (scheduledTime == null ||
-                    scheduledTime.isBefore(LocalDateTime.now()) ||
-                    scheduledTime.isAfter(LocalDateTime.now().plusHours(5))) {
-                return new CreatedRideResponseDTO(
-                        RideOrderStatus.INVALID_SCHEDULED_TIME.toString(),
-                        "Scheduled time must be within the next 5 hours",
-                        null
-                );
-            }
+            CreatedRideResponseDTO timeError = validateScheduledTime(scheduledTime);
+            if (timeError != null) return timeError;
         }
 
-        // Find and validate linked passengers
-        List<Passenger> linkedPassengers = new ArrayList<>();
-        if (createRideRequestDTO.getFriendEmails() != null) {
-            for (String email : createRideRequestDTO.getFriendEmails()) {
-                Passenger passenger = passengerRepository.findByEmail(email).orElse(null);
-                if (passenger == null) {
-                    return new CreatedRideResponseDTO(
-                            "LINKED_PASSENGER_NOT_FOUND",
-                            "Passenger with email " + email + " not found",
-                            null
-                    );
-                }
+        List<Passenger> linkedPassengers = collectLinkedPassengers(createRideRequestDTO.getFriendEmails());
+        CreatedRideResponseDTO linkedError = validateLinkedPassengers(
+                createRideRequestDTO.getFriendEmails(), linkedPassengers
+        );
+        if (linkedError != null) return linkedError;
 
-                // Check if linked passenger already has an active ride
-                boolean linkedHasActiveRide = activeRideRepository.existsByPayingPassengerOrLinkedPassengersContaining(
-                        passenger, passenger
-                );
-                if (linkedHasActiveRide) {
-                    return new CreatedRideResponseDTO(
-                            "LINKED_PASSENGER_HAS_ACTIVE_RIDE",
-                            "Passenger " + email + " already has an active ride",
-                            null
-                    );
-                }
-
-                linkedPassengers.add(passenger);
-            }
-        }
-
-        // Create Route with waypoints
         Route route = createRoute(createRideRequestDTO);
         routeRepository.save(route);
 
-        // Parse vehicle type (null for "ANY")
         VehicleType requestedVehicleType = parseVehicleType(createRideRequestDTO.getVehicleType());
 
-        // Create ActiveRide with common properties
-        ActiveRide ride = new ActiveRide();
-        ride.setRoute(route);
-        ride.setScheduledTime(scheduledTime);
-        ride.setNeedsBabySeats(createRideRequestDTO.getHasBaby() != null && createRideRequestDTO.getHasBaby());
-        ride.setNeedsPetFriendly(createRideRequestDTO.getHasPets() != null && createRideRequestDTO.getHasPets());
-        ride.setPayingPassenger(payingPassenger);
-        ride.setLinkedPassengers(linkedPassengers);
-        ride.setCurrentLocation(route.getWaypoints().getFirst());
+        ActiveRide ride = buildActiveRide(createRideRequestDTO, route,
+                scheduledTime, payingPassenger, linkedPassengers);
 
         if (scheduledTime == null) {
-            // Assign driver for immediate rides
-            Driver driver = driverMatchingService.findAvailableDriver(ride);
-
-            if (driver == null) {
-                return new CreatedRideResponseDTO(
-                        "NO_DRIVERS_AVAILABLE",
-                        "No drivers available at the moment",
-                        null
-                );
-            }
-
-            ride.setDriver(driver);
-
-            // Use driver's vehicle type (overrides "ANY" if requested)
-            VehicleType actualVehicleType = driver.getVehicle().getType();
-            ride.setVehicleType(actualVehicleType);
-            ride.setEstimatedPrice(calculatePrice(route, actualVehicleType.toString()));
-
-            // Set status based on driver's current state
-            if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
-                ride.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
-            } else {
-                ride.setStatus(RideStatus.DRIVER_READY);
-            }
+            CreatedRideResponseDTO driverError = assignDriverForImmediateRide(ride, route);
+            if (driverError != null) return driverError;
         } else {
-            // Assign driver later for scheduled rides
             ride.setVehicleType(requestedVehicleType);
-            // TODO: on scheduled ride activate when driver is picked calculate estimated price
             ride.setStatus(RideStatus.SCHEDULED);
         }
 
-        // Save ride
         ActiveRide savedRide = activeRideRepository.save(ride);
-
-        // Notify driver if ready
-        if (savedRide.getStatus() == RideStatus.DRIVER_READY) {
-            GetDriverActiveRideDTO rideDTO = rideMapper.buildDriverActiveRideDTO(savedRide);
-            webSocketController.notifyDriverRideAssigned(savedRide.getDriver().getEmail(), rideDTO);
-        }
+        notifyDriverIfReady(savedRide);
 
         return new CreatedRideResponseDTO(
                 "SUCCESS",
@@ -209,6 +102,173 @@ public class RideOrderServiceImpl implements RideOrderService {
                         : "Ride ordered successfully!",
                 savedRide.getId()
         );
+    }
+
+    private CreatedRideResponseDTO validateCoordinates(CreateRideRequestDTO request) {
+        if (request.getLatitudes().size() < 2 ||
+                request.getLatitudes().size() != request.getLongitudes().size() ||
+                request.getLatitudes().size() != request.getAddresses().size()) {
+            return new CreatedRideResponseDTO(
+                    "INVALID_REQUEST",
+                    "Invalid coordinates or addresses",
+                    null
+            );
+        }
+        return null;
+    }
+
+    private CreatedRideResponseDTO validatePayingPassenger(Passenger payingPassenger) {
+        if (payingPassenger == null) {
+            return new CreatedRideResponseDTO(
+                    RideOrderStatus.PASSENGER_NOT_FOUND.toString(),
+                    "Passenger account not found",
+                    null
+            );
+        }
+
+        if (payingPassenger.isBlocked()) {
+            String reason = blockNoteRepository.findByUserAndUnblockedAtIsNull(payingPassenger)
+                    .map(BlockNote::getReason)
+                    .orElse("You have been blocked.");
+            return new CreatedRideResponseDTO(
+                    "blocked",
+                    "Cannot order ride: user is blocked. Reason: " + reason,
+                    null
+            );
+        }
+
+        // Check for any active ride that's not far-future scheduled
+        boolean hasBlockingRide = activeRideRepository.existsByPayingPassengerAndStatusNot(
+                payingPassenger, RideStatus.SCHEDULED
+        ) || activeRideRepository.existsByLinkedPassengersContainingAndStatusNot(
+                payingPassenger, RideStatus.SCHEDULED
+        );
+
+        // Cannot start ride if scheduled ride starts in less than 1h
+        LocalDateTime soonThreshold = LocalDateTime.now().plusHours(1);
+        boolean hasUpcomingScheduled = activeRideRepository.existsByPayingPassengerAndStatusAndScheduledTimeBefore(
+                payingPassenger, RideStatus.SCHEDULED, soonThreshold
+        ) || activeRideRepository.existsByLinkedPassengersContainingAndStatusAndScheduledTimeBefore(
+                payingPassenger, RideStatus.SCHEDULED, soonThreshold
+        );
+
+        if (hasBlockingRide || hasUpcomingScheduled) {
+            return new CreatedRideResponseDTO(
+                    "PASSENGER_HAS_ACTIVE_RIDE",
+                    "You already have an active or upcoming ride",
+                    null
+            );
+        }
+
+        return null;
+    }
+
+    private CreatedRideResponseDTO validateScheduledTime(LocalDateTime scheduledTime) {
+        if (scheduledTime == null ||
+                scheduledTime.isBefore(LocalDateTime.now()) ||
+                scheduledTime.isAfter(LocalDateTime.now().plusHours(5))) {
+            return new CreatedRideResponseDTO(
+                    RideOrderStatus.INVALID_SCHEDULED_TIME.toString(),
+                    "Scheduled time must be within the next 5 hours",
+                    null
+            );
+        }
+        return null;
+    }
+
+    private CreatedRideResponseDTO validateLinkedPassengers(
+            List<String> friendEmails,
+            List<Passenger> linkedPassengers
+    ) {
+        if (friendEmails == null) return null;
+
+        LocalDateTime soonThreshold = LocalDateTime.now().plusMinutes(30);
+
+        for (Passenger passenger : linkedPassengers) {
+            boolean hasBlockingRide = activeRideRepository.existsByPayingPassengerAndStatusNot(
+                    passenger, RideStatus.SCHEDULED
+            ) || activeRideRepository.existsByLinkedPassengersContainingAndStatusNot(
+                    passenger, RideStatus.SCHEDULED
+            );
+
+            boolean hasUpcomingScheduled = activeRideRepository.existsByPayingPassengerAndStatusAndScheduledTimeBefore(
+                    passenger, RideStatus.SCHEDULED, soonThreshold
+            ) || activeRideRepository.existsByLinkedPassengersContainingAndStatusAndScheduledTimeBefore(
+                    passenger, RideStatus.SCHEDULED, soonThreshold
+            );
+
+            if (hasBlockingRide || hasUpcomingScheduled) {
+                return new CreatedRideResponseDTO(
+                        "LINKED_PASSENGER_HAS_ACTIVE_RIDE",
+                        "Passenger " + passenger.getEmail() + " already has an active or upcoming ride",
+                        null
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private List<Passenger> collectLinkedPassengers(List<String> friendEmails) {
+        List<Passenger> linkedPassengers = new ArrayList<>();
+        if (friendEmails == null) return linkedPassengers;
+
+        for (String email : friendEmails) {
+            passengerRepository.findByEmail(email).ifPresent(linkedPassengers::add);
+        }
+
+        return linkedPassengers;
+    }
+
+    private ActiveRide buildActiveRide(
+            CreateRideRequestDTO request,
+            Route route,
+            LocalDateTime scheduledTime,
+            Passenger payingPassenger,
+            List<Passenger> linkedPassengers
+    ) {
+        ActiveRide ride = new ActiveRide();
+        ride.setRoute(route);
+        ride.setScheduledTime(scheduledTime);
+        ride.setNeedsBabySeats(request.getHasBaby() != null && request.getHasBaby());
+        ride.setNeedsPetFriendly(request.getHasPets() != null && request.getHasPets());
+        ride.setPayingPassenger(payingPassenger);
+        ride.setLinkedPassengers(linkedPassengers);
+        ride.setCurrentLocation(route.getWaypoints().getFirst());
+        return ride;
+    }
+
+    private CreatedRideResponseDTO assignDriverForImmediateRide(ActiveRide ride, Route route) {
+        Driver driver = driverMatchingService.findAvailableDriver(ride);
+
+        if (driver == null) {
+            return new CreatedRideResponseDTO(
+                    "NO_DRIVERS_AVAILABLE",
+                    "No drivers available at the moment",
+                    null
+            );
+        }
+
+        ride.setDriver(driver);
+
+        VehicleType actualVehicleType = driver.getVehicle().getType();
+        ride.setVehicleType(actualVehicleType);
+        ride.setEstimatedPrice(calculatePrice(route, actualVehicleType.toString()));
+
+        if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
+            ride.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
+        } else {
+            ride.setStatus(RideStatus.DRIVER_READY);
+        }
+
+        return null;
+    }
+
+    private void notifyDriverIfReady(ActiveRide savedRide) {
+        if (savedRide.getStatus() == RideStatus.DRIVER_READY) {
+            GetDriverActiveRideDTO rideDTO = rideMapper.buildDriverActiveRideDTO(savedRide);
+            webSocketController.notifyDriverRideAssigned(savedRide.getDriver().getEmail(), rideDTO);
+        }
     }
 
     private LocalDateTime parseScheduledTime(String timeString) {
@@ -229,11 +289,9 @@ public class RideOrderServiceImpl implements RideOrderService {
     private Route createRoute(CreateRideRequestDTO request) {
         Route route = new Route();
 
-        // Set starting and ending points
         route.setStartingPoint(request.getAddresses().getFirst());
         route.setEndingPoint(request.getAddresses().get(request.getLatitudes().size() - 1));
 
-        // Create waypoints for all coordinates (including start and end point)
         List<WayPoint> waypoints = new ArrayList<>();
         for (int i = 0; i < request.getLatitudes().size(); i++) {
             WayPoint waypoint = new WayPoint();
@@ -261,11 +319,9 @@ public class RideOrderServiceImpl implements RideOrderService {
             totalDistance += segment.distanceKm();
             totalTime += segment.realDurationSeconds() / 60.0;
 
-            // Collect all coordinates for polyline
             if (i == 0) {
                 allCoordinates.addAll(segment.coordinates());
             } else {
-                // Skip first coordinate to avoid duplicates at waypoint connections
                 allCoordinates.addAll(segment.coordinates().subList(1, segment.coordinates().size()));
             }
         }
@@ -273,7 +329,6 @@ public class RideOrderServiceImpl implements RideOrderService {
         route.setEstDistanceKm(totalDistance);
         route.setEstTimeMin(totalTime);
 
-        // Save the polyline as JSON string
         String polylineJson = routingService.convertCoordinatesToJson(allCoordinates);
         route.setEncodedPolyline(polylineJson);
 
@@ -287,7 +342,6 @@ public class RideOrderServiceImpl implements RideOrderService {
     }
 
     private GetRidePriceDTO getPricesWithDefaults(VehicleType vehicleType) {
-        // Default values if not set in database
         double defaultStartPrice;
         double defaultPricePerKm;
 
@@ -303,10 +357,9 @@ public class RideOrderServiceImpl implements RideOrderService {
                 .orElse(new GetRidePriceDTO(defaultPricePerKm, defaultStartPrice));
     }
 
-
     private VehicleType parseVehicleType(String vehicleTypeStr) {
         if (vehicleTypeStr == null || vehicleTypeStr.trim().isEmpty()) {
-            return null; // Vehicle type is 'any'
+            return null;
         }
 
         try {

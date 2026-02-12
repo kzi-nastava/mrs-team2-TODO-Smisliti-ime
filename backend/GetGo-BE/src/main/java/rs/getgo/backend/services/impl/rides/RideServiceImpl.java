@@ -265,14 +265,6 @@ public class RideServiceImpl implements RideService {
         cancelRide(ride, dto);
     }
 
-
-
-
-
-
-
-
-
     @Override
     public UpdatedRideDTO acceptRide(Long rideId) {
         ActiveRide ride = activeRideRepository.findById(rideId)

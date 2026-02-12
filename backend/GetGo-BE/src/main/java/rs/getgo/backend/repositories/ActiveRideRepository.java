@@ -25,4 +25,8 @@ public interface ActiveRideRepository extends JpaRepository<ActiveRide, Long> {
     Optional<ActiveRide> findByPayingPassengerAndStatusIn(Passenger passenger, List<RideStatus> status);
     List<ActiveRide> findByStatusAndScheduledTimeLessThanEqual(RideStatus status, LocalDateTime time);
     boolean existsByPayingPassengerOrLinkedPassengersContaining(Passenger payingPassenger, Passenger linkedPassenger);
+    boolean existsByPayingPassengerAndStatusNot(Passenger passenger, RideStatus status);
+    boolean existsByLinkedPassengersContainingAndStatusNot(Passenger passenger, RideStatus status);
+    boolean existsByPayingPassengerAndStatusAndScheduledTimeBefore(Passenger passenger, RideStatus status, LocalDateTime time);
+    boolean existsByLinkedPassengersContainingAndStatusAndScheduledTimeBefore(Passenger passenger, RideStatus status, LocalDateTime time);
 }

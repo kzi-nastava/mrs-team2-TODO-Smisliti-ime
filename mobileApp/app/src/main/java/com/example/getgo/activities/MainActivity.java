@@ -1,6 +1,8 @@
 package com.example.getgo.activities;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -27,6 +29,7 @@ import com.example.getgo.R;
 import com.example.getgo.fragments.passengers.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.admins.AdminRideHistoryFragment;
 import com.example.getgo.fragments.passengers.PassengerRideHistoryFragment;
+import com.example.getgo.fragments.passengers.PassengerRideTrackingFragment;
 import com.example.getgo.utils.NavigationHelper;
 import com.example.getgo.model.UserRole;
 import com.example.getgo.api.ApiClient;
@@ -34,6 +37,7 @@ import com.example.getgo.api.services.DriverApiService;
 import com.example.getgo.api.services.AuthApiService;
 import com.example.getgo.api.services.UserApiService;
 import com.example.getgo.model.UserProfile;
+import com.example.getgo.utils.NotificationHelper;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
@@ -74,6 +78,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        NotificationHelper.createNotificationChannel(this);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    "getgo_notifications",
+                    "GetGo Notifications",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Notifications for ride updates");
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(channel);
+        }
+
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_main);
 
@@ -404,25 +421,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleNotificationIntent(Intent intent) {
-        if (intent == null) {
-            Log.d("NOTIF_TEST", "Intent je null");
-            return;
-        }
-
-        Log.d("NOTIF_TEST", "Intent action = " + intent.getAction());
-        Log.d("NOTIF_TEST", "Intent extras = " + intent.getExtras());
+        if (intent == null) return;
 
         boolean openRate = intent.getBooleanExtra("OPEN_RATE_FRAGMENT", false);
         long rideId = intent.getLongExtra("RIDE_ID", -1);
         long driverId = intent.getLongExtra("driverId", -1);
 
-        Log.d("NOTIF_TEST", "handleNotificationIntent called");
-        Log.d("NOTIF_TEST", "OPEN_RATE_FRAGMENT = " + openRate);
-        Log.d("NOTIF_TEST", "RIDE_ID = " + rideId);
-
-        if (openRate && rideId != -1 && !(getSupportFragmentManager().findFragmentById(R.id.fragmentContainer)
+        // if intent is for opening rating fragment, and we're not already there, open it
+        if (openRate && rideId != -1
+                && !(getSupportFragmentManager().findFragmentById(R.id.fragmentContainer)
                 instanceof PassengerRateDriverVehicleFragment)) {
-            Log.d("NOTIF_TEST", "Opening PassengerRateDriverVehicleFragment for rideId: " + rideId);
 
             Bundle bundle = new Bundle();
             bundle.putLong("rideId", rideId);
@@ -435,9 +443,24 @@ public class MainActivity extends AppCompatActivity {
                     .beginTransaction()
                     .replace(R.id.fragmentContainer, fragment)
                     .commit();
+            return;
+        }
+
+        // If not for rating, check if it's for ride tracking
+        boolean openTracking = intent.getBooleanExtra("OPEN_RIDE_TRACKING", false);
+        if (openTracking && rideId != -1) {
+            Bundle bundle = new Bundle();
+            bundle.putLong("rideId", rideId);
+
+            Fragment fragment = new PassengerRideTrackingFragment();
+            fragment.setArguments(bundle);
+
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, fragment)
+                    .commit();
         }
     }
-
     private void loadUserProfile() {
         userApiService = ApiClient.getUserApiService();
 
@@ -498,5 +521,62 @@ public class MainActivity extends AppCompatActivity {
             webSocketManager.disconnect();
             webSocketManager = null;
         }
+    }
+
+    private void onWebSocketNotificationReceived(NotificationDTO notif, long rideId) {
+        showLocalNotification(notif, rideId);
+    }
+
+    private void showLocalNotification(NotificationDTO notif, long rideId) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // API 33+
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        101); // request code
+                return;
+            }
+        }
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("OPEN_RIDE_TRACKING", true);
+        intent.putExtra("RIDE_ID", rideId);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, notif.getId().intValue(), intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "getgo_notifications")
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(notif.getTitle())
+                .setContentText(notif.getMessage())
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent);
+
+        NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+        manager.notify(notif.getId().intValue(), builder.build());
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 101) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("NOTIF", "Notification permission granted");
+                Toast.makeText(this, "Notifications enabled", Toast.LENGTH_SHORT).show();
+            } else {
+                Log.d("NOTIF", "Notification permission denied");
+                Toast.makeText(this, "Cannot show notifications without permission", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleNotificationIntent(intent);
     }
 }

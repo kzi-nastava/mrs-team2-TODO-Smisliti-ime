@@ -1,9 +1,21 @@
 package com.example.getgo.utils;
 
+import android.Manifest;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
 import android.util.Log;
 
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
+
+import com.example.getgo.R;
+import com.example.getgo.activities.MainActivity;
 import com.example.getgo.callbacks.SupportChatMessageListener;
 import com.example.getgo.dtos.driver.GetDriverLocationDTO;
+import com.example.getgo.dtos.notification.NotificationDTO;
 import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideFinishedDTO;
 import com.example.getgo.dtos.ride.GetRideStatusUpdateDTO;
@@ -12,6 +24,8 @@ import com.example.getgo.dtos.supportChat.GetMessageDTO;
 import com.example.getgo.model.ChatMessage;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.time.LocalDateTime;
 
@@ -324,5 +338,20 @@ public class WebSocketManager {
 
     public interface DriverRideCancelledListener {
         void onDriverRideCancelled(com.example.getgo.dtos.ride.GetRideCancelledDTO dto);
+    }
+
+    public void handleIncomingNotification(Context context, String messageJson) {
+        try {
+            Gson gson = new Gson();
+            NotificationDTO notification = gson.fromJson(messageJson, NotificationDTO.class);
+
+            JsonObject jsonObj = new Gson().fromJson(messageJson, JsonObject.class);
+            Long rideId = jsonObj.has("rideId") ? jsonObj.get("rideId").getAsLong() : null;
+
+            NotificationHelper.showNotification(context, notification, rideId);
+
+        } catch (Exception e) {
+            Log.e("WebSocketManager", "Failed to handle incoming notification", e);
+        }
     }
 }

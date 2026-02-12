@@ -38,8 +38,10 @@ import com.example.getgo.dtos.inconsistencyReport.CreateInconsistencyReportDTO;
 import com.example.getgo.dtos.inconsistencyReport.CreatedInconsistencyReportDTO;
 import com.example.getgo.dtos.ride.GetPassengerActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideFinishedDTO;
+import com.example.getgo.dtos.ride.RideCompletionDTO;
 import com.example.getgo.repositories.RideRepository;
 import com.example.getgo.utils.MapManager;
+import com.example.getgo.utils.ToastHelper;
 import com.example.getgo.utils.WebSocketManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -61,8 +63,11 @@ import retrofit2.Response;
 
 public class PassengerRideTrackingFragment extends Fragment implements OnMapReadyCallback {
     private static final String TAG = "PassengerRideTracking";
-    private static final String PREFS_NAME = "getgo_prefs";
     private static final String NOTIF_TAG = "RIDE_NOTIF";
+
+    private static final String NOTIF_CHANNEL_ID = "ride_channel_general";
+    private static final int NOTIF_ID_PANIC = 3001;
+    private static final int NOTIF_ID_CANCEL = 3002;
 
 
     private GoogleMap mMap;
@@ -107,6 +112,9 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         loadActiveRide();
 
         requestNotificationPermission();
+
+        // ensure channel exists for passenger notifications
+        createNotificationChannelIfNeeded();
 
         return root;
     }
@@ -356,6 +364,28 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
                 showRideCompleted(finished);
             });
         });
+
+        // Subscribe to server-side ride-cancelled topic (sent when any participant cancels)
+        webSocketManager.subscribeToRideCancelled(rideId, cancelled -> {
+            requireActivity().runOnUiThread(() -> {
+                try {
+                    Log.d(NOTIF_TAG, "Ride cancelled event received for rideId=" + cancelled.getRideId());
+                    // Show short toast and system notification
+                    String by = cancelled.getCancelledBy() != null ? cancelled.getCancelledBy() : "Unknown";
+                    String reason = cancelled.getReason() != null ? cancelled.getReason() : "";
+                    String text = "Ride cancelled by " + by + (reason.isEmpty() ? "" : (": " + reason));
+                    Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show();
+                    showSystemNotification("Ride cancelled", text, NOTIF_ID_CANCEL);
+
+                    // Reset UI
+                    currentRide = null;
+                    showNoRide();
+                    if (mapManager != null) mapManager.reset();
+                } catch (Exception ex) {
+                    Log.e(NOTIF_TAG, "Error handling ride cancelled event", ex);
+                }
+            });
+        });
     }
 
     private void updateUI() {
@@ -510,53 +540,66 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
             return;
         }
 
-        // Ask for reason
-        EditText input = new EditText(requireContext());
-        input.setHint("Reason for cancellation (required)");
+        {
+            final String reason = ""; // per request - no input form
+            btnCancelRide.setEnabled(false);
 
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Cancel ride")
-                .setMessage("Please provide a reason for cancelling the ride:")
-                .setView(input)
-                .setPositiveButton("Cancel ride", (dialog, which) -> {
-                    String reason = input.getText() != null ? input.getText().toString().trim() : "";
-                    if (reason.isEmpty()) reason = "Passenger cancelled";
+            rideApiService.cancelRideByPassenger(currentRide.getRideId(),
+                    new com.example.getgo.dtos.ride.CancelRideRequestDTO(reason))
+                    .enqueue(new Callback<RideCompletionDTO>() {
+                        @Override
+                        public void onResponse(Call<RideCompletionDTO> call, Response<RideCompletionDTO> response) {
+                            requireActivity().runOnUiThread(() -> {
+                                btnCancelRide.setEnabled(true);
+                                if (response.isSuccessful() && response.body() != null) {
+                                    RideCompletionDTO completion = response.body();
+                                    String serverMsg = completion.getNotificationMessage();
+                                    if (serverMsg == null || serverMsg.isEmpty()) serverMsg = "Ride cancelled";
+                                    Toast.makeText(requireContext(), serverMsg, Toast.LENGTH_SHORT).show();
+                                    // POST system notification
+                                    showSystemNotification("Ride cancelled", serverMsg, NOTIF_ID_CANCEL);
 
-                    btnCancelRide.setEnabled(false);
+                                    // Refresh server-side notifications for current user
+                                    try {
+                                        com.example.getgo.api.services.NotificationApiService notifService = ApiClient.getNotificationApiService();
+                                        notifService.getNotifications().enqueue(new retrofit2.Callback<java.util.List<com.example.getgo.dtos.notification.NotificationDTO>>() {
+                                            @Override
+                                            public void onResponse(retrofit2.Call<java.util.List<com.example.getgo.dtos.notification.NotificationDTO>> call, retrofit2.Response<java.util.List<com.example.getgo.dtos.notification.NotificationDTO>> response) {
+                                                if (response.isSuccessful() && response.body() != null) {
+                                                    java.util.List<com.example.getgo.dtos.notification.NotificationDTO> list = response.body();
+                                                    if (!list.isEmpty()) {
+                                                        android.util.Log.d("NOTIF_SYNC", "Latest notification: " + list.get(0).getMessage());
+                                                    }
+                                                }
+                                            }
 
-                    // Call passenger cancel endpoint
-                    rideApiService.cancelRideByPassenger(currentRide.getRideId(),
-                            new com.example.getgo.dtos.ride.CancelRideRequestDTO(reason))
-                            .enqueue(new Callback<Void>() {
-                                @Override
-                                public void onResponse(Call<Void> call, Response<Void> response) {
-                                    requireActivity().runOnUiThread(() -> {
-                                        btnCancelRide.setEnabled(true);
-                                        if (response.isSuccessful()) {
-                                            Toast.makeText(requireContext(), "Ride cancelled", Toast.LENGTH_SHORT).show();
-                                            currentRide = null;
-                                            showNoRide();
-                                            if (mapManager != null) mapManager.reset();
-                                        } else {
-                                            Toast.makeText(requireContext(), "Failed to cancel ride", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                                }
+                                            @Override
+                                            public void onFailure(retrofit2.Call<java.util.List<com.example.getgo.dtos.notification.NotificationDTO>> call, Throwable t) {
+                                                android.util.Log.e("NOTIF_SYNC", "Failed to refresh notifications", t);
+                                            }
+                                        });
+                                    } catch (Exception ex) {
+                                        android.util.Log.e("NOTIF_SYNC", "Error while refreshing notifications", ex);
+                                    }
 
-                                @Override
-                                public void onFailure(Call<Void> call, Throwable t) {
-                                    requireActivity().runOnUiThread(() -> {
-                                        btnCancelRide.setEnabled(true);
-                                        Toast.makeText(requireContext(), "Failed to cancel ride", Toast.LENGTH_SHORT).show();
-                                    });
+                                    currentRide = null;
+                                    showNoRide();
+                                    if (mapManager != null) mapManager.reset();
+                                } else {
+                                    Toast.makeText(requireContext(), "Failed to cancel ride", Toast.LENGTH_SHORT).show();
                                 }
                             });
+                        }
 
-                })
-                .setNegativeButton("Dismiss", (d, w) -> {
-                    // do nothing
-                })
-                .show();
+                        @Override
+                        public void onFailure(Call<RideCompletionDTO> call, Throwable t) {
+                            requireActivity().runOnUiThread(() -> {
+                                btnCancelRide.setEnabled(true);
+                                ToastHelper.showError(requireContext(), "Failed to cancel ride", t.getMessage());
+                            });
+                        }
+                    });
+        }
     }
 
     private void triggerPanic() {
@@ -584,6 +627,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
                                 if (response.isSuccessful()) {
                                     panicSent = true;
                                     Toast.makeText(requireContext(), "Emergency alert sent!", Toast.LENGTH_LONG).show();
+                                    // POST system notification
+                                    showSystemNotification("Emergency alert sent", "Panic alert sent for ride #" + currentRide.getRideId(), NOTIF_ID_PANIC);
                                 } else {
                                     Toast.makeText(requireContext(), "Failed to send panic alert", Toast.LENGTH_SHORT).show();
                                 }
@@ -592,10 +637,9 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 
                         @Override
                         public void onFailure(Call<Void> call, Throwable t) {
-                            Log.e(TAG, "Failed to trigger panic", t);
                             requireActivity().runOnUiThread(() -> {
                                 btnPanic.setEnabled(true);
-                                Toast.makeText(requireContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                ToastHelper.showError(requireContext(), "Failed to send panic alert", t.getMessage());
                             });
                         }
                     });
@@ -743,6 +787,48 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
                         new String[]{Manifest.permission.POST_NOTIFICATIONS},
                         1002); // request code
             }
+        }
+    }
+
+    // Create channel if needed
+    private void createNotificationChannelIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "Ride notifications";
+            String description = "Notifications about rides and emergencies";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel(NOTIF_CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            NotificationManager manager = requireContext().getSystemService(NotificationManager.class);
+            if (manager != null) manager.createNotificationChannel(channel);
+        }
+    }
+
+    private void showSystemNotification(String title, String text, int id) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    Log.w(NOTIF_TAG, "No POST_NOTIFICATIONS permission - skipping system notification");
+                    return;
+                }
+            }
+
+            Intent intent = new Intent(requireContext(), com.example.getgo.activities.MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent pendingIntent = PendingIntent.getActivity(requireContext(), id, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(requireContext(), NOTIF_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_car)
+                    .setContentTitle(title)
+                    .setContentText(text)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent);
+
+            NotificationManagerCompat.from(requireContext()).notify(id, builder.build());
+        } catch (Exception ex) {
+            Log.e(NOTIF_TAG, "Failed to post system notification", ex);
         }
     }
 

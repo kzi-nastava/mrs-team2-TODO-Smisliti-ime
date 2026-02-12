@@ -94,10 +94,12 @@ public class PassengerController {
     public ResponseEntity<Page<GetRideDTO>> getPassengerRides(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
+            @RequestParam(required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate,
+            @RequestParam(defaultValue = "startTime") String sort,
+            @RequestParam(defaultValue = "DESC") String direction) {
 
         String email = AuthUtils.getCurrentUserEmail();
-        Page<GetRideDTO> rides = passengerService.getPassengerRides(email, startDate, page, size);
+        Page<GetRideDTO> rides = passengerService.getPassengerRides(email, startDate, page, size, sort, direction);
         return ResponseEntity.ok(rides);
     }
 

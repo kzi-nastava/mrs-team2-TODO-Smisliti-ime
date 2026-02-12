@@ -15,6 +15,7 @@ import com.example.getgo.api.services.AdminApiService;
 import com.example.getgo.dtos.admin.GetAdminDTO;
 import com.example.getgo.dtos.admin.UpdateAdminDTO;
 import com.example.getgo.dtos.admin.UpdatedAdminDTO;
+import com.example.getgo.utils.ToastHelper;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -94,7 +95,7 @@ public class AdminProfileInfoFragment extends Fragment {
 
             @Override
             public void onFailure(@NonNull Call<GetAdminDTO> call, @NonNull Throwable t) {
-                Toast.makeText(requireContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                ToastHelper.showError(requireContext(), "Failed to load profile", t.getMessage());
             }
         });
     }
@@ -137,7 +138,7 @@ public class AdminProfileInfoFragment extends Fragment {
             @Override
             public void onFailure(@NonNull Call<UpdatedAdminDTO> call, @NonNull Throwable t) {
                 btnSave.setEnabled(true);
-                Toast.makeText(requireContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                ToastHelper.showError(requireContext(), "Failed to update profile", t.getMessage());
             }
         });
     }

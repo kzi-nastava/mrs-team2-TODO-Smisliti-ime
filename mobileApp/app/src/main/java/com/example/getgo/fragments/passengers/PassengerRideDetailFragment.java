@@ -21,6 +21,7 @@ import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.repositories.RideRepository;
 import com.example.getgo.utils.MapManager;
 import com.example.getgo.utils.RideDetailHelper;
+import com.example.getgo.utils.ToastHelper;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -104,8 +105,8 @@ public class PassengerRideDetailFragment extends Fragment {
 
             @Override
             public void onFailure(Call<GetRideDTO> call, Throwable t) {
-                if (!isAdded()) return;
-                Toast.makeText(requireContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Failed to load ride detail", t);
+                ToastHelper.showError(requireContext(), "Failed to load ride", t.getMessage());
             }
         });
 
@@ -133,7 +134,7 @@ public class PassengerRideDetailFragment extends Fragment {
                 mainHandler.post(() -> {
                     if (!isAdded()) return;
                     btnFavoriteRide.setEnabled(true);
-                    Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                    ToastHelper.showError(requireContext(), "Failed to add favorite", e.getMessage());
                 });
             }
         });
@@ -154,7 +155,7 @@ public class PassengerRideDetailFragment extends Fragment {
                 mainHandler.post(() -> {
                     if (!isAdded()) return;
                     btnUnfavoriteRide.setEnabled(true);
-                    Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                    ToastHelper.showError(requireContext(), "Failed to remove favorite", e.getMessage());
                 });
             }
         });

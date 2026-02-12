@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#8FABD4">
+    android:background="@color/light_blue">
 
 
     <TextView
@@ -23,7 +23,7 @@
         android:id="@+id/support_chat_recycler"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#e5efff"
+        android:background="@color/light_blue"
         android:clipToPadding="false"
         android:padding="8dp"
         android:scrollbars="vertical"

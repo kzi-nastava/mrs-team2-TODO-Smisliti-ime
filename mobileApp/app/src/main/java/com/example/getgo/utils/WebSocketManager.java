@@ -1,6 +1,5 @@
 package com.example.getgo.utils;
 
-import android.content.Context;
 import android.util.Log;
 
 import com.example.getgo.callbacks.SupportChatMessageListener;
@@ -24,7 +23,9 @@ import ua.naiksoftware.stomp.StompClient;
 
 public class WebSocketManager {
     private static final String TAG = "WebSocketManager";
-    private static final String WS_URL = "http://10.0.2.2:8080/socket/websocket";
+
+    public static final String WS_URL = "http://10.0.2.2:8080/";
+    // public static final String WS_URL = "wss://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
 
     private StompClient stompClient;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
@@ -248,6 +249,48 @@ public class WebSocketManager {
         compositeDisposable.add(disposable);
     }
 
+    public void subscribeToRideCancelled(Long rideId, RideCancelledListener listener) {
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
+
+        String topic = "/socket-publisher/ride/" + rideId + "/ride-cancelled";
+        Log.d(TAG, "Subscribing to ride cancelled: " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    Log.d(TAG, "Ride cancelled: " + topicMessage.getPayload());
+                    com.example.getgo.dtos.ride.GetRideCancelledDTO cancelled = gson.fromJson(topicMessage.getPayload(), com.example.getgo.dtos.ride.GetRideCancelledDTO.class);
+                    listener.onRideCancelled(cancelled);
+                }, throwable -> {
+                    Log.e(TAG, "Error on ride cancelled topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
+    public void subscribeToDriverRideCancelled(String driverEmail, DriverRideCancelledListener listener) {
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
+
+        String topic = "/socket-publisher/driver/" + driverEmail + "/ride-cancelled";
+        Log.d(TAG, "Subscribing to driver ride cancelled: " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    Log.d(TAG, "Driver ride cancelled: " + topicMessage.getPayload());
+                    com.example.getgo.dtos.ride.GetRideCancelledDTO cancelled = gson.fromJson(topicMessage.getPayload(), com.example.getgo.dtos.ride.GetRideCancelledDTO.class);
+                    listener.onDriverRideCancelled(cancelled);
+                }, throwable -> {
+                    Log.e(TAG, "Error on driver ride cancelled topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
     public void disconnect() {
         if (stompClient != null) {
             stompClient.disconnect();
@@ -275,4 +318,11 @@ public class WebSocketManager {
         compositeDisposable.add(disposable);
     }
 
+    public interface RideCancelledListener {
+        void onRideCancelled(com.example.getgo.dtos.ride.GetRideCancelledDTO dto);
+    }
+
+    public interface DriverRideCancelledListener {
+        void onDriverRideCancelled(com.example.getgo.dtos.ride.GetRideCancelledDTO dto);
+    }
 }

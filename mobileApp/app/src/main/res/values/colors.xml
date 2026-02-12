@@ -8,4 +8,5 @@
     <color name="selected_blue">#2168DF</color>
     <color name="switch_track_color">#4CAF50</color>
     <color name="red">#FF0000</color>
+    <color name="panic_red">#D32F2F</color>
 </resources>

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavBarComponent } from '../../layout/nav-bar/nav-bar.component';
 import { RideTrackingMapComponent } from '../../layout/ride-tracking-map/ride-tracking-map.component';
@@ -399,7 +399,14 @@ export class DriverHome implements OnInit {
       this.rideService
         .cancelRideByDriver(this.activeRide.rideId, { reason: '' })
         .subscribe({
-          next: () => {
+          next: (completion) => {
+            // completion may contain notificationMessage set by backend
+            const notif = (completion as any)?.notificationMessage;
+            if (notif) {
+              this.snackBarService.show(notif, false);
+            } else {
+              this.snackBarService.show('Ride successfully cancelled.');
+            }
             this.successMessage = 'Ride successfully cancelled.';
             this.activeRide = null;
             this.isCancelling = false;
@@ -447,7 +454,13 @@ export class DriverHome implements OnInit {
     this.rideService
       .cancelRideByDriver(this.activeRide.rideId, { reason: this.cancelReason.trim() || '' })
       .subscribe({
-        next: () => {
+        next: (completion) => {
+          const notif2 = (completion as any)?.notificationMessage;
+          if (notif2) {
+            this.snackBarService.show(notif2, false);
+          } else {
+            this.snackBarService.show('Ride successfully cancelled.');
+          }
           this.successMessage = 'Ride successfully cancelled.';
           this.activeRide = null;
           this.showCancelForm = false;
@@ -455,12 +468,12 @@ export class DriverHome implements OnInit {
           this.resetMap();
           this.cdr.detectChanges();
         },
-        error: (err) => {
-          this.errorMessage = err.error?.message || 'Failed to cancel ride.';
-          this.isCancelling = false;
-          this.cdr.detectChanges();
-        }
-      });
+         error: (err) => {
+           this.errorMessage = err.error?.message || 'Failed to cancel ride.';
+           this.isCancelling = false;
+           this.cdr.detectChanges();
+         }
+       });
   }
 
   acknowledgeCompletion() {

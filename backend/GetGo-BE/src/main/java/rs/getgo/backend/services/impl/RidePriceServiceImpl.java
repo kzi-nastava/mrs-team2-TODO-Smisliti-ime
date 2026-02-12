@@ -7,6 +7,8 @@ import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.RidePriceRepository;
 import rs.getgo.backend.services.RidePriceService;
 
+import java.util.List;
+
 @Service
 public class RidePriceServiceImpl implements RidePriceService {
     private final RidePriceRepository ridePriceRepository;
@@ -45,4 +47,10 @@ public class RidePriceServiceImpl implements RidePriceService {
         ridePriceRepository.save(price);
     }
 
+    @Override
+    public List<String> getVehicleTypes() {
+        return ridePriceRepository.findAll().stream()
+                .map(rp -> rp.getVehicleType().name())
+                .toList();
+    }
 }

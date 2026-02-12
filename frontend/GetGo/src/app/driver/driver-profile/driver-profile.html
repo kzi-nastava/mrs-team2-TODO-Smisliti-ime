@@ -39,7 +39,12 @@
     @if (activeTab === 'vehicle') {
       <form class="profile-form">
         <input type="text" placeholder="Vehicle Model" class="form-input" [(ngModel)]="vehicleData.model" name="model" />
-        <input type="text" placeholder="Vehicle Type" class="form-input" [(ngModel)]="vehicleData.type" name="type" />
+        <select class="form-input" [(ngModel)]="vehicleData.type" name="type">
+          <option value="" disabled>Select Vehicle Type</option>
+          @for (type of vehicleTypes; track type) {
+          <option [value]="type">{{ type }}</option>
+          }
+        </select>
         <input type="text" placeholder="Registration Number" class="form-input" [(ngModel)]="vehicleData.registrationNumber" name="registrationNumber" />
         <input type="number" placeholder="Number of Seats" class="form-input" [(ngModel)]="vehicleData.seats" name="seats" />
 

@@ -27,7 +27,8 @@ public class DataInitializer {
             UserRepository userRepository,
             AdministratorRepository administratorRepository,
             DriverRepository driverRepository,
-            PassengerRepository passengerRepository) {
+            PassengerRepository passengerRepository,
+            RidePriceRepository ridePriceRepository) {
 
         return args -> {
             // Check if data already exists
@@ -70,6 +71,17 @@ public class DataInitializer {
             Passenger passenger2 = createPassenger2();
             passengerRepository.save(passenger2);
             log.info("Created passenger: {}", passenger2.getEmail());
+
+            for (VehicleType type : VehicleType.values()) {
+                if (ridePriceRepository.findByVehicleType(type).isEmpty()) {
+                    RidePrice price = new RidePrice();
+                    price.setVehicleType(type);
+                    price.setPricePerKm(getDefaultPricePerKm(type));
+                    price.setStartPrice(getDefaultStartPrice(type));
+                    ridePriceRepository.save(price);
+                    log.info("Created ride price for: {}", type);
+                }
+            }
 
             log.info("Database initialization completed successfully!");
         };
@@ -210,4 +222,25 @@ public class DataInitializer {
         passenger.setProfilePictureUrl(null);
         return passenger;
     }
+
+    private Double getDefaultPricePerKm(VehicleType type) {
+        return switch (type) {
+            case STANDARD -> 50.0;
+            case SEDAN -> 60.0;
+            case VAN -> 70.0;
+            case SUV -> 80.0;
+            case LUXURY -> 120.0;
+        };
+    }
+
+    private Double getDefaultStartPrice(VehicleType type) {
+        return switch (type) {
+            case STANDARD -> 150.0;
+            case SEDAN -> 180.0;
+            case VAN -> 200.0;
+            case SUV -> 220.0;
+            case LUXURY -> 300.0;
+        };
+    }
+
 }

@@ -344,26 +344,21 @@ public class RideServiceImpl implements RideService {
         Route route = createRoute(createRideRequestDTO);
         routeRepository.save(route);
 
-        // Calculate price
-        double estimatedPrice = calculatePrice(route, createRideRequestDTO.getVehicleType());
+        // Parse vehicle type (null for "ANY")
+        VehicleType requestedVehicleType = parseVehicleType(createRideRequestDTO.getVehicleType());
 
-        // Parse vehicle type
-        VehicleType vehicleType = parseVehicleType(createRideRequestDTO.getVehicleType());
-
-        // Create ActiveRide
+        // Create ActiveRide with common properties
         ActiveRide ride = new ActiveRide();
         ride.setRoute(route);
         ride.setScheduledTime(scheduledTime);
-        ride.setEstimatedPrice(estimatedPrice);
-        ride.setVehicleType(vehicleType);
         ride.setNeedsBabySeats(createRideRequestDTO.getHasBaby() != null && createRideRequestDTO.getHasBaby());
         ride.setNeedsPetFriendly(createRideRequestDTO.getHasPets() != null && createRideRequestDTO.getHasPets());
         ride.setPayingPassenger(payingPassenger);
         ride.setLinkedPassengers(linkedPassengers);
-        ride.setCurrentLocation(route.getWaypoints().getFirst()); // Start at first waypoint
+        ride.setCurrentLocation(route.getWaypoints().getFirst());
 
         if (scheduledTime == null) {
-            // Assign driver if ride is not scheduled and set according status
+            // Assign driver for immediate rides
             Driver driver = driverService.findAvailableDriver(ride);
 
             if (driver == null) {
@@ -375,30 +370,33 @@ public class RideServiceImpl implements RideService {
             }
 
             ride.setDriver(driver);
-            VehicleType vehicleTypeEnum = ride.getDriver() != null ? ride.getDriver().getVehicle().getType() : null;
-            ride.setVehicleType(vehicleTypeEnum);
 
+            // Use driver's vehicle type (overrides "ANY" if requested)
+            VehicleType actualVehicleType = driver.getVehicle().getType();
+            ride.setVehicleType(actualVehicleType);
+            ride.setEstimatedPrice(calculatePrice(route, actualVehicleType.toString()));
 
-            // Decide initial status based on driver's current state
+            // Set status based on driver's current state
             if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
                 ride.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
             } else {
                 ride.setStatus(RideStatus.DRIVER_READY);
             }
         } else {
-            // Set status to scheduled and don't pick driver yet
+            // Assign driver later for scheduled rides
+            ride.setVehicleType(requestedVehicleType);
+            // TODO: on scheduled ride activate when driver is picked calculate estimated price
             ride.setStatus(RideStatus.SCHEDULED);
         }
 
         // Save ride
         ActiveRide savedRide = activeRideRepository.save(ride);
 
-        // Notify driver and passengers about assigned ride
+        // Notify driver if ready
         if (savedRide.getStatus() == RideStatus.DRIVER_READY) {
             GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(savedRide);
             webSocketController.notifyDriverRideAssigned(savedRide.getDriver().getEmail(), rideDTO);
         }
-        // Note: there is no notifying passenger because passenger has separate order ride and track ride pages
 
         return new CreatedRideResponseDTO(
                 "SUCCESS",
@@ -528,16 +526,15 @@ public class RideServiceImpl implements RideService {
 
 
     private VehicleType parseVehicleType(String vehicleTypeStr) {
+        if (vehicleTypeStr == null || vehicleTypeStr.trim().isEmpty()) {
+            return null; // Vehicle type is 'any'
+        }
+
         try {
             return VehicleType.valueOf(vehicleTypeStr.toUpperCase());
-        } catch (IllegalArgumentException | NullPointerException e) {
+        } catch (IllegalArgumentException e) {
             return null;
         }
-//        if (vehicleTypeStr == null) {
-//            return VehicleType.STANDARD; // default
-//        }
-//
-//        return VehicleType.valueOf(vehicleTypeStr.toUpperCase());
     }
 
     @Override

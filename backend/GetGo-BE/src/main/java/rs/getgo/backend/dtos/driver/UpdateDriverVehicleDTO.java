@@ -16,7 +16,6 @@ public class UpdateDriverVehicleDTO {
     private String vehicleModel;
 
     @NotBlank(message = "Vehicle type is required")
-    @Pattern(regexp = "^(STANDARD|VAN|LUXURY)$", message = "Vehicle type must be STANDARD, VAN, or LUXURY")
     private String vehicleType;
 
     @NotBlank(message = "Vehicle license plate is required")

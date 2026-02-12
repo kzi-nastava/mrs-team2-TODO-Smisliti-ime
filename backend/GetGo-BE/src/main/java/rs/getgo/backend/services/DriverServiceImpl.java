@@ -19,6 +19,7 @@ import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
 import rs.getgo.backend.model.enums.RideStatus;
+import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.*;
 
 import java.time.LocalDate;
@@ -338,6 +339,13 @@ public class DriverServiceImpl implements DriverService {
         // Check for existing pending request
         if (vehicleChangeRequestRepo.existsByDriverAndStatus(driver, RequestStatus.PENDING)) {
             throw new RuntimeException("You already have a pending vehicle information change request");
+        }
+
+        // Check if vehicle type is valid (can be custom validator in dto)
+        try {
+            VehicleType.valueOf(updateDTO.getVehicleType());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid vehicle type: " + updateDTO.getVehicleType());
         }
 
         Vehicle vehicle = driver.getVehicle();

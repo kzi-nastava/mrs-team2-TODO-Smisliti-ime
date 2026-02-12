@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { DriverNavBarComponent } from '../../layout/driver-nav-bar/driver-nav-bar.component';
 import { DriverService, GetDriverDTO, UpdateDriverPersonalDTO, UpdateDriverVehicleDTO } from '../service/driver.service';
+import { VehicleService } from '../../service/vehicle-service/vehicle.service'
 import { environment } from '../../../env/environment';
 
 @Component({
@@ -13,6 +14,8 @@ import { environment } from '../../../env/environment';
   styleUrl: './driver-profile.css',
 })
 export class DriverProfile implements OnInit {
+  vehicleTypes: string[] = [];
+
   profileImageUrl: string = 'assets/images/pfp.png';
   selectedFile: File | null = null;
   activeTab: string = 'driver';
@@ -40,11 +43,23 @@ export class DriverProfile implements OnInit {
 
   constructor(
     private driverService: DriverService,
+    private vehicleService: VehicleService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadProfile();
+    this.loadVehicleTypes();
+  }
+
+  loadVehicleTypes(): void {
+    this.vehicleService.getVehicleTypes().subscribe({
+      next: (types) => {
+        this.vehicleTypes = types;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load vehicle types:', err)
+    });
   }
 
   loadProfile(): void {

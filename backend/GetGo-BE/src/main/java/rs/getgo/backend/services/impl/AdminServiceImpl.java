@@ -112,6 +112,13 @@ public class AdminServiceImpl implements AdminService {
             throw new RuntimeException("User with email " + createDriverDTO.getEmail() + " already exists");
         }
 
+        // Validate vehicle type
+        try {
+            VehicleType.valueOf(createDriverDTO.getVehicleType());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid vehicle type: " + createDriverDTO.getVehicleType());
+        }
+
         Vehicle vehicle = fillVehicle(createDriverDTO);
         Driver driver = fillDriver(createDriverDTO, vehicle);
 

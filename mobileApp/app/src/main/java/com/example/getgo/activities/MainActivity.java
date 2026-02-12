@@ -125,9 +125,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleIntent(Intent intent) {
-        if (intent != null && intent.getBooleanExtra("OPEN_RIDE_TRACKING_FRAGMENT", false)) {
-            Long rideId = intent.getLongExtra("RIDE_ID", -1);
-            if (rideId != -1) {
+        if (intent == null) return;
+
+        if (intent.getBooleanExtra("OPEN_RIDE_TRACKING_FRAGMENT", false)) {
+            long rideId = intent.getLongExtra("RIDE_ID", -1);
+            if (rideId != -1 && !isFragmentAlreadyOpen(PassengerRideTrackingFragment.class)) {
                 openRideTrackingFragment(rideId);
             }
         }
@@ -451,20 +453,19 @@ public class MainActivity extends AppCompatActivity {
     private void handleNotificationIntent(Intent intent) {
         if (intent == null) return;
 
-        boolean openRate = intent.getBooleanExtra("OPEN_RATE_FRAGMENT", false);
         long rideId = intent.getLongExtra("RIDE_ID", -1);
         long driverId = intent.getLongExtra("driverId", -1);
 
-        // if intent is for opening rating fragment, and we're not already there, open it
-        if (openRate && rideId != -1
-                && !(getSupportFragmentManager().findFragmentById(R.id.fragmentContainer)
-                instanceof PassengerRateDriverVehicleFragment)) {
+        // Rating fragment
+        if (intent.getBooleanExtra("OPEN_RATE_FRAGMENT", false)
+                && rideId != -1
+                && !isFragmentAlreadyOpen(PassengerRateDriverVehicleFragment.class)) {
 
             Bundle bundle = new Bundle();
             bundle.putLong("rideId", rideId);
             bundle.putLong("driverId", driverId);
 
-            Fragment fragment = new PassengerRateDriverVehicleFragment();
+            PassengerRateDriverVehicleFragment fragment = new PassengerRateDriverVehicleFragment();
             fragment.setArguments(bundle);
 
             getSupportFragmentManager()
@@ -474,13 +475,15 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // If not for rating, check if it's for ride tracking
-        boolean openTracking = intent.getBooleanExtra("OPEN_RIDE_TRACKING", false);
-        if (openTracking && rideId != -1) {
+        // Ride tracking fragment
+        if (intent.getBooleanExtra("OPEN_RIDE_TRACKING", false)
+                && rideId != -1
+                && !isFragmentAlreadyOpen(PassengerRideTrackingFragment.class)) {
+
             Bundle bundle = new Bundle();
             bundle.putLong("rideId", rideId);
 
-            Fragment fragment = new PassengerRideTrackingFragment();
+            PassengerRideTrackingFragment fragment = new PassengerRideTrackingFragment();
             fragment.setArguments(bundle);
 
             getSupportFragmentManager()
@@ -489,6 +492,12 @@ public class MainActivity extends AppCompatActivity {
                     .commit();
         }
     }
+
+    private boolean isFragmentAlreadyOpen(Class<? extends Fragment> fragmentClass) {
+        Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
+        return current != null && fragmentClass.isInstance(current);
+    }
+
     private void loadUserProfile() {
         userApiService = ApiClient.getUserApiService();
 

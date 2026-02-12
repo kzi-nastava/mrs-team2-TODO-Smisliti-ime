@@ -10,6 +10,8 @@ import rs.getgo.backend.dtos.ride.*;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
 import rs.getgo.backend.mappers.RideMapper;
 import rs.getgo.backend.model.entities.*;
+import rs.getgo.backend.model.enums.NotificationType;
+import rs.getgo.backend.model.enums.RideOrderStatus;
 import rs.getgo.backend.model.enums.RideStatus;
 import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.*;
@@ -294,12 +296,44 @@ public class RideServiceImpl implements RideService {
                 "Driver is on the way to pick you up!"
         );
 
+        notifyLinkedPassengersRideAccepted(ride);
+
         UpdatedRideDTO response = new UpdatedRideDTO();
         response.setId(ride.getId());
         response.setStatus(RideStatus.DRIVER_INCOMING.toString());
         response.setStartTime(null);
 
         return response;
+    }
+
+    private void notifyLinkedPassengersRideAccepted(ActiveRide ride) {
+        if (ride.getLinkedPassengers() == null || ride.getLinkedPassengers().isEmpty() || ride.getDriver() == null) {
+            return;
+        }
+
+        for (Passenger p : ride.getLinkedPassengers()) {
+            if (!p.equals(ride.getPayingPassenger())) {
+                emailService.sendLinkedPassengerEmail(p, ride);
+
+//                pushNotificationService.sendNotification(
+//                        p.getId(),
+//                        "You have been added to a ride and the driver has accepted it!"
+//                );
+                notificationService.createAndNotify(
+                        p.getId(),
+                        NotificationType.RIDE_ACCEPTED,
+                        "Ride accepted",
+                        "You have been added to a ride. The driver has accepted it!",
+                        LocalDateTime.now()
+                );
+
+                webSocketController.notifyPassengerLinkedRideAccepted(
+                        p.getId(),
+                        ride.getId(),
+                        ride.getDriver().getName()
+                );
+            }
+        }
     }
 
     private void initializeDriverToPickupMovement(ActiveRide ride) {

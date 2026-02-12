@@ -1,19 +1,34 @@
 package com.example.getgo.utils;
 
+import android.Manifest;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
 import android.util.Log;
 
 import com.example.getgo.api.ApiClient;
 import com.example.getgo.api.services.NotificationApiService;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
+
+import com.example.getgo.R;
+import com.example.getgo.activities.MainActivity;
 import com.example.getgo.callbacks.SupportChatMessageListener;
 import com.example.getgo.dtos.driver.GetDriverLocationDTO;
+import com.example.getgo.dtos.notification.NotificationDTO;
 import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideFinishedDTO;
 import com.example.getgo.dtos.ride.GetRideStatusUpdateDTO;
 import com.example.getgo.dtos.ride.GetRideStoppedEarlyDTO;
+import com.example.getgo.dtos.ride.LinkedRideAcceptedDTO;
 import com.example.getgo.dtos.supportChat.GetMessageDTO;
 import com.example.getgo.model.ChatMessage;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -37,6 +52,7 @@ public class WebSocketManager {
 
     public static final String WS_URL = "http://10.0.2.2:8080/socket/websocket";
     // public static final String WS_URL = "wss://nonpossibly-nonderivable-teddy.ngrok-free.dev/socket/websocket";
+
 
     private StompClient stompClient;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
@@ -63,6 +79,10 @@ public class WebSocketManager {
         void onRideFinished(GetRideFinishedDTO finished);
     }
 
+    public interface RideAcceptedListener {
+        void onRideAccepted(GetDriverActiveRideDTO ride);
+    }
+
     public interface DriverLocationListener {
         void onLocationUpdate(GetDriverLocationDTO location);
     }
@@ -79,6 +99,26 @@ public class WebSocketManager {
     // Listener for receiving a single notification
     public interface SingleUserNotificationListener {
         void onNotification(com.example.getgo.dtos.notification.NotificationDTO notification);
+    }
+
+    public interface NotificationListener {
+        void onNotificationReceived(NotificationDTO notification, Long rideId);
+    }
+
+    private NotificationListener notificationListener;
+
+    public void setNotificationListener(NotificationListener listener) {
+        this.notificationListener = listener;
+    }
+
+    public interface LinkedRideAcceptedListener {
+        void onLinkedRideAccepted(LinkedRideAcceptedDTO linkedRideAccepted);
+    }
+
+    private LinkedRideAcceptedListener linkedRideAcceptedListener;
+
+    public void setLinkedRideAcceptedListener(LinkedRideAcceptedListener listener) {
+        this.linkedRideAcceptedListener = listener;
     }
 
     public WebSocketManager() {
@@ -141,7 +181,7 @@ public class WebSocketManager {
 
         Log.d(TAG, "Connecting to WebSocket at: " + WS_URL);
 
-        // Build connect headers if auth token present
+// Build connect headers if auth token present
         if (authToken != null && !authToken.isEmpty()) {
             List<StompHeader> headers = new ArrayList<>();
             headers.add(new StompHeader("Authorization", "Bearer " + authToken));
@@ -250,6 +290,27 @@ public class WebSocketManager {
                     listener.onRideFinished(finished);
                 }, throwable -> {
                     Log.e(TAG, "Error on ride finished topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
+    public void subscribeToPassengerRideAccepted(Long rideId, RideAcceptedListener listener) {
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
+
+        String topic = "/socket-publisher/ride/" + rideId + "/ride-accepted";
+        Log.d(TAG, "Subscribing to passenger ride accepted: " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    Log.d(TAG, "Ride accepted: " + topicMessage.getPayload());
+                    GetDriverActiveRideDTO ride = gson.fromJson(topicMessage.getPayload(), GetDriverActiveRideDTO.class);
+                    listener.onRideAccepted(ride);
+                }, throwable -> {
+                    Log.e(TAG, "Error on ride accepted topic", throwable);
                 });
 
         compositeDisposable.add(disposable);
@@ -489,4 +550,35 @@ public class WebSocketManager {
     public interface DriverRideCancelledListener {
         void onDriverRideCancelled(com.example.getgo.dtos.ride.GetRideCancelledDTO dto);
     }
+
+    public void subscribeToLinkedRideAccepted(Long passengerId) {
+        if (stompClient == null) return;
+
+        String topic = "/socket-publisher/user/" + passengerId + "/linked-ride-accepted";
+        Log.d(TAG, "Subscribing to linked ride accepted: " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    Log.d(TAG, "WS payload received on topic: " + topic + " -> " + topicMessage.getPayload());
+                    Log.d(TAG, "Linked ride accepted: " + topicMessage.getPayload());
+
+                    try {
+                        LinkedRideAcceptedDTO linkedRideAccepted = gson.fromJson(
+                                topicMessage.getPayload(), LinkedRideAcceptedDTO.class);
+
+                        if (linkedRideAcceptedListener != null) {
+                            linkedRideAcceptedListener.onLinkedRideAccepted(linkedRideAccepted);
+                        }
+
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to parse linked ride accepted DTO", e);
+                    }
+
+                }, throwable -> {
+                    Log.e(TAG, "Error on linked ride accepted topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
 }

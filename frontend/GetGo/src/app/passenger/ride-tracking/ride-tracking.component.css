@@ -1,7 +1,7 @@
 :host{
   display: block;
   background-color: #8FABD4;
-  min-height: 100vh;
+  min-height: 107vh;
 }
 
 .main-container {
@@ -130,6 +130,7 @@
   margin: 10px 0;
   cursor: pointer;
   font-weight: bold;
+  margin-left: 15px;
 }
 
 .panic-btn {
@@ -151,7 +152,7 @@
   border-radius: 8px;
   padding: 12px;
   margin: 10px 0;
-  width: 100%;
+  width: 92%;
   display: flex;
   flex-direction: column;
   gap: 8px;

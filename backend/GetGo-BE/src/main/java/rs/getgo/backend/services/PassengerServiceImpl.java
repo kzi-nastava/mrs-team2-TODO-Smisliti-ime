@@ -73,18 +73,10 @@ public class PassengerServiceImpl implements PassengerService {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
-        if (updatePassengerDTO.getName() != null && !updatePassengerDTO.getName().trim().isEmpty()) {
-            passenger.setName(updatePassengerDTO.getName().trim());
-        }
-        if (updatePassengerDTO.getSurname() != null && !updatePassengerDTO.getSurname().trim().isEmpty()) {
-            passenger.setSurname(updatePassengerDTO.getSurname().trim());
-        }
-        if (updatePassengerDTO.getPhone() != null && !updatePassengerDTO.getPhone().trim().isEmpty()) {
-            passenger.setPhone(updatePassengerDTO.getPhone().trim());
-        }
-        if (updatePassengerDTO.getAddress() != null && !updatePassengerDTO.getAddress().trim().isEmpty()) {
-            passenger.setAddress(updatePassengerDTO.getAddress().trim());
-        }
+        passenger.setName(updatePassengerDTO.getName().trim());
+        passenger.setSurname(updatePassengerDTO.getSurname().trim());
+        passenger.setPhone(updatePassengerDTO.getPhone().trim());
+        passenger.setAddress(updatePassengerDTO.getAddress().trim());
 
         Passenger savedPassenger = passengerRepo.save(passenger);
         return modelMapper.map(savedPassenger, UpdatedPassengerDTO.class);
@@ -111,6 +103,8 @@ public class PassengerServiceImpl implements PassengerService {
     public UpdatedProfilePictureDTO uploadProfilePicture(String email, MultipartFile file) {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
+
+        fileStorageService.validateImageFile(file);
 
         // Delete old picture if exists
         if (passenger.getProfilePictureUrl() != null) {

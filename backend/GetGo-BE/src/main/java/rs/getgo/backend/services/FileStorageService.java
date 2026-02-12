@@ -29,6 +29,21 @@ public class FileStorageService {
         }
     }
 
+    public void validateImageFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("File is required");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new RuntimeException("File must be an image");
+        }
+
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new RuntimeException("File size must not exceed 5MB");
+        }
+    }
+
     public String storeFile(MultipartFile file, String prefix) {
         try {
             if (file.isEmpty()) {

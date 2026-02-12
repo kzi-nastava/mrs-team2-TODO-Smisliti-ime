@@ -26,6 +26,7 @@ public class DriverMovementSimulator {
     private final ActiveRideRepository activeRideRepository;
     private final DriverRepository driverRepository;
     private final RideService rideService;
+    private final WebSocketController webSocketController;
 
     @Value("${simulation.speed.multiplier}")
     private int speedMultiplier;
@@ -33,11 +34,13 @@ public class DriverMovementSimulator {
     public DriverMovementSimulator(
             ActiveRideRepository activeRideRepository,
             DriverRepository driverRepository,
-            @Lazy RideService rideService
+            @Lazy RideService rideService,
+            WebSocketController webSocketController
     ) {
         this.activeRideRepository = activeRideRepository;
         this.driverRepository = driverRepository;
         this.rideService = rideService;
+        this.webSocketController = webSocketController;
     }
 
     /**
@@ -65,24 +68,19 @@ public class DriverMovementSimulator {
         if (path.isEmpty()) return;
 
         int currentIndex = ride.getCurrentPathIndex();
-
-        // Skip indexes by multiplier
         int nextIndex = Math.min(currentIndex + speedMultiplier, path.size() - 1);
 
-        // Check for end of waypoint reached/waypoint passed due to multiplier
-        if (nextIndex >= path.size() - 1) {
-            // Adjust position on waypoint
-            MapboxRoutingService.Coordinate finalPosition = path.getLast();
-            updateDriverLocation(ride, finalPosition, path.size() - 1);
+        // Move to next coordinate
+        MapboxRoutingService.Coordinate nextPosition = path.get(nextIndex);
+        updateDriverLocation(ride, nextPosition, nextIndex);
 
-            // Handle waypoint reached
+        // Check if waypoint reached
+        if (nextIndex >= path.size() - 1) {
             rideService.handleWaypointReached(ride);
-            return;
         }
 
-        // Move to next coordinate
-        MapboxRoutingService.Coordinate nextPosition = path.get(currentIndex + 1);
-        updateDriverLocation(ride, nextPosition, nextIndex);
+        // Always broadcast after update
+        broadcastDriverLocation(ride.getDriver(), ride);
     }
 
     private void updateDriverLocation(ActiveRide ride, MapboxRoutingService.Coordinate position, int pathIndex) {
@@ -95,6 +93,19 @@ public class DriverMovementSimulator {
         // Update ride
         ride.setCurrentPathIndex(pathIndex);
         activeRideRepository.save(ride);
+    }
+
+    private void broadcastDriverLocation(Driver driver, ActiveRide ride) {
+        GetDriverLocationDTO locationUpdate = new GetDriverLocationDTO(
+                driver.getId(),
+                ride.getId(),
+                driver.getCurrentLatitude(),
+                driver.getCurrentLongitude(),
+                ride.getStatus().toString()
+        );
+
+        webSocketController.broadcastDriverLocation(driver.getEmail(), locationUpdate);
+        webSocketController.broadcastDriverLocationToRide(ride.getId(), locationUpdate);
     }
 
     private List<MapboxRoutingService.Coordinate> parseJsonToCoordinates(String json) {

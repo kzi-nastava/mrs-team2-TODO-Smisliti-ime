@@ -113,12 +113,11 @@
 
             <!-- Vehicle Type -->
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/AppTextInputLayout"
+                style="@style/AppDropdownLayout"
                 android:hint="Vehicle Type">
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etVehicleType"
-                    style="@style/AppTextInputEditText"
-                    android:inputType="text"/>
+                <AutoCompleteTextView
+                    android:id="@+id/actvVehicleType"
+                    style="@style/AppDropdownText"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Registration Number -->

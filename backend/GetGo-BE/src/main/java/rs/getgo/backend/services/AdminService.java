@@ -50,12 +50,6 @@ public interface AdminService {
 
     AcceptDriverChangeRequestDTO rejectAvatarChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO);
 
-    void blockUser();
-
-    void unblockUser();
-
-    void getReports();
-
     CreatedAdminDTO createAdmin(CreateAdminDTO createAdminDTO);
 
     Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction);
@@ -73,4 +67,6 @@ public interface AdminService {
     Page<UserEmailDTO> getUnblockedUsers(String search, int page, int size);
 
     Page<UserEmailDTO> getBlockedUsers(String search, int page, int size);
+
+    void getReports();
 }

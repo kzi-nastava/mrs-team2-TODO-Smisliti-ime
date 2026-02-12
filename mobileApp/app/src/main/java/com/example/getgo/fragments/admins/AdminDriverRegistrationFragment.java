@@ -1,13 +1,15 @@
 package com.example.getgo.fragments.admins;
 
-import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -15,6 +17,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.api.services.VehicleApiService;
 import com.example.getgo.dtos.driver.CreateDriverDTO;
 import com.example.getgo.dtos.driver.CreatedDriverDTO;
 import com.example.getgo.repositories.AdminRepository;
@@ -22,6 +26,8 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,7 +35,8 @@ public class AdminDriverRegistrationFragment extends Fragment {
     private LinearLayout layoutDriverForm, layoutVehicleForm;
 
     private TextInputEditText etEmail, etFirstName, etLastName, etPhone, etAddress;
-    private TextInputEditText etVehicleModel, etVehicleType, etLicensePlate, etSeats;
+    private TextInputEditText etVehicleModel, etLicensePlate, etSeats;
+    private AutoCompleteTextView actvVehicleType;
     private MaterialCheckBox cbAllowsBabies, cbAllowsPets;
 
     private MaterialButton btnNext, btnBack, btnRegister;
@@ -60,6 +67,7 @@ public class AdminDriverRegistrationFragment extends Fragment {
 
         initializeViews(view);
         setupListeners();
+        loadVehicleTypes();
         showDriverForm();
 
         return view;
@@ -82,7 +90,7 @@ public class AdminDriverRegistrationFragment extends Fragment {
         etAddress = view.findViewById(R.id.etAddress);
 
         etVehicleModel = view.findViewById(R.id.etVehicleModel);
-        etVehicleType = view.findViewById(R.id.etVehicleType);
+        actvVehicleType = view.findViewById(R.id.actvVehicleType);
         etLicensePlate = view.findViewById(R.id.etLicensePlate);
         etSeats = view.findViewById(R.id.etSeats);
         cbAllowsBabies = view.findViewById(R.id.cbAllowsBabies);
@@ -97,6 +105,28 @@ public class AdminDriverRegistrationFragment extends Fragment {
         btnNext.setOnClickListener(v -> goToVehicle());
         btnBack.setOnClickListener(v -> showDriverForm());
         btnRegister.setOnClickListener(v -> onRegister());
+    }
+
+    private void loadVehicleTypes() {
+        executor.execute(() -> {
+            try {
+                VehicleApiService vehicleApi = ApiClient.getClient().create(VehicleApiService.class);
+                retrofit2.Response<List<String>> response = vehicleApi.getVehicleTypes().execute();
+
+                if (response.isSuccessful() && response.body() != null) {
+                    mainHandler.post(() -> {
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                                requireContext(),
+                                android.R.layout.simple_dropdown_item_1line,
+                                response.body()
+                        );
+                        actvVehicleType.setAdapter(adapter);
+                    });
+                }
+            } catch (Exception e) {
+                mainHandler.post(() -> showToast("Failed to load vehicle types"));
+            }
+        });
     }
 
     private void showDriverForm() {
@@ -153,6 +183,8 @@ public class AdminDriverRegistrationFragment extends Fragment {
     }
 
     private CreateDriverDTO buildCreateDriverDTO(int seats) {
+        String selectedType = actvVehicleType.getText().toString().trim();
+
         return new CreateDriverDTO(
                 getTextSafely(etEmail),
                 getTextSafely(etFirstName),
@@ -160,7 +192,7 @@ public class AdminDriverRegistrationFragment extends Fragment {
                 getTextSafely(etPhone),
                 getTextSafely(etAddress),
                 getTextSafely(etVehicleModel),
-                getTextSafely(etVehicleType),
+                selectedType,
                 getTextSafely(etLicensePlate),
                 seats,
                 cbAllowsBabies.isChecked(),
@@ -175,7 +207,7 @@ public class AdminDriverRegistrationFragment extends Fragment {
         etPhone.setText("");
         etAddress.setText("");
         etVehicleModel.setText("");
-        etVehicleType.setText("");
+        actvVehicleType.setText("", false);
         etLicensePlate.setText("");
         etSeats.setText("");
         cbAllowsBabies.setChecked(false);

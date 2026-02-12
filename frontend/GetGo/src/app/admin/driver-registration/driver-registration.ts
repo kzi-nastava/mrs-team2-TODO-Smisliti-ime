@@ -1,7 +1,8 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminNavBarComponent } from '../../layout/admin-nav-bar/admin-nav-bar.component';
 import { AdminService, CreateDriverDTO } from '../service/admin.service';
+import { VehicleService } from '../../service/vehicle-service/vehicle.service'
 
 @Component({
   selector: 'app-driver-registration',
@@ -9,7 +10,9 @@ import { AdminService, CreateDriverDTO } from '../service/admin.service';
   templateUrl: './driver-registration.html',
   styleUrl: './driver-registration.css',
 })
-export class DriverRegistration {
+export class DriverRegistration implements OnInit {
+  vehicleTypes: string[] = [];
+
   activeTab: string = 'driver';
 
   // Driver form data
@@ -33,8 +36,23 @@ export class DriverRegistration {
 
   constructor(
       private adminService: AdminService,
+      private vehicleService: VehicleService,
       private cdr: ChangeDetectorRef
   ) {}
+
+  ngOnInit(): void {
+    this.loadVehicleTypes()
+  }
+
+  loadVehicleTypes(): void {
+    this.vehicleService.getVehicleTypes().subscribe({
+      next: (types) => {
+        this.vehicleTypes = types;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load vehicle types:', err)
+    });
+  }
 
   goToVehicle(): void {
     // Validate driver data before moving to vehicle tab

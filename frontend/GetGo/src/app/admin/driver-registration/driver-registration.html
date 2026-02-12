@@ -1,7 +1,7 @@
 <app-admin-nav-bar></app-admin-nav-bar>
 <div class="user-info">
     <p class="main-title">Register Driver</p>
-    
+
     <div class="info-label">
       @if (activeTab === 'driver') {
         <p class="info-title">Driver Info</p>
@@ -18,7 +18,7 @@
         <input type="text" placeholder="Last Name" class="form-input" [(ngModel)]="driverData.lastName" name="lastName" />
         <input type="tel" placeholder="Phone" class="form-input" [(ngModel)]="driverData.phone" name="phone" />
         <input type="text" placeholder="Address" class="form-input" [(ngModel)]="driverData.address" name="address" />
-        
+
         <button type="button" class="next-button" (click)="goToVehicle()">Next</button>
       </form>
     }
@@ -26,10 +26,15 @@
     @if (activeTab === 'vehicle') {
       <form class="profile-form">
         <input type="text" placeholder="Vehicle Model" class="form-input" [(ngModel)]="vehicleData.model" name="model" />
-        <input type="text" placeholder="Vehicle Type" class="form-input" [(ngModel)]="vehicleData.type" name="type" />
+        <select class="form-input" [(ngModel)]="vehicleData.type" name="type">
+          <option value="" disabled>Select Vehicle Type</option>
+          @for (type of vehicleTypes; track type) {
+          <option [value]="type">{{ type }}</option>
+          }
+        </select>
         <input type="text" placeholder="Registration Number" class="form-input" [(ngModel)]="vehicleData.registrationNumber" name="registrationNumber" />
         <input type="number" placeholder="Number of Seats" class="form-input" [(ngModel)]="vehicleData.seats" name="seats" />
-        
+
         <div class="checkbox-container">
           <label class="checkbox-label">
             <input type="checkbox" class="checkbox-input" [(ngModel)]="vehicleData.allowsBabies" name="allowsBabies" />
@@ -40,7 +45,7 @@
             <span>Allows Pets</span>
           </label>
         </div>
-        
+
         <div class="button-group">
           <button type="button" class="back-button" (click)="goToDriver()">Back</button>
           <button type="button" class="register-button" (click)="onRegister()">Register</button>

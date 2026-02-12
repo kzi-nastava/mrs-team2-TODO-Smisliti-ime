@@ -16,23 +16,25 @@ import java.util.List;
 @Getter
 @Setter
 public class CreateRideRequestDTO {
-//    @NotNull
-//    @Size(min = 2)
+    @NotNull(message = "Latitudes are required")
+    @Size(min = 2, message = "At least 2 coordinates required")
     private List<Double> latitudes;
 
-//    @NotNull
-//    @Size(min = 2)
+    @NotNull(message = "Longitudes are required")
+    @Size(min = 2, message = "At least 2 coordinates required")
     private List<Double> longitudes;
 
-
+    @NotNull(message = "Addresses are required")
+    @Size(min = 2, message = "At least 2 addresses required")
     private List<String> addresses;
 
-//    @Pattern(regexp = "^([01]\\d|2[0-3]):([0-5]\\d)$")
-    private String scheduledTime;     // "HH:mm" format or null for immediate
+    @Pattern(regexp = "^([01]\\d|2[0-3]):([0-5]\\d)$", message = "Scheduled time must be in HH:mm format")
+    private String scheduledTime;
 
-//    private List<@Email String> friendEmails;
-    private List<String> friendEmails;
+    private List<@Email(message = "Invalid email address") String> friendEmails;
+
     private Boolean hasBaby;
     private Boolean hasPets;
-    private String vehicleType;
+
+    private String vehicleType; // null for vehicle type any
 }

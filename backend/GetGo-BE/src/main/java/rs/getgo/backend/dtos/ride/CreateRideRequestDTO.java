@@ -35,6 +35,6 @@ public class CreateRideRequestDTO {
 
     private Boolean hasBaby;
     private Boolean hasPets;
-    
+
     private String vehicleType; // null for vehicle type any
 }

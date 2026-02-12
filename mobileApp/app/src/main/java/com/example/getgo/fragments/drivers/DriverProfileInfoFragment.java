@@ -28,6 +28,7 @@ import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.example.getgo.R;
 import com.example.getgo.api.ApiClient;
+import com.example.getgo.api.services.VehicleApiService;
 import com.example.getgo.dtos.driver.GetDriverDTO;
 import com.example.getgo.dtos.request.CreatedDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.UpdateDriverPersonalDTO;
@@ -41,6 +42,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -220,13 +222,25 @@ public class DriverProfileInfoFragment extends Fragment {
     }
 
     private void loadVehicleTypeDropdown() {
-        String[] vehicleTypes = new String[]{"STANDARD", "LUXURY", "VAN"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_dropdown_item_1line,
-                vehicleTypes
-        );
-        actvVehicleType.setAdapter(adapter);
+        executor.execute(() -> {
+            try {
+                VehicleApiService vehicleApi = ApiClient.getClient().create(VehicleApiService.class);
+                retrofit2.Response<List<String>> response = vehicleApi.getVehicleTypes().execute();
+
+                if (response.isSuccessful() && response.body() != null) {
+                    mainHandler.post(() -> {
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                                requireContext(),
+                                android.R.layout.simple_dropdown_item_1line,
+                                response.body()
+                        );
+                        actvVehicleType.setAdapter(adapter);
+                    });
+                }
+            } catch (Exception e) {
+                mainHandler.post(() -> showToast("Failed to load vehicle types"));
+            }
+        });
     }
 
     private void loadDriverData() {

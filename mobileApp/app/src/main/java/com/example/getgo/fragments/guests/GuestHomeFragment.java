@@ -191,7 +191,7 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
             List<LatLng> points = new ArrayList<>();
             points.add(pickupCoord);
             points.add(dropoffCoord);
-            mapManager.drawRoute(points, null);
+            mapManager.drawRouteOSRM(points, null);
         }
     }
 

@@ -195,28 +195,14 @@ public class RideServiceImpl implements RideService {
             }
         }
 
+        for (Passenger p : allPassengers) {
+            notificationService.createAndNotify(p.getId(), rs.getgo.backend.model.enums.NotificationType.RIDE_CANCELLED, "Ride canceled", notifMsg, LocalDateTime.now());
+        }
+
         // Release driver if assigned
         if (driver != null) {
             driver.setActive(true);
             driverRepository.save(driver);
-        }
-
-        // Notify via WebSocket about ride cancellation
-        // Notify all participants about cancellation
-        webSocketController.notifyRideCancelled(
-                ride.getId(),
-                cancelledBy,
-                req.getReason() != null ? req.getReason() : "No reason provided"
-        );
-
-        // If driver exists, notify driver specifically
-        if (driver != null) {
-            webSocketController.notifyDriverRideCancelled(
-                    driver.getEmail(),
-                    ride.getId(),
-                    cancelledBy,
-                    req.getReason() != null ? req.getReason() : "No reason provided"
-            );
         }
 
         activeRideRepository.delete(ride);

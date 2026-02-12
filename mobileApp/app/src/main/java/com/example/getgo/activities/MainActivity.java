@@ -1,11 +1,14 @@
 package com.example.getgo.activities;
 
 import android.Manifest;
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.os.Build;
+import android.app.PendingIntent;
+import android.media.AudioAttributes;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import androidx.core.content.ContextCompat;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -17,7 +20,6 @@ import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
@@ -49,12 +51,10 @@ import retrofit2.Response;
 
 import com.example.getgo.utils.WebSocketManager;
 import com.example.getgo.fragments.layouts.NotificationsFragment;
-import com.google.gson.Gson;
-import com.example.getgo.dtos.notification.NotificationDTO;
-
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
-import android.annotation.SuppressLint;
+import com.example.getgo.dtos.notification.NotificationDTO;
+import com.example.getgo.api.services.NotificationApiService;
 
 public class MainActivity extends AppCompatActivity {
     private UserRole currentUserRole;
@@ -70,12 +70,19 @@ public class MainActivity extends AppCompatActivity {
     private CircleImageView ivUserProfile;
     private WebSocketManager webSocketManager;
     private Long currentUserId = null;
+    private static final int REQ_CODE_POST_NOTIFICATIONS = 1001;
+    private MediaPlayer notificationSound;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_main);
+
+        // Ensure notification channel exists for system notifications (Android O+)
+        createNotificationChannel();
+        // Request runtime notification permission on Android 13+
+        requestNotificationPermissionIfNeeded();
 
         initUserRole();
         setupGuestRestrictions();
@@ -481,14 +488,284 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupNotificationSocket() {
-        // Read stored user id
+        // Avoid creating multiple socket connections
+        if (webSocketManager != null) return;
+
+        // Try to get user id from prefs first; do NOT fallback to an extra HTTP call.
         SharedPreferences prefs = getSharedPreferences("getgo_prefs", MODE_PRIVATE);
         long uid = prefs.getLong("user_id", -1L);
-        if (uid <= 0) return;
-        currentUserId = uid;
+        String jwt = prefs.getString("jwt_token", null);
 
+        // If we already have user id, start socket immediately
+        if (uid > 0) {
+            startNotificationSocketForUser(uid, jwt);
+        } else {
+            // No stored user id -> nothing to subscribe right now. The socket will be
+            // started on next app launch or after login when prefs are set.
+            Log.d("MainActivity", "No user_id in prefs, skipping socket subscription");
+        }
+    }
+
+    // Start and subscribe socket for a specific user id. Keeps method small and focused.
+    private void startNotificationSocketForUser(Long uid, String jwtToken) {
+        if (uid == null || uid <= 0) return;
+        if (webSocketManager != null) return; // already started
+
+        currentUserId = uid;
         webSocketManager = new WebSocketManager();
+        if (jwtToken != null && !jwtToken.isEmpty()) webSocketManager.setAuthToken(jwtToken);
+
+        webSocketManager.setConnectionListener(() -> runOnUiThread(() -> {
+            // Bulk unread notifications
+            webSocketManager.subscribeToUserNotifications(currentUserId, notifications -> runOnUiThread(() -> {
+                if (notifications == null || notifications.isEmpty()) return;
+
+                int unreadCount = 0;
+                NotificationApiService notifService = ApiClient.getNotificationApiService(); // local ref
+
+                for (com.example.getgo.dtos.notification.NotificationDTO n : notifications) {
+                    if (n == null) continue;
+                    if (!n.isRead()) {
+                        unreadCount++;
+                        String title = n.getTitle() != null ? n.getTitle() : "Notification";
+                        String msg = n.getMessage() != null ? n.getMessage() : "";
+                        int nid = n.getId() != null ? n.getId().intValue() : (int) (System.currentTimeMillis() & 0x7fffffff);
+                        Log.d("NOTIF_FLOW", "Bulk unread -> showing notification id=" + nid + " title='" + title + "' msg='" + msg + "'");
+                        showUserNotification(title, msg, nid);
+
+                        // mark notification as viewed on backend so it won't be forwarded again
+                        if (n.getId() != null) {
+                            notifService.deleteNotification(n.getId()).enqueue(new Callback<com.example.getgo.dtos.notification.NotificationDTO>() {
+                                @Override
+                                public void onResponse(Call<com.example.getgo.dtos.notification.NotificationDTO> call, Response<com.example.getgo.dtos.notification.NotificationDTO> response) {
+                                    if (response.isSuccessful()) {
+                                        Log.d("NOTIF_SYNC", "Marked notification read id=" + n.getId());
+                                    } else {
+                                        Log.w("NOTIF_SYNC", "Failed to mark read id=" + n.getId() + " code=" + response.code());
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<com.example.getgo.dtos.notification.NotificationDTO> call, Throwable t) {
+                                    Log.e("NOTIF_SYNC", "Error marking notification read id=" + n.getId(), t);
+                                }
+                            });
+                        }
+                    }
+                }
+
+                if (unreadCount > 0) {
+                    // Show a summary system notification instead of a Toast
+                    String summaryTitle = "New notifications";
+                    String summaryMessage = "You have " + unreadCount + " new notifications";
+                    int summaryId = (int) (System.currentTimeMillis() & 0x7fffffff);
+                    showUserNotification(summaryTitle, summaryMessage, summaryId);
+
+                    Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
+                    if (current instanceof NotificationsFragment) {
+                        ((NotificationsFragment) current).refreshNotifications();
+                    }
+                }
+            }));
+
+            webSocketManager.subscribeToUserNotification(currentUserId, notification -> runOnUiThread(() -> {
+                if (notification == null) return;
+                String title = notification.getTitle() != null ? notification.getTitle() : "Notification";
+                int nid = (notification.getId() != null) ? notification.getId().intValue() : (int) (System.currentTimeMillis() & 0x7fffffff);
+                String msg = notification.getMessage() != null ? notification.getMessage() : "";
+                // Post a real system notification for the incoming single notification
+                Log.d("NOTIF_FLOW", "Single notification -> showing notification id=" + nid + " title='" + title + "' msg='" + msg + "'");
+                showUserNotification(title, msg, nid);
+
+                // mark single notification as viewed on backend to avoid re-forwarding
+                if (notification.getId() != null) {
+                    ApiClient.getNotificationApiService().deleteNotification(notification.getId())
+                            .enqueue(new Callback<NotificationDTO>() {
+                                @Override
+                                public void onResponse(Call<com.example.getgo.dtos.notification.NotificationDTO> call, Response<com.example.getgo.dtos.notification.NotificationDTO> response) {
+                                    if (response.isSuccessful()) {
+                                        Log.d("NOTIF_SYNC", "Marked single notification read id=" + notification.getId());
+                                    } else {
+                                        Log.w("NOTIF_SYNC", "Failed to mark single notification read id=" + notification.getId() + " code=" + response.code());
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<com.example.getgo.dtos.notification.NotificationDTO> call, Throwable t) {
+                                    Log.e("NOTIF_SYNC", "Error marking single notif read id=" + notification.getId(), t);
+                                }
+                            });
+                }
+
+                Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
+                if (current instanceof NotificationsFragment) {
+                    ((NotificationsFragment) current).refreshNotifications();
+                }
+            }));
+
+            // Request unread notifications immediately (no userId param required)
+            webSocketManager.requestUnreadNotifications();
+
+            // Also start periodic polling to request unread notifications repeatedly (every 10s)
+            webSocketManager.startUnreadNotificationsPolling(10);
+        }));
+
         webSocketManager.connect();
+    }
+
+    // Helper: show simple system notification (channel must exist elsewhere in app)
+    private void showUserNotification(String title, String message, int id) {
+        try {
+            Log.d("NOTIF_FLOW", "showUserNotification called id=" + id + " title='" + title + "'");
+             // If runtime permission is required and not granted, request it and skip showing now
+             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                     // Ask user for permission; the next incoming notification will be shown after grant
+                     int notifFlow = Log.w("NOTIF_FLOW", "POST_NOTIFICATIONS not granted, requesting permission");
+                     ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_CODE_POST_NOTIFICATIONS);
+                     return;
+                 }
+             }
+
+            // Build PendingIntent to open NotificationsFragment when user taps the notification
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.putExtra("OPEN_NOTIFICATIONS", true);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, id, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "getgo_channel")
+                    .setSmallIcon(R.drawable.ic_notifications)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent)
+                    // Use defaults for vibration/sound as channel provides sound
+                    .setDefaults(NotificationCompat.DEFAULT_ALL);
+
+            NotificationManagerCompat.from(this).notify(id, builder.build());
+            Log.d("NOTIF_FLOW", "Notification posted id=" + id);
+
+            // Also play local sound immediately (fallback in case notifications are suppressed)
+            playNotificationSound();
+        } catch (Exception ex) {
+            Log.e("MainActivity", "Failed to post system notification", ex);
+        }
+    }
+
+    // Create notification channel used by showUserNotification()
+    private void createNotificationChannel() {
+        try {
+            String channelId = "getgo_channel";
+            String channelName = "GetGo Notifications";
+            String channelDesc = "Notifications from GetGo app";
+            int importance = android.app.NotificationManager.IMPORTANCE_HIGH;
+            android.app.NotificationManager nm = (android.app.NotificationManager) getSystemService(android.content.Context.NOTIFICATION_SERVICE);
+            if (nm != null) {
+                // Delete old channel to ensure new settings (importance/sound) are applied.
+                // Note: deleting a channel resets any user-customizations; keep for debugging/testing.
+                try {
+                    android.app.NotificationChannel existing = nm.getNotificationChannel(channelId);
+                    if (existing != null) {
+                        nm.deleteNotificationChannel(channelId);
+                    }
+                } catch (Exception ignored) {}
+
+                android.app.NotificationChannel channel = new android.app.NotificationChannel(channelId, channelName, importance);
+                channel.setDescription(channelDesc);
+
+                // Use default notification sound
+                Uri soundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION);
+                AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build();
+                channel.setSound(soundUri, audioAttributes);
+                channel.enableVibration(true);
+                channel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+
+                nm.createNotificationChannel(channel);
+            }
+        } catch (Exception ex) {
+            Log.e("MainActivity", "Failed to create notification channel", ex);
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent == null) return;
+        // If notification click asked to open notifications, do it
+        if (intent.getBooleanExtra("OPEN_NOTIFICATIONS", false)) {
+            runOnUiThread(() -> {
+                Fragment fragment = new NotificationsFragment();
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragmentContainer, fragment)
+                        .commit();
+            });
+            return;
+        }
+
+        // also handle other notification intents (rate fragment / ride id) via existing handler
+        handleNotificationIntent(intent);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_CODE_POST_NOTIFICATIONS) {
+            if (grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("MainActivity", "POST_NOTIFICATIONS granted");
+            } else {
+                Log.w("MainActivity", "POST_NOTIFICATIONS denied");
+                // Optionally guide user to settings
+                // Show a short toast / log
+                Toast.makeText(this, "Notifications disabled. Enable in system settings.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void requestNotificationPermissionIfNeeded() {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    // Request the permission
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_CODE_POST_NOTIFICATIONS);
+                }
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Failed to request notification permission", e);
+        }
+    }
+
+    private void playNotificationSound() {
+        try {
+            if (notificationSound != null) {
+                if (notificationSound.isPlaying()) return;
+                notificationSound.start();
+                return;
+            }
+
+            // Try to load app bundled sound (same as panic)
+            int resId = getResources().getIdentifier("notification_sound", "raw", getPackageName());
+            if (resId != 0) {
+                notificationSound = MediaPlayer.create(this, resId);
+                if (notificationSound != null) {
+                    notificationSound.start();
+                    return;
+                }
+            }
+
+            // Fallback to default notification ringtone
+            try {
+                android.media.Ringtone r = android.media.RingtoneManager.getRingtone(this, android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION));
+                if (r != null) r.play();
+            } catch (Exception ignored) {}
+        } catch (Exception e) {
+            Log.e("MainActivity", "Failed to play notification sound", e);
+        }
     }
 
     @Override
@@ -498,5 +775,12 @@ public class MainActivity extends AppCompatActivity {
             webSocketManager.disconnect();
             webSocketManager = null;
         }
+        try {
+            if (notificationSound != null) {
+                if (notificationSound.isPlaying()) notificationSound.stop();
+                notificationSound.release();
+                notificationSound = null;
+            }
+        } catch (Exception ignored) {}
     }
 }

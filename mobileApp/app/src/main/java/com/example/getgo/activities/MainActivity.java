@@ -111,15 +111,26 @@ public class MainActivity extends AppCompatActivity {
             openFragment(navigationHelper.getStartFragment());
         }
 
-        if (getIntent() != null && getIntent().getBooleanExtra("OPEN_RIDE_TRACKING_FRAGMENT", false)) {
-            Long rideId = getIntent().getLongExtra("RIDE_ID", -1);
+
+        handleIntent(getIntent());
+//        if (getIntent() != null && getIntent().getBooleanExtra("OPEN_RIDE_TRACKING_FRAGMENT", false)) {
+//            Long rideId = getIntent().getLongExtra("RIDE_ID", -1);
+//            if (rideId != -1) {
+//                openRideTrackingFragment(rideId);
+//            }
+//        }
+
+        handleNotificationIntent(intent);
+
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && intent.getBooleanExtra("OPEN_RIDE_TRACKING_FRAGMENT", false)) {
+            Long rideId = intent.getLongExtra("RIDE_ID", -1);
             if (rideId != -1) {
                 openRideTrackingFragment(rideId);
             }
         }
-
-        handleNotificationIntent(intent);
-
     }
 
     private void openRideTrackingFragment(Long rideId) {
@@ -574,7 +585,8 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("OPEN_RIDE_TRACKING", true);
         intent.putExtra("RIDE_ID", rideId);
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this, notif.getId().intValue(), intent,
@@ -612,6 +624,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        handleIntent(intent);
         handleNotificationIntent(intent);
     }
 }

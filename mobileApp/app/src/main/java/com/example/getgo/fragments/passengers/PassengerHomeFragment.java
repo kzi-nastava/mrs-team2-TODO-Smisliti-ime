@@ -829,8 +829,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         Intent intent = new Intent(requireContext(), MainActivity.class);
         intent.putExtra("OPEN_RIDE_TRACKING_FRAGMENT", true);
         intent.putExtra("RIDE_ID", rideId);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 requireContext(),
                 rideId.intValue(),

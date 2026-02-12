@@ -75,6 +75,11 @@ public class NotificationsFragment extends Fragment {
         });
     }
 
+    // Public method to allow external callers (e.g. MainActivity / WebSocket) to refresh the list
+    public void refreshNotifications() {
+        loadNotifications();
+    }
+
     // Simple adapter
     private static class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.VH> {
         private List<NotificationDTO> items;

@@ -35,7 +35,7 @@ public class ApiClient {
     private static final String PREF_JWT = "jwt_token";
 
     public static final String SERVER_URL = "http://10.0.2.2:8080/";
-    //public static final String SERVER_URL = "https://nonpossibly-nonderivable-teddy.ngrok-free.dev/"; // For fetching images
+    // public static final String SERVER_URL = "https://nonpossibly-nonderivable-teddy.ngrok-free.dev/"; // For fetching images
 
     private static final String DEFAULT_BASE_URL = "http://10.0.2.2:8080/";
     // public static final String DEFAULT_BASE_URL = "https://nonpossibly-nonderivable-teddy.ngrok-free.dev/";

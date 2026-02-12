@@ -1,12 +1,14 @@
 package com.example.getgo.dtos.notification;
 
 import java.time.LocalDateTime;
+import com.google.gson.annotations.SerializedName;
 
 public class NotificationDTO {
     private Long id;
     private String type;
     private String title;
     private String message;
+    @SerializedName(value = "read", alternate = {"seen", "isRead", "is_read"})
     private boolean read;
     private LocalDateTime timestamp;
 
@@ -25,8 +27,4 @@ public class NotificationDTO {
     public void setMessage(String message) { this.message = message; }
 
     public boolean isRead() { return read; }
-    public void setRead(boolean read) { this.read = read; }
-
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 }

@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.api.services.NotificationApiService;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
@@ -29,23 +31,41 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import okhttp3.OkHttpClient;
+import io.reactivex.Observable;
+import java.util.concurrent.TimeUnit;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import ua.naiksoftware.stomp.Stomp;
 import ua.naiksoftware.stomp.StompClient;
+import ua.naiksoftware.stomp.dto.StompHeader;
 
 public class WebSocketManager {
     private static final String TAG = "WebSocketManager";
 
-//    public static final String WS_URL = "http://10.0.2.2:8080/";
-    private static final String WS_URL = "http://10.0.2.2:8080/socket/websocket";
-    // public static final String WS_URL = "wss://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
+    public static final String WS_URL = "http://10.0.2.2:8080/socket/websocket";
+    // public static final String WS_URL = "wss://nonpossibly-nonderivable-teddy.ngrok-free.dev/socket/websocket";
+
 
     private StompClient stompClient;
     private final CompositeDisposable compositeDisposable = new CompositeDisposable();
     private final Gson gson;
+
+    // Optional auth token to include in STOMP CONNECT headers
+    private String authToken = null;
+
+    // Connection listener called when socket is opened
+    private Runnable connectionListener = null;
+
+    // Disposable for unread-notifications polling (kept in compositeDisposable as well)
+    private Disposable unreadPollingDisposable = null;
 
     public interface RideAssignedListener {
         void onRideAssigned(GetDriverActiveRideDTO ride);
@@ -69,6 +89,16 @@ public class WebSocketManager {
 
     public interface RideStoppedEarlyListener {
         void onRideStopped(GetRideStoppedEarlyDTO stopped);
+    }
+
+    // Listener for receiving a batch (list) of notifications (unread)
+    public interface UserNotificationsListener {
+        void onNotifications(List<com.example.getgo.dtos.notification.NotificationDTO> notifications);
+    }
+
+    // Listener for receiving a single notification
+    public interface SingleUserNotificationListener {
+        void onNotification(com.example.getgo.dtos.notification.NotificationDTO notification);
     }
 
     public interface NotificationListener {
@@ -97,6 +127,20 @@ public class WebSocketManager {
                 .create();
     }
 
+    /**
+     * Set optional JWT token to include in CONNECT headers
+     */
+    public void setAuthToken(String token) {
+        this.authToken = token;
+    }
+
+    /**
+     * Set a callback that will be invoked on the UI thread when the socket connection opens
+     */
+    public void setConnectionListener(Runnable listener) {
+        this.connectionListener = listener;
+    }
+
     public void connect() {
         if (stompClient != null && stompClient.isConnected()) {
             Log.d(TAG, "Already connected");
@@ -112,6 +156,14 @@ public class WebSocketManager {
                     switch (lifecycleEvent.getType()) {
                         case OPENED:
                             Log.d(TAG, "WebSocket connected");
+                            // notify listener if set
+                            if (connectionListener != null) {
+                                try {
+                                    connectionListener.run();
+                                } catch (Exception ex) {
+                                    Log.e(TAG, "Connection listener failed", ex);
+                                }
+                            }
                             break;
                         case CLOSED:
                             Log.d(TAG, "WebSocket closed");
@@ -130,6 +182,66 @@ public class WebSocketManager {
         Log.d(TAG, "Connecting to WebSocket at: " + WS_URL);
         stompClient.connect();
         Log.d(TAG, "WebSocketManager: user should now subscribe to topics for notifications");
+
+        // Build connect headers if auth token present
+        if (authToken != null && !authToken.isEmpty()) {
+            List<StompHeader> headers = new ArrayList<>();
+            headers.add(new StompHeader("Authorization", "Bearer " + authToken));
+            stompClient.connect(headers);
+        } else {
+            stompClient.connect();
+        }
+    }
+
+    public void subscribeToUserNotifications(Long userId, UserNotificationsListener listener) {
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
+
+        String topic = "/socket-publisher/user/" + userId + "/notifications";
+        Log.d(TAG, "Subscribing to user notifications (bulk): " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    try {
+                        Log.d(TAG, "User notifications payload: " + topicMessage.getPayload());
+                        com.example.getgo.dtos.notification.NotificationDTO[] arr = gson.fromJson(topicMessage.getPayload(), com.example.getgo.dtos.notification.NotificationDTO[].class);
+                        List<com.example.getgo.dtos.notification.NotificationDTO> list = arr != null ? Arrays.asList(arr) : java.util.Collections.emptyList();
+                        listener.onNotifications(list);
+                    } catch (Exception ex) {
+                        Log.e(TAG, "Failed to parse user notifications payload", ex);
+                    }
+                }, throwable -> {
+                    Log.e(TAG, "Error on user notifications topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
+    public void subscribeToUserNotification(Long userId, SingleUserNotificationListener listener) {
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
+
+        String topic = "/socket-publisher/user/" + userId + "/notification";
+        Log.d(TAG, "Subscribing to user notification (single): " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    try {
+                        Log.d(TAG, "User notification payload: " + topicMessage.getPayload());
+                        com.example.getgo.dtos.notification.NotificationDTO dto = gson.fromJson(topicMessage.getPayload(), com.example.getgo.dtos.notification.NotificationDTO.class);
+                        listener.onNotification(dto);
+                    } catch (Exception ex) {
+                        Log.e(TAG, "Failed to parse single user notification payload", ex);
+                    }
+                }, throwable -> {
+                    Log.e(TAG, "Error on user notification topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
     }
 
     public void subscribeToRideAssigned(String driverEmail, RideAssignedListener listener) {
@@ -353,12 +465,65 @@ public class WebSocketManager {
         compositeDisposable.add(disposable);
     }
 
+    public void requestUnreadNotifications() {
+        NotificationApiService service = ApiClient.getNotificationApiService();
+
+        service.requestUnreadNotifications().enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Requested unread notifications via API");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Log.e(TAG, "Failed to request unread notifications via API", t);
+            }
+        });
+    }
+
+    public void startUnreadNotificationsPolling(long intervalSeconds) {
+        if (intervalSeconds <= 0) return;
+        stopUnreadNotificationsPolling();
+
+        Log.d(TAG, "Starting unread notifications polling interval=" + intervalSeconds + "s");
+
+        // Start immediately, then every intervalSeconds
+        unreadPollingDisposable = Observable.interval(0, intervalSeconds, TimeUnit.SECONDS)
+                .subscribe(tick -> {
+                    try {
+                        if (stompClient != null && stompClient.isConnected()) {
+                            requestUnreadNotifications();
+                        } else {
+                            Log.d(TAG, "Skipping requestUnreadNotifications - socket not connected yet");
+                        }
+                    } catch (Exception ex) {
+                        Log.e(TAG, "Error during unread notifications polling", ex);
+                    }
+                }, throwable -> Log.e(TAG, "Unread notifications polling error", throwable));
+
+        compositeDisposable.add(unreadPollingDisposable);
+    }
+
+    public void stopUnreadNotificationsPolling() {
+        if (unreadPollingDisposable != null && !unreadPollingDisposable.isDisposed()) {
+            try {
+                unreadPollingDisposable.dispose();
+            } catch (Exception ex) {
+                Log.e(TAG, "Failed to dispose unreadPollingDisposable", ex);
+            }
+            unreadPollingDisposable = null;
+        }
+    }
+
     public void disconnect() {
         if (stompClient != null) {
             stompClient.disconnect();
             stompClient = null;
         }
         compositeDisposable.clear();
+        unreadPollingDisposable = null;
     }
 
     public void subscribeToChat(Long chatId, String currentUserType, SupportChatMessageListener listener) {

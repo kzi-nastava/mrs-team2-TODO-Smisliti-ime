@@ -12,6 +12,7 @@ import rs.getgo.backend.dtos.rideEstimate.CreateRideEstimateDTO;
 import rs.getgo.backend.dtos.rideEstimate.CreatedRideEstimateDTO;
 import rs.getgo.backend.services.CompletedRideService;
 import rs.getgo.backend.services.RideEstimateService;
+import rs.getgo.backend.services.RideOrderService;
 import rs.getgo.backend.services.RideService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -31,6 +32,7 @@ public class RideController {
 
     private final RideEstimateService rideEstimateService;
     private final RideService rideService;
+    private final RideOrderService rideOrderService;
     private final RideTrackingService rideTrackingService;
     private final ScheduledRideService scheduledRideService;
     private final FavoriteRideService favoriteRideService;
@@ -38,11 +40,13 @@ public class RideController {
 
     public RideController(RideEstimateService rideEstimateService,
                           RideService rideService,
+                          RideOrderService rideOrderService,
                           RideTrackingService rideTrackingService,
                           ScheduledRideService scheduledRideService,
                           FavoriteRideService favoriteRideService) {
         this.rideEstimateService = rideEstimateService;
         this.rideService = rideService;
+        this.rideOrderService = rideOrderService;
         this.rideTrackingService = rideTrackingService;
         this.scheduledRideService = scheduledRideService;
         this.favoriteRideService = favoriteRideService;
@@ -162,7 +166,7 @@ public class RideController {
             @RequestBody CreateRideRequestDTO request
     ) {
         String email = AuthUtils.getCurrentUserEmail();
-        CreatedRideResponseDTO response = rideService.orderRide(request, email);
+        CreatedRideResponseDTO response = rideOrderService.orderRide(request, email);
         return ResponseEntity.ok(response);
     }
 

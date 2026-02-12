@@ -24,4 +24,5 @@ public interface ActiveRideRepository extends JpaRepository<ActiveRide, Long> {
     @EntityGraph(attributePaths = {"route", "route.waypoints", "driver", "payingPassenger"})
     Optional<ActiveRide> findByPayingPassengerAndStatusIn(Passenger passenger, List<RideStatus> status);
     List<ActiveRide> findByStatusAndScheduledTimeLessThanEqual(RideStatus status, LocalDateTime time);
+    boolean existsByPayingPassengerOrLinkedPassengersContaining(Passenger payingPassenger, Passenger linkedPassenger);
 }

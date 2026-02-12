@@ -7,18 +7,15 @@ import org.springframework.transaction.annotation.Transactional;
 import rs.getgo.backend.controllers.WebSocketController;
 import rs.getgo.backend.dtos.panic.PanicAlertDTO;
 import rs.getgo.backend.dtos.ride.*;
-import rs.getgo.backend.dtos.ridePrice.GetRidePriceDTO;
 import rs.getgo.backend.dtos.rideStatus.CreatedRideStatusDTO;
+import rs.getgo.backend.mappers.RideMapper;
 import rs.getgo.backend.model.entities.*;
-import rs.getgo.backend.model.enums.RideOrderStatus;
 import rs.getgo.backend.model.enums.RideStatus;
-import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.*;
 import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +24,6 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class RideServiceImpl implements RideService {
-
     private final RideCancellationRepository cancellationRepository;
     private final PanicRepository panicRepository;
     private final ActiveRideRepository activeRideRepository;
@@ -36,14 +32,12 @@ public class RideServiceImpl implements RideService {
     private final RouteRepository routeRepository;
     private final DriverRepository driverRepository;
     private final CompletedRideRepository completedRideRepository;
-    private final BlockNoteRepository blockNoteRepository;
     private final EmailService emailService;
-    private final DriverService driverService;
     private final MapboxRoutingService routingService;
     private final WebSocketController webSocketController;
     private final InconsistencyReportRepository reportRepository;
     private final PanicNotifierService panicNotifierService;
-    private final RidePriceRepository ridePriceRepository;
+    private final RideMapper rideMapper;
 
     @Value("${driver.default.latitude}")
     private Double defaultDriverLatitude;
@@ -61,15 +55,13 @@ public class RideServiceImpl implements RideService {
                            PassengerRepository passengerRepository,
                            RouteRepository routeRepository,
                            DriverRepository driverRepository,
-                           DriverService driverService,
                            MapboxRoutingService mapboxRoutingService,
                            WebSocketController webSocketController,
                            CompletedRideRepository completedRideRepository,
-                           BlockNoteRepository blockNoteRepository,
                            EmailService emailService,
                            InconsistencyReportRepository reportRepository,
                            PanicNotifierService panicNotifierService,
-                           RidePriceRepository ridePriceRepository) {
+                           RideMapper rideMapper) {
         this.cancellationRepository = cancellationRepository;
         this.panicRepository = panicRepository;
         this.activeRideRepository = activeRideRepository;
@@ -77,15 +69,13 @@ public class RideServiceImpl implements RideService {
         this.passengerRepository = passengerRepository;
         this.routeRepository = routeRepository;
         this.driverRepository = driverRepository;
-        this.driverService = driverService;
         this.completedRideRepository = completedRideRepository;
-        this.blockNoteRepository = blockNoteRepository;
         this.emailService = emailService;
         this.routingService = mapboxRoutingService;
         this.webSocketController = webSocketController;
         this.reportRepository = reportRepository;
         this.panicNotifierService = panicNotifierService;
-        this.ridePriceRepository = ridePriceRepository;
+        this.rideMapper = rideMapper;
     }
 
     @Override
@@ -275,267 +265,13 @@ public class RideServiceImpl implements RideService {
         cancelRide(ride, dto);
     }
 
-    @Override
-    public CreatedRideResponseDTO orderRide(CreateRideRequestDTO createRideRequestDTO, String userEmail) {
-        // Validate request
-        if (createRideRequestDTO.getLatitudes().size() < 2 ||
-                createRideRequestDTO.getLatitudes().size() != createRideRequestDTO.getLongitudes().size() ||
-                createRideRequestDTO.getLatitudes().size() != createRideRequestDTO.getAddresses().size()) {
-            return new CreatedRideResponseDTO(
-                    "INVALID_REQUEST",
-                    "Invalid coordinates or addresses",
-                    null
-            );
-        }
-
-        // Find paying passenger
-        Passenger payingPassenger = passengerRepository.findByEmail(userEmail)
-                .orElse(null);
-        if (payingPassenger == null) {
-            return new CreatedRideResponseDTO(
-                    RideOrderStatus.PASSENGER_NOT_FOUND.toString(),
-                    "Passenger account not found",
-                    null
-            );
-        }
-        if (payingPassenger.isBlocked()) {
-            String reason = blockNoteRepository.findByUserAndUnblockedAtIsNull(payingPassenger)
-                    .map(BlockNote::getReason)
-                    .orElse("You have been blocked.");
-            return new CreatedRideResponseDTO(
-                    "blocked",
-                    "Cannot order ride: user is blocked. Reason: " + reason,
-                    null);
-        }
-
-        // Parse scheduled time
-        LocalDateTime scheduledTime = null;
-        if (createRideRequestDTO.getScheduledTime() != null && !createRideRequestDTO.getScheduledTime().isEmpty()) {
-            scheduledTime = parseScheduledTime(createRideRequestDTO.getScheduledTime());
-
-            if (scheduledTime == null ||
-                    scheduledTime.isBefore(LocalDateTime.now()) ||
-                    scheduledTime.isAfter(LocalDateTime.now().plusHours(5))) {
-                return new CreatedRideResponseDTO(
-                        RideOrderStatus.INVALID_SCHEDULED_TIME.toString(),
-                        "Scheduled time must be within the next 5 hours",
-                        null
-                );
-            }
-        }
-
-        // Find linked passengers
-        List<Passenger> linkedPassengers = new ArrayList<>();
-        if (createRideRequestDTO.getFriendEmails() != null) {
-            for (String email : createRideRequestDTO.getFriendEmails()) {
-                Passenger passenger = passengerRepository.findByEmail(email).orElse(null);
-                if (passenger == null) {
-                    return new CreatedRideResponseDTO(
-                            "LINKED_PASSENGER_NOT_FOUND",
-                            "Passenger with email " + email + " not found",
-                            null
-                    );
-                }
-                linkedPassengers.add(passenger);
-            }
-        }
-
-        // Create Route with waypoints
-        Route route = createRoute(createRideRequestDTO);
-        routeRepository.save(route);
-
-        // Parse vehicle type (null for "ANY")
-        VehicleType requestedVehicleType = parseVehicleType(createRideRequestDTO.getVehicleType());
-
-        // Create ActiveRide with common properties
-        ActiveRide ride = new ActiveRide();
-        ride.setRoute(route);
-        ride.setScheduledTime(scheduledTime);
-        ride.setNeedsBabySeats(createRideRequestDTO.getHasBaby() != null && createRideRequestDTO.getHasBaby());
-        ride.setNeedsPetFriendly(createRideRequestDTO.getHasPets() != null && createRideRequestDTO.getHasPets());
-        ride.setPayingPassenger(payingPassenger);
-        ride.setLinkedPassengers(linkedPassengers);
-        ride.setCurrentLocation(route.getWaypoints().getFirst());
-
-        if (scheduledTime == null) {
-            // Assign driver for immediate rides
-            Driver driver = driverService.findAvailableDriver(ride);
-
-            if (driver == null) {
-                return new CreatedRideResponseDTO(
-                        "NO_DRIVERS_AVAILABLE",
-                        "No drivers available at the moment",
-                        null
-                );
-            }
-
-            ride.setDriver(driver);
-
-            // Use driver's vehicle type (overrides "ANY" if requested)
-            VehicleType actualVehicleType = driver.getVehicle().getType();
-            ride.setVehicleType(actualVehicleType);
-            ride.setEstimatedPrice(calculatePrice(route, actualVehicleType.toString()));
-
-            // Set status based on driver's current state
-            if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
-                ride.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
-            } else {
-                ride.setStatus(RideStatus.DRIVER_READY);
-            }
-        } else {
-            // Assign driver later for scheduled rides
-            ride.setVehicleType(requestedVehicleType);
-            // TODO: on scheduled ride activate when driver is picked calculate estimated price
-            ride.setStatus(RideStatus.SCHEDULED);
-        }
-
-        // Save ride
-        ActiveRide savedRide = activeRideRepository.save(ride);
-
-        // Notify driver if ready
-        if (savedRide.getStatus() == RideStatus.DRIVER_READY) {
-            GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(savedRide);
-            webSocketController.notifyDriverRideAssigned(savedRide.getDriver().getEmail(), rideDTO);
-        }
-
-        return new CreatedRideResponseDTO(
-                "SUCCESS",
-                scheduledTime != null
-                        ? "Ride scheduled successfully. Driver will be assigned closer to scheduled time."
-                        : "Ride ordered successfully!",
-                savedRide.getId()
-        );
-    }
-
-    private GetDriverActiveRideDTO buildDriverActiveRideDTO(ActiveRide ride) {
-        GetDriverActiveRideDTO dto = new GetDriverActiveRideDTO();
-        dto.setRideId(ride.getId());
-        dto.setStartingPoint(ride.getRoute().getStartingPoint());
-        dto.setEndingPoint(ride.getRoute().getEndingPoint());
-        dto.setEstimatedPrice(ride.getEstimatedPrice());
-        dto.setEstimatedTimeMin(ride.getRoute().getEstTimeMin());
-        dto.setPassengerName(ride.getPayingPassenger().getName() + " " + ride.getPayingPassenger().getSurname());
-        dto.setPassengerCount(1 + (ride.getLinkedPassengers() != null ? ride.getLinkedPassengers().size() : 0));
-        dto.setStatus(ride.getStatus().toString());
-        dto.setScheduledTime(ride.getScheduledTime());
-
-        dto.setLatitudes(ride.getRoute().getWaypoints().stream()
-                .map(WayPoint::getLatitude)
-                .toList());
-        dto.setLongitudes(ride.getRoute().getWaypoints().stream()
-                .map(WayPoint::getLongitude)
-                .toList());
-        dto.setAddresses(ride.getRoute().getWaypoints().stream()
-                .map(WayPoint::getAddress)
-                .toList());
-
-        return dto;
-    }
-
-    private LocalDateTime parseScheduledTime(String timeString) {
-        try {
-            LocalTime time = LocalTime.parse(timeString);
-            LocalDateTime scheduled = LocalDateTime.of(LocalDateTime.now().toLocalDate(), time);
-
-            if (scheduled.isBefore(LocalDateTime.now())) {
-                scheduled = scheduled.plusDays(1);
-            }
-
-            return scheduled;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private Route createRoute(CreateRideRequestDTO request) {
-        Route route = new Route();
-
-        // Set starting and ending points
-        route.setStartingPoint(request.getAddresses().getFirst());
-        route.setEndingPoint(request.getAddresses().get(request.getLatitudes().size() - 1));
-
-        // Create waypoints for all coordinates (including start and end point)
-        List<WayPoint> waypoints = new ArrayList<>();
-        for (int i = 0; i < request.getLatitudes().size(); i++) {
-            WayPoint waypoint = new WayPoint();
-            waypoint.setLatitude(request.getLatitudes().get(i));
-            waypoint.setLongitude(request.getLongitudes().get(i));
-            waypoint.setAddress(request.getAddresses().get(i));
-            waypoint.setReachedAt(null);
-            waypoints.add(waypoint);
-        }
-        route.setWaypoints(waypoints);
-
-        double totalDistance = 0.0;
-        double totalTime = 0.0;
-        List<MapboxRoutingService.Coordinate> allCoordinates = new ArrayList<>();
-
-        for (int i = 0; i < waypoints.size() - 1; i++) {
-            WayPoint from = waypoints.get(i);
-            WayPoint to = waypoints.get(i + 1);
-
-            MapboxRoutingService.RouteResponse segment = routingService.getRoute(
-                    from.getLatitude(), from.getLongitude(),
-                    to.getLatitude(), to.getLongitude()
-            );
-
-            totalDistance += segment.distanceKm();
-            totalTime += segment.realDurationSeconds() / 60.0;
-
-            // Collect all coordinates for polyline
-            if (i == 0) {
-                allCoordinates.addAll(segment.coordinates());
-            } else {
-                // Skip first coordinate to avoid duplicates at waypoint connections
-                allCoordinates.addAll(segment.coordinates().subList(1, segment.coordinates().size()));
-            }
-        }
-
-        route.setEstDistanceKm(totalDistance);
-        route.setEstTimeMin(totalTime);
-
-        // Save the polyline as JSON string
-        String polylineJson = convertCoordinatesToJson(allCoordinates);
-        route.setEncodedPolyline(polylineJson);
-
-        return route;
-    }
-
-    private double calculatePrice(Route route, String vehicleTypeStr) {
-        VehicleType vehicleType = parseVehicleType(vehicleTypeStr);
-        GetRidePriceDTO priceDTO = getPricesWithDefaults(vehicleType);
-        return priceDTO.getStartPrice() + (route.getEstDistanceKm() * priceDTO.getPricePerKm());
-    }
-
-    private GetRidePriceDTO getPricesWithDefaults(VehicleType vehicleType) {
-        // Default values if not set in database
-        double defaultStartPrice;
-        double defaultPricePerKm;
-
-        switch (vehicleType) {
-            case STANDARD -> { defaultStartPrice = 200; defaultPricePerKm = 120; }
-            case VAN -> { defaultStartPrice = 500; defaultPricePerKm = 150; }
-            case LUXURY -> { defaultStartPrice = 800; defaultPricePerKm = 200; }
-            default -> { defaultStartPrice = 200; defaultPricePerKm = 100; }
-        }
-
-        return ridePriceRepository.findByVehicleType(vehicleType)
-                .map(p -> new GetRidePriceDTO(p.getPricePerKm(), p.getStartPrice()))
-                .orElse(new GetRidePriceDTO(defaultPricePerKm, defaultStartPrice));
-    }
 
 
-    private VehicleType parseVehicleType(String vehicleTypeStr) {
-        if (vehicleTypeStr == null || vehicleTypeStr.trim().isEmpty()) {
-            return null; // Vehicle type is 'any'
-        }
 
-        try {
-            return VehicleType.valueOf(vehicleTypeStr.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
+
+
+
+
 
     @Override
     public UpdatedRideDTO acceptRide(Long rideId) {
@@ -592,7 +328,7 @@ public class RideServiceImpl implements RideService {
                 pickupPoint.getLatitude(), pickupPoint.getLongitude()
         );
 
-        String pathJson = convertCoordinatesToJson(route.coordinates());
+        String pathJson = routingService.convertCoordinatesToJson(route.coordinates());
 
         ride.setMovementPathJson(pathJson); // Set movement to: driver location -> start point
         ride.setCurrentPathIndex(0);
@@ -685,7 +421,7 @@ public class RideServiceImpl implements RideService {
             activeRideRepository.save(waitingRide);
 
             // Notify driver about next ride
-            GetDriverActiveRideDTO rideDTO = buildDriverActiveRideDTO(waitingRide);
+            GetDriverActiveRideDTO rideDTO = rideMapper.buildDriverActiveRideDTO(waitingRide);
             webSocketController.notifyDriverRideAssigned(driver.getEmail(), rideDTO);
             // Notify passenger
             webSocketController.notifyPassengerRideStatusUpdate(
@@ -746,22 +482,9 @@ public class RideServiceImpl implements RideService {
         );
 
         // Set movement of active ride to waypoint(i) -> waypoint(j) where waypoint(0) is start point and (n-1) is dest.
-        String pathJson = convertCoordinatesToJson(route.coordinates());
+        String pathJson = routingService.convertCoordinatesToJson(route.coordinates());
         ride.setMovementPathJson(pathJson);
         ride.setCurrentPathIndex(0);
-    }
-
-    private String convertCoordinatesToJson(List<MapboxRoutingService.Coordinate> coordinates) {
-        StringBuilder json = new StringBuilder("[");
-        for (int i = 0; i < coordinates.size(); i++) {
-            MapboxRoutingService.Coordinate coord = coordinates.get(i);
-            json.append(String.format("[%.6f,%.6f]", coord.longitude(), coord.latitude()));
-            if (i < coordinates.size() - 1) {
-                json.append(",");
-            }
-        }
-        json.append("]");
-        return json.toString();
     }
 
     public GetDriverActiveRideDTO getDriverActiveRide(String driverEmail) {
@@ -782,7 +505,7 @@ public class RideServiceImpl implements RideService {
                 .orElse(null);
         if (ride == null) return null;
 
-        return buildDriverActiveRideDTO(ride);
+        return rideMapper.buildDriverActiveRideDTO(ride);
     }
 
     @Override

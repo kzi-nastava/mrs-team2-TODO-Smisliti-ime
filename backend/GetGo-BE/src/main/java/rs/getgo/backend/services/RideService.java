@@ -8,7 +8,6 @@ public interface RideService {
     public void cancelRide(ActiveRide ride, CancelRideDTO req);
     void cancelRideByDriver(Long rideId, String reason);
     void cancelRideByPassenger(Long rideId, String reason);
-    public CreatedRideResponseDTO orderRide(CreateRideRequestDTO createRideRequestDTO, String email);
     UpdatedRideDTO startRide(Long rideId);
     UpdatedRideDTO acceptRide(Long rideId);
     void handleWaypointReached(ActiveRide ride);

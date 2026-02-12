@@ -79,6 +79,19 @@ public class MapboxRoutingService {
         );
     }
 
+    public String convertCoordinatesToJson(List<Coordinate> coordinates) {
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < coordinates.size(); i++) {
+            Coordinate coord = coordinates.get(i);
+            json.append(String.format("[%.6f,%.6f]", coord.longitude(), coord.latitude()));
+            if (i < coordinates.size() - 1) {
+                json.append(",");
+            }
+        }
+        json.append("]");
+        return json.toString();
+    }
+
     /**
      * Pair (lat, long)
      */

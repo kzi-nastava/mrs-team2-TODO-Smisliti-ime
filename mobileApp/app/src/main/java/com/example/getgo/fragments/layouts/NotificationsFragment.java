@@ -132,6 +132,12 @@ public class NotificationsFragment extends Fragment {
         @Override
         public int getItemCount() { return items != null ? items.size() : 0; }
 
+        public void addNotification(NotificationDTO notification) {
+            if (items == null) items = new ArrayList<>();
+            items.add(0, notification); // to the top
+            notifyItemInserted(0);
+        }
+
         static class VH extends RecyclerView.ViewHolder {
             TextView title, message;
             VH(@NonNull View itemView) {
@@ -172,6 +178,15 @@ public class NotificationsFragment extends Fragment {
             }
         } catch (Exception ex) {
             Log.e("NOTIF_WS", "Failed to inspect WebSocketManager on activity", ex);
+        }
+    }
+
+    public void addNotification(NotificationDTO notification) {
+        if (adapter != null) {
+            adapter.addNotification(notification);
+
+            // Scroll to top to show new notification immediately
+            if (rvNotifications != null) rvNotifications.scrollToPosition(0);
         }
     }
 }

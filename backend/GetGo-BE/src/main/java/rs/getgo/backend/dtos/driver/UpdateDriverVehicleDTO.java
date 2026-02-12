@@ -16,7 +16,6 @@ public class UpdateDriverVehicleDTO {
     private String vehicleModel;
 
     @NotBlank(message = "Vehicle type is required")
-    @Pattern(regexp = "^(STANDARD|VAN|LUXURY)$", message = "Vehicle type must be STANDARD, VAN, or LUXURY")
     private String vehicleType;
 
     @NotBlank(message = "Vehicle license plate is required")
@@ -25,7 +24,7 @@ public class UpdateDriverVehicleDTO {
 
     @NotNull(message = "Vehicle seats is required")
     @Min(value = 2, message = "Vehicle must have at least 2 seats")
-    @Max(value = 8, message = "Vehicle cannot have more than 8 seats")
+    @Max(value = 100, message = "Vehicle cannot have more than 8 seats")
     private Integer vehicleSeats;
 
     @NotNull(message = "Vehicle baby seats availability is required")

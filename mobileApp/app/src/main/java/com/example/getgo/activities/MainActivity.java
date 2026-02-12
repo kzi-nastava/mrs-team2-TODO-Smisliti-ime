@@ -1,14 +1,18 @@
 package com.example.getgo.activities;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.app.PendingIntent;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import androidx.core.content.ContextCompat;
+
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -29,6 +33,7 @@ import com.example.getgo.R;
 import com.example.getgo.fragments.passengers.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.admins.AdminRideHistoryFragment;
 import com.example.getgo.fragments.passengers.PassengerRideHistoryFragment;
+import com.example.getgo.fragments.passengers.PassengerRideTrackingFragment;
 import com.example.getgo.utils.NavigationHelper;
 import com.example.getgo.model.UserRole;
 import com.example.getgo.api.ApiClient;
@@ -36,6 +41,7 @@ import com.example.getgo.api.services.DriverApiService;
 import com.example.getgo.api.services.AuthApiService;
 import com.example.getgo.api.services.UserApiService;
 import com.example.getgo.model.UserProfile;
+import com.example.getgo.utils.NotificationHelper;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
@@ -76,6 +82,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        NotificationHelper.createNotificationChannel(this);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    "getgo_notifications",
+                    "GetGo Notifications",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Notifications for ride updates");
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(channel);
+        }
+
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_main);
 
@@ -101,9 +120,39 @@ public class MainActivity extends AppCompatActivity {
             openFragment(navigationHelper.getStartFragment());
         }
 
+
+        handleIntent(getIntent());
+//        if (getIntent() != null && getIntent().getBooleanExtra("OPEN_RIDE_TRACKING_FRAGMENT", false)) {
+//            Long rideId = getIntent().getLongExtra("RIDE_ID", -1);
+//            if (rideId != -1) {
+//                openRideTrackingFragment(rideId);
+//            }
+//        }
+
         handleNotificationIntent(intent);
 
     }
+
+    private void handleIntent(Intent intent) {
+        if (intent == null) return;
+
+        if (intent.getBooleanExtra("OPEN_RIDE_TRACKING_FRAGMENT", false)) {
+            long rideId = intent.getLongExtra("RIDE_ID", -1);
+            if (rideId != -1 && !isFragmentAlreadyOpen(PassengerRideTrackingFragment.class)) {
+                openRideTrackingFragment(rideId);
+            }
+        }
+    }
+
+    private void openRideTrackingFragment(Long rideId) {
+        PassengerRideTrackingFragment fragment = PassengerRideTrackingFragment.newInstance(rideId);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
     private void initUserRole() {
         String roleString = getIntent().getStringExtra("USER_ROLE");
         currentUserRole = roleString != null
@@ -411,31 +460,39 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleNotificationIntent(Intent intent) {
-        if (intent == null) {
-            Log.d("NOTIF_TEST", "Intent je null");
-            return;
-        }
+        if (intent == null) return;
 
-        Log.d("NOTIF_TEST", "Intent action = " + intent.getAction());
-        Log.d("NOTIF_TEST", "Intent extras = " + intent.getExtras());
-
-        boolean openRate = intent.getBooleanExtra("OPEN_RATE_FRAGMENT", false);
         long rideId = intent.getLongExtra("RIDE_ID", -1);
         long driverId = intent.getLongExtra("driverId", -1);
 
-        Log.d("NOTIF_TEST", "handleNotificationIntent called");
-        Log.d("NOTIF_TEST", "OPEN_RATE_FRAGMENT = " + openRate);
-        Log.d("NOTIF_TEST", "RIDE_ID = " + rideId);
-
-        if (openRate && rideId != -1 && !(getSupportFragmentManager().findFragmentById(R.id.fragmentContainer)
-                instanceof PassengerRateDriverVehicleFragment)) {
-            Log.d("NOTIF_TEST", "Opening PassengerRateDriverVehicleFragment for rideId: " + rideId);
+        // Rating fragment
+        if (intent.getBooleanExtra("OPEN_RATE_FRAGMENT", false)
+                && rideId != -1
+                && !isFragmentAlreadyOpen(PassengerRateDriverVehicleFragment.class)) {
 
             Bundle bundle = new Bundle();
             bundle.putLong("rideId", rideId);
             bundle.putLong("driverId", driverId);
 
-            Fragment fragment = new PassengerRateDriverVehicleFragment();
+            PassengerRateDriverVehicleFragment fragment = new PassengerRateDriverVehicleFragment();
+            fragment.setArguments(bundle);
+
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, fragment)
+                    .commit();
+            return;
+        }
+
+        // Ride tracking fragment
+        if (intent.getBooleanExtra("OPEN_RIDE_TRACKING", false)
+                && rideId != -1
+                && !isFragmentAlreadyOpen(PassengerRideTrackingFragment.class)) {
+
+            Bundle bundle = new Bundle();
+            bundle.putLong("rideId", rideId);
+
+            PassengerRideTrackingFragment fragment = new PassengerRideTrackingFragment();
             fragment.setArguments(bundle);
 
             getSupportFragmentManager()
@@ -443,6 +500,11 @@ public class MainActivity extends AppCompatActivity {
                     .replace(R.id.fragmentContainer, fragment)
                     .commit();
         }
+    }
+
+    private boolean isFragmentAlreadyOpen(Class<? extends Fragment> fragmentClass) {
+        Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
+        return current != null && fragmentClass.isInstance(current);
     }
 
     private void loadUserProfile() {
@@ -494,6 +556,11 @@ public class MainActivity extends AppCompatActivity {
         // Try to get user id from prefs first; do NOT fallback to an extra HTTP call.
         SharedPreferences prefs = getSharedPreferences("getgo_prefs", MODE_PRIVATE);
         long uid = prefs.getLong("user_id", -1L);
+        Log.d("NOTIF_DEBUG", "setupNotificationSocket: user_id = " + uid); // <- dodaj ovo
+        if (uid <= 0) {
+            Log.d("NOTIF_DEBUG", "User ID invalid, websocket neće startovati");
+            return;
+        }
         String jwt = prefs.getString("jwt_token", null);
 
         // If we already have user id, start socket immediately
@@ -513,6 +580,7 @@ public class MainActivity extends AppCompatActivity {
 
         currentUserId = uid;
         webSocketManager = new WebSocketManager();
+        webSocketManager.setNotificationListener(this::onWebSocketNotificationReceived);
         if (jwtToken != null && !jwtToken.isEmpty()) webSocketManager.setAuthToken(jwtToken);
 
         webSocketManager.setConnectionListener(() -> runOnUiThread(() -> {
@@ -611,6 +679,7 @@ public class MainActivity extends AppCompatActivity {
         }));
 
         webSocketManager.connect();
+        Log.d("NOTIF_DEBUG", "WebSocket connect() pozvan");
     }
 
     // Helper: show simple system notification (channel must exist elsewhere in app)
@@ -692,40 +761,40 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        if (intent == null) return;
-        // If notification click asked to open notifications, do it
-        if (intent.getBooleanExtra("OPEN_NOTIFICATIONS", false)) {
-            runOnUiThread(() -> {
-                Fragment fragment = new NotificationsFragment();
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragmentContainer, fragment)
-                        .commit();
-            });
-            return;
-        }
+//    @Override
+//    protected void onNewIntent(Intent intent) {
+//        super.onNewIntent(intent);
+//        if (intent == null) return;
+//        // If notification click asked to open notifications, do it
+//        if (intent.getBooleanExtra("OPEN_NOTIFICATIONS", false)) {
+//            runOnUiThread(() -> {
+//                Fragment fragment = new NotificationsFragment();
+//                getSupportFragmentManager()
+//                        .beginTransaction()
+//                        .replace(R.id.fragmentContainer, fragment)
+//                        .commit();
+//            });
+//            return;
+//        }
+//
+//        // also handle other notification intents (rate fragment / ride id) via existing handler
+//        handleNotificationIntent(intent);
+//    }
 
-        // also handle other notification intents (rate fragment / ride id) via existing handler
-        handleNotificationIntent(intent);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQ_CODE_POST_NOTIFICATIONS) {
-            if (grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d("MainActivity", "POST_NOTIFICATIONS granted");
-            } else {
-                Log.w("MainActivity", "POST_NOTIFICATIONS denied");
-                // Optionally guide user to settings
-                // Show a short toast / log
-                Toast.makeText(this, "Notifications disabled. Enable in system settings.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        if (requestCode == REQ_CODE_POST_NOTIFICATIONS) {
+//            if (grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                Log.d("MainActivity", "POST_NOTIFICATIONS granted");
+//            } else {
+//                Log.w("MainActivity", "POST_NOTIFICATIONS denied");
+//                // Optionally guide user to settings
+//                // Show a short toast / log
+//                Toast.makeText(this, "Notifications disabled. Enable in system settings.", Toast.LENGTH_SHORT).show();
+//            }
+//        }
+//    }
 
     private void requestNotificationPermissionIfNeeded() {
         try {
@@ -782,5 +851,112 @@ public class MainActivity extends AppCompatActivity {
                 notificationSound = null;
             }
         } catch (Exception ignored) {}
+    }
+
+    private void onWebSocketNotificationReceived(NotificationDTO notif, long rideId) {
+        Log.d("NOTIF_DEBUG", "Primljena notifikacija: title=" + notif.getTitle() + ", rideId=" + rideId); // <- dodaj
+
+        showLocalNotification(notif, rideId);
+
+        NotificationsFragment fragment = (NotificationsFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.fragmentContainer);
+        if (fragment != null) {
+            fragment.addNotification(notif);
+        }
+    }
+
+    private void showLocalNotification(NotificationDTO notif, long rideId) {
+        Log.d("NOTIF_DEBUG", "showLocalNotification: pripremam notifikaciju za rideId=" + rideId);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                Log.d("NOTIF_DEBUG", "POST_NOTIFICATIONS permission nije odobrena");
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        101);
+                return;
+            }
+        }
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("OPEN_RIDE_TRACKING", true);
+        intent.putExtra("RIDE_ID", rideId);
+//        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, notif.getId().intValue(), intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "getgo_notifications")
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(notif.getTitle())
+                .setContentText(notif.getMessage())
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent);
+
+        NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+        manager.notify(notif.getId().intValue(), builder.build());
+
+        Log.d("NOTIF_DEBUG", "Notifikacija poslata OS-u: id=" + notif.getId());
+    }
+
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        if (requestCode == 101) {
+//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                Toast.makeText(this, "Notifications enabled", Toast.LENGTH_SHORT).show();
+//                Log.d("NOTIF_DEBUG", "Notification permission granted");
+//            } else {
+//                Log.d("NOTIF_DEBUG", "Notification permission denied");
+//                Toast.makeText(this, "Cannot show notifications without permission", Toast.LENGTH_SHORT).show();
+//            }
+//        }
+//    }
+
+//    @Override
+//    protected void onNewIntent(Intent intent) {
+//        super.onNewIntent(intent);
+//        handleIntent(intent);
+//        handleNotificationIntent(intent);
+//    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent == null) return;
+
+        // Open notifications fragment
+        if (intent.getBooleanExtra("OPEN_NOTIFICATIONS", false)) {
+            Fragment fragment = new NotificationsFragment();
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, fragment)
+                    .commit();
+            return;
+        }
+
+        // Ride tracking / rate fragment handling
+        handleIntent(intent);
+        handleNotificationIntent(intent);
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == REQ_CODE_POST_NOTIFICATIONS || requestCode == 101) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("MainActivity", "Notification permission granted");
+            } else {
+                Log.w("MainActivity", "Notification permission denied");
+                Toast.makeText(this,
+                        "Notifications disabled. Enable in system settings.",
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }

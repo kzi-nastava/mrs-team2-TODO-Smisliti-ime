@@ -69,6 +69,9 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     private static final int NOTIF_ID_PANIC = 3001;
     private static final int NOTIF_ID_CANCEL = 3002;
 
+    private static final String ARG_RIDE_ID = "rideId";
+    private long rideId;
+
 
     private GoogleMap mMap;
     private MapManager mapManager;
@@ -269,6 +272,9 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            rideId = getArguments().getLong(ARG_RIDE_ID);
+        }
         rideApiService = ApiClient.getClient().create(RideApiService.class);
     }
 
@@ -501,7 +507,6 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         }
         LatLngBounds bounds = builder.build();
         mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)); // 100 = padding u px
-
 
 //        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
     }
@@ -830,6 +835,13 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         } catch (Exception ex) {
             Log.e(NOTIF_TAG, "Failed to post system notification", ex);
         }
+    }
+    public static PassengerRideTrackingFragment newInstance(long rideId) {
+        PassengerRideTrackingFragment fragment = new PassengerRideTrackingFragment();
+        Bundle args = new Bundle();
+        args.putLong(ARG_RIDE_ID, rideId);
+        fragment.setArguments(args);
+        return fragment;
     }
 
 }

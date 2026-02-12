@@ -39,7 +39,7 @@ export class BlockUsers implements OnInit {
   }
 
   get canBlock(): boolean {
-    return this.selectedUserToBlock !== null && this.blockReason.trim().length > 0;
+    return this.selectedUserToBlock !== null;
   }
 
   get canUnblock(): boolean {

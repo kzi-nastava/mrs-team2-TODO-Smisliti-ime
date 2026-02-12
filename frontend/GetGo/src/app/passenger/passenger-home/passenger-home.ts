@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { MapComponent } from '../../layout/map/map.component';
 import { NavBarComponent } from '../../layout/nav-bar/nav-bar.component';
 import { RideService, CreateRideRequestDTO, CreatedRideResponseDTO, GetFavoriteRideDTO } from '../../service/ride/ride.service';
+import { VehicleService } from '../../service/vehicle-service/vehicle.service'
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
@@ -14,6 +15,8 @@ import { ActivatedRoute } from '@angular/router';
   styleUrls: ['./passenger-home.css']
 })
 export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
+  vehicleTypes: string[] = [];
+
   travelForm: FormGroup;
   isLoading = false;
   estimateMinutes: number | null = null;
@@ -35,6 +38,7 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
   constructor(
     private fb: FormBuilder,
     private rideService: RideService,
+    private vehicleService: VehicleService,
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute
   ) {
@@ -49,12 +53,13 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
       friendEmails: this.fb.array([]),
       hasBaby: [false],
       hasPets: [false],
-      vehicleType: ['VAN']
+      vehicleType: ['']
     });
   }
 
   ngOnInit(): void {
     this.loadFavoriteRides();
+    this.loadVehicleTypes();
 
     // Check for query params from rebook
     this.route.queryParams.subscribe(params => {
@@ -104,6 +109,16 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
           this.cdr.detectChanges();
         }, 3000);
       }
+    });
+  }
+
+  loadVehicleTypes(): void {
+    this.vehicleService.getVehicleTypes().subscribe({
+      next: (types) => {
+        this.vehicleTypes = types;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load vehicle types:', err)
     });
   }
 

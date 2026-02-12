@@ -7,12 +7,23 @@ import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.RidePriceRepository;
 import rs.getgo.backend.services.RidePriceService;
 
+import java.util.List;
+
 @Service
 public class RidePriceServiceImpl implements RidePriceService {
     private final RidePriceRepository ridePriceRepository;
 
     public RidePriceServiceImpl(RidePriceRepository ridePriceRepository) {
         this.ridePriceRepository = ridePriceRepository;
+    }
+
+    @Override
+    public double calculateRidePrice(VehicleType vehicleType, double distanceKm) {
+        GetRidePriceDTO prices = getPrices(vehicleType);
+        if (prices.getPricePerKm() == null || prices.getStartPrice() == null) {
+            prices = new GetRidePriceDTO(120.0, 500.0);
+        }
+        return prices.getStartPrice() + (distanceKm * prices.getPricePerKm());
     }
 
     @Override
@@ -45,4 +56,10 @@ public class RidePriceServiceImpl implements RidePriceService {
         ridePriceRepository.save(price);
     }
 
+    @Override
+    public List<String> getVehicleTypes() {
+        return ridePriceRepository.findAll().stream()
+                .map(rp -> rp.getVehicleType().name())
+                .toList();
+    }
 }

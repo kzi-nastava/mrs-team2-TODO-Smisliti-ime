@@ -35,6 +35,7 @@ import com.example.getgo.R;
 import com.example.getgo.activities.MainActivity;
 import com.example.getgo.api.ApiClient;
 import com.example.getgo.api.services.UserApiService;
+import com.example.getgo.api.services.VehicleApiService;
 import com.example.getgo.dtos.driver.GetActiveDriverLocationDTO;
 import com.example.getgo.dtos.ride.CreateRideRequestDTO;
 import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
@@ -188,14 +189,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
     }
 
     private void setupDropdowns() {
-        String[] vehicleTypes = {"VAN", "STANDARD", "LUXURY"};
-        ArrayAdapter<String> vehicleAdapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_dropdown_item_1line,
-                vehicleTypes
-        );
-        actvVehicleType.setAdapter(vehicleAdapter);
-        actvVehicleType.setText(vehicleAdapter.getItem(0), false);
+        loadVehicleTypes();
 
         String[] orderTimings = {"Order now", "Order later"};
         ArrayAdapter<String> timingAdapter = new ArrayAdapter<>(
@@ -214,6 +208,34 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         );
         actvTravelOption.setAdapter(travelAdapter);
         actvTravelOption.setText(travelAdapter.getItem(0), false);
+    }
+
+    private void loadVehicleTypes() {
+        executor.execute(() -> {
+            try {
+                VehicleApiService vehicleApi = ApiClient.getClient().create(VehicleApiService.class);
+                retrofit2.Response<List<String>> response = vehicleApi.getVehicleTypes().execute();
+
+                if (response.isSuccessful() && response.body() != null) {
+                    List<String> types = new ArrayList<>();
+                    types.add(0, "ANY");
+                    types.addAll(response.body());
+
+                    mainHandler.post(() -> {
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                                requireContext(),
+                                android.R.layout.simple_dropdown_item_1line,
+                                types
+                        );
+                        actvVehicleType.setAdapter(adapter);
+                        actvVehicleType.setText("ANY", false);
+                    });
+                }
+            } catch (Exception e) {
+                mainHandler.post(() -> Toast.makeText(requireContext(),
+                        "Failed to load vehicle types", Toast.LENGTH_SHORT).show());
+            }
+        });
     }
 
     private void setupListeners() {
@@ -474,7 +496,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
         if (allPoints.size() < 2) return;
 
-        mapManager.drawRoute(allPoints, null);
+        mapManager.drawRouteOSRM(allPoints, null);
     }
 
     private void addWaypoint() {
@@ -682,6 +704,9 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         lngs.add(destinationCoord.longitude);
         addrs.add(etDestination.getText().toString());
 
+        String vehicleType = actvVehicleType.getText().toString();
+        if ("ANY".equals(vehicleType)) vehicleType = "";
+
         CreateRideRequestDTO request = new CreateRideRequestDTO(
                 lats,
                 lngs,
@@ -690,7 +715,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
                 isWithFriends() ? getFriendEmails() : null,
                 cbHasBaby.isChecked(),
                 cbHasPets.isChecked(),
-                actvVehicleType.getText().toString()
+                vehicleType
         );
 
         btnOrderRide.setEnabled(false);
@@ -755,10 +780,9 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         friendEmailInputs.clear();
         btnRemoveFriendEmail.setEnabled(false);
 
-        ArrayAdapter<String> vehicleAdapter = (ArrayAdapter<String>) actvVehicleType.getAdapter();
         ArrayAdapter<String> timingAdapter = (ArrayAdapter<String>) actvOrderTiming.getAdapter();
         ArrayAdapter<String> travelAdapter = (ArrayAdapter<String>) actvTravelOption.getAdapter();
-        actvVehicleType.setText(vehicleAdapter.getItem(0), false);
+        actvVehicleType.setText("ANY", false);
         actvOrderTiming.setText(timingAdapter.getItem(0), false);
         actvTravelOption.setText(travelAdapter.getItem(0), false);
 

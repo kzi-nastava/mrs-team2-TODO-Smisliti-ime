@@ -24,7 +24,7 @@
 
     @if (activeTab === 'driver') {
       <form class="profile-form">
-        <input type="email" placeholder="E-mail" class="form-input" [(ngModel)]="driverData.email" name="email" />
+        <input type="email" placeholder="E-mail" class="form-input" [(ngModel)]="driverData.email" name="email" [disabled]="true" />
         <input type="text" placeholder="First Name" class="form-input" [(ngModel)]="driverData.firstName" name="firstName" />
         <input type="text" placeholder="Last Name" class="form-input" [(ngModel)]="driverData.lastName" name="lastName" />
         <input type="tel" placeholder="Phone" class="form-input" [(ngModel)]="driverData.phone" name="phone" />
@@ -39,7 +39,12 @@
     @if (activeTab === 'vehicle') {
       <form class="profile-form">
         <input type="text" placeholder="Vehicle Model" class="form-input" [(ngModel)]="vehicleData.model" name="model" />
-        <input type="text" placeholder="Vehicle Type" class="form-input" [(ngModel)]="vehicleData.type" name="type" />
+        <select class="form-input" [(ngModel)]="vehicleData.type" name="type">
+          <option value="" disabled>Select Vehicle Type</option>
+          @for (type of vehicleTypes; track type) {
+          <option [value]="type">{{ type }}</option>
+          }
+        </select>
         <input type="text" placeholder="Registration Number" class="form-input" [(ngModel)]="vehicleData.registrationNumber" name="registrationNumber" />
         <input type="number" placeholder="Number of Seats" class="form-input" [(ngModel)]="vehicleData.seats" name="seats" />
 

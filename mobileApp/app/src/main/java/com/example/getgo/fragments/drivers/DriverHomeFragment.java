@@ -38,7 +38,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -153,14 +152,17 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
-        mapManager = new MapManager(requireContext(), mMap);
+        mapManager = new MapManager(requireActivity(), mMap);
 
         LatLng noviSad = new LatLng(45.2519, 19.8370);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
         if (pendingDrawRoute && currentRide != null) {
+            Log.d(TAG, "Map ready, drawing pending route");
+            pendingDrawRoute = false;
             drawRideRoute();
         }
+
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -194,15 +196,22 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
 
         webSocketManager.subscribeToRideAssigned(driverEmail, ride -> {
             requireActivity().runOnUiThread(() -> {
+                Log.d(TAG, "Ride assigned via WebSocket: " + ride.getRideId());
                 currentRide = ride;
                 updateUI();
-                drawRideRoute();
+                if (isMapReady()) {
+                    drawRideRoute();
+                } else {
+                    Log.d(TAG, "Map not ready, setting pendingDrawRoute flag");
+                    pendingDrawRoute = true;
+                }
             });
         });
 
         webSocketManager.subscribeToRideStatusUpdates(driverEmail, update -> {
             requireActivity().runOnUiThread(() -> {
                 if (currentRide != null && currentRide.getRideId().equals(update.getRideId())) {
+                    Log.d(TAG, "Status update: " + update.getStatus());
                     currentRide.setStatus(update.getStatus());
                     updateUI();
 
@@ -222,7 +231,10 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         });
 
         webSocketManager.subscribeToRideFinished(driverEmail, finished -> {
-            requireActivity().runOnUiThread(() -> showRideCompleted(finished));
+            requireActivity().runOnUiThread(() -> {
+                Log.d(TAG, "Ride finished notification received");
+                showRideCompleted(finished);
+            });
         });
 
         webSocketManager.subscribeToDriverLocation(driverEmail, location -> {
@@ -257,6 +269,10 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         });
     }
 
+    private boolean isMapReady() {
+        return mMap != null && mapManager != null;
+    }
+
     private void loadActiveRide() {
         new Thread(() -> {
             try {
@@ -265,6 +281,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
 
                 requireActivity().runOnUiThread(() -> {
                     if (ride != null) {
+                        Log.d(TAG, "Loaded active ride: " + ride.getRideId());
                         currentRide = ride;
 
                         if (ride.getStatus().equals("DRIVER_ARRIVED_AT_DESTINATION")) {
@@ -272,8 +289,14 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                         }
 
                         updateUI();
-                        drawRideRoute();
+                        if (isMapReady()) {
+                            drawRideRoute();
+                        } else {
+                            Log.d(TAG, "Map not ready, setting pendingDrawRoute flag");
+                            pendingDrawRoute = true;
+                        }
                     } else {
+                        Log.d(TAG, "No active ride found");
                         showNoRide();
                     }
                 });
@@ -361,8 +384,12 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                 break;
         }
     }
+
     private void drawRideRoute() {
-        if (currentRide == null) return;
+        if (currentRide == null) {
+            Log.w(TAG, "Cannot draw route: currentRide is null");
+            return;
+        }
 
         if (mapManager == null || mMap == null) {
             pendingDrawRoute = true;
@@ -372,7 +399,10 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         if (currentRide.getLatitudes() == null ||
                 currentRide.getLongitudes() == null ||
                 currentRide.getLatitudes().size() < 2) {
-            Log.w("ROUTE_DEBUG", "Not enough points to draw route");
+            Log.w(TAG, "Not enough points to draw route. Latitudes: " +
+                    (currentRide.getLatitudes() != null ? currentRide.getLatitudes().size() : "null") +
+                    ", Longitudes: " +
+                    (currentRide.getLongitudes() != null ? currentRide.getLongitudes().size() : "null"));
             return;
         }
 
@@ -384,20 +414,52 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
             ));
         }
 
-        mMap.clear();
+        mapManager.clearRoute();
+        mapManager.clearWaypoints();
 
-        mMap.addMarker(new MarkerOptions().position(waypoints.get(0)).title("Start"));
-        mMap.addMarker(new MarkerOptions().position(waypoints.get(waypoints.size() - 1)).title("Destination"));
+        for (int i = 0; i < waypoints.size(); i++) {
+            String title;
 
-        mapManager.drawRouteOSRM(waypoints, null);
+            if (i == 0) {
+                title = "Start";
+            } else if (i == waypoints.size() - 1) {
+                title = "Destination";
+            } else {
+                title = "Waypoint " + i;
+            }
 
-        LatLngBounds.Builder builder = new LatLngBounds.Builder();
-        for (LatLng point : waypoints) {
-            builder.include(point);
+            mapManager.addWaypointMarker(waypoints.get(i), i, title);
         }
-        LatLngBounds bounds = builder.build();
-        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)); // 100 = padding u px
-//        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
+
+        // Draw the route using OSRM
+        mapManager.drawRouteOSRM(waypoints, new MapManager.RouteCallback() {
+            @Override
+            public void onRouteFound(int distanceMeters, int durationSeconds) {
+                Log.d(TAG, "Route drawn successfully: " + distanceMeters + "m, " +
+                        durationSeconds + "s (" + (durationSeconds / 60) + " min)");
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Failed to draw route: " + error);
+                requireActivity().runOnUiThread(() ->
+                        Toast.makeText(requireContext(), "Failed to load route", Toast.LENGTH_SHORT).show()
+                );
+            }
+        });
+
+        // Fit camera to show all waypoints with padding
+        try {
+            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+            for (LatLng point : waypoints) {
+                builder.include(point);
+            }
+            LatLngBounds bounds = builder.build();
+            mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150));
+            Log.d(TAG, "Camera adjusted to show all waypoints");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to adjust camera bounds", e);
+        }
 
         pendingDrawRoute = false;
     }
@@ -519,7 +581,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
     private void handleOkClick() {
         currentRide = null;
         showNoRide();
-        mapManager.reset();
+        if (mapManager != null) mapManager.reset();
     }
 
     private void acceptRide() {

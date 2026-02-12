@@ -28,6 +28,7 @@ import com.example.getgo.dtos.route.RouteDTO;
 import com.example.getgo.dtos.rating.GetRatingDTO;
 import com.example.getgo.utils.MapManager;
 import com.example.getgo.utils.RideDetailHelper;
+import com.example.getgo.utils.ToastHelper;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -172,7 +173,7 @@ public class AdminRideDetailFragment extends Fragment {
                 } else {
                     String errorMsg = "Failed to load ride: " + response.code() + " - " + response.message();
                     Log.e("AdminRideDetail", errorMsg);
-                    Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
+                    ToastHelper.showError(requireContext(), "Failed to load ride", String.valueOf(response.code()));
                 }
             }
 
@@ -182,8 +183,7 @@ public class AdminRideDetailFragment extends Fragment {
 
                 if (!isAdded()) return;
 
-                String errorMsg = "Error: " + t.getMessage();
-                Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
+                ToastHelper.showError(requireContext(), "Failed to load ride", t.getMessage());
             }
         });
     }

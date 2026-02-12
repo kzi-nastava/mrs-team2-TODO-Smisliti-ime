@@ -27,6 +27,7 @@ import com.example.getgo.dtos.ride.CreatedRideEstimateDTO;
 import com.example.getgo.dtos.vehicle.GetVehicleDTO;
 import com.example.getgo.repositories.DriverRepository;
 import com.example.getgo.utils.MapManager;
+import com.example.getgo.utils.ToastHelper;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -327,7 +328,7 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
             public void onFailure(Call<CreatedRideEstimateDTO> call, Throwable t) {
                 btnEstimate.setEnabled(true);
                 Log.e("GuestHome", "Estimate failed", t);
-                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                ToastHelper.showError(getContext(), "Failed to estimate ride", t.getMessage());
             }
         });
     }

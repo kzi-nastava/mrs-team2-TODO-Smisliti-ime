@@ -10,13 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-import android.widget.Spinner;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.widget.*;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 
@@ -32,22 +26,23 @@ import com.google.android.material.datepicker.MaterialDatePicker;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import com.example.getgo.utils.ToastHelper;
 
 public class PassengerRideHistoryFragment extends Fragment implements SensorEventListener {
 
     private ListView rideHistoryLV;
     private RideHistoryAdapter adapter;
     private TextView tvFilterDate;
-    private ArrayList<GetRideDTO> fullHistoryList;
     private MaterialButton btnReset, btnApply, btnNext, btnPrev;
+    private Spinner spinnerSortField, spinnerSortDirection;
+
+    private ArrayList<GetRideDTO> fullHistoryList;
 
     private int currentPage = 0;
     private int pageSize = 5;
@@ -94,7 +89,7 @@ public class PassengerRideHistoryFragment extends Fragment implements SensorEven
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_ride_history, container, false);
+        View view = inflater.inflate(R.layout.fragment_passenger_ride_history, container, false);
 
         btnReset = view.findViewById(R.id.btnReset);
         btnApply = view.findViewById(R.id.btnApply);
@@ -102,6 +97,38 @@ public class PassengerRideHistoryFragment extends Fragment implements SensorEven
         btnPrev = view.findViewById(R.id.btnPrevPage);
         tvFilterDate = view.findViewById(R.id.tvFilterDate);
         rideHistoryLV = view.findViewById(R.id.rideHistoryListView);
+
+        // Sorting spinners (passenger)
+        spinnerSortField = view.findViewById(R.id.spinnerSortField);
+        spinnerSortDirection = view.findViewById(R.id.spinnerSortDirection);
+        String[] sortFields = {"Start Time", "Price", "Distance", "Duration"};
+        String[] sortFieldsApi = {"startTime", "estimatedPrice", "estDistanceKm", "estTime"};
+        ArrayAdapter<String> sortFieldAdapter = new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_item, sortFields);
+        sortFieldAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerSortField.setAdapter(sortFieldAdapter);
+        spinnerSortField.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                sortField = sortFieldsApi[position];
+                currentPage = 0;
+                loadPassengerRides();
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
+        String[] directions = {"DESC", "ASC"};
+        ArrayAdapter<String> directionAdapter = new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_item, directions);
+        directionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerSortDirection.setAdapter(directionAdapter);
+        spinnerSortDirection.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                sortDirection = directions[position];
+                currentPage = 0;
+                loadPassengerRides();
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         // Page size spinner
         Spinner spinnerPageSize = view.findViewById(R.id.spinnerPageSize);
@@ -191,19 +218,48 @@ public class PassengerRideHistoryFragment extends Fragment implements SensorEven
             float y = event.values[1];
             float z = event.values[2];
 
-            float acceleration = (float) Math.sqrt(x * x + y * y + z * z) - SensorManager.GRAVITY_EARTH;
+            // use normalized g-force to be more robust across devices
+            float gX = x / SensorManager.GRAVITY_EARTH;
+            float gY = y / SensorManager.GRAVITY_EARTH;
+            float gZ = z / SensorManager.GRAVITY_EARTH;
+            float gForce = (float) Math.sqrt(gX * gX + gY * gY + gZ * gZ);
 
-            if (acceleration > 12) {
+            final float SHAKE_THRESHOLD = 2.7f; // tuned threshold
+            final long SHAKE_DEBOUNCE_MS = 1000L;
+
+            if (gForce > SHAKE_THRESHOLD) {
                 long currentTime = System.currentTimeMillis();
-                if (currentTime - lastShakeTime > 1000) {
+                if (currentTime - lastShakeTime > SHAKE_DEBOUNCE_MS) {
                     lastShakeTime = currentTime;
+
+                    // Toggle sort direction and force field to startTime
                     sortAscending = !sortAscending;
                     sortDirection = sortAscending ? "ASC" : "DESC";
+                    sortField = "startTime"; // ensure we sort by startTime on shake
                     currentPage = 0;
-                    loadPassengerRides();
-                    Toast.makeText(requireContext(),
-                            "Sorted: " + (sortAscending ? "Ascending ▲" : "Descending ▼"),
-                            Toast.LENGTH_SHORT).show();
+
+                    // Update UI controls and trigger reload on main thread
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> {
+                            // spinner indices: startTime = 0, directions {"DESC","ASC"}
+                            try {
+                                if (spinnerSortField != null) spinnerSortField.setSelection(0, true);
+                                if (spinnerSortDirection != null) spinnerSortDirection.setSelection(sortAscending ? 1 : 0, true);
+                            } catch (Exception e) {
+                                Log.w("PassengerRideHistory", "Failed to update spinner selection: " + e.getMessage());
+                            }
+
+                            // Use existing helper which respects backend sorting
+                            sortRidesByDate();
+
+                            Toast.makeText(requireContext(),
+                                    "Sorted by Start Time: " + (sortAscending ? "Ascending ▲" : "Descending ▼"),
+                                    Toast.LENGTH_SHORT).show();
+                        });
+                    } else {
+                        // fallback: just load data if fragment not attached
+                        sortRidesByDate();
+                    }
                 }
             }
         }
@@ -288,7 +344,7 @@ public class PassengerRideHistoryFragment extends Fragment implements SensorEven
                 Log.e("PassengerRideHistory", "API call failed", t);
                 adapter.setRides(Collections.emptyList());
                 totalElements = 0;
-                Toast.makeText(requireContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                ToastHelper.showError(requireContext(), "Failed to load ride history", t.getMessage());
             }
         });
     }

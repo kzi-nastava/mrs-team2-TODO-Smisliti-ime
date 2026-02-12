@@ -1,4 +1,4 @@
-import { Component, inject, computed, effect, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -364,8 +364,14 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     this.rideService
       .cancelRideByPassenger(this.activeRide.rideId, { reason: '' })
       .subscribe({
-        next: () => {
-          console.log('Ride cancelled successfully');
+        next: (completion) => {
+          console.log('Ride cancelled successfully', completion);
+          const notif = (completion as any)?.notificationMessage;
+          if (notif) {
+            this.snackBarService.show(notif, false);
+          } else {
+            this.snackBarService.show('Ride has been cancelled.');
+          }
           this.activeRide = null;
           this.rideCompletion = null;
           this.statusMessage = 'Ride has been cancelled.';

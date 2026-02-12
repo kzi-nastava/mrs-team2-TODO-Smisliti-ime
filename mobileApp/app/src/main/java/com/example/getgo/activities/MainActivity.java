@@ -1,6 +1,11 @@
 package com.example.getgo.activities;
 
+import android.Manifest;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -11,6 +16,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
@@ -40,6 +47,15 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import com.example.getgo.utils.WebSocketManager;
+import com.example.getgo.fragments.layouts.NotificationsFragment;
+import com.google.gson.Gson;
+import com.example.getgo.dtos.notification.NotificationDTO;
+
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import android.annotation.SuppressLint;
+
 public class MainActivity extends AppCompatActivity {
     private UserRole currentUserRole;
     private DrawerLayout drawer;
@@ -52,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
     private UserApiService userApiService;
     private TextView tvUserName;
     private CircleImageView ivUserProfile;
+    private WebSocketManager webSocketManager;
+    private Long currentUserId = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
         // Load user profile for authenticated users
         if (currentUserRole != UserRole.GUEST) {
             loadUserProfile();
+            setupNotificationSocket();
         }
 
         Intent intent = getIntent();
@@ -249,7 +268,8 @@ public class MainActivity extends AppCompatActivity {
                 } else if (currentUserRole == UserRole.ADMIN) {
                     AdminRideHistoryFragment.navigateTo(this);
                 } else {
-                    Toast.makeText(this, "My Rides not available for your role", Toast.LENGTH_SHORT).show();
+                    // Short, descriptive message
+                    Toast.makeText(this, "My Rides not available", Toast.LENGTH_SHORT).show();
                 }
                 return true;
             }
@@ -289,7 +309,7 @@ public class MainActivity extends AppCompatActivity {
                 } else if (currentUserRole == UserRole.ADMIN) {
                     AdminRideHistoryFragment.navigateTo(this);
                 } else {
-                    Toast.makeText(this, "My Rides not available for your role", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "My Rides not available", Toast.LENGTH_SHORT).show();
                 }
                 drawer.closeDrawer(GravityCompat.START);
                 return true;
@@ -324,7 +344,7 @@ public class MainActivity extends AppCompatActivity {
             // First try to use cached status
             if (isDriverActive) {
                 Toast.makeText(this,
-                        "Cannot logout while you are active. Please deactivate first.",
+                        "Cannot logout while active",
                         Toast.LENGTH_LONG).show();
                 return;
             }
@@ -341,12 +361,12 @@ public class MainActivity extends AppCompatActivity {
                             performLogout();
                         } else {
                             Toast.makeText(MainActivity.this,
-                                    "Cannot logout while active or on a ride. Please deactivate first.",
+                                    "Cannot logout while active",
                                     Toast.LENGTH_LONG).show();
                         }
                     } else {
                         Toast.makeText(MainActivity.this,
-                                "Failed to verify logout status",
+                                "Logout check failed",
                                 Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -355,7 +375,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onFailure(Call<Boolean> call, Throwable t) {
                     Log.e("MainActivity", "Logout check failed", t);
                     Toast.makeText(MainActivity.this,
-                            "Network error during logout check",
+                            "Network error",
                             Toast.LENGTH_SHORT).show();
                 }
             });
@@ -372,7 +392,7 @@ public class MainActivity extends AppCompatActivity {
                 .remove("jwt_token")
                 .apply();
 
-        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show();
         redirectToLogin();
     }
 
@@ -427,6 +447,8 @@ public class MainActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     UserProfile profile = response.body();
                     updateUserProfileUI(profile);
+
+                    // WebSocket subscription handled in setupNotificationSocket()
                 }
             }
 
@@ -437,25 +459,44 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
     private void updateUserProfileUI(UserProfile profile) {
         if (tvUserName != null) {
             tvUserName.setText(profile.getFullName());
         }
 
-        if (ivUserProfile != null && profile.getProfilePictureUrl() != null) {
+        if (ivUserProfile != null && profile.getProfilePictureUrl() != null && !profile.getProfilePictureUrl().isEmpty()) {
+            // Build final image URL the same way as PassengerProfileInfoFragment:
+            // if returned URL is absolute, use it; otherwise prefix with ApiClient.SERVER_URL
+            String rawUrl = profile.getProfilePictureUrl();
+            String imageUrl = rawUrl.startsWith("http") ? rawUrl : ApiClient.SERVER_URL + rawUrl;
+
             Glide.with(this)
-                    .load(profile.getProfilePictureUrl())
-                    .placeholder(R.drawable.ic_profile_placeholder)
-                    .error(R.drawable.ic_profile_placeholder)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.unregistered_profile) // same placeholder as passenger fragment
+                    .error(R.drawable.unregistered_profile)
+                    .circleCrop()
                     .into(ivUserProfile);
         }
     }
 
+    private void setupNotificationSocket() {
+        // Read stored user id
+        SharedPreferences prefs = getSharedPreferences("getgo_prefs", MODE_PRIVATE);
+        long uid = prefs.getLong("user_id", -1L);
+        if (uid <= 0) return;
+        currentUserId = uid;
+
+        webSocketManager = new WebSocketManager();
+        webSocketManager.connect();
+    }
+
     @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-        Log.d("NOTIF_TEST", "onNewIntent called");
-        handleNotificationIntent(intent);
+    protected void onDestroy() {
+        super.onDestroy();
+        if (webSocketManager != null) {
+            webSocketManager.disconnect();
+            webSocketManager = null;
+        }
     }
 }

@@ -9,6 +9,7 @@ import com.example.getgo.fragments.admins.AdminBlockUsersFragment;
 import com.example.getgo.fragments.admins.AdminActiveRidesFragment;
 import com.example.getgo.fragments.admins.AdminDriverRegistrationFragment;
 import com.example.getgo.fragments.admins.AdminChatListFragment;
+import com.example.getgo.fragments.admins.AdminHomeFragment;
 import com.example.getgo.fragments.admins.AdminProfileInfoFragment;
 import com.example.getgo.fragments.admins.AdminReviewDriverRequestsFragment;
 import com.example.getgo.fragments.admins.AdminRidePricingFragment;
@@ -16,6 +17,7 @@ import com.example.getgo.fragments.drivers.DriverHomeFragment;
 import com.example.getgo.fragments.drivers.DriverProfileInfoFragment;
 import com.example.getgo.fragments.guests.GuestHomeFragment;
 import com.example.getgo.fragments.layouts.SupportChatFragment;
+import com.example.getgo.fragments.layouts.NotificationsFragment;
 import com.example.getgo.fragments.passengers.PassengerProfileInfoFragment;
 import com.example.getgo.fragments.passengers.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.drivers.DriverRideHistoryFragment;
@@ -77,7 +79,7 @@ public class NavigationHelper {
             case PASSENGER:
                 return new PassengerHomeFragment();
             case ADMIN:
-                return new DriverHomeFragment(); // TODO: Create AdminDashboardFragment
+                return new AdminHomeFragment();
             default:
                 return new DriverHomeFragment();
         }
@@ -92,6 +94,8 @@ public class NavigationHelper {
             return DriverProfileInfoFragment.newInstance();
         } else if (itemId == R.id.nav_drawer_support) {
             return SupportChatFragment.newInstance("DRIVER");
+        } else if (itemId == R.id.nav_drawer_notifications) {
+            return new NotificationsFragment();
         }
 
         return null;
@@ -108,13 +112,15 @@ public class NavigationHelper {
             return new PassengerRideTrackingFragment();
         } else if (itemId == R.id.nav_drawer_support) {
             return SupportChatFragment.newInstance("PASSENGER");
+        } else if (itemId == R.id.nav_drawer_notifications) {
+            return new NotificationsFragment();
         }
         return null;
     }
 
     private Fragment getAdminFragment(int itemId) {
         if (itemId == R.id.nav_bottom_dashboard) {
-            return new DriverHomeFragment();
+            return new AdminHomeFragment();
         } else if (itemId == R.id.nav_bottom_profile) {
             return new AdminProfileInfoFragment();
         } else if (itemId == R.id.nav_review_requests) {

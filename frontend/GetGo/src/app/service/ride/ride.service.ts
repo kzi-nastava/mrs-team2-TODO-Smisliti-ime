@@ -69,6 +69,7 @@ export interface RideCompletionDTO {
   startTime: string;
   endTime: string;
   durationMinutes: number;
+  notificationMessage?: string;
 }
 
 export interface StopRideDTO {
@@ -163,12 +164,13 @@ export class RideService {
     return this.http.post<RideCompletionDTO>(`${this.apiUrl}/${rideId}/stop`, payload);
   }
 
-  cancelRideByDriver(rideId: number, body: CancelRideRequestDTO): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${rideId}/cancel/driver`, body);
+  // Backend now returns a RideCompletionDTO on cancel (same shape as stop)
+  cancelRideByDriver(rideId: number, body: CancelRideRequestDTO): Observable<RideCompletionDTO> {
+    return this.http.post<RideCompletionDTO>(`${this.apiUrl}/${rideId}/cancel/driver`, body);
   }
 
-  cancelRideByPassenger(rideId: number, body: CancelRideRequestDTO): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${rideId}/cancel/passenger`, body);
+  cancelRideByPassenger(rideId: number, body: CancelRideRequestDTO): Observable<RideCompletionDTO> {
+    return this.http.post<RideCompletionDTO>(`${this.apiUrl}/${rideId}/cancel/passenger`, body);
   }
 
   createPanic(rideId: number): Observable<void> {

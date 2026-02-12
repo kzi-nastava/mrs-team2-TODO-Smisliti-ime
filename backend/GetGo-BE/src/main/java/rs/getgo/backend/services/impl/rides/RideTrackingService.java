@@ -61,6 +61,7 @@ public class RideTrackingService {
         dto.setEstimatedPrice(ride.getEstimatedPrice());
         dto.setEstimatedTimeMin(ride.getRoute().getEstTimeMin());
         dto.setStatus(ride.getStatus().toString());
+        dto.setScheduledTime(ride.getScheduledTime());
 
         if (ride.getDriver() != null) {
             dto.setDriverName(ride.getDriver().getName() + " " + ride.getDriver().getSurname());

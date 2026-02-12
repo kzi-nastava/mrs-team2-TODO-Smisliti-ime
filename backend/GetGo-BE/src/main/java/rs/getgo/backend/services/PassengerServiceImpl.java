@@ -132,7 +132,10 @@ public class PassengerServiceImpl implements PassengerService {
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
         Sort.Direction sortDirection = direction.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        String normalizedSort = normalizeSortField(sortBy);
+        // Ensure nulls are sorted last to avoid null startTime/price pushing to top
+        Sort.Order order = new Sort.Order(sortDirection, normalizedSort).with(Sort.NullHandling.NULLS_LAST);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(order));
 
         Page<CompletedRide> ridesPage;
         if (startDate != null) {
@@ -148,6 +151,26 @@ public class PassengerServiceImpl implements PassengerService {
         }
 
         return ridesPage.map(this::mapCompletedRideToDTO);
+    }
+
+    // Map allowed frontend sort keys to entity properties. Defaults to startTime.
+    private String normalizeSortField(String sortBy) {
+        if (sortBy == null) return "startTime";
+        String key = sortBy.trim();
+        String candidate = switch (key) {
+            case "startTime", "startingTime", "Start Date/Time", "StartDate", "start_date" -> "startTime";
+            case "estimatedPrice", "price", "Price" -> "estimatedPrice";
+            case "estTime", "duration", "Duration" -> "estTime";
+            case "estDistanceKm", "distance", "Distance" -> "estDistanceKm";
+            default -> key;
+        };
+        // Verify candidate exists on CompletedRide entity; if not, fallback to startTime
+        try {
+            java.lang.reflect.Field f = rs.getgo.backend.model.entities.CompletedRide.class.getDeclaredField(candidate);
+            if (f != null) return candidate;
+        } catch (NoSuchFieldException ignored) {
+        }
+        return "startTime";
     }
 
     @Override

@@ -1,7 +1,6 @@
 package rs.getgo.backend.services.impl;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class AdminServiceImpl implements AdminService {
@@ -603,7 +601,8 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
         Sort.Direction sortDirection = direction.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        String normalizedSort = normalizeSortField(sortBy);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, normalizedSort));
 
         Page<CompletedRide> ridesPage;
         if (startDate != null) {
@@ -645,7 +644,8 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 
         Sort.Direction sortDirection = direction.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        String normalizedSort = normalizeSortField(sortBy);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, normalizedSort));
 
         Page<CompletedRide> ridesPage;
         if (startDate != null) {
@@ -840,5 +840,20 @@ public class AdminServiceImpl implements AdminService {
                 ? userRepository.findByIsBlocked(true, pageable)
                 : userRepository.findByIsBlockedAndEmailContaining(true, search, pageable);
         return users.map(u -> new UserEmailDTO(u.getId(), u.getEmail(), u.getRole().toString()));
+    }
+
+    // Map allowed frontend sort keys to entity properties for admin endpoints
+    private String normalizeSortField(String sortBy) {
+        if (sortBy == null) return "startTime";
+        String key = sortBy.trim();
+        return switch (key) {
+            case "startTime", "startingTime", "Start Date/Time", "StartDate", "start_date" -> "startTime";
+            case "estimatedPrice", "price", "Price" -> "estimatedPrice";
+            case "estTime", "duration", "Duration" -> "estTime";
+            case "estDistanceKm", "distance", "Distance" -> "estDistanceKm";
+            default -> {
+                try { yield key; } catch (Exception e) { yield "startTime"; }
+            }
+        };
     }
 }

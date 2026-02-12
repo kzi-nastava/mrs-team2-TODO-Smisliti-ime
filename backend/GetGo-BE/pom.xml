@@ -123,6 +123,35 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Test utilities: Spring Security Test and in-memory DB -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Selenium for E2E tests -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>4.16.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WebDriverManager to manage browser drivers in tests -->
+        <dependency>
+            <groupId>io.github.bonigarcia</groupId>
+            <artifactId>webdrivermanager</artifactId>
+            <version>5.5.3</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -153,5 +182,45 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>e2e</id>
+            <properties>
+                <!-- Default values; can be overridden on the mvn command line -->
+                <baseUrl>http://localhost:4200</baseUrl>
+                <headless>true</headless>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>3.1.2</version>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <baseUrl>${baseUrl}</baseUrl>
+                                <headless>${headless}</headless>
+                                <adminEmail>${adminEmail}</adminEmail>
+                                <adminPassword>${adminPassword}</adminPassword>
+                            </systemPropertyVariables>
+                            <includes>
+                                <include>**/*E2ETest*.java</include>
+                                <include>**/*E2E*.java</include>
+                            </includes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

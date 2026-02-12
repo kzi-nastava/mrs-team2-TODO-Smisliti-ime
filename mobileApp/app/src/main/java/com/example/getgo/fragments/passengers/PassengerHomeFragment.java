@@ -747,7 +747,6 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         friendEmailInputs.clear();
         btnRemoveFriendEmail.setEnabled(false);
 
-        ArrayAdapter<String> vehicleAdapter = (ArrayAdapter<String>) actvVehicleType.getAdapter();
         ArrayAdapter<String> timingAdapter = (ArrayAdapter<String>) actvOrderTiming.getAdapter();
         ArrayAdapter<String> travelAdapter = (ArrayAdapter<String>) actvTravelOption.getAdapter();
         actvVehicleType.setText("ANY", false);

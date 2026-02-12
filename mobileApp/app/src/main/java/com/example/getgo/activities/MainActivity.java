@@ -111,9 +111,26 @@ public class MainActivity extends AppCompatActivity {
             openFragment(navigationHelper.getStartFragment());
         }
 
+        if (getIntent() != null && getIntent().getBooleanExtra("OPEN_RIDE_TRACKING_FRAGMENT", false)) {
+            Long rideId = getIntent().getLongExtra("RIDE_ID", -1);
+            if (rideId != -1) {
+                openRideTrackingFragment(rideId);
+            }
+        }
+
         handleNotificationIntent(intent);
 
     }
+
+    private void openRideTrackingFragment(Long rideId) {
+        PassengerRideTrackingFragment fragment = PassengerRideTrackingFragment.newInstance(rideId);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
     private void initUserRole() {
         String roleString = getIntent().getStringExtra("USER_ROLE");
         currentUserRole = roleString != null
@@ -504,14 +521,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupNotificationSocket() {
-        // Read stored user id
         SharedPreferences prefs = getSharedPreferences("getgo_prefs", MODE_PRIVATE);
         long uid = prefs.getLong("user_id", -1L);
-        if (uid <= 0) return;
+        Log.d("NOTIF_DEBUG", "setupNotificationSocket: user_id = " + uid); // <- dodaj ovo
+        if (uid <= 0) {
+            Log.d("NOTIF_DEBUG", "User ID invalid, websocket neće startovati");
+            return;
+        }
         currentUserId = uid;
 
         webSocketManager = new WebSocketManager();
+        webSocketManager.setNotificationListener(this::onWebSocketNotificationReceived);
         webSocketManager.connect();
+        Log.d("NOTIF_DEBUG", "WebSocket connect() pozvan");
     }
 
     @Override
@@ -524,16 +546,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onWebSocketNotificationReceived(NotificationDTO notif, long rideId) {
+        Log.d("NOTIF_DEBUG", "Primljena notifikacija: title=" + notif.getTitle() + ", rideId=" + rideId); // <- dodaj
+
         showLocalNotification(notif, rideId);
+
+        NotificationsFragment fragment = (NotificationsFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.fragmentContainer);
+        if (fragment != null) {
+            fragment.addNotification(notif);
+        }
     }
 
     private void showLocalNotification(NotificationDTO notif, long rideId) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // API 33+
+        Log.d("NOTIF_DEBUG", "showLocalNotification: pripremam notifikaciju za rideId=" + rideId);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
+                Log.d("NOTIF_DEBUG", "POST_NOTIFICATIONS permission nije odobrena");
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                        101); // request code
+                        101);
                 return;
             }
         }
@@ -558,6 +591,8 @@ public class MainActivity extends AppCompatActivity {
 
         NotificationManagerCompat manager = NotificationManagerCompat.from(this);
         manager.notify(notif.getId().intValue(), builder.build());
+
+        Log.d("NOTIF_DEBUG", "Notifikacija poslata OS-u: id=" + notif.getId());
     }
 
     @Override
@@ -565,10 +600,10 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 101) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d("NOTIF", "Notification permission granted");
                 Toast.makeText(this, "Notifications enabled", Toast.LENGTH_SHORT).show();
+                Log.d("NOTIF_DEBUG", "Notification permission granted");
             } else {
-                Log.d("NOTIF", "Notification permission denied");
+                Log.d("NOTIF_DEBUG", "Notification permission denied");
                 Toast.makeText(this, "Cannot show notifications without permission", Toast.LENGTH_SHORT).show();
             }
         }

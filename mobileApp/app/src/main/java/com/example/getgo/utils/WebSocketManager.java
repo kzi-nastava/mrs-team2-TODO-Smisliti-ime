@@ -20,6 +20,7 @@ import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideFinishedDTO;
 import com.example.getgo.dtos.ride.GetRideStatusUpdateDTO;
 import com.example.getgo.dtos.ride.GetRideStoppedEarlyDTO;
+import com.example.getgo.dtos.ride.LinkedRideAcceptedDTO;
 import com.example.getgo.dtos.supportChat.GetMessageDTO;
 import com.example.getgo.model.ChatMessage;
 import com.google.gson.Gson;
@@ -38,7 +39,8 @@ import ua.naiksoftware.stomp.StompClient;
 public class WebSocketManager {
     private static final String TAG = "WebSocketManager";
 
-    public static final String WS_URL = "http://10.0.2.2:8080/";
+//    public static final String WS_URL = "http://10.0.2.2:8080/";
+    private static final String WS_URL = "http://10.0.2.2:8080/socket/websocket";
     // public static final String WS_URL = "wss://nonpossibly-nonderivable-teddy.ngrok-free.dev/";
 
     private StompClient stompClient;
@@ -57,12 +59,36 @@ public class WebSocketManager {
         void onRideFinished(GetRideFinishedDTO finished);
     }
 
+    public interface RideAcceptedListener {
+        void onRideAccepted(GetDriverActiveRideDTO ride);
+    }
+
     public interface DriverLocationListener {
         void onLocationUpdate(GetDriverLocationDTO location);
     }
 
     public interface RideStoppedEarlyListener {
         void onRideStopped(GetRideStoppedEarlyDTO stopped);
+    }
+
+    public interface NotificationListener {
+        void onNotificationReceived(NotificationDTO notification, Long rideId);
+    }
+
+    private NotificationListener notificationListener;
+
+    public void setNotificationListener(NotificationListener listener) {
+        this.notificationListener = listener;
+    }
+
+    public interface LinkedRideAcceptedListener {
+        void onLinkedRideAccepted(LinkedRideAcceptedDTO linkedRideAccepted);
+    }
+
+    private LinkedRideAcceptedListener linkedRideAcceptedListener;
+
+    public void setLinkedRideAcceptedListener(LinkedRideAcceptedListener listener) {
+        this.linkedRideAcceptedListener = listener;
     }
 
     public WebSocketManager() {
@@ -103,6 +129,7 @@ public class WebSocketManager {
 
         Log.d(TAG, "Connecting to WebSocket at: " + WS_URL);
         stompClient.connect();
+        Log.d(TAG, "WebSocketManager: user should now subscribe to topics for notifications");
     }
 
     public void subscribeToRideAssigned(String driverEmail, RideAssignedListener listener) {
@@ -153,6 +180,27 @@ public class WebSocketManager {
                     listener.onRideFinished(finished);
                 }, throwable -> {
                     Log.e(TAG, "Error on ride finished topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
+    public void subscribeToPassengerRideAccepted(Long rideId, RideAcceptedListener listener) {
+        if (stompClient == null) {
+            Log.e(TAG, "Cannot subscribe - client is null");
+            return;
+        }
+
+        String topic = "/socket-publisher/ride/" + rideId + "/ride-accepted";
+        Log.d(TAG, "Subscribing to passenger ride accepted: " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    Log.d(TAG, "Ride accepted: " + topicMessage.getPayload());
+                    GetDriverActiveRideDTO ride = gson.fromJson(topicMessage.getPayload(), GetDriverActiveRideDTO.class);
+                    listener.onRideAccepted(ride);
+                }, throwable -> {
+                    Log.e(TAG, "Error on ride accepted topic", throwable);
                 });
 
         compositeDisposable.add(disposable);
@@ -350,8 +398,42 @@ public class WebSocketManager {
 
             NotificationHelper.showNotification(context, notification, rideId);
 
+            if (notificationListener != null) {
+                notificationListener.onNotificationReceived(notification, rideId);
+            }
+
         } catch (Exception e) {
             Log.e("WebSocketManager", "Failed to handle incoming notification", e);
         }
     }
+
+    public void subscribeToLinkedRideAccepted(Long passengerId) {
+        if (stompClient == null) return;
+
+        String topic = "/socket-publisher/user/" + passengerId + "/linked-ride-accepted";
+        Log.d(TAG, "Subscribing to linked ride accepted: " + topic);
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    Log.d(TAG, "Linked ride accepted: " + topicMessage.getPayload());
+
+                    try {
+                        LinkedRideAcceptedDTO linkedRideAccepted = gson.fromJson(
+                                topicMessage.getPayload(), LinkedRideAcceptedDTO.class);
+
+                        if (linkedRideAcceptedListener != null) {
+                            linkedRideAcceptedListener.onLinkedRideAccepted(linkedRideAccepted);
+                        }
+
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to parse linked ride accepted DTO", e);
+                    }
+
+                }, throwable -> {
+                    Log.e(TAG, "Error on linked ride accepted topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
 }

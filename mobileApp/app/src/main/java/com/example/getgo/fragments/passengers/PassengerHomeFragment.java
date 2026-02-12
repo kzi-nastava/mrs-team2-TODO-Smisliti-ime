@@ -1,9 +1,13 @@
 package com.example.getgo.fragments.passengers;
 
+import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -24,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
@@ -38,6 +43,7 @@ import com.example.getgo.dtos.ride.GetRideDTO;
 import com.example.getgo.model.UserProfile;
 import com.example.getgo.repositories.DriverRepository;
 import com.example.getgo.repositories.RideRepository;
+import com.example.getgo.utils.JwtUtils;
 import com.example.getgo.utils.MapManager;
 import com.example.getgo.utils.ToastHelper;
 import com.example.getgo.utils.WebSocketManager;
@@ -126,6 +132,14 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         }
 
         userApiService = ApiClient.getUserApiService();
+        SharedPreferences prefs = requireContext()
+                .getSharedPreferences("getgo_prefs", Context.MODE_PRIVATE);
+
+        String token = prefs.getString("jwt_token", null);
+
+        Long userIdFromToken = JwtUtils.getUserIdFromToken(token);
+
+        Log.d("PassengerHome", "UserId from token: " + userIdFromToken);
 
         return root;
     }
@@ -783,6 +797,20 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
     }
 
     private void showRideTrackingNotification(Long rideId) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(),
+                    Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                requestPermissions(
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        1001
+                );
+                return;
+            }
+        }
+
         String channelId = "ride_channel";
         String channelName = "Ride Notifications";
 
@@ -793,11 +821,11 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
                     NotificationManager.IMPORTANCE_HIGH
             );
             channel.setDescription("Notifications about rides");
-            NotificationManager manager = requireContext().getSystemService(NotificationManager.class);
+            NotificationManager manager = requireContext()
+                    .getSystemService(NotificationManager.class);
             if (manager != null) manager.createNotificationChannel(channel);
         }
 
-        // Intent ka MainActivity koji ce otvoriti RideTrackingFragment
         Intent intent = new Intent(requireContext(), MainActivity.class);
         intent.putExtra("OPEN_RIDE_TRACKING_FRAGMENT", true);
         intent.putExtra("RIDE_ID", rideId);
@@ -810,41 +838,83 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(requireContext(), channelId)
-                .setSmallIcon(R.drawable.ic_car) // zameni sa svojom ikonom
-                .setContentTitle("Your ride is active!")
-                .setContentText("Tap to track your ride")
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent);
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(requireContext(), channelId)
+                        .setSmallIcon(R.drawable.ic_notification)
+                        .setContentTitle("Your ride is active!")
+                        .setContentText("Tap to track your ride")
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent);
 
-        NotificationManagerCompat.from(requireContext()).notify(rideId.intValue(), builder.build());
+        NotificationManagerCompat.from(requireContext())
+                .notify(rideId.intValue(), builder.build());
     }
 
-    private void fetchLoggedInUserIdAndSubscribe() {
-        userApiService.getUserProfile().enqueue(new Callback<UserProfile>() {
-            @Override
-            public void onResponse(Call<UserProfile> call, Response<UserProfile> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    passengerId = response.body().getId();
-                    subscribeToLinkedRideAccepted(passengerId);
-                }
-            }
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-            @Override
-            public void onFailure(Call<UserProfile> call, Throwable t) {
-                Log.e("PassengerHome", "Failed to fetch user profile", t);
+        if (requestCode == 1001) {
+            if (grantResults.length > 0 &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                Log.d("PassengerHome", "Notification permission granted");
+            } else {
+                Log.d("PassengerHome", "Notification permission denied");
             }
-        });
+        }
+    }
+//    private void fetchLoggedInUserIdAndSubscribe() {
+//        userApiService.getUserProfile().enqueue(new Callback<UserProfile>() {
+//            @Override
+//            public void onResponse(Call<UserProfile> call, Response<UserProfile> response) {
+//                if (response.isSuccessful() && response.body() != null) {
+//                    passengerId = response.body().getId();
+//                    Log.d("PassengerHome", "Fetched userId: " + passengerId);
+//                    subscribeToLinkedRideAccepted(passengerId);
+//                    Log.d("PassengerHome", "Subscribing to linked ride accepted");
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<UserProfile> call, Throwable t) {
+//                Log.e("PassengerHome", "Failed to fetch user profile", t);
+//            }
+//        });
+//    }
+
+    private void fetchLoggedInUserIdAndSubscribe() {
+        SharedPreferences prefs = requireContext()
+                .getSharedPreferences("getgo_prefs", Context.MODE_PRIVATE);
+
+        String token = prefs.getString("jwt_token", null);
+        if (token == null) {
+            Log.e("PassengerHome", "JWT token not found");
+            return;
+        }
+
+        passengerId = JwtUtils.getUserIdFromToken(token);
+
+        if (passengerId != null) {
+            Log.d("PassengerHome", "UserId from token in fetchLoggedInUser: " + passengerId);
+            subscribeToLinkedRideAccepted(passengerId);
+        } else {
+            Log.e("PassengerHome", "Failed to extract userId from token");
+        }
     }
 
     private void subscribeToLinkedRideAccepted(Long passengerId) {
         if (passengerId == null) return;
 
         webSocketManager.setLinkedRideAcceptedListener(linkedRide -> {
+            Log.d("PassengerHome", "Received linked ride accepted WS event for rideId: " + linkedRide.getRideId());
             mainHandler.post(() -> showRideTrackingNotification(linkedRide.getRideId()));
         });
 
+        Log.d("PassengerHome", "Calling WebSocketManager subscribe for passengerId: " + passengerId);
         webSocketManager.subscribeToLinkedRideAccepted(passengerId);
     }
 

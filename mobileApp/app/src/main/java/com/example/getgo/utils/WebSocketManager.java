@@ -388,25 +388,6 @@ public class WebSocketManager {
         void onDriverRideCancelled(com.example.getgo.dtos.ride.GetRideCancelledDTO dto);
     }
 
-    public void handleIncomingNotification(Context context, String messageJson) {
-        try {
-            Gson gson = new Gson();
-            NotificationDTO notification = gson.fromJson(messageJson, NotificationDTO.class);
-
-            JsonObject jsonObj = new Gson().fromJson(messageJson, JsonObject.class);
-            Long rideId = jsonObj.has("rideId") ? jsonObj.get("rideId").getAsLong() : null;
-
-            NotificationHelper.showNotification(context, notification, rideId);
-
-            if (notificationListener != null) {
-                notificationListener.onNotificationReceived(notification, rideId);
-            }
-
-        } catch (Exception e) {
-            Log.e("WebSocketManager", "Failed to handle incoming notification", e);
-        }
-    }
-
     public void subscribeToLinkedRideAccepted(Long passengerId) {
         if (stompClient == null) return;
 
@@ -415,6 +396,7 @@ public class WebSocketManager {
 
         Disposable disposable = stompClient.topic(topic)
                 .subscribe(topicMessage -> {
+                    Log.d(TAG, "WS payload received on topic: " + topic + " -> " + topicMessage.getPayload());
                     Log.d(TAG, "Linked ride accepted: " + topicMessage.getPayload());
 
                     try {

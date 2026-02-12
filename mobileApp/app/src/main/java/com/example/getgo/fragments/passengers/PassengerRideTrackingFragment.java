@@ -508,7 +508,6 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         LatLngBounds bounds = builder.build();
         mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)); // 100 = padding u px
 
-
 //        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
     }
 

@@ -8,11 +8,13 @@ import rs.getgo.backend.dtos.ride.GetActiveRideDTO;
 import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
 import rs.getgo.backend.mappers.RideMapper;
 import rs.getgo.backend.model.entities.*;
+import rs.getgo.backend.model.enums.NotificationType;
 import rs.getgo.backend.model.enums.RideStatus;
 import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.ActiveRideRepository;
 import rs.getgo.backend.repositories.RideCancellationRepository;
 import rs.getgo.backend.services.DriverMatchingService;
+import rs.getgo.backend.services.NotificationService;
 import rs.getgo.backend.services.RidePriceService;
 
 import java.time.LocalDateTime;
@@ -25,6 +27,7 @@ public class ScheduledRideService {
     private final RideCancellationRepository rideCancellationRepository;
     private final DriverMatchingService driverMatchingService;
     private final RidePriceService ridePriceService;
+    private final NotificationService notificationService;
     private final WebSocketController webSocketController;
     private final RideMapper rideMapper;
 
@@ -39,6 +42,7 @@ public class ScheduledRideService {
             RideCancellationRepository rideCancellationRepository,
             DriverMatchingService driverMatchingService,
             RidePriceService ridePriceService,
+            NotificationService notificationService,
             WebSocketController webSocketController,
             RideMapper rideMapper
     ) {
@@ -46,8 +50,36 @@ public class ScheduledRideService {
         this.rideCancellationRepository = rideCancellationRepository;
         this.driverMatchingService = driverMatchingService;
         this.ridePriceService = ridePriceService;
+        this.notificationService = notificationService;
         this.webSocketController = webSocketController;
         this.rideMapper = rideMapper;
+    }
+
+    @Scheduled(fixedRate = 60000)
+    @Transactional
+    public void sendScheduledRideReminders() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime reminderWindow = now.plusMinutes(15);
+
+        List<ActiveRide> upcomingRides = activeRideRepository
+                .findByStatusAndScheduledTimeBetween(RideStatus.SCHEDULED, now, reminderWindow);
+
+        for (ActiveRide ride : upcomingRides) {
+            if (notificationService.wasRecentlySent(
+                    ride.getPayingPassenger().getId(),
+                    NotificationType.RIDE_STARTING_SOON,
+                    4)) {
+                continue;
+            }
+
+            notificationService.createAndNotify(
+                    ride.getPayingPassenger().getId(),
+                    NotificationType.RIDE_STARTING_SOON,
+                    "Ride reminder",
+                    "Your scheduled ride starts at " + ride.getScheduledTime().toLocalTime(),
+                    LocalDateTime.now()
+            );
+        }
     }
 
     @Scheduled(fixedRate = 60000)

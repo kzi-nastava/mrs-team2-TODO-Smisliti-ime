@@ -7,11 +7,13 @@ import rs.getgo.backend.dtos.ride.CreatedRideResponseDTO;
 import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
 import rs.getgo.backend.mappers.RideMapper;
 import rs.getgo.backend.model.entities.*;
+import rs.getgo.backend.model.enums.NotificationType;
 import rs.getgo.backend.model.enums.RideOrderStatus;
 import rs.getgo.backend.model.enums.RideStatus;
 import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.DriverMatchingService;
+import rs.getgo.backend.services.NotificationService;
 import rs.getgo.backend.services.RideOrderService;
 import rs.getgo.backend.services.RidePriceService;
 
@@ -30,6 +32,7 @@ public class RideOrderServiceImpl implements RideOrderService {
     private final RidePriceService ridePriceService;
     private final MapboxRoutingService routingService;
     private final DriverMatchingService driverMatchingService;
+    private final NotificationService notificationService;
     private final RideMapper rideMapper;
 
     public RideOrderServiceImpl(
@@ -41,6 +44,7 @@ public class RideOrderServiceImpl implements RideOrderService {
             RidePriceService ridePriceService,
             MapboxRoutingService routingService,
             DriverMatchingService driverMatchingService,
+            NotificationService notificationService,
             RideMapper rideMapper
     ) {
         this.webSocketController = webSocketController;
@@ -51,6 +55,7 @@ public class RideOrderServiceImpl implements RideOrderService {
         this.ridePriceService = ridePriceService;
         this.routingService = routingService;
         this.driverMatchingService = driverMatchingService;
+        this.notificationService = notificationService;
         this.rideMapper = rideMapper;
     }
 
@@ -86,14 +91,22 @@ public class RideOrderServiceImpl implements RideOrderService {
 
         if (scheduledTime == null) {
             CreatedRideResponseDTO driverError = assignDriverForImmediateRide(ride, route, requestedVehicleType);
-            if (driverError != null) return driverError;
+            if (driverError != null) {
+                notifyPassengerRideOrderFailed(payingPassenger, driverError.getMessage());
+                return driverError;
+            }
         } else {
             ride.setVehicleType(requestedVehicleType);
             ride.setStatus(RideStatus.SCHEDULED);
         }
 
         ActiveRide savedRide = activeRideRepository.save(ride);
-        notifyDriverIfReady(savedRide);
+        notifyDriver(savedRide);
+        if (scheduledTime == null) {
+            notifyPassengerRideOrderedSuccessfully(payingPassenger);
+        } else {
+            notifyPassengerRideScheduledSuccessfully(payingPassenger);
+        }
 
         return new CreatedRideResponseDTO(
                 "SUCCESS",
@@ -264,11 +277,67 @@ public class RideOrderServiceImpl implements RideOrderService {
         return null;
     }
 
-    private void notifyDriverIfReady(ActiveRide savedRide) {
+    private void notifyDriver(ActiveRide savedRide) {
         if (savedRide.getStatus() == RideStatus.DRIVER_READY) {
+            // Update driver home page with web socket to ride tracking
             GetDriverActiveRideDTO rideDTO = rideMapper.toDriverActiveRideDTO(savedRide);
             webSocketController.notifyDriverRideAssigned(savedRide.getDriver().getEmail(), rideDTO);
+            // Send notification
+            notifyDriverRideAssigned(savedRide.getDriver());
+        } else if (savedRide.getStatus() == RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE) {
+            // Send notification
+            notifyDriverRideAssignedAfterCurrent(savedRide.getDriver());
         }
+    }
+
+    private void notifyPassengerRideScheduledSuccessfully(Passenger passenger) {
+        notificationService.createAndNotify(
+                passenger.getId(),
+                NotificationType.RIDE_SCHEDULED,
+                "Ride ordered",
+                "Ride scheduled successfully. Driver will be assigned closer to scheduled time.",
+                LocalDateTime.now()
+        );
+    }
+
+    private void notifyPassengerRideOrderedSuccessfully(Passenger passenger) {
+        notificationService.createAndNotify(
+                passenger.getId(),
+                NotificationType.RIDE_ORDERED,
+                "Ride ordered",
+                "Ride ordered successfully! Driver assigned.",
+                LocalDateTime.now()
+        );
+    }
+
+    private void notifyPassengerRideOrderFailed(Passenger passenger, String reason) {
+        notificationService.createAndNotify(
+                passenger.getId(),
+                NotificationType.RIDE_REJECTED,
+                "Ride order failed",
+                reason,
+                LocalDateTime.now()
+        );
+    }
+
+    private void notifyDriverRideAssigned(Driver driver) {
+        notificationService.createAndNotify(
+                driver.getId(),
+                NotificationType.DRIVER_ASSIGNED,
+                "New ride assigned",
+                "A new ride has been assigned to you.",
+                LocalDateTime.now()
+        );
+    }
+
+    private void notifyDriverRideAssignedAfterCurrent(Driver driver) {
+        notificationService.createAndNotify(
+                driver.getId(),
+                NotificationType.DRIVER_ASSIGNED,
+                "New ride queued",
+                "A new ride has been assigned to you. It will start after your current ride.",
+                LocalDateTime.now()
+        );
     }
 
     private LocalDateTime parseScheduledTime(String timeString) {

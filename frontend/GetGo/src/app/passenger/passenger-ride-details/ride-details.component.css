@@ -114,7 +114,8 @@ p.loading {
 
 .favorite-button,
 .unfavorite-button,
-.rebook-button {
+.rebook-button,
+.rate-button{
   flex: 1;
   min-width: 120px;
   padding: 12px 16px;
@@ -406,3 +407,22 @@ button:disabled {
     position: static;
   }
 }
+
+.rate-button {
+  background-color: #ff9800;
+  color: white;
+}
+
+.rate-button:hover:not(:disabled) {
+  background-color: #e68900;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.rate-button:disabled {
+  background-color: #A0B3C8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+

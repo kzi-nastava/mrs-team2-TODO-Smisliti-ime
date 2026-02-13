@@ -224,4 +224,12 @@ export class PassengerRideDetailsComponent implements OnInit, AfterViewInit {
     const sum = ratingsList.reduce((acc, r) => acc + r.driverRating, 0);
     return sum / ratingsList.length;
   }
+
+  onRateRide(): void {
+    const currentRide = this.ride();
+    if (!currentRide) return;
+
+    this.router.navigate(['/rides', currentRide.id, 'rate']);
+  }
+
 }

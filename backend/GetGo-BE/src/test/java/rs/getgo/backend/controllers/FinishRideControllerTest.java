@@ -20,13 +20,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-/*
-  Unit test for RideController using @Mock fields initialized manually:
-  - No @ExtendWith(MockitoExtension.class)
-  - No AutoCloseable stored
-  - Mocks are annotated with @Mock and initialized with MockitoAnnotations.openMocks(this) called without storing the result
-*/
-class RideControllerFinishRideTest {
+
+class FinishRideControllerTest {
 
     @Mock
     private RideEstimateService rideEstimateService;

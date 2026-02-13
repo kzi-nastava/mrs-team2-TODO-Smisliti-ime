@@ -1,13 +1,12 @@
 package rs.getgo.backend.repositories;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import rs.getgo.backend.model.entities.ActiveRide;
 import rs.getgo.backend.model.entities.Driver;
 import rs.getgo.backend.model.entities.Passenger;
-import rs.getgo.backend.model.entities.Route;
 import rs.getgo.backend.model.enums.RideStatus;
 
 import java.time.LocalDateTime;
@@ -17,11 +16,15 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-public class ActiveRideRepositoryTest {
+public class FinishRideRepositoryTest {
 
     @Mock
     private ActiveRideRepository activeRideRepository;
+
+    @BeforeEach
+    void initMocks() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void testFindFirstByDriverAndStatusOrderByScheduledTimeAsc() {
@@ -102,6 +105,37 @@ public class ActiveRideRepositoryTest {
         assertThat(rides).hasSizeGreaterThanOrEqualTo(2);
 
         verify(activeRideRepository, times(1)).findByDriverAndStatusIn(d, List.of(RideStatus.DRIVER_READY, RideStatus.ACTIVE));
+    }
+
+    @Test
+    public void testFindByStatusInAndExistsByDriverAndStatus() {
+        ActiveRide a = new ActiveRide();
+        a.setStatus(RideStatus.ACTIVE);
+        when(activeRideRepository.findByStatusIn(List.of(RideStatus.ACTIVE, RideStatus.DRIVER_READY))).thenReturn(List.of(a));
+
+        List<ActiveRide> res = activeRideRepository.findByStatusIn(List.of(RideStatus.ACTIVE, RideStatus.DRIVER_READY));
+        assertThat(res).hasSize(1);
+
+        Driver d = new Driver();
+        when(activeRideRepository.existsByDriverAndStatusIn(d, List.of(RideStatus.ACTIVE))).thenReturn(true);
+        boolean exists = activeRideRepository.existsByDriverAndStatusIn(d, List.of(RideStatus.ACTIVE));
+        assertThat(exists).isTrue();
+
+        verify(activeRideRepository).findByStatusIn(List.of(RideStatus.ACTIVE, RideStatus.DRIVER_READY));
+        verify(activeRideRepository).existsByDriverAndStatusIn(d, List.of(RideStatus.ACTIVE));
+    }
+
+    @Test
+    public void testFindByStatusAndScheduledTimeLessThanEqual() {
+        ActiveRide a = new ActiveRide();
+        a.setStatus(RideStatus.SCHEDULED);
+        LocalDateTime cutoff = LocalDateTime.of(2025,1,1,0,0);
+        when(activeRideRepository.findByStatusAndScheduledTimeLessThanEqual(RideStatus.SCHEDULED, cutoff)).thenReturn(List.of(a));
+
+        List<ActiveRide> res = activeRideRepository.findByStatusAndScheduledTimeLessThanEqual(RideStatus.SCHEDULED, cutoff);
+        assertThat(res).isNotEmpty();
+
+        verify(activeRideRepository).findByStatusAndScheduledTimeLessThanEqual(RideStatus.SCHEDULED, cutoff);
     }
 
 }

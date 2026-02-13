@@ -127,6 +127,23 @@ public class MapboxRoutingService {
         return json.toString();
     }
 
+    public List<Coordinate> parseJsonToCoordinates(String json) {
+        List<Coordinate> coords = new ArrayList<>();
+        try {
+            String cleaned = json.replace("[", "").replace("]", "").trim();
+            if (cleaned.isEmpty()) return coords;
+            String[] tokens = cleaned.split(",");
+            for (int i = 0; i < tokens.length - 1; i += 2) {
+                double lng = Double.parseDouble(tokens[i].trim());
+                double lat = Double.parseDouble(tokens[i + 1].trim());
+                coords.add(new Coordinate(lat, lng));
+            }
+        } catch (Exception e) {
+            System.err.println("[Roaming] Failed to parse path: " + e.getMessage());
+        }
+        return coords;
+    }
+
     /**
      * Pair (lat, long)
      */

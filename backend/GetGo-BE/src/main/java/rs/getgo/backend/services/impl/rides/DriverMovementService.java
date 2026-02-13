@@ -21,7 +21,7 @@ import java.util.List;
  * Moves drivers and rides based on their state
  */
 @Service
-public class DriverMovementSimulator {
+public class DriverMovementService {
 
     private final ActiveRideRepository activeRideRepository;
     private final DriverRepository driverRepository;
@@ -31,7 +31,7 @@ public class DriverMovementSimulator {
     @Value("${simulation.speed.multiplier}")
     private int speedMultiplier;
 
-    public DriverMovementSimulator(
+    public DriverMovementService(
             ActiveRideRepository activeRideRepository,
             DriverRepository driverRepository,
             @Lazy RideService rideService,

@@ -44,20 +44,11 @@ export class AdminSupportChatComponent implements AfterViewChecked {
     });
   }
 
-
   selectChat(chat: Chat) {
     this.selectedChat.set(chat);
     this.chatService.getMessages(chat.id).subscribe(msgs => this.messages.set(msgs));
-
-    if (!this.wsService.connectionStatus){
-      this.wsService.connect().then(() => {
-        this.subscribeToChat(chat.id);
-      });
-    } else {
-      this.subscribeToChat(chat.id);
-    }
+    this.subscribeToChat(chat.id);
   }
-
 
   sendMessage() {
     if (!this.selectedChat() || !this.newMessage().trim()) return;
@@ -84,8 +75,6 @@ export class AdminSupportChatComponent implements AfterViewChecked {
       });
   }
 
-
   ngOnDestroy() {
-    this.wsService.disconnect();
   }
 }

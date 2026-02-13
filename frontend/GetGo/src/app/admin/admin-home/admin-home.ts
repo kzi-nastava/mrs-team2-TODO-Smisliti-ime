@@ -45,27 +45,21 @@ export class AdminHome implements OnInit, AfterViewInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.webSocketService.connect().then(() => {
-      this.panicSubscription = this.webSocketService
-        .subscribeToAdminPanic()
-        .subscribe((payload: PanicAlertDTO) => {
-          setTimeout(() => {
-            this.allPanicAlerts.unshift(payload);
-            this.updateUnreadCount();
-            this.subscribeToRideLocation(payload.rideId);
-            this.snackBarService.show(
-              `PANIC: Ride #${payload.rideId} triggered by user #${payload.triggeredByUserId}`
-            );
-            this.cdr.detectChanges();
-          }, 0);
-        });
+    this.panicSubscription = this.webSocketService
+      .subscribeToAdminPanic()
+      .subscribe((payload: PanicAlertDTO) => {
+        setTimeout(() => {
+          this.allPanicAlerts.unshift(payload);
+          this.updateUnreadCount();
+          this.subscribeToRideLocation(payload.rideId);
+          this.snackBarService.show(
+            `PANIC: Ride #${payload.rideId} triggered by user #${payload.triggeredByUserId}`
+          );
+          this.cdr.detectChanges();
+        }, 0);
+      });
 
-      // Load panic alerts AFTER WebSocket is connected
-      this.loadAllPanics();
-    }).catch(err => {
-      console.error('Failed to connect WebSocket:', err);
-      this.snackBarService.show('Failed to connect to real-time updates');
-    });
+    this.loadAllPanics();
   }
 
   ngAfterViewInit(): void {

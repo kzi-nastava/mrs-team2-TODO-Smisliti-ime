@@ -7,6 +7,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSlideToggleModule, MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { AuthService } from '../../service/auth-service/auth.service';
 import { DriverService } from '../../driver/service/driver.service';
+import { NotificationListenerService } from '../../service/notification/notification-listener.service';
 
 const DRIVER_STATUS_STORAGE_KEY = 'driverActiveStatus';
 
@@ -37,7 +38,8 @@ export class DriverNavBarComponent implements OnInit, OnDestroy {
   constructor(
     public auth: AuthService,
     private router: Router,
-    private driverService: DriverService
+    private driverService: DriverService,
+    private notificationListener: NotificationListenerService
   ) {}
 
   ngOnInit(): void {
@@ -75,6 +77,8 @@ export class DriverNavBarComponent implements OnInit, OnDestroy {
   }
 
   logout() {
+    this.notificationListener.stopListening();
+
     this.auth.logout();
     this.router.navigate(['/']);
   }

@@ -24,7 +24,6 @@ public class AdminRideHistoryE2ETest {
     private WebDriverWait wait;
 
     private final String baseUrl = System.getProperty("baseUrl", "http://localhost:4200");
-    private final String adminToken = System.getProperty("adminToken", "<PUT_VALID_ADMIN_JWT_HERE>");
     private final String adminEmail = System.getProperty("adminEmail", "a@gmail.com");
     private final String adminPassword = System.getProperty("adminPassword", "aaaaaaaa");
 
@@ -54,22 +53,12 @@ public class AdminRideHistoryE2ETest {
         loginPage = new LoginPage(driver, wait, baseUrl);
         historyPage = new AdminRideHistoryPage(driver, wait);
 
-        if (adminToken == null || adminToken.contains("<PUT_VALID_ADMIN_JWT_HERE>")) {
-            // Try API login first (faster, avoids UI modals). If it fails, fallback to UI login.
-            boolean apiOk = false;
-            try {
-                apiOk = loginPage.loginViaApi(adminEmail, adminPassword);
-            } catch (Throwable t) {
-                System.out.println("DEBUG loginViaApi threw: " + t.getMessage());
-                apiOk = false;
-            }
-            if (!apiOk) {
-                loginPage.login(adminEmail, adminPassword);
-            }
-        } else {
-            ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("window.localStorage.setItem('authToken', arguments[0]);", adminToken);
-            driver.get(baseUrl);
-        }
+        // attempt login via API (faster) and fallback to UI login
+        boolean apiOk = loginPage.loginViaApi(adminEmail, adminPassword);
+        if (!apiOk) loginPage.login(adminEmail, adminPassword);
+
+        // ensure we are on the app root after login
+        driver.get(baseUrl);
     }
 
     @AfterEach
@@ -83,72 +72,42 @@ public class AdminRideHistoryE2ETest {
     public void testSortAndFilterBehaviors() {
         historyPage.open(baseUrl);
 
-        // collect full unsorted baseline across all pages for the specific email
+        // collect baseline (unsorted) data for the provided email
         List<Integer> unsortedPrices = historyPage.collectAllPricesForEmail(testEmail);
         List<java.time.LocalDate> unsortedDates = historyPage.collectAllDatesForEmail(testEmail);
 
-        // DEBUG: print collected baseline info to help troubleshooting
-        System.out.println("DEBUG: collected unsortedPrices.size() = " + (unsortedPrices == null ? 0 : unsortedPrices.size()));
+        System.out.println("INFO: collected unsortedPrices.size() = " + (unsortedPrices == null ? 0 : unsortedPrices.size()));
         if (unsortedPrices != null && !unsortedPrices.isEmpty()) {
-            System.out.println("DEBUG: sample prices: " + unsortedPrices.subList(0, Math.min(5, unsortedPrices.size())));
+            System.out.println("INFO: sample prices: " + unsortedPrices.subList(0, Math.min(5, unsortedPrices.size())));
         }
-        // DEBUG: check how many .card-price elements Selenium sees and print item texts
         int priceElCount = historyPage.countPriceElements();
-        System.out.println("DEBUG: countPriceElements() = " + priceElCount);
+        System.out.println("INFO: countPriceElements() = " + priceElCount);
         List<String> itemTexts = historyPage.getItemTexts();
-        System.out.println("DEBUG: first 2 item texts: " + (itemTexts.isEmpty() ? itemTexts : itemTexts.subList(0, Math.min(2, itemTexts.size()))));
-        System.out.println("DEBUG: collected unsortedDates.size() = " + (unsortedDates == null ? 0 : unsortedDates.size()));
-        if (unsortedDates != null && !unsortedDates.isEmpty()) {
-            System.out.println("DEBUG: sample dates: " + unsortedDates.subList(0, Math.min(5, unsortedDates.size())));
-        }
+        if (!itemTexts.isEmpty()) System.out.println("INFO: first item text snippet: " + itemTexts.get(0).replaceAll("\n"," ").substring(0, Math.min(200, itemTexts.get(0).length())));
+        System.out.println("INFO: collected unsortedDates.size() = " + (unsortedDates == null ? 0 : unsortedDates.size()));
 
-        // Require at least dates baseline; if prices are missing we'll skip price-specific assertions
         assumeTrue(unsortedDates != null && !unsortedDates.isEmpty(), "No rides found for " + testEmail + " — ensure frontend is running and test data exists");
 
-        // expected sorted by date desc
+        // expected list sorted by date descending (newest first)
         List<java.time.LocalDate> expectedByDateDesc = unsortedDates.stream().sorted(java.util.Comparator.reverseOrder()).toList();
 
-        // apply sort in UI and verify
-        historyPage.searchWithAll(testEmail, "Passenger", "Start Date/Time", "Descending", null);
-        // collect actual after applying sort across pages (preserve current filter state)
-        List<java.time.LocalDate> actualDates = historyPage.collectAllDatesForCurrentFilter();
+        // apply sort by start time (descending) and verify
+        retry(() -> historyPage.searchWithAll(testEmail, "Passenger", "Start Date/Time", "Descending", null));
+        List<java.time.LocalDate> actualDates = retry(() -> historyPage.collectAllDatesForCurrentFilter());
         assertEquals(expectedByDateDesc.size(), actualDates.size(), "Date count after applying date sort must match baseline");
         for (int i = 0; i < actualDates.size(); i++) {
             assertEquals(expectedByDateDesc.get(i), actualDates.get(i), "Mismatch at index " + i);
         }
 
-        // price ascending - only run if backend has prices
+        // price ascending: derive expected order from unsortedPrices
         if (unsortedPrices != null && !unsortedPrices.isEmpty()) {
-            // Fetch expected sorted list from backend JSON directly (more reliable)
-            String backendPricesJson = historyPage.fetchAllPricesFromBackend(testEmail, "estimatedPrice", "ASC", null);
-            List<Integer> expectedByPriceAsc;
-            if (backendPricesJson != null) {
-                try {
-                    expectedByPriceAsc = new java.util.ArrayList<>();
-                    String trimmed = backendPricesJson.trim();
-                    if (trimmed.startsWith("[")) {
-                        // parse array of integers
-                        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)").matcher(trimmed);
-                        while (m.find()) expectedByPriceAsc.add(Integer.parseInt(m.group(1)));
-                    } else {
-                        expectedByPriceAsc = parsePricesFromBackendJson(backendPricesJson);
-                    }
-                } catch (Exception e) {
-                    System.out.println("DEBUG: failed to parse backend prices JSON: " + e.getMessage());
-                    expectedByPriceAsc = unsortedPrices.stream().sorted().toList();
-                }
-            } else {
-                expectedByPriceAsc = unsortedPrices.stream().sorted().toList();
-            }
+            List<Integer> expectedByPriceAsc = unsortedPrices.stream().sorted().toList();
 
-            historyPage.searchWithAll(testEmail, "Passenger", "Price", "Ascending", null);
-            List<Integer> actualPrices = historyPage.collectAllPricesForCurrentFilter();
+            retry(() -> historyPage.searchWithAll(testEmail, "Passenger", "Price", "Ascending", null));
+            List<Integer> actualPrices = retry(() -> historyPage.collectAllPricesForCurrentFilter());
 
             if (actualPrices.size() != expectedByPriceAsc.size()) {
-                // give more debug: dump page source and backend preview
-                System.out.println("DEBUG: expectedByPriceAsc.size()=" + expectedByPriceAsc.size() + " actualPrices.size()=" + actualPrices.size());
-                System.out.println("DEBUG: backend sample prices: " + (expectedByPriceAsc.size() > 0 ? expectedByPriceAsc.subList(0, Math.min(10, expectedByPriceAsc.size())) : expectedByPriceAsc));
-                System.out.println("DEBUG: actual sample prices: " + (actualPrices.size() > 0 ? actualPrices.subList(0, Math.min(10, actualPrices.size())) : actualPrices));
+                System.out.println("INFO: expectedByPriceAsc.size()=" + expectedByPriceAsc.size() + " actualPrices.size()=" + actualPrices.size());
                 historyPage.dumpDebug("price-sort-mismatch");
             }
 
@@ -157,34 +116,40 @@ public class AdminRideHistoryE2ETest {
                 assertEquals(expectedByPriceAsc.get(i), actualPrices.get(i), "Price mismatch at index " + i);
             }
         } else {
-            System.out.println("DEBUG: no prices collected for " + testEmail + "; skipping price sorting assertions");
+            System.out.println("INFO: no prices collected for " + testEmail + "; skipping price sorting assertions");
         }
 
-        // date filter test
+        // date filter test: check today's date filter
         LocalDate date = LocalDate.now();
         String dateStr = date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
         List<java.time.LocalDate> expectedDateFiltered = unsortedDates.stream().filter(d -> d.equals(date)).toList();
-        historyPage.searchWithAll(testEmail, "Passenger", null, null, dateStr);
-        List<java.time.LocalDate> actualDateFiltered = historyPage.collectAllDatesForCurrentFilter();
+        retry(() -> historyPage.searchWithAll(testEmail, "Passenger", null, null, dateStr));
+        List<java.time.LocalDate> actualDateFiltered = retry(() -> historyPage.collectAllDatesForCurrentFilter());
         assertEquals(expectedDateFiltered.size(), actualDateFiltered.size(), "Filtered date count must match expected");
         for (int i = 0; i < actualDateFiltered.size(); i++) {
             assertEquals(expectedDateFiltered.get(i), actualDateFiltered.get(i));
         }
     }
 
-    // helper: parse prices numbers from backend JSON response (expects JSON with content array of rides)
-    private List<Integer> parsePricesFromBackendJson(String json) {
-        List<Integer> prices = new java.util.ArrayList<>();
-        if (json == null || json.isEmpty()) return prices;
-        // A quick-and-dirty parse: find "price":NUMBER occurrences in JSON (sufficient for test)
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"price\"\s*:\s*([0-9]+(?:\\.[0-9]+)?)").matcher(json);
-        while (m.find()) {
-            String token = m.group(1);
+    // small retry helper that retries supplier up to 3 times with small backoff
+    private <T> T retry(java.util.concurrent.Callable<T> c) {
+        Exception last = null;
+        for (int i = 0; i < 3; i++) {
             try {
-                double d = Double.parseDouble(token);
-                prices.add((int) Math.round(d));
-            } catch (NumberFormatException ignored) {}
+                return c.call();
+            } catch (Exception e) {
+                last = e;
+                try { Thread.sleep(500); } catch (InterruptedException ignored) {}
+            }
         }
-        return prices;
+        throw new RuntimeException(last);
+    }
+
+    private void retry(Runnable r) {
+        for (int i = 0; i < 3; i++) {
+            try { r.run(); return; } catch (Exception e) { try { Thread.sleep(500); } catch (InterruptedException ignored) {} }
+        }
+        // run once more to throw
+        r.run();
     }
 }

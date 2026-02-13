@@ -267,4 +267,84 @@ public class RideServiceStopRideTest {
         // verify report was saved with completedRide set
         verify(reportRepository, atLeastOnce()).save(argThat(r -> ((InconsistencyReport) r).getCompletedRide() != null));
     }
+
+    @Test
+    public void testStopRide_NullPayingPassenger_Throws() {
+        // simulate missing paying passenger
+        activeRide.setPayingPassenger(null);
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
+
+        StopRideDTO dto = new StopRideDTO();
+        dto.setLatitude(1.0);
+        dto.setLongitude(1.0);
+
+        assertThrows(NullPointerException.class, () -> rideService.stopRide(1L, dto));
+    }
+
+    @Test
+    public void testStopRide_NullRoute_UsesFallback() {
+        activeRide.setRoute(null);
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
+        when(completedRideRepository.save(any())).thenAnswer(invocation -> {
+            CompletedRide cr = invocation.getArgument(0);
+            cr.setId(201L);
+            return cr;
+        });
+        when(reportRepository.findUnlinkedReportsByPassenger(any())).thenReturn(List.of());
+        when(panicRepository.findAll()).thenReturn(List.of());
+
+        StopRideDTO dto = new StopRideDTO();
+        dto.setLatitude(2.0);
+        dto.setLongitude(2.0);
+
+        RideCompletionDTO res = rideService.stopRide(1L, dto);
+        assertNotNull(res);
+        assertEquals(201L, res.getRideId());
+    }
+
+    @Test
+    public void testStopRide_EmptyWaypoints_DoesNotFail() {
+        // route with empty waypoints already set in setUp
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
+        when(routeRepository.save(any(Route.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(completedRideRepository.save(any())).thenAnswer(invocation -> {
+            CompletedRide cr = invocation.getArgument(0);
+            cr.setId(202L);
+            return cr;
+        });
+        when(reportRepository.findUnlinkedReportsByPassenger(any())).thenReturn(List.of());
+        when(panicRepository.findAll()).thenReturn(List.of());
+
+        StopRideDTO dto = new StopRideDTO();
+        dto.setLatitude(3.0);
+        dto.setLongitude(3.0);
+
+        RideCompletionDTO res = rideService.stopRide(1L, dto);
+        assertNotNull(res);
+        assertEquals(202L, res.getRideId());
+    }
+
+    @Test
+    public void testStopRide_PanicsWithDifferentRideIds_NotDeleted() {
+        Panic p1 = new Panic(); p1.setId(301L); p1.setRideId(999L);
+        Panic p2 = new Panic(); p2.setId(302L); p2.setRideId(1L);
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
+        when(routeRepository.save(any(Route.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(completedRideRepository.save(any())).thenAnswer(invocation -> {
+            CompletedRide cr = invocation.getArgument(0);
+            cr.setId(303L);
+            return cr;
+        });
+        when(reportRepository.findUnlinkedReportsByPassenger(any())).thenReturn(List.of());
+        when(panicRepository.findAll()).thenReturn(List.of(p1, p2));
+
+        StopRideDTO dto = new StopRideDTO(); dto.setLatitude(4.0); dto.setLongitude(4.0);
+        RideCompletionDTO res = rideService.stopRide(1L, dto);
+        assertNotNull(res);
+        // verify deleteAll called only with panics related to ride id 1 -> here contains p2
+        verify(panicRepository, times(1)).deleteAll(argThat(iter -> {
+            int cnt=0; for(Object o: iter){ if(o instanceof Panic){ Panic pp=(Panic)o; if(pp.getRideId()!=null && pp.getRideId().equals(1L)) cnt++; }} return cnt==1;
+        }));
+    }
+
 }

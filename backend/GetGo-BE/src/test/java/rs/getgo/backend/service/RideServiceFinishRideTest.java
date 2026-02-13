@@ -1,12 +1,11 @@
 package rs.getgo.backend.service;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import rs.getgo.backend.controllers.WebSocketController;
 import rs.getgo.backend.dtos.ride.UpdateRideDTO;
 import rs.getgo.backend.dtos.ride.UpdatedRideDTO;
@@ -21,12 +20,13 @@ import rs.getgo.backend.services.impl.rides.RideServiceImpl;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 public class RideServiceFinishRideTest {
 
     @Mock
@@ -84,8 +84,29 @@ public class RideServiceFinishRideTest {
     private Driver driver;
     private Passenger payingPassenger;
 
+    private AutoCloseable mocksCloser;
+
     @BeforeEach
     void setUp() {
+        mocksCloser = MockitoAnnotations.openMocks(this);
+        // reference mocks to avoid unused-field warnings
+        Objects.requireNonNull(cancellationRepository);
+        Objects.requireNonNull(panicRepository);
+        Objects.requireNonNull(activeRideRepository);
+        Objects.requireNonNull(userRepository);
+        Objects.requireNonNull(passengerRepository);
+        Objects.requireNonNull(routeRepository);
+        Objects.requireNonNull(driverRepository);
+        Objects.requireNonNull(mapboxRoutingService);
+        Objects.requireNonNull(webSocketController);
+        Objects.requireNonNull(completedRideRepository);
+        Objects.requireNonNull(emailService);
+        Objects.requireNonNull(reportRepository);
+        Objects.requireNonNull(panicNotifierService);
+        Objects.requireNonNull(rideMapper);
+        Objects.requireNonNull(notificationService);
+        Objects.requireNonNull(ridePriceRepository);
+
         // Build a minimal ActiveRide in ACTIVE status
         activeRide = new ActiveRide();
         activeRide.setId(11L);
@@ -120,6 +141,11 @@ public class RideServiceFinishRideTest {
         activeRide.setLinkedPassengers(List.of());
     }
 
+    @AfterEach
+    void tearDown() throws Exception {
+        if (mocksCloser != null) mocksCloser.close();
+    }
+
     @Test
     public void testFinishRide_HappyPath() {
         // Arrange
@@ -150,7 +176,7 @@ public class RideServiceFinishRideTest {
         verify(webSocketController, times(1)).notifyPassengerRideFinished(eq(activeRide.getId()), anyDouble(), any(LocalDateTime.class), any(LocalDateTime.class), eq(driver.getId()));
         verify(activeRideRepository, times(1)).delete(activeRide);
         // driverRepository.save should be called to mark driver active (no scheduled rides => active true)
-        verify(driverRepository, times(1)).save(argThat(d -> ((Driver) d).getActive()));
+        verify(driverRepository, times(1)).save(argThat(Driver::getActive));
     }
 
     @Test
@@ -197,5 +223,58 @@ public class RideServiceFinishRideTest {
         // completedRideRepository.save should have been called at least twice (initial save + update when panic attached)
         verify(completedRideRepository, atLeast(2)).save(any(CompletedRide.class));
     }
-}
 
+    @Test
+    public void testFinishRide_DriverHasNextScheduledRide_MarksDriverBusy() {
+        // Arrange: driver has next scheduled ride
+        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(completedRideRepository.save(any())).thenAnswer(invocation -> {
+            CompletedRide cr = invocation.getArgument(0);
+            cr.setId(888L);
+            return cr;
+        });
+        // simulate there is a scheduled ride for this driver
+        ActiveRide next = new ActiveRide();
+        when(activeRideRepository.findFirstByDriverAndStatusOrderByScheduledTimeAsc(eq(driver), eq(RideStatus.SCHEDULED))).thenReturn(Optional.of(next));
+
+        UpdateRideDTO req = new UpdateRideDTO();
+
+        // Act
+        UpdatedRideDTO result = rideService.finishRide(11L, req);
+
+        // Assert
+        assertNotNull(result);
+        // when next ride exists driver should be set to active=false
+        verify(driverRepository).save(argThat(d -> !d.getActive()));
+    }
+
+    @Test
+    public void testFinishRide_SendsEmailToLinkedPassengers() {
+        // Arrange
+        Passenger linked = new Passenger();
+        linked.setId(55L);
+        linked.setEmail("linked@example.com");
+        linked.setName("Lnk");
+        activeRide.setLinkedPassengers(List.of(linked));
+
+        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(completedRideRepository.save(any())).thenAnswer(invocation -> {
+            CompletedRide cr = invocation.getArgument(0);
+            cr.setId(999L);
+            return cr;
+        });
+        when(reportRepository.findUnlinkedReportsByPassenger(any())).thenReturn(List.of());
+        when(activeRideRepository.findFirstByDriverAndStatusOrderByScheduledTimeAsc(any(Driver.class), any())).thenReturn(Optional.empty());
+
+        UpdateRideDTO req = new UpdateRideDTO();
+
+        // Act
+        UpdatedRideDTO result = rideService.finishRide(11L, req);
+
+        // Assert
+        assertNotNull(result);
+        // emailService should be called for linked passenger as well
+        verify(emailService).sendRideFinishedEmail(eq(linked.getEmail()), eq(linked.getName()), eq(result.getId()), eq(linked.getId()));
+    }
+
+}

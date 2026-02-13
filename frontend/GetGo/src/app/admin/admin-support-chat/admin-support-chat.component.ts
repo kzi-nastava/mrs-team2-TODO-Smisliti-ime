@@ -45,6 +45,7 @@ export class AdminSupportChatComponent implements AfterViewChecked {
   }
 
   selectChat(chat: Chat) {
+    console.log('WS connected?', this.wsService.connectionStatus);
     this.selectedChat.set(chat);
     this.chatService.getMessages(chat.id).subscribe(msgs => this.messages.set(msgs));
     this.subscribeToChat(chat.id);

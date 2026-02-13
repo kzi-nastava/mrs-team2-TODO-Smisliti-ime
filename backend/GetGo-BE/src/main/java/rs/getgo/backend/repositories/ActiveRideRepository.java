@@ -21,11 +21,10 @@ public interface ActiveRideRepository extends JpaRepository<ActiveRide, Long> {
     List<ActiveRide> findByStatusIn(List<RideStatus> statuses);
     boolean existsByDriverAndStatusIn(Driver driver, List<RideStatus> statuses);
     boolean existsByDriverAndStatus(Driver driver, RideStatus status);
+    boolean existsByDriverAndStatusNot(Driver driver, RideStatus status);
     Optional<ActiveRide> findFirstByDriverAndStatusOrderByScheduledTimeAsc(Driver driver, RideStatus status);
     @EntityGraph(attributePaths = {"route", "route.waypoints", "driver", "payingPassenger"})
-    Optional<ActiveRide> findByPayingPassengerAndStatusIn(Passenger passenger, List<RideStatus> status);
     List<ActiveRide> findByStatusAndScheduledTimeLessThanEqual(RideStatus status, LocalDateTime time);
-    boolean existsByPayingPassengerOrLinkedPassengersContaining(Passenger payingPassenger, Passenger linkedPassenger);
     boolean existsByPayingPassengerAndStatusNot(Passenger passenger, RideStatus status);
     boolean existsByLinkedPassengersContainingAndStatusNot(Passenger passenger, RideStatus status);
     boolean existsByPayingPassengerAndStatusAndScheduledTimeBefore(Passenger passenger, RideStatus status, LocalDateTime time);

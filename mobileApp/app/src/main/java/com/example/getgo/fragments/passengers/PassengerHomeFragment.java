@@ -470,19 +470,14 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
                     // UPDATE - we just move the existing marker. In a real app, you might want to animate this movement.
                     driverMarkers.get(driverId).setPosition(newPosition);
+                    driverMarkers.get(driverId).setIcon(bitmapDescriptorFromVector(
+                            requireContext(),
+                            "".equals(location.getStatus()) ? R.drawable.ic_car_green : R.drawable.ic_car_red,
+                            120, 120
+                    )); // IDLE
 
                 } else {
-
                     // CREATE
-//                    Marker marker = mMap.addMarker(new MarkerOptions()
-//                            .position(newPosition)
-//                            .icon(bitmapDescriptorFromVector(
-//                                    requireContext(),
-//                                    R.drawable.ic_car_green,
-//                                    120, 120
-//                            )));
-//
-//                    driverMarkers.put(driverId, marker);
                 }
             });
         });

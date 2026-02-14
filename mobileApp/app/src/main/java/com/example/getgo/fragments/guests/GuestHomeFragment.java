@@ -178,6 +178,11 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
                     // UPDATE - we just move the existing marker. In a real app, you might want to animate this movement.
                     driverMarkers.get(driverId).setPosition(newPosition);
 
+                    driverMarkers.get(driverId).setIcon(bitmapDescriptorFromVector(
+                            requireContext(),
+                            "".equals(location.getStatus()) ? R.drawable.ic_car_green : R.drawable.ic_car_red,
+                            120, 120
+                    )); // IDLE
                 } else {
 
                     // CREATE

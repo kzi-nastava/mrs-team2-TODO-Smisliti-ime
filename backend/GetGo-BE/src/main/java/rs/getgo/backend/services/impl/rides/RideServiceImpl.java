@@ -595,8 +595,13 @@ public class RideServiceImpl implements RideService {
         completedRide.setStartTime(ride.getActualStartTime());
         completedRide.setEndTime(LocalDateTime.now());
         completedRide.setEstimatedPrice(ride.getEstimatedPrice());
-        completedRide.setEstDistanceKm(ride.getRoute().getEstDistanceKm());
-        completedRide.setEstTime(ride.getRoute().getEstTimeMin());
+        if (ride.getRoute() != null) {
+            completedRide.setEstDistanceKm(ride.getRoute().getEstDistanceKm());
+            completedRide.setEstTime(ride.getRoute().getEstTimeMin());
+        } else {
+            completedRide.setEstDistanceKm(0.0);
+            completedRide.setEstTime(0.0);
+        }
         completedRide.setVehicleType(ride.getVehicleType());
         completedRide.setNeedsBabySeats(ride.isNeedsBabySeats());
         completedRide.setNeedsPetFriendly(ride.isNeedsPetFriendly());
@@ -759,8 +764,13 @@ public class RideServiceImpl implements RideService {
         completedRide.setStartTime(startTime);
         completedRide.setEndTime(endTime);
         completedRide.setEstimatedPrice(ride.getEstimatedPrice());
-        completedRide.setEstDistanceKm(ride.getRoute().getEstDistanceKm());
-        completedRide.setEstTime(ride.getRoute().getEstTimeMin());
+        if (ride.getRoute() != null) {
+            completedRide.setEstDistanceKm(ride.getRoute().getEstDistanceKm());
+            completedRide.setEstTime(ride.getRoute().getEstTimeMin());
+        } else {
+            completedRide.setEstDistanceKm(0.0);
+            completedRide.setEstTime(0.0);
+        }
         completedRide.setVehicleType(ride.getVehicleType());
         completedRide.setNeedsBabySeats(ride.isNeedsBabySeats());
         completedRide.setNeedsPetFriendly(ride.isNeedsPetFriendly());
@@ -846,10 +856,13 @@ public class RideServiceImpl implements RideService {
     private double calculateStoppedRidePrice(ActiveRide ride, long durationMinutes) {
         // Business logic: charge proportional price based on time driven
         double estimatedPrice = ride.getEstimatedPrice();
-        double estimatedDuration = ride.getRoute().getEstTimeMin();
+        double estimatedDuration = 0.0;
+        if (ride.getRoute() != null) {
+            estimatedDuration = ride.getRoute().getEstTimeMin();
+        }
 
         if (estimatedDuration <= 0) {
-            return estimatedPrice; // fallback
+            return estimatedPrice; // fallback to estimated price
         }
 
         // Proportional price

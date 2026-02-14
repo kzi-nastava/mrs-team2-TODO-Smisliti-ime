@@ -175,21 +175,21 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
 
                 if (driverMarkers.containsKey(driverId)) {
 
-                    // UPDATE (ne briši!)
+                    // UPDATE - we just move the existing marker. In a real app, you might want to animate this movement.
                     driverMarkers.get(driverId).setPosition(newPosition);
 
                 } else {
 
                     // CREATE
-                    Marker marker = mMap.addMarker(new MarkerOptions()
-                            .position(newPosition)
-                            .icon(bitmapDescriptorFromVector(
-                                    requireContext(),
-                                    R.drawable.ic_car_green,
-                                    120, 120
-                            )));
-
-                    driverMarkers.put(driverId, marker);
+//                    Marker marker = mMap.addMarker(new MarkerOptions()
+//                            .position(newPosition)
+//                            .icon(bitmapDescriptorFromVector(
+//                                    requireContext(),
+//                                    R.drawable.ic_car_green,
+//                                    120, 120
+//                            )));
+//
+//                    driverMarkers.put(driverId, marker);
                 }
             });
         });

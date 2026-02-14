@@ -104,8 +104,13 @@ public class DriverMovementService {
                 ride.getStatus().toString()
         );
 
+        System.out.println("ISPRINTAOOOOO");
+        webSocketController.broadcastAllDriversLocation(locationUpdate);
+
         webSocketController.broadcastDriverLocation(driver.getEmail(), locationUpdate);
         webSocketController.broadcastDriverLocationToRide(ride.getId(), locationUpdate);
+
+
     }
 
     private List<MapboxRoutingService.Coordinate> parseJsonToCoordinates(String json) {

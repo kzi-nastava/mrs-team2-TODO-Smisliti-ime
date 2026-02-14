@@ -28,6 +28,7 @@ import com.example.getgo.dtos.vehicle.GetVehicleDTO;
 import com.example.getgo.repositories.DriverRepository;
 import com.example.getgo.utils.MapManager;
 import com.example.getgo.utils.ToastHelper;
+import com.example.getgo.utils.WebSocketManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -35,13 +36,16 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -62,6 +66,9 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
     private LatLng dropoffCoord = null;
     private Integer activeInputIndex = null; // -1 for pickup, -2 for dropoff
 
+    private final Map<Long, Marker> driverMarkers = new HashMap<>();
+    private WebSocketManager webSocketManager;
+
     public GuestHomeFragment() {
         // Required empty constructor
     }
@@ -69,6 +76,9 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        webSocketManager = new WebSocketManager();
+        webSocketManager.connect();
+
         vehicleApiService = ApiClient.getClient().create(VehicleApiService.class);
         rideApiService = ApiClient.getClient().create(RideApiService.class);
     }
@@ -147,10 +157,49 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
         loadActiveDrivers();
+        subscribeToDriverLocationUpdates();
 
         // Setup map click listener for location selection
         mMap.setOnMapClickListener(this::handleMapClick);
     }
+
+    private void subscribeToDriverLocationUpdates() {
+
+        webSocketManager.subscribeToAllDriversLocations(location -> {
+
+            requireActivity().runOnUiThread(() -> {
+
+                Long driverId = location.getDriverId();
+                LatLng newPosition =
+                        new LatLng(location.getLatitude(), location.getLongitude());
+
+                if (driverMarkers.containsKey(driverId)) {
+
+                    // UPDATE - we just move the existing marker. In a real app, you might want to animate this movement.
+                    driverMarkers.get(driverId).setPosition(newPosition);
+
+                    driverMarkers.get(driverId).setIcon(bitmapDescriptorFromVector(
+                            requireContext(),
+                            "".equals(location.getStatus()) ? R.drawable.ic_car_green : R.drawable.ic_car_red,
+                            120, 120
+                    )); // IDLE
+                } else {
+
+                    // CREATE
+//                    Marker marker = mMap.addMarker(new MarkerOptions()
+//                            .position(newPosition)
+//                            .icon(bitmapDescriptorFromVector(
+//                                    requireContext(),
+//                                    R.drawable.ic_car_green,
+//                                    120, 120
+//                            )));
+//
+//                    driverMarkers.put(driverId, marker);
+                }
+            });
+        });
+    }
+
 
     private void handleMapClick(LatLng latLng) {
         if (activeInputIndex == null) return;
@@ -219,20 +268,21 @@ public class GuestHomeFragment extends Fragment implements OnMapReadyCallback {
             if (d.getLatitude() == null || d.getLongitude() == null) continue;
 
             LatLng position = new LatLng(d.getLatitude(), d.getLongitude());
-            String title = d.getVehicleType();
-            String snippet = "Status: " + (d.getIsAvailable() ? "Free" : "Occupied");
 
-            mMap.addMarker(new MarkerOptions()
+            Marker marker = mMap.addMarker(new MarkerOptions()
                     .position(position)
-                    .title(title)
-                    .snippet(snippet)
+                    .title(d.getVehicleType())
+                    .snippet("Status: " + (d.getIsAvailable() ? "Free" : "Occupied"))
                     .icon(bitmapDescriptorFromVector(
                             getContext(),
                             d.getIsAvailable() ? R.drawable.ic_car_green : R.drawable.ic_car_red,
                             120, 120
                     )));
+
+            driverMarkers.put(d.getDriverId(), marker);
         }
     }
+
 
     private BitmapDescriptor bitmapDescriptorFromVector(@NonNull Context context, int vectorResId, int width, int height) {
         Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorResId);

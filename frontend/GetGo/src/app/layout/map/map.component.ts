@@ -79,13 +79,15 @@ export class MapComponent implements OnInit, AfterViewInit{
       vehicleType?: string
     }) => {
 
+//       console.log('Status drivera je', driver.status);
+
       const lat = Number(driver.latitude);
       const lng = Number(driver.longitude);
       const driverId = driver.driverId;
 
       const existingMarker = this.driverMarkers.get(driverId);
 
-      const iconUrl = driver.status === 'IDLE'
+      const iconUrl = driver.status === ""
         ? 'assets/images/green_car.svg'
         : 'assets/images/red_car.svg';
 

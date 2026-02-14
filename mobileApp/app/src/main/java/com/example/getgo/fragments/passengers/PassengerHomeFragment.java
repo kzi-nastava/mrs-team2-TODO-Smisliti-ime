@@ -133,8 +133,6 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         vehicleApiService = ApiClient.getClient().create(VehicleApiService.class);
         rideApiService = ApiClient.getClient().create(RideApiService.class);
 
-//        webSocketManager = new WebSocketManager();
-//        webSocketManager.connect();
     }
 
     @Override

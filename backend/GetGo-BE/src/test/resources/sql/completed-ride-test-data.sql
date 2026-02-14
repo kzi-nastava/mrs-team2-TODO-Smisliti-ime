@@ -27,3 +27,13 @@ INSERT INTO completed_rides (id, driver_id, driver_name, driver_email, paying_pa
 VALUES (3, 2, 'Jane', 'driver2@test.com', 3, 'Bob', 'passenger1@test.com',
         '2025-04-15 11:00:00', '2025-04-15 11:20:00',
         200.0, 195.0, 5.0, 4.8, 15.0, false, false, true, false, false, false);
+
+-- Completed ride 11: driver id 1 (for fixture test)
+INSERT INTO completed_rides (id, driver_id, driver_name, driver_email, paying_passenger_id,
+                             paying_passenger_name, paying_passenger_email, start_time, end_time,
+                             estimated_price, actual_price, est_distance_km, actual_distance_km,
+                             est_time, needs_baby_seats, needs_pet_friendly,
+                             is_completed_normally, is_panic_pressed, is_cancelled, is_stopped_early)
+VALUES (11, 1, 'John', 'driver1@test.com', 3, 'Bob', 'passenger1@test.com',
+        '2026-01-01 09:00:00', '2026-01-01 09:20:00',
+        150.0, 140.0, 3.0, 3.2, 12.0, false, false, true, false, false, false);

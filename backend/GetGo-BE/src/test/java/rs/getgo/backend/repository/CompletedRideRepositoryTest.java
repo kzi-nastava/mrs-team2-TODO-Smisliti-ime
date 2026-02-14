@@ -12,6 +12,7 @@ import rs.getgo.backend.repositories.CompletedRideRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -67,5 +68,12 @@ public class CompletedRideRepositoryTest {
         List<CompletedRide> result = completedRideRepository.findByDriverIdAndEndTimeAfter(
                 1L, LocalDateTime.of(2025, 6, 1, 14, 45, 0));
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void fixture_shouldLoadCompletedRide() {
+        Optional<CompletedRide> cr = completedRideRepository.findById(11L);
+        assertTrue(cr.isPresent());
+        assertEquals(150.0, cr.get().getEstimatedPrice());
     }
 }

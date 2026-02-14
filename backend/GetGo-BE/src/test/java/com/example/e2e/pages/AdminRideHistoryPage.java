@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class AdminRideHistoryPage {
     private final WebDriver driver;
@@ -33,7 +32,6 @@ public class AdminRideHistoryPage {
 
     public void setEmail(String email) {
         WebElement emailInput = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("input[formcontrolname='email']")));
-        // Try multiple approaches: JS set + dispatch, then fallback to sendKeys + blur/tab to ensure Angular reacts
         boolean applied = false;
         try {
             ((JavascriptExecutor) driver).executeScript(
@@ -43,21 +41,18 @@ public class AdminRideHistoryPage {
         } catch (Exception ignored) {
         }
 
-        // Fallback: clear and type then blur / tab to trigger Angular change detection
         try {
             emailInput.clear();
             emailInput.sendKeys(email);
-            // send TAB to move focus out
             emailInput.sendKeys(org.openqa.selenium.Keys.TAB);
             try { ((JavascriptExecutor) driver).executeScript("arguments[0].blur();", emailInput); } catch (Exception ignored) {}
             applied = true;
         } catch (Exception ignored) {}
 
         if (!applied) {
-            System.out.println("DEBUG setEmail: unable to programmatically apply email='" + email + "'");
+            System.out.println("WARN setEmail: unable to programmatically apply email='" + email + "'");
         }
 
-        // Wait until the input value is reflected in the DOM (prevents immediate search from racing)
         try {
             WebDriverWait shortWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(5));
             shortWait.until(d -> {
@@ -83,19 +78,16 @@ public class AdminRideHistoryPage {
     }
 
     public void setDate(String dateStr) {
-        // dateStr expected in dd.MM.yyyy
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         java.time.LocalDate target;
         try {
             target = java.time.LocalDate.parse(dateStr, fmt);
         } catch (Exception e) {
-            // fallback to simple set if parse fails
             WebElement dateInputFallback = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("input[formcontrolname='date']")));
             ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", dateInputFallback, dateStr);
             return;
         }
 
-        // Attempt robust JS strategies to set the date
         String iso = String.format("%04d-%02d-%02d", target.getYear(), target.getMonthValue(), target.getDayOfMonth());
         String dd = String.valueOf(target.getDayOfMonth());
         String setDateScript =
@@ -103,25 +95,18 @@ public class AdminRideHistoryPage {
                 "  try{\n" +
                 "    var input = document.querySelector('input[formcontrolname=\\'date\\']');\n" +
                 "    if(!input){ return {ok:false, reason:'no-input'}; }\n" +
-                "    // 1) native value set + events\n" +
                 "    try{ input.value = visibleStr; input.dispatchEvent(new Event('input',{bubbles:true})); input.dispatchEvent(new Event('change',{bubbles:true})); input.blur(); }catch(e){}\n" +
-                "    // 2) try to set as Date object on the element if supported\n" +
                 "    try{ if('valueAsDate' in input){ var parts = dateIso.split('-'); input.type='date'; input.valueAsDate = new Date(parts[0], parts[1]-1, parts[2]); input.dispatchEvent(new Event('input',{bubbles:true})); input.dispatchEvent(new Event('change',{bubbles:true})); } }catch(e){}\n" +
-                "    // 3) attempt Angular debug API if present (dev-mode)\n" +
                 "    try{ if(window.ng && window.ng.getOwningComponent){ var cmp = window.ng.getOwningComponent(input); if(cmp && cmp.searchRideForm && cmp.searchRideForm.get){ try{ cmp.searchRideForm.get('date').setValue(new Date(dateIso)); if(cmp.searchRideForm.updateValueAndValidity) cmp.searchRideForm.updateValueAndValidity(); }catch(e){} } } }catch(e){}\n" +
-                "    // 4) trigger click on datepicker toggle to ensure UI updates\n" +
                 "    try{ var toggle = document.querySelector('mat-datepicker-toggle button'); if(toggle){ toggle.click(); setTimeout(function(){ var dayBtn = document.evaluate(\"//mat-calendar//button[normalize-space(.)='" + dd + "' and not(contains(@class,'mat-calendar-body-disabled'))]\", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(dayBtn){ dayBtn.click(); } }, 200); } }catch(e){}\n" +
-                "    // final: check input value textContent or value contains visibleStr (dd.MM.yyyy or dd)\n" +
                 "    var val = input.value || input.getAttribute('value') || (input.textContent||'');\n" +
                 "    if(val && (val.indexOf(visibleStr) !== -1 || val.indexOf(day) !== -1)) return {ok:true, val:val};\n" +
-                "    // try reading formatted display in surrounding .mat-form-field\n" +
                 "    try{ var parent = input.closest('.mat-form-field'); if(parent){ var disp = parent.querySelector('.mat-form-field-wrapper, .mat-form-field-infix'); if(disp && disp.textContent && disp.textContent.indexOf(visibleStr)!==-1) return {ok:true,val:disp.textContent}; } }catch(e){}\n" +
                 "    return {ok:false, reason:'no-match', val: val};\n" +
                 "  }catch(e){ return {ok:false, reason: e.message}; }\n" +
                 "})(arguments[0], arguments[1], arguments[2]);";
 
         Object result = ((JavascriptExecutor) driver).executeScript(setDateScript, iso, dateStr, dd);
-        // Wait up to 5s for the input value or display to reflect the date
         try {
             WebDriverWait shortWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(5));
             shortWait.pollingEvery(java.time.Duration.ofMillis(200));
@@ -130,7 +115,6 @@ public class AdminRideHistoryPage {
                     WebElement el = d.findElement(By.cssSelector("input[formcontrolname='date']"));
                     String v = el.getAttribute("value");
                     if (v != null && (v.contains(dateStr) || v.contains(String.format("%02d.%02d.%04d", target.getDayOfMonth(), target.getMonthValue(), target.getYear())))) return true;
-                    // check visible formatted text near the input
                     try {
                         WebElement parent = el.findElement(By.xpath("ancestor::mat-form-field"));
                         if (parent != null && parent.getText().contains(dateStr)) return true;
@@ -139,7 +123,7 @@ public class AdminRideHistoryPage {
                 } catch (Exception e) { return false; }
             });
         } catch (Exception e) {
-            System.out.println("DEBUG setDate: wait for date reflection failed: " + e.getMessage() + " execResult=" + result);
+            System.out.println("WARN setDate: wait for date reflection failed: " + e.getMessage() + " execResult=" + result);
         }
     }
 
@@ -148,107 +132,116 @@ public class AdminRideHistoryPage {
         try {
             searchBtn.click();
         } catch (org.openqa.selenium.ElementClickInterceptedException ex) {
-            // fallback to JS click if normal click is intercepted
             ((JavascriptExecutor) driver).executeScript("arguments[0].click();", searchBtn);
         }
-        // After triggering search, wait until the result list or empty-state is rendered and populated
         try {
             waitForItemsLoaded();
             ensureItemsPopulated();
         } catch (Exception e) {
-            // If waiting fails, dump debug to help diagnose flakiness
-            System.out.println("DEBUG clickSearch: wait after search failed: " + e.getMessage());
+            System.out.println("WARN clickSearch: wait after search failed: " + e.getMessage());
             dumpDebug("after-search-wait-failed");
         }
 
-        // Read visible sort/select values and map to backend params
-        String sortParam = null;
-        String dirParam = null;
-        String startDateParam = null;
-         try {
-             Object sortVisible = ((JavascriptExecutor) driver).executeScript("var el = document.querySelector('mat-select[formcontrolname=\\'sortBy\\'] .mat-select-value-text span'); return el ? el.textContent.trim() : null;");
-             Object dirVisible = ((JavascriptExecutor) driver).executeScript("var el = document.querySelector('mat-select[formcontrolname=\\'sortDirection\\'] .mat-select-value-text span'); return el ? el.textContent.trim() : null;");
+        try {
+            String email = (String) ((JavascriptExecutor) driver).executeScript("var e = document.querySelector('input[formcontrolname=\\'email\\']'); return e ? e.value : null;");
+            if (email == null) email = "";
+            String sortParam = null;
+            String dirParam = null;
+            String startDateParam = null;
+            Object sortVisible = ((JavascriptExecutor) driver).executeScript("var el = document.querySelector('mat-select[formcontrolname=\\'sortBy\\'] .mat-select-value-text span'); return el ? el.textContent.trim() : null;");
+            Object dirVisible = ((JavascriptExecutor) driver).executeScript("var el = document.querySelector('mat-select[formcontrolname=\\'sortDirection\\'] .mat-select-value-text span'); return el ? el.textContent.trim() : null;");
             Object dateVisible = ((JavascriptExecutor) driver).executeScript("var el = document.querySelector('input[formcontrolname=\\'date\\']'); return el ? el.value || el.getAttribute('value') || el.textContent : null;");
-             String sv = sortVisible == null ? null : sortVisible.toString();
-             String dv = dirVisible == null ? null : dirVisible.toString();
+            String sv = sortVisible == null ? null : sortVisible.toString();
+            String dv = dirVisible == null ? null : dirVisible.toString();
             String dvDate = dateVisible == null ? null : dateVisible.toString();
-             if (sv != null) {
-                 switch (sv) {
-                     case "Start Date/Time": sortParam = "startTime"; break;
-                     case "Duration": sortParam = "estTime"; break;
-                     case "Distance": sortParam = "estDistanceKm"; break;
-                     case "Price": sortParam = "estimatedPrice"; break;
-                     default: sortParam = null;
+            if (sv != null) {
+                switch (sv) {
+                    case "Start Date/Time": sortParam = "startTime"; break;
+                    case "Duration": sortParam = "estTime"; break;
+                    case "Distance": sortParam = "estDistanceKm"; break;
+                    case "Price": sortParam = "estimatedPrice"; break;
+                    default: sortParam = null;
                 }
             }
             if (dv != null) {
                 if (dv.equalsIgnoreCase("Descending")) dirParam = "DESC"; else if (dv.equalsIgnoreCase("Ascending")) dirParam = "ASC";
             }
-            // normalize visible date to backend expected format dd-MM-yyyy
             if (dvDate != null && !dvDate.isBlank()) {
-                // possible formats: dd.MM.yyyy or yyyy-MM-dd or dd-MM-yyyy
                 String s = dvDate.trim();
                 java.util.regex.Matcher m1 = java.util.regex.Pattern.compile("(\\d{2})\\.(\\d{2})\\.(\\d{4})").matcher(s);
                 java.util.regex.Matcher m2 = java.util.regex.Pattern.compile("(\\d{4})-(\\d{2})-(\\d{2})").matcher(s);
                 java.util.regex.Matcher m3 = java.util.regex.Pattern.compile("(\\d{2})-(\\d{2})-(\\d{4})").matcher(s);
                 if (m1.find()) {
-                    // m1 is dd.MM.yyyy -> convert to dd-MM-yyyy
                     startDateParam = m1.group(1) + "-" + m1.group(2) + "-" + m1.group(3);
                 } else if (m2.find()) {
-                    // m2 is yyyy-MM-dd -> convert to dd-MM-yyyy
                     startDateParam = m2.group(3) + "-" + m2.group(2) + "-" + m2.group(1);
                 } else if (m3.find()) {
-                    // m3 already dd-MM-yyyy
                     startDateParam = m3.group(1) + "-" + m3.group(2) + "-" + m3.group(3);
                 }
             }
-         } catch (Exception ignored) {}
-
-         // Always attempt to fetch backend JSON for the current email to help debug empty results
-         try {
-             String email = (String) ((JavascriptExecutor) driver).executeScript("var e = document.querySelector('input[formcontrolname=\\'email\\']'); return e ? e.value : null;");
-             if (email == null) email = "";
             String json = fetchRidesJson(email, 0, 50, sortParam, dirParam, startDateParam);
-             if (json == null) System.out.println("DEBUG clickSearch: backend JSON is null");
-             else System.out.println("DEBUG clickSearch: backend JSON preview: " + (json.length() > 1000 ? json.substring(0,1000) + "..." : json));
-         } catch (Exception e) {
-             System.out.println("DEBUG clickSearch: failed to fetch backend JSON: " + e.getMessage());
-         }
+            if (json == null) System.out.println("DEBUG clickSearch: backend JSON is null"); else System.out.println("DEBUG clickSearch: backend JSON preview: " + (json.length() > 1000 ? json.substring(0,1000) + "..." : json));
+        } catch (Exception e) {
+            System.out.println("WARN clickSearch: failed to fetch backend JSON: " + e.getMessage());
+        }
     }
 
     public void clickReset() {
-        By locator = By.xpath("//div[contains(@class,'buttons')]//button[normalize-space(text())='Reset' or @type='button']");
-        WebElement reset = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
-        // compute header height if present and scroll so element is visible below header
-        try {
-            Long headerHeight = (Long) ((JavascriptExecutor) driver).executeScript(
-                    "const tb = document.querySelector('mat-toolbar'); if (tb) return Math.round(tb.getBoundingClientRect().height); return 0;");
-            long offset = (headerHeight != null ? headerHeight : 0L) + 10L;
-            ((JavascriptExecutor) driver).executeScript(
-                    "const el = arguments[0]; const offset = arguments[1]; const y = el.getBoundingClientRect().top + window.pageYOffset - offset; window.scrollTo({top: y, behavior: 'instant'});",
-                    reset, offset);
-        } catch (Exception ignored) {
+        // Try a few locator strategies to find the Reset button robustly
+        By[] locators = new By[]{
+                By.xpath("//div[contains(@class,'buttons')]//button[normalize-space(.)='Reset']"),
+                By.cssSelector(".buttons button[type='button']"),
+                By.xpath("//button[contains(., 'Reset')]")
+        };
+
+        WebElement reset = null;
+        for (By locator : locators) {
+            try {
+                reset = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+                if (reset != null) break;
+            } catch (Exception ignored) {}
         }
-        // try normal click first, then fallback to JS click if intercepted
+
+        if (reset == null) {
+            // last attempt: try to find any button with text containing 'Reset' (case-insensitive)
+            try {
+                List<WebElement> allButtons = driver.findElements(By.tagName("button"));
+                for (WebElement b : allButtons) {
+                    try {
+                        String t = b.getText();
+                        if (t != null && t.trim().equalsIgnoreCase("reset")) { reset = b; break; }
+                    } catch (Exception ignored) {}
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if (reset == null) {
+            System.out.println("WARN clickReset: Reset button not found with any locator");
+            throw new NoSuchElementException("Reset button not found");
+        }
+
         try {
-            wait.until(ExpectedConditions.elementToBeClickable(locator));
+            // scroll into view and click using safe patterns
+            try { ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", reset); } catch (Exception ignored) {}
+            WebDriverWait clickableWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(10));
+            clickableWait.until(ExpectedConditions.elementToBeClickable(reset));
             try {
                 reset.click();
             } catch (org.openqa.selenium.ElementClickInterceptedException ex) {
-                System.out.println("DEBUG clickReset: normal click intercepted, falling back to JS click");
-                try { ((JavascriptExecutor) driver).executeScript("arguments[0].click();", reset); } catch (Exception jsEx) { System.out.println("DEBUG clickReset: JS click also failed: " + jsEx.getMessage()); throw ex; }
+                try { ((JavascriptExecutor) driver).executeScript("arguments[0].click();", reset); } catch (Exception jsEx) { throw ex; }
             }
-        } catch (org.openqa.selenium.TimeoutException te) {
-            // element not clickable in time; attempt JS click anyway
-            try { ((JavascriptExecutor) driver).executeScript("arguments[0].click();", reset); } catch (Exception e) { throw te; }
+        } catch (Exception e) {
+            try { ((JavascriptExecutor) driver).executeScript("arguments[0].click();", reset); } catch (Exception ex) {
+                System.out.println("WARN clickReset: failed to click reset: " + ex.getMessage());
+                throw new RuntimeException(ex);
+            }
         }
 
-        // After resetting, wait for the page to reflect cleared state (items loaded or empty state)
         try {
             waitForItemsLoaded();
             ensureItemsPopulated();
         } catch (Exception e) {
-            System.out.println("DEBUG clickReset: wait after reset failed: " + e.getMessage());
+            System.out.println("WARN clickReset: wait after reset failed: " + e.getMessage());
             dumpDebug("after-reset-wait-failed");
         }
     }
@@ -270,7 +263,6 @@ public class AdminRideHistoryPage {
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", opt);
         opt.click();
 
-        // After clicking the option, wait until the mat-select shows the selected visible text in its value element
         try {
             WebDriverWait shortWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(5));
             shortWait.until(d -> {
@@ -288,6 +280,8 @@ public class AdminRideHistoryPage {
     public List<WebElement> getResultItems() {
         try {
             wait.until(ExpectedConditions.or(
+                    ExpectedConditions.presenceOfElementLocated(By.cssSelector(".list .item .card-date")),
+                    ExpectedConditions.presenceOfElementLocated(By.cssSelector(".list .item .card-price")),
                     ExpectedConditions.presenceOfElementLocated(By.cssSelector(".list .item")),
                     ExpectedConditions.presenceOfElementLocated(By.xpath("//*[contains(text(),'No rides found for this user.') or contains(text(),'Enter email and search to view rides.') ]"))
             ));
@@ -302,8 +296,6 @@ public class AdminRideHistoryPage {
         java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+[\\.,]?\\d*)");
         for (WebElement item : items) {
             try {
-                int idx = prices.size();
-                // Try to find a dedicated price element inside the item first
                 try {
                     WebElement priceEl = item.findElement(By.cssSelector(".card-price"));
                     String raw = priceEl.getText();
@@ -314,25 +306,20 @@ public class AdminRideHistoryPage {
                         continue;
                     }
                 } catch (NoSuchElementException ignored) {
-                    // fall back to extracting from whole item text
                 }
 
-                // Fallback: extract last numeric token from item's visible text
                 String txt = item.getText();
-                System.out.println("DEBUG parsePrices: item text='" + (txt.length() > 200 ? txt.substring(0,200) + "..." : txt) + "'");
                 java.util.regex.Matcher m = p.matcher(txt);
                 Integer found = null;
                 while (m.find()) {
                     String token = m.group(1);
                     String digits = token.replaceAll("[^0-9]", "");
                     if (!digits.isEmpty()) {
-                        System.out.println("DEBUG parsePrices: found token='" + token + "' digits='" + digits + "'");
                         found = Integer.parseInt(digits);
                     }
                 }
                 if (found != null) prices.add(found);
             } catch (StaleElementReferenceException e) {
-                // ignore this item if it went stale
             }
         }
         return prices;
@@ -348,7 +335,6 @@ public class AdminRideHistoryPage {
                     WebElement dateEl = item.findElement(By.cssSelector(".card-date b, .card-date"));
                     String raw = (String) ((JavascriptExecutor) driver).executeScript("return arguments[0].textContent;", dateEl);
                     if (raw != null) raw = raw.trim(); else raw = "";
-                    System.out.println("DEBUG parseDates: found dateEl raw='" + raw + "'");
                     String dateOnly = raw.replaceAll("[^0-9.]", "").trim();
                     if (!dateOnly.isEmpty()) {
                         try { dates.add(LocalDate.parse(dateOnly, fmt)); } catch (Exception pe) { System.out.println("DEBUG parseDates: failed to parse dateOnly='" + dateOnly + "' -> " + pe.getMessage()); }
@@ -356,55 +342,40 @@ public class AdminRideHistoryPage {
                     continue;
                 } catch (NoSuchElementException ignored) { }
 
-                // Fallback: try to parse any date-like token from item text (use textContent)
                 String txt = (String) ((JavascriptExecutor) driver).executeScript("return arguments[0].textContent;", item);
                 if (txt == null) txt = item.getText();
-                System.out.println("DEBUG parseDates: item text='" + (txt.length() > 200 ? txt.substring(0,200) + "..." : txt) + "'");
                 java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d{2}\\.\\d{2}\\.\\d{4})").matcher(txt);
                 if (m.find()) {
                     String found = m.group(1);
-                    System.out.println("DEBUG parseDates: regex matched='" + found + "'");
                     try { dates.add(LocalDate.parse(found, fmt)); } catch (Exception pe) { System.out.println("DEBUG parseDates: failed parse regex date='" + found + "' -> " + pe.getMessage()); }
                 }
             } catch (StaleElementReferenceException e) {
-                // ignore
             }
         }
         return dates;
     }
 
     public void waitForItemsLoaded() {
-        // Wait until either items with dates/prices are present, or a known empty-state message, or paginator range shows up.
         wait.until(driver -> {
             try {
-                // if item date or price elements exist, we're ready
                 if (!driver.findElements(By.cssSelector(".list .item .card-date")).isEmpty()) return true;
                 if (!driver.findElements(By.cssSelector(".list .item .card-price")).isEmpty()) return true;
-                // if there's at least one item element (may be rendered but inner content not yet populated)
                 if (!driver.findElements(By.cssSelector(".list .item")).isEmpty()) return true;
-                // or empty-state message
-                if (!driver.findElements(By.xpath("//*[contains(text(),'No rides found for this user.') or contains(text(),'Enter email and search to view rides.')]")).isEmpty()) return true;
-                // or paginator range label (indicates items/count rendered)
-                if (!driver.findElements(By.cssSelector(".mat-mdc-paginator-range-label")).isEmpty()) return true;
+                if (!driver.findElements(By.xpath("//*[contains(text(),'No rides found for this user.') or contains(text(),'Enter email and search to view rides.')]")) .isEmpty()) return true;
             } catch (Exception e) {
-                // ignore and retry
             }
             return false;
         });
     }
 
     public List<WebElement> fetchUnsortedForEmail(String email) {
-        // Use centralized searchWithAll to ensure fields are applied consistently and waits are performed
         searchWithAll(email, "Passenger", null, null, null);
         List<WebElement> items = getResultItems();
-        if (items.isEmpty()) {
-            dumpDebug("fetch-unsorted-empty");
-        }
+        if (items.isEmpty()) dumpDebug("fetch-unsorted-empty");
         return items;
     }
 
     public List<Integer> collectAllPricesForEmail(String email) {
-        // Use searchWithAll to reliably set email/userType and wait for results
         searchWithAll(email, "Passenger", null, null, null);
         List<Integer> all = new ArrayList<>();
         boolean firstIteration = true;
@@ -423,7 +394,6 @@ public class AdminRideHistoryPage {
                 }
             }
             firstIteration = false;
-            // deduplicate by visible text to avoid duplicates across pages
             List<WebElement> unique = new ArrayList<>();
             for (WebElement it : items) {
                 try {
@@ -433,7 +403,6 @@ public class AdminRideHistoryPage {
                     seen.add(sig);
                     unique.add(it);
                 } catch (StaleElementReferenceException sere) {
-                    // ignore stale
                 }
             }
             all.addAll(parsePrices(unique));
@@ -441,7 +410,6 @@ public class AdminRideHistoryPage {
             clickNextPage();
         }
 
-        // Fallback: if we couldn't parse any prices but there are price-like tokens in the page, extract from page source
         if (all.isEmpty()) {
             int countPriceEls = countPriceElements();
             String src = driver.getPageSource();
@@ -456,7 +424,6 @@ public class AdminRideHistoryPage {
         return all;
     }
 
-    // Extract numbers followed by 'rsd' or standalone numeric tokens from page source in document order
     private List<Integer> extractPricesFromPageSource(String src) {
         List<Integer> res = new ArrayList<>();
         if (src == null || src.isEmpty()) return res;
@@ -467,7 +434,6 @@ public class AdminRideHistoryPage {
                 res.add(Integer.parseInt(m.group(1)));
             } catch (NumberFormatException ignored) {}
         }
-        // If none found with 'rsd' suffix, try any numeric tokens that look like prices at line ends
         if (res.isEmpty()) {
             java.util.regex.Pattern p2 = java.util.regex.Pattern.compile("(\\d{2,6})(?=\\D|<)");
             java.util.regex.Matcher m2 = p2.matcher(src);
@@ -479,7 +445,6 @@ public class AdminRideHistoryPage {
     }
 
     public List<LocalDate> collectAllDatesForEmail(String email) {
-        // Use searchWithAll to reliably set email/userType and wait for results
         searchWithAll(email, "Passenger", null, null, null);
         List<LocalDate> all = new ArrayList<>();
         boolean firstIteration = true;
@@ -498,7 +463,6 @@ public class AdminRideHistoryPage {
                 }
             }
             firstIteration = false;
-            // deduplicate by visible text signature
             List<WebElement> unique = new ArrayList<>();
             for (WebElement it : items) {
                 try {
@@ -508,7 +472,6 @@ public class AdminRideHistoryPage {
                     seen.add(sig);
                     unique.add(it);
                 } catch (StaleElementReferenceException sere) {
-                    // ignore
                 }
             }
             all.addAll(parseDates(unique));
@@ -518,7 +481,6 @@ public class AdminRideHistoryPage {
         return all;
     }
 
-    // Returns how many .card-price elements are present in the current DOM
     public int countPriceElements() {
         try {
             return driver.findElements(By.cssSelector(".list .item .card-price")).size();
@@ -527,7 +489,6 @@ public class AdminRideHistoryPage {
         }
     }
 
-    // Returns the visible text of each .list .item element (useful for debugging)
     public List<String> getItemTexts() {
         List<WebElement> items = driver.findElements(By.cssSelector(".list .item"));
         List<String> texts = new ArrayList<>();
@@ -558,7 +519,6 @@ public class AdminRideHistoryPage {
     private boolean clickNextPageWithWait(String prevFirstText) {
         try {
             WebElement nextBtn = driver.findElement(By.cssSelector("mat-paginator button[aria-label='Next page']"));
-            // scroll paginator into view
             try {
                 ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", nextBtn);
             } catch (Exception ignored) {}
@@ -572,7 +532,6 @@ public class AdminRideHistoryPage {
                     return false;
                 }
             }
-            // wait until new items loaded and first item text changed (or timeout)
             WebDriverWait shortWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(5));
             shortWait.pollingEvery(java.time.Duration.ofMillis(200));
             try {
@@ -581,7 +540,7 @@ public class AdminRideHistoryPage {
                         waitForItemsLoaded();
                         ensureItemsPopulated();
                         List<WebElement> items = d.findElements(By.cssSelector(".list .item"));
-                        if (items.isEmpty()) return true; // empty but page changed
+                        if (items.isEmpty()) return true;
                         String first = items.get(0).getText();
                         if (prevFirstText == null) return true;
                         return !first.equals(prevFirstText);
@@ -590,7 +549,6 @@ public class AdminRideHistoryPage {
                     }
                 });
             } catch (Exception ignored) {
-                // timeout waiting for change — still proceed
             }
             return true;
         } catch (NoSuchElementException e) {
@@ -617,7 +575,6 @@ public class AdminRideHistoryPage {
         }
     }
 
-    // Wait briefly until item inner content (prices/dates) is rendered; avoids racing when container exists but content not yet filled.
     private void ensureItemsPopulated() {
         WebDriverWait shortWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(3));
         shortWait.pollingEvery(java.time.Duration.ofMillis(200));
@@ -638,7 +595,6 @@ public class AdminRideHistoryPage {
                 return false;
             });
         } catch (Exception ignored) {
-            // timeout — it's okay, callers will handle empty results
         }
     }
 
@@ -655,7 +611,6 @@ public class AdminRideHistoryPage {
                 try { System.out.println("DEBUG first item text: " + items.get(0).getText().replaceAll("\n"," ").substring(0, Math.min(200, items.get(0).getText().length()))); } catch (Exception ignored) {}
             }
 
-            // Filter duplicates by item visible text (prevents counting same items twice when paginator mis-detects page change)
             List<WebElement> unique = new ArrayList<>();
             for (WebElement it : items) {
                 try {
@@ -665,18 +620,15 @@ public class AdminRideHistoryPage {
                     seen.add(sig);
                     unique.add(it);
                 } catch (StaleElementReferenceException sere) {
-                    // ignore stale
                 }
             }
 
             all.addAll(parsePrices(unique));
              if (!isNextPageAvailable()) break;
-             // pass previous first text to help detect change
              String prev = items.isEmpty() ? null : items.get(0).getText();
              clickNextPageWithWait(prev);
              page++;
          }
-         // fallback to page source if necessary
          if (all.isEmpty()) {
              String src = driver.getPageSource();
              if (src.contains("rsd")) {
@@ -699,7 +651,6 @@ public class AdminRideHistoryPage {
             if (!items.isEmpty()) {
                 try { System.out.println("DEBUG first item text: " + items.get(0).getText().replaceAll("\n"," ").substring(0, Math.min(200, items.get(0).getText().length()))); } catch (Exception ignored) {}
             }
-            // deduplicate by visible text signature to avoid double-counting across pages
             List<WebElement> unique = new ArrayList<>();
             for (WebElement it : items) {
                 try {
@@ -709,7 +660,6 @@ public class AdminRideHistoryPage {
                     seen.add(sig);
                     unique.add(it);
                 } catch (StaleElementReferenceException sere) {
-                    // ignore
                 }
             }
             all.addAll(parseDates(unique));
@@ -721,8 +671,6 @@ public class AdminRideHistoryPage {
          return all;
      }
 
-    // Fetch backend JSON for admin rides endpoint using same-origin browser session.
-    // Returns raw response text (JSON) or a string starting with 'ERR:' on network error.
     public String fetchRidesJson(String email, int page, int size, String sortBy, String direction, String startDate) {
         String backendBase = System.getProperty("backendBaseUrl", "http://localhost:8080");
         Object res = ((JavascriptExecutor) driver).executeAsyncScript(
@@ -741,8 +689,6 @@ public class AdminRideHistoryPage {
         return res == null ? null : res.toString();
     }
 
-    // Fetch all prices from backend for given email and sort params using browser fetch and JSON.parse.
-    // Returns a JSON array string like "[241,285,606,...]" or null on error.
     public String fetchAllPricesFromBackend(String email, String sortBy, String direction, String startDate) {
         String backendBase = System.getProperty("backendBaseUrl", "http://localhost:8080");
         try {
@@ -767,7 +713,6 @@ public class AdminRideHistoryPage {
     }
 
     public void searchWithAll(String email, String userType, String sortBy, String sortDirection, String dateStr) {
-        // Reset and set all fields to be safe
         clickReset();
         if (email != null) setEmail(email);
         if (userType != null) setUserType(userType);
@@ -775,7 +720,6 @@ public class AdminRideHistoryPage {
         if (sortDirection != null) setSortDirection(sortDirection);
         if (dateStr != null && !dateStr.isEmpty()) setDate(dateStr);
 
-        // Click search (has internal waits) and then do an additional explicit wait up to 10s for results or empty-state
         clickSearch();
         WebDriverWait longWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(10));
         longWait.pollingEvery(java.time.Duration.ofMillis(200));
@@ -785,14 +729,13 @@ public class AdminRideHistoryPage {
                     if (!d.findElements(By.cssSelector(".list .item .card-date")).isEmpty()) return true;
                     if (!d.findElements(By.cssSelector(".list .item .card-price")).isEmpty()) return true;
                     if (!d.findElements(By.cssSelector(".list .item")).isEmpty()) return true;
-                    if (!d.findElements(By.xpath("//*[contains(text(),'No rides found for this user.') or contains(text(),'Enter email and search to view rides.')]")).isEmpty()) return true;
+                    if (!d.findElements(By.xpath("//*[contains(text(),'No rides found for this user.') or contains(text(),'Enter email and search to view rides.')]")) .isEmpty()) return true;
                 } catch (Exception e) {
-                    // ignore and retry
                 }
                 return false;
             });
         } catch (Exception e) {
-            System.out.println("DEBUG searchWithAll: wait after search timed out: " + e.getMessage());
+            System.out.println("WARN searchWithAll: wait after search timed out: " + e.getMessage());
             dumpDebug("search-with-all-timeout");
         }
     }

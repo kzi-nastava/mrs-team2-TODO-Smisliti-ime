@@ -8,6 +8,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,9 +37,11 @@ import androidx.fragment.app.Fragment;
 import com.example.getgo.R;
 import com.example.getgo.activities.MainActivity;
 import com.example.getgo.api.ApiClient;
+import com.example.getgo.api.services.RideApiService;
 import com.example.getgo.api.services.UserApiService;
 import com.example.getgo.api.services.VehicleApiService;
 import com.example.getgo.dtos.driver.GetActiveDriverLocationDTO;
+import com.example.getgo.dtos.driver.GetDriverLocationDTO;
 import com.example.getgo.dtos.ride.CreateRideRequestDTO;
 import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
 import com.example.getgo.dtos.ride.GetFavoriteRideDTO;
@@ -52,8 +57,11 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
@@ -76,6 +84,8 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
     private GoogleMap mMap;
     private MapManager mapManager;
+    private VehicleApiService vehicleApiService;
+    private RideApiService rideApiService;
 
     private TextInputEditText etStartPoint, etDestination;
     private LinearLayout layoutWaypoints, layoutFriendEmailsList, layoutScheduledTime, layoutFriendEmails;
@@ -114,6 +124,17 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
     public static PassengerHomeFragment newInstance() {
         return new PassengerHomeFragment();
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        vehicleApiService = ApiClient.getClient().create(VehicleApiService.class);
+        rideApiService = ApiClient.getClient().create(RideApiService.class);
+
+        webSocketManager = new WebSocketManager();
+        webSocketManager.connect();
     }
 
     @Override
@@ -430,8 +451,41 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
         loadActiveDrivers();
+        subscribeToDriverLocationUpdates();
 
         mMap.setOnMapClickListener(this::handleMapClick);
+    }
+
+    private void subscribeToDriverLocationUpdates() {
+
+        webSocketManager.subscribeToAllDriversLocations(location -> {
+
+            requireActivity().runOnUiThread(() -> {
+
+                Long driverId = location.getDriverId();
+                LatLng newPosition =
+                        new LatLng(location.getLatitude(), location.getLongitude());
+
+                if (driverMarkers.containsKey(driverId)) {
+
+                    // UPDATE - we just move the existing marker. In a real app, you might want to animate this movement.
+                    driverMarkers.get(driverId).setPosition(newPosition);
+
+                } else {
+
+                    // CREATE
+//                    Marker marker = mMap.addMarker(new MarkerOptions()
+//                            .position(newPosition)
+//                            .icon(bitmapDescriptorFromVector(
+//                                    requireContext(),
+//                                    R.drawable.ic_car_green,
+//                                    120, 120
+//                            )));
+//
+//                    driverMarkers.put(driverId, marker);
+                }
+            });
+        });
     }
 
     private void loadActiveDrivers() {
@@ -441,13 +495,44 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
                 List<GetActiveDriverLocationDTO> drivers = repo.getActiveDriverLocations();
 
                 requireActivity().runOnUiThread(() -> {
-                    mapManager.updateDriverLocations(drivers);
-                    Log.d("PassengerHome", "Loaded " + drivers.size() + " active drivers");
+                    showDriversOnMap(drivers);
+                    Log.d("GuestHome", "Loaded " + drivers.size() + " active drivers");
                 });
             } catch (Exception e) {
-                Log.e("PassengerHome", "Failed to load active drivers", e);
+                Log.e("GuestHome", "Failed to load active drivers", e);
             }
         }).start();
+    }
+
+    private void showDriversOnMap(List<GetActiveDriverLocationDTO> drivers) {
+        if (mMap == null) return;
+
+        for (GetActiveDriverLocationDTO d : drivers) {
+            if (d.getLatitude() == null || d.getLongitude() == null) continue;
+
+            LatLng position = new LatLng(d.getLatitude(), d.getLongitude());
+
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                    .position(position)
+                    .title(d.getVehicleType())
+                    .snippet("Status: " + (d.getIsAvailable() ? "Free" : "Occupied"))
+                    .icon(bitmapDescriptorFromVector(
+                            getContext(),
+                            d.getIsAvailable() ? R.drawable.ic_car_green : R.drawable.ic_car_red,
+                            120, 120
+                    )));
+
+            driverMarkers.put(d.getDriverId(), marker);
+        }
+    }
+
+    private BitmapDescriptor bitmapDescriptorFromVector(@NonNull Context context, int vectorResId, int width, int height) {
+        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorResId);
+        vectorDrawable.setBounds(0, 0, width, height);
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.draw(canvas);
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 
     private void handleMapClick(LatLng latLng) {
@@ -815,7 +900,45 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         webSocketManager.connect();
 
         fetchLoggedInUserIdAndSubscribe();
+//        subscribeToAllDriversLiveUpdates();
     }
+
+    private void subscribeToAllDriversLiveUpdates() {
+        webSocketManager.subscribeToAllDriversLocations(driverLocation -> {
+            mainHandler.post(() -> updateDriverMarker(driverLocation));
+        });
+    }
+
+    private void updateDriverMarker(GetDriverLocationDTO driverLocation) {
+        Long driverId = driverLocation.getDriverId();
+        LatLng latLng = new LatLng(driverLocation.getLatitude(), driverLocation.getLongitude());
+
+        Marker marker = driverMarkers.get(driverId);
+
+        if (marker != null) {
+            // Ako postoji, samo ažuriraj lokaciju
+            marker.setPosition(latLng);
+
+            // Ako marker ne postoji, dodaj novi
+            marker = mMap.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .title("Driver " + driverId)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+            );
+            driverMarkers.put(driverId, marker);
+        } else {
+            // Ako marker ne postoji, dodaj novi
+//            marker = mMap.addMarker(new MarkerOptions()
+//                    .position(latLng)
+//                    .title("Driver " + driverId)
+//                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+//            );
+//            driverMarkers.put(driverId, marker);
+        }
+    }
+
+
+
 
     @Override
     public void onDestroyView() {

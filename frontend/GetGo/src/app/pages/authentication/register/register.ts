@@ -8,7 +8,6 @@ import { HttpClient } from '@angular/common/http';
 import {CommonModule} from '@angular/common';
 import {AuthService} from '../../../service/auth-service/auth.service';
 import {environment} from '../../../../env/environment';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { SnackBarService } from '../../../service/snackBar/snackBar.service';
 
 @Component({
@@ -46,37 +45,37 @@ export class RegisterComponent {
     this.form = this.fb.group(
       {
         email: ['', [
-          // Validators.required,
-          // Validators.email,
-          // Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+          Validators.required,
+          Validators.email,
+          Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
         ]],
         firstName: ['', [
-          // Validators.required,
-          // Validators.minLength(2),
-          // Validators.maxLength(50)
+          Validators.required,
+          Validators.minLength(2),
+          Validators.maxLength(50)
         ]],
         lastName: ['', [
-          // Validators.required,
-          // Validators.minLength(2),
-          // Validators.maxLength(50)
+          Validators.required,
+          Validators.minLength(2),
+          Validators.maxLength(50)
         ]],
         address: ['', [
-          // Validators.required
+          Validators.required
         ]],
         phoneNumber: ['', [
-          // Validators.required,
-          // Validators.pattern(/^(\+3816|06)[0-9]{7,8}$/)
+          Validators.required,
+          Validators.pattern(/^(\+3816|06)[0-9]{7,8}$/)
         ]],
         password: ['', [
-          // Validators.required,
-          // Validators.minLength(8)
+          Validators.required,
+          Validators.minLength(8)
         ]],
         confirmPassword: ['', [
-          // Validators.required
+          Validators.required
         ]],
         imageUrl: ['']
       },
-      // {validators: this.passwordsMatchValidator}
+      { validators: this.passwordsMatchValidator }
     );
   }
 

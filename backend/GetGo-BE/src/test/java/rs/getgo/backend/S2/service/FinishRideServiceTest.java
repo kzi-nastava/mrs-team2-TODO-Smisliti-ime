@@ -180,6 +180,44 @@ public class FinishRideServiceTest {
     }
 
     @Test
+    public void testFinishRide_ReportLinking_savesReports() {
+        // Arrange
+        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(completedRideRepository.save(any())).thenAnswer(invocation -> {
+            CompletedRide cr = invocation.getArgument(0);
+            cr.setId(600L);
+            return cr;
+        });
+
+        InconsistencyReport rep = new InconsistencyReport();
+        rep.setId(300L);
+        when(reportRepository.findUnlinkedReportsByPassenger(any())).thenReturn(List.of(rep));
+
+        UpdateRideDTO req = new UpdateRideDTO();
+
+        // Act
+        UpdatedRideDTO result = rideService.finishRide(11L, req);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(600L, result.getId());
+        // verify that reportRepository.save was called for the report
+        verify(reportRepository, times(1)).save(any(InconsistencyReport.class));
+    }
+
+    @Test
+    public void testFinishRide_RepoSaveThrows_propagatesException() {
+        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(completedRideRepository.save(any())).thenThrow(new RuntimeException("DB down"));
+
+        UpdateRideDTO req = new UpdateRideDTO();
+
+        assertThrows(RuntimeException.class, () -> rideService.finishRide(11L, req));
+
+        verify(completedRideRepository, times(1)).save(any(CompletedRide.class));
+    }
+
+    @Test
     public void testFinishRide_RideNotFound() {
         when(activeRideRepository.findById(99L)).thenReturn(Optional.empty());
         UpdateRideDTO req = new UpdateRideDTO();

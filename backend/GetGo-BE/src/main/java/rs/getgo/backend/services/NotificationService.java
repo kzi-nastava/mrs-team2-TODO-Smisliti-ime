@@ -12,4 +12,6 @@ public interface NotificationService {
     NotificationDTO readNotification(Long notificationId, Long userId);
 
     void getUserNotifications(Long userId);
+
+    boolean wasRecentlySent(Long userId, NotificationType type, int minutesAgo);
 }

@@ -62,10 +62,6 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     try {
-      // Connect to WebSocket
-      await this.webSocketService.connect();
-      console.log('WebSocket connected');
-
       // Load active ride
       this.loadActiveRide();
 
@@ -77,14 +73,11 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    // Clean up subscriptions
     if (this.locationSubscription) this.locationSubscription.unsubscribe();
     if (this.statusSubscription) this.statusSubscription.unsubscribe();
     if (this.completionSubscription) this.completionSubscription.unsubscribe();
     if (this.stopSubscription) this.stopSubscription.unsubscribe();
     if (this.cancelSubscription) this.cancelSubscription.unsubscribe();
-
-    this.webSocketService.disconnect();
   }
 
   loadActiveRide() {
@@ -141,7 +134,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       .subscribeToRideStatusUpdates(rideId)
       .subscribe({
         next: (update: PassengerStatusUpdateDTO) => {
-          console.log('🔔 Status update received:', update);
+          console.log('Status update received:', update);
           if (this.activeRide) {
             this.activeRide.status = update.status;
             this.statusMessage = update.message;
@@ -156,7 +149,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       .subscribeToPassengerRideFinished(rideId)
       .subscribe({
         next: (completion: PassengerRideFinishedDTO) => {
-          console.log('🎉 Ride finished:', completion);
+          console.log('Ride finished:', completion);
           this.rideCompletion = completion;
           if (this.activeRide) {
             this.activeRide.status = 'FINISHED';
@@ -170,7 +163,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       .subscribeToPassengerRideStopped(rideId)
       .subscribe({
         next: (data: any) => {
-          console.log('⏸️ Ride stopped:', data);
+          console.log('⏸Ride stopped:', data);
           if (this.activeRide) {
             this.activeRide.status = 'STOPPED';
             this.statusMessage = 'Ride has been stopped.';
@@ -185,7 +178,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       .subscribeToPassengerRideCancelled(rideId)
       .subscribe({
         next: (data: any) => {
-          console.log('❌ Ride cancelled:', data);
+          console.log('Ride cancelled:', data);
           if (this.activeRide) {
             this.activeRide.status = 'CANCELLED';
             this.statusMessage = data.reason

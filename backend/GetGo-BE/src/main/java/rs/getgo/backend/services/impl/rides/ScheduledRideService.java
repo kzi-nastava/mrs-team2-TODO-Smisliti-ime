@@ -8,11 +8,13 @@ import rs.getgo.backend.dtos.ride.GetActiveRideDTO;
 import rs.getgo.backend.dtos.ride.GetDriverActiveRideDTO;
 import rs.getgo.backend.mappers.RideMapper;
 import rs.getgo.backend.model.entities.*;
+import rs.getgo.backend.model.enums.NotificationType;
 import rs.getgo.backend.model.enums.RideStatus;
 import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.ActiveRideRepository;
 import rs.getgo.backend.repositories.RideCancellationRepository;
 import rs.getgo.backend.services.DriverMatchingService;
+import rs.getgo.backend.services.NotificationService;
 import rs.getgo.backend.services.RidePriceService;
 
 import java.time.LocalDateTime;
@@ -25,6 +27,7 @@ public class ScheduledRideService {
     private final RideCancellationRepository rideCancellationRepository;
     private final DriverMatchingService driverMatchingService;
     private final RidePriceService ridePriceService;
+    private final NotificationService notificationService;
     private final WebSocketController webSocketController;
     private final RideMapper rideMapper;
 
@@ -39,6 +42,7 @@ public class ScheduledRideService {
             RideCancellationRepository rideCancellationRepository,
             DriverMatchingService driverMatchingService,
             RidePriceService ridePriceService,
+            NotificationService notificationService,
             WebSocketController webSocketController,
             RideMapper rideMapper
     ) {
@@ -46,8 +50,36 @@ public class ScheduledRideService {
         this.rideCancellationRepository = rideCancellationRepository;
         this.driverMatchingService = driverMatchingService;
         this.ridePriceService = ridePriceService;
+        this.notificationService = notificationService;
         this.webSocketController = webSocketController;
         this.rideMapper = rideMapper;
+    }
+
+    @Scheduled(fixedRate = 60000)
+    @Transactional
+    public void sendScheduledRideReminders() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime reminderWindow = now.plusMinutes(15);
+
+        List<ActiveRide> upcomingRides = activeRideRepository
+                .findByStatusAndScheduledTimeBetween(RideStatus.SCHEDULED, now, reminderWindow);
+
+        for (ActiveRide ride : upcomingRides) {
+            if (notificationService.wasRecentlySent(
+                    ride.getPayingPassenger().getId(),
+                    NotificationType.RIDE_STARTING_SOON,
+                    4)) {
+                continue;
+            }
+
+            notificationService.createAndNotify(
+                    ride.getPayingPassenger().getId(),
+                    NotificationType.RIDE_STARTING_SOON,
+                    "Ride reminder",
+                    "Your scheduled ride starts at " + ride.getScheduledTime().toLocalTime(),
+                    LocalDateTime.now()
+            );
+        }
     }
 
     @Scheduled(fixedRate = 60000)
@@ -86,40 +118,67 @@ public class ScheduledRideService {
 
     private void activateScheduledRide(ActiveRide ride) {
         Driver driver = driverMatchingService.findAvailableDriver(ride);
-        // If no drivers were found, try in next scheduled run
         if (driver == null) return;
 
         ride.setDriver(driver);
+        resolveVehicleTypeIfNeeded(ride, driver);
+        resolveRideStatus(ride, driver);
+        activeRideRepository.save(ride);
 
-        // If vehicle type was 'ANY', set driver's vehicle type as ride vehicle type and calculate price
-        if (ride.getVehicleType() == null) {
-            VehicleType vehicleType = driver.getVehicle().getType();
-            double routeEstDistanceKm = ride.getRoute().getEstDistanceKm();
-            ride.setVehicleType(vehicleType);
-            ride.setEstimatedPrice(ridePriceService.calculateRidePrice(vehicleType, routeEstDistanceKm));
-        }
+        notifyDriverScheduledRideAssigned(ride);
+        notifyPassengerScheduledDriverAssigned(ride);
+    }
 
+    private void resolveVehicleTypeIfNeeded(ActiveRide ride, Driver driver) {
+        if (ride.getVehicleType() != null) return;
+        VehicleType vehicleType = driver.getVehicle().getType();
+        ride.setVehicleType(vehicleType);
+        ride.setEstimatedPrice(ridePriceService.calculateRidePrice(vehicleType, ride.getRoute().getEstDistanceKm()));
+    }
+
+    private void resolveRideStatus(ActiveRide ride, Driver driver) {
         if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
             ride.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
         } else {
             ride.setStatus(RideStatus.DRIVER_READY);
         }
+    }
 
-        activeRideRepository.save(ride);
+    private void notifyDriverScheduledRideAssigned(ActiveRide ride) {
+        boolean ready = ride.getStatus() == RideStatus.DRIVER_READY;
 
-        // Notify driver if ready
-        if (ride.getStatus() == RideStatus.DRIVER_READY) {
+        if (ready) {
             GetDriverActiveRideDTO rideDTO = rideMapper.toDriverActiveRideDTO(ride);
-            webSocketController.notifyDriverRideAssigned(driver.getEmail(), rideDTO);
+            webSocketController.notifyDriverRideAssigned(ride.getDriver().getEmail(), rideDTO);
         }
 
-        // Notify passenger
+        notificationService.createAndNotify(
+                ride.getDriver().getId(),
+                NotificationType.DRIVER_ASSIGNED,
+                ready ? "Scheduled ride assigned" : "Scheduled ride queued",
+                ready ? "A scheduled ride has been assigned to you."
+                        : "A scheduled ride has been assigned to you. It will start after your current ride.",
+                LocalDateTime.now()
+        );
+    }
+
+    private void notifyPassengerScheduledDriverAssigned(ActiveRide ride) {
+        boolean ready = ride.getStatus() == RideStatus.DRIVER_READY;
+
         webSocketController.notifyPassengerRideStatusUpdate(
                 ride.getId(),
                 ride.getStatus().toString(),
-                ride.getStatus() == RideStatus.DRIVER_READY
-                        ? "Driver assigned, your scheduled ride will start soon"
+                ready ? "Driver assigned, your scheduled ride will start soon"
                         : "Driver assigned, waiting for driver to finish previous ride..."
+        );
+
+        notificationService.createAndNotify(
+                ride.getPayingPassenger().getId(),
+                NotificationType.RIDE_ACCEPTED,
+                "Driver assigned",
+                ready ? "A driver has been assigned to your scheduled ride."
+                        : "A driver has been assigned but is finishing a previous ride.",
+                LocalDateTime.now()
         );
     }
 
@@ -151,6 +210,14 @@ public class ScheduledRideService {
         cancellation.setReason("Scheduled ride cancelled: No drivers available by scheduled time + grace period");
         cancellation.setCreatedAt(LocalDateTime.now());
         rideCancellationRepository.save(cancellation);
+
+        notificationService.createAndNotify(
+                ride.getPayingPassenger().getId(),
+                NotificationType.RIDE_REJECTED,
+                "Scheduled ride cancelled",
+                "Your scheduled ride could not be fulfilled — no available drivers were found in time.",
+                LocalDateTime.now()
+        );
 
         // Delete active ride
         activeRideRepository.delete(ride);

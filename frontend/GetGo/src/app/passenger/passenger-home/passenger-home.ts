@@ -32,9 +32,6 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
 
   // Store coordinates per destination
   private destinationCoords: Array<{ lat: number; lng: number } | null> = [null, null];
-
-  driverMarkers: Map<number, L.Marker> = new Map();
-
   private mapClickListener?: (ev: Event) => void;
 
   @ViewChild('appMap', {static: false}) private mapComponent?: MapComponent;
@@ -44,8 +41,7 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
     private rideService: RideService,
     private vehicleService: VehicleService,
     private cdr: ChangeDetectorRef,
-    private route: ActivatedRoute,
-    private websocketService: WebSocketService
+    private route: ActivatedRoute
   ) {
     this.travelForm = this.fb.group({
       destinations: this.fb.array([
@@ -65,11 +61,6 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
   ngOnInit(): void {
     this.loadFavoriteRides();
     this.loadVehicleTypes();
-
-    this.websocketService.connect().then(() => {
-        this.listenAllDriverLocations();
-      });
-
     // Check for query params from rebook
     this.route.queryParams.subscribe(params => {
       if (params['from'] && params['to']) {
@@ -577,28 +568,5 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
       const event = new CustomEvent('reset-map', { bubbles: true });
       this.mapComponent['elementRef'].nativeElement.dispatchEvent(event);
     }
-  }
-
-  listenAllDriverLocations(): void {
-    this.websocketService.subscribeToAllDriversLocations().subscribe((update: any) => {
-      const driverId = update.driverId;
-      const lat = update.latitude;
-      const lng = update.longitude;
-
-      if (this.driverMarkers.has(driverId)) {
-
-        this.driverMarkers.get(driverId)!.setLatLng([lat, lng]);
-      } else {
-
-        const map = this.mapComponent?.leafletMap;
-        if (map) {
-          const newMarker = L.marker([lat, lng]).addTo(map);
-          this.driverMarkers.set(driverId, newMarker);
-        } else {
-          console.warn('Leaflet map is not ready yet!');
-        }
-
-      }
-    });
   }
 }

@@ -71,14 +71,17 @@ export class MapComponent implements OnInit, AfterViewInit{
       drivers = [drivers];
     }
 
-    const activeIds = new Set<number>();
+    drivers.forEach((driver: {
+      driverId: number,
+      latitude: number,
+      longitude: number,
+      status: string,
+      vehicleType?: string
+    }) => {
 
-    drivers.forEach((driver: { driverId: number, latitude: number, longitude: number, status: string, vehicleType?: string }) => {
       const lat = Number(driver.latitude);
       const lng = Number(driver.longitude);
       const driverId = driver.driverId;
-
-      activeIds.add(driverId);
 
       const existingMarker = this.driverMarkers.get(driverId);
 
@@ -94,9 +97,11 @@ export class MapComponent implements OnInit, AfterViewInit{
       });
 
       if (existingMarker) {
+        // Just move existing marker and update icon if status changed
         existingMarker.setLatLng([lat, lng]);
         existingMarker.setIcon(icon);
       } else {
+        // Create new marker if it doesn't exist
         const marker = L.marker([lat, lng], { icon })
           .bindPopup(`${driver.status} - ${driver.vehicleType ?? ''}`)
           .addTo(this.map);
@@ -104,18 +109,7 @@ export class MapComponent implements OnInit, AfterViewInit{
         this.driverMarkers.set(driverId, marker);
       }
     });
-
-    // Remove markers for drivers no longer in activeIds
-    this.driverMarkers.forEach((marker, id) => {
-      if (!activeIds.has(id)) {
-        this.map.removeLayer(marker);
-        this.driverMarkers.delete(id);
-      }
-    });
   }
-
-
-
 
   private initMap(): void {
     this.map = L.map('map', {

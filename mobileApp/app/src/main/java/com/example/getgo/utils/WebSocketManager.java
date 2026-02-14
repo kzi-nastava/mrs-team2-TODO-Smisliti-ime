@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat;
 
 import com.example.getgo.R;
 import com.example.getgo.activities.MainActivity;
+import com.example.getgo.callbacks.AllDriversLocationListener;
 import com.example.getgo.callbacks.SupportChatMessageListener;
 import com.example.getgo.dtos.driver.GetDriverLocationDTO;
 import com.example.getgo.dtos.notification.NotificationDTO;
@@ -580,5 +581,25 @@ public class WebSocketManager {
 
         compositeDisposable.add(disposable);
     }
+
+    public void subscribeToAllDriversLocations(AllDriversLocationListener listener) {
+        if (stompClient == null) return;
+
+        String topic = "/socket-publisher/drivers/location";
+
+        Disposable disposable = stompClient.topic(topic)
+                .subscribe(topicMessage -> {
+                    GetDriverLocationDTO location =
+                            gson.fromJson(topicMessage.getPayload(), GetDriverLocationDTO.class);
+
+                    listener.onDriverLocation(location);
+
+                }, throwable -> {
+                    Log.e(TAG, "Error on all drivers location topic", throwable);
+                });
+
+        compositeDisposable.add(disposable);
+    }
+
 
 }

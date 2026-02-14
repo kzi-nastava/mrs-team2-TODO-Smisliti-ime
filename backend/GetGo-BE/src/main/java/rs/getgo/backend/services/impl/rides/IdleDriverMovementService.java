@@ -111,7 +111,7 @@ public class IdleDriverMovementService {
                 null, // idle driver doesn't have an active ride
                 driver.getCurrentLatitude(),
                 driver.getCurrentLongitude(),
-                "IDLE"
+                "" // IDLE
         );
 
         webSocketController.broadcastAllDriversLocation(locationUpdate);
@@ -148,7 +148,7 @@ public class IdleDriverMovementService {
                 null,
                 driver.getCurrentLatitude(),
                 driver.getCurrentLongitude(),
-                "IDLE"
+                "" // IDLE
         ));
     }
 

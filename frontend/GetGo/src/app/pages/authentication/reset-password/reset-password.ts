@@ -40,14 +40,14 @@ export class ResetPasswordComponent implements OnInit {
     this.form = this.fb.group(
       {
         password: ['', [
-          // Validators.required,
-          // Validators.minLength(8)
+          Validators.required,
+          Validators.minLength(8)
         ]],
         confirmPassword: ['', [
-          // Validators.required
+          Validators.required
         ]]
       },
-      // { validators: this.passwordsMatchValidator }
+      { validators: this.passwordsMatchValidator }
     );
   }
 

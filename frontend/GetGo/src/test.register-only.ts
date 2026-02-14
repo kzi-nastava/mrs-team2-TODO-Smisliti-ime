@@ -1,4 +1,5 @@
-// Test entry that only loads the RegisterComponent spec
+;(window as any).global = window;
+
 // Load Zone.js first
 import 'zone.js';
 import 'zone.js/testing';

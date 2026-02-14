@@ -4,6 +4,7 @@ import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
 import 'leaflet-routing-machine';
 import { DriverService, GetActiveDriverLocationDTO } from '../../service/driver/driver.service';
+import { WebSocketService } from '../../service/websocket/websocket.service';
 
 @Component({
   selector: 'app-map',
@@ -28,7 +29,8 @@ export class MapComponent implements OnInit, AfterViewInit{
   constructor(
     private http: HttpClient,
     private driverService: DriverService,
-    private elementRef: ElementRef<HTMLElement>
+    private elementRef: ElementRef<HTMLElement>,
+    private webSocketService: WebSocketService
   ) {}
 
   ngOnInit(): void {
@@ -48,7 +50,72 @@ export class MapComponent implements OnInit, AfterViewInit{
     this.registerOnClick();
     this.setupEventListeners();
     this.loadDrivers();
+
+    this.webSocketService.connect().then(() => {
+        console.log('Connected to WebSocket');
+
+
+        this.webSocketService.subscribeToAllDriversLocations().subscribe({
+          next: (drivers: any[]) => {
+            this.updateDriverMarkers(drivers);
+          },
+          error: (err) => console.error('WebSocket error:', err)
+        });
+      }).catch(err => console.error('WebSocket connection failed:', err));
   }
+
+  private updateDriverMarkers(drivers: any | any[]): void {
+    if (!drivers) return;
+
+    if (!Array.isArray(drivers)) {
+      drivers = [drivers];
+    }
+
+    const activeIds = new Set<number>();
+
+    drivers.forEach((driver: { driverId: number, latitude: number, longitude: number, status: string, vehicleType?: string }) => {
+      const lat = Number(driver.latitude);
+      const lng = Number(driver.longitude);
+      const driverId = driver.driverId;
+
+      activeIds.add(driverId);
+
+      const existingMarker = this.driverMarkers.get(driverId);
+
+      const iconUrl = driver.status === 'IDLE'
+        ? 'assets/images/green_car.svg'
+        : 'assets/images/red_car.svg';
+
+      const icon = L.icon({
+        iconUrl,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16]
+      });
+
+      if (existingMarker) {
+        existingMarker.setLatLng([lat, lng]);
+        existingMarker.setIcon(icon);
+      } else {
+        const marker = L.marker([lat, lng], { icon })
+          .bindPopup(`${driver.status} - ${driver.vehicleType ?? ''}`)
+          .addTo(this.map);
+
+        this.driverMarkers.set(driverId, marker);
+      }
+    });
+
+    // Remove markers for drivers no longer in activeIds
+    this.driverMarkers.forEach((marker, id) => {
+      if (!activeIds.has(id)) {
+        this.map.removeLayer(marker);
+        this.driverMarkers.delete(id);
+      }
+    });
+  }
+
+
+
 
   private initMap(): void {
     this.map = L.map('map', {
@@ -496,5 +563,9 @@ export class MapComponent implements OnInit, AfterViewInit{
       iconAnchor: [20, 20],
       popupAnchor: [0, -20]
     });
+  }
+
+  public get leafletMap(): L.Map | null {
+    return this.map;
   }
 }

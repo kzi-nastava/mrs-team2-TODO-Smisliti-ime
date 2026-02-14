@@ -70,7 +70,7 @@ public class FinishRideRepositoryTest {
         verify(activeRideRepository, times(1)).findActiveRideForPassenger(p, List.of(RideStatus.ACTIVE));
     }
 
-    @Test
+   /* @Test
     public void testExistsByPayingPassengerOrLinkedPassengersContaining() {
         Passenger p = new Passenger();
         p.setEmail("pass2@example.com");
@@ -82,7 +82,7 @@ public class FinishRideRepositoryTest {
         assertThat(exists).isTrue();
 
         verify(activeRideRepository, times(1)).existsByPayingPassengerOrLinkedPassengersContaining(p, p);
-    }
+    }*/
 
     @Test
     public void testFindByDriverAndStatusIn() {

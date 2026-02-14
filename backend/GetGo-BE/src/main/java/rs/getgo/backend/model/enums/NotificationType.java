@@ -1,6 +1,7 @@
 package rs.getgo.backend.model.enums;
 
 public enum NotificationType {
+    RIDE_ORDERED,
     RIDE_ACCEPTED,
     RIDE_REJECTED,
     RIDE_SCHEDULED,

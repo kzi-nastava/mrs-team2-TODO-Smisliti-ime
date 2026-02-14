@@ -80,4 +80,11 @@ public class NotificationServiceImpl implements NotificationService {
         } catch (Exception ignored) {
         }
     }
+
+    @Override
+    public boolean wasRecentlySent(Long userId, NotificationType type, int minutesAgo) {
+        return notificationRepository.existsByUserIdAndTypeAndTimestampAfter(
+                userId, type, LocalDateTime.now().minusMinutes(minutesAgo)
+        );
+    }
 }

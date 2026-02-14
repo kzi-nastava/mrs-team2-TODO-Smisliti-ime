@@ -72,9 +72,6 @@ export class DriverHome implements OnInit {
     console.log('Driver Email:', driverEmail);
 
     try {
-      await this.webSocketService.connect();
-      console.log('WebSocket connected');
-
       this.subscribeToRideAssignments(driverEmail);
       this.subscribeToLocationUpdates(driverEmail);
       this.subscribeToStatusUpdates(driverEmail);
@@ -111,8 +108,6 @@ export class DriverHome implements OnInit {
     if (this.locationSubscription) this.locationSubscription.unsubscribe();
     if (this.statusSubscription) this.statusSubscription.unsubscribe();
     if (this.completionSubscription) this.completionSubscription.unsubscribe();
-
-    this.webSocketService.disconnect();
   }
 
   private subscribeToRideAssignments(driverEmail: string) {

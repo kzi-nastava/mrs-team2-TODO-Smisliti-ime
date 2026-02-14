@@ -1,4 +1,4 @@
-package rs.getgo.backend.service;
+package rs.getgo.backend.S2.service;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

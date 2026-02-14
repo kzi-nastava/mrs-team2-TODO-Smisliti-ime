@@ -133,8 +133,8 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         vehicleApiService = ApiClient.getClient().create(VehicleApiService.class);
         rideApiService = ApiClient.getClient().create(RideApiService.class);
 
-        webSocketManager = new WebSocketManager();
-        webSocketManager.connect();
+//        webSocketManager = new WebSocketManager();
+//        webSocketManager.connect();
     }
 
     @Override
@@ -460,28 +460,50 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
         webSocketManager.subscribeToAllDriversLocations(location -> {
 
-            requireActivity().runOnUiThread(() -> {
+            if (!isAdded() || getActivity() == null) return;
+
+            getActivity().runOnUiThread(() -> {
+
+                if (!isAdded() || getContext() == null || mMap == null) return;
 
                 Long driverId = location.getDriverId();
                 LatLng newPosition =
                         new LatLng(location.getLatitude(), location.getLongitude());
 
-                if (driverMarkers.containsKey(driverId)) {
+                Marker marker = driverMarkers.get(driverId);
 
-                    // UPDATE - we just move the existing marker. In a real app, you might want to animate this movement.
-                    driverMarkers.get(driverId).setPosition(newPosition);
-                    driverMarkers.get(driverId).setIcon(bitmapDescriptorFromVector(
-                            requireContext(),
-                            "".equals(location.getStatus()) ? R.drawable.ic_car_green : R.drawable.ic_car_red,
+                if (marker != null) {
+
+                    marker.setPosition(newPosition);
+
+                    marker.setIcon(bitmapDescriptorFromVector(
+                            getContext(),   // više ne koristimo requireContext()
+                            "".equals(location.getStatus())
+                                    ? R.drawable.ic_car_green
+                                    : R.drawable.ic_car_red,
                             120, 120
-                    )); // IDLE
+                    ));
 
                 } else {
-                    // CREATE
+
+                    Marker newMarker = mMap.addMarker(
+                            new MarkerOptions()
+                                    .position(newPosition)
+                                    .icon(bitmapDescriptorFromVector(
+                                            getContext(),
+                                            "".equals(location.getStatus())
+                                                    ? R.drawable.ic_car_green
+                                                    : R.drawable.ic_car_red,
+                                            120, 120
+                                    ))
+                    );
+
+                    driverMarkers.put(driverId, newMarker);
                 }
             });
         });
     }
+
 
     private void loadActiveDrivers() {
         new Thread(() -> {
@@ -915,12 +937,12 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
             marker.setPosition(latLng);
 
             // Ako marker ne postoji, dodaj novi
-            marker = mMap.addMarker(new MarkerOptions()
-                    .position(latLng)
-                    .title("Driver " + driverId)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-            );
-            driverMarkers.put(driverId, marker);
+//            marker = mMap.addMarker(new MarkerOptions()
+//                    .position(latLng)
+//                    .title("Driver " + driverId)
+//                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+//            );
+//            driverMarkers.put(driverId, marker);
         } else {
             // Ako marker ne postoji, dodaj novi
 //            marker = mMap.addMarker(new MarkerOptions()
@@ -941,6 +963,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         if (webSocketManager != null) {
             webSocketManager.disconnect();
         }
+        driverMarkers.clear();
     }
 
     private void showRideTrackingNotification(Long rideId) {

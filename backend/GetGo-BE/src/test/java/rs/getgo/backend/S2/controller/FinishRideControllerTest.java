@@ -1,9 +1,10 @@
-package rs.getgo.backend.controllers;
+package rs.getgo.backend.S2.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import rs.getgo.backend.controllers.RideController;
 import rs.getgo.backend.dtos.ride.UpdateRideDTO;
 import rs.getgo.backend.dtos.ride.UpdatedRideDTO;
 import rs.getgo.backend.services.RideEstimateService;

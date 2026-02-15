@@ -82,7 +82,6 @@ public class RideControllerIntegrationTest {
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.rideId").isNumber());
 
-        // Verify ride was actually persisted in DB
         List<ActiveRide> rides = activeRideRepository.findAll();
         ActiveRide createdRide = rides.stream()
                 .filter(r -> r.getPayingPassenger().getEmail().equals("p@gmail.com"))
@@ -91,9 +90,9 @@ public class RideControllerIntegrationTest {
                 .findFirst()
                 .orElse(null);
 
-        assertNotNull(createdRide, "Ride should be persisted in DB");
-        assertNotNull(createdRide.getDriver(), "Driver should be assigned");
-        assertNotNull(createdRide.getRoute(), "Route should be created");
+        assertNotNull(createdRide, "Ride not be null");
+        assertNotNull(createdRide.getDriver(), "Driver should not be null");
+        assertNotNull(createdRide.getRoute(), "Route should not be null");
         assertEquals("Zarka Zrenjanina 5", createdRide.getRoute().getStartingPoint());
         assertEquals("Bulevar Evrope 4-57", createdRide.getRoute().getEndingPoint());
         assertEquals(2, createdRide.getRoute().getWaypoints().size());

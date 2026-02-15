@@ -145,21 +145,11 @@ public class RateRideE2ETest {
 
         ratePage.submit();
 
-        // treba da ostane na /rate stranici
+        //
         wait.until(d -> d.getCurrentUrl().contains("/rate"));
         assertTrue(driver.getCurrentUrl().contains("/rate"));
 
-        // debug dump if snackbar not found
-        boolean found = ratePage.waitForSnackBarWithText("Please fill all fields", 5);
-        if (!found) {
-            try {
-                Object bodyText = ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("return document.body.innerText || document.body.textContent;");
-                System.out.println("DEBUG: body text after submit:\n" + String.valueOf(bodyText).substring(0, Math.min(2000, String.valueOf(bodyText).length())));
-            } catch (Exception ignored) {
-            }
-        }
-
-        assertTrue(found);
+        assertTrue(ratePage.waitForSnackBarWithText("Please fill all fields", 5));
     }
 
     @Test
@@ -204,7 +194,6 @@ public class RateRideE2ETest {
         ratePage.submit();
 
         assertTrue(ratePage.waitForSnackBarWithText("Please fill all fields", 5));
-
     }
 
 

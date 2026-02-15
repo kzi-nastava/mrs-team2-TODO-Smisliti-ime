@@ -137,33 +137,8 @@ public class RatePage {
                 }
                 return false;
             });
-            if (!found) {
-                List<WebElement> all = new ArrayList<>();
-                for (String sel : SNACK_SELECTORS) all.addAll(driver.findElements(By.cssSelector(sel)));
-                System.out.println("DEBUG: snack-bar containers found: " + all.size());
-                for (int i = 0; i < all.size(); i++) {
-                    try {
-                        System.out.println("DEBUG: snack[" + i + "] text='" + all.get(i).getText() + "' (selector?)");
-                    } catch (Exception ex) {
-                        System.out.println("DEBUG: snack[" + i + "] unable to get text: " + ex.getMessage());
-                    }
-                }
-            }
             return found;
         } catch (Exception e) {
-            try {
-                List<WebElement> all = new ArrayList<>();
-                for (String sel : SNACK_SELECTORS) all.addAll(driver.findElements(By.cssSelector(sel)));
-                System.out.println("DEBUG(EX): snack-bar containers found: " + all.size());
-                for (int i = 0; i < all.size(); i++) {
-                    try {
-                        System.out.println("DEBUG(EX): snack[" + i + "] text='" + all.get(i).getText() + "'");
-                    } catch (Exception ex) {
-                        System.out.println("DEBUG(EX): snack[" + i + "] unable to get text: " + ex.getMessage());
-                    }
-                }
-            } catch (Exception ignored) {
-            }
             return false;
         }
     }

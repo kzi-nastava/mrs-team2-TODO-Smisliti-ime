@@ -166,7 +166,7 @@ public class RideController {
     @PreAuthorize("hasRole('PASSENGER')")
     @PostMapping("/order")
     public ResponseEntity<CreatedRideResponseDTO> orderRide(
-            @RequestBody CreateRideRequestDTO request
+            @Valid @RequestBody CreateRideRequestDTO request
     ) {
         String email = AuthUtils.getCurrentUserEmail();
         CreatedRideResponseDTO response = rideOrderService.orderRide(request, email);

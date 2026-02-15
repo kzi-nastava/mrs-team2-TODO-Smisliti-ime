@@ -35,6 +35,42 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(RideNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleRideNotFound(RideNotFoundException ex) {
+        logger.warn("RideNotFound: {}", ex.getMessage());
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Not Found");
+        error.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(InvalidRideStateException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidRideState(InvalidRideStateException ex) {
+        logger.warn("InvalidRideState: {}", ex.getMessage());
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Bad Request");
+        error.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(NullPayingPassengerException.class)
+    public ResponseEntity<Map<String, String>> handleNullPayingPassenger(NullPayingPassengerException ex) {
+        logger.warn("NullPayingPassenger: {}", ex.getMessage());
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Bad Request");
+        error.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(DatabaseException.class)
+    public ResponseEntity<Map<String, String>> handleDatabaseException(DatabaseException ex) {
+        logger.error("DatabaseException: {}", ex.getMessage(), ex);
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Internal Server Error");
+        error.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, String>> handleIllegalStateException(IllegalStateException ex) {
         logger.warn("IllegalStateException: {}", ex.getMessage());

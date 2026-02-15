@@ -17,7 +17,6 @@ import rs.getgo.backend.model.entities.Passenger;
 import rs.getgo.backend.model.enums.RideStatus;
 import rs.getgo.backend.repositories.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 @ContextConfiguration(classes = GetGoBeApplication.class)
 @TestPropertySource(locations = "classpath:application-test.properties")
-@Sql({"/sql/active-ride-test-data.sql", "/sql/panic-test-data.sql", "/sql/inconsistency-report-test-data.sql", "/sql/completed-ride-test-data.sql"})
+@Sql({"/sql/S1/active-ride-test-data.sql", "/sql/S3/panic-test-data.sql", "/sql/S3/inconsistency-report-test-data.sql", "/sql/S3/completed-ride-test-data.sql"})
 public class FinishRideRepositoryTest {
 
     @Autowired

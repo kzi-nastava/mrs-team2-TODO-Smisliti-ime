@@ -1,4 +1,4 @@
-package rs.getgo.backend.repository;
+package rs.getgo.backend.S3.repository;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("test")
 @ContextConfiguration(classes = GetGoBeApplication.class)
 @TestPropertySource(locations = "classpath:application-test.properties")
-@Sql(scripts = "/sql/inconsistency-report-test-data.sql")
+@Sql(scripts = "/sql/S3/inconsistency-report-test-data.sql")
 public class InconsistencyReportRepositoryTest {
 
     @Autowired

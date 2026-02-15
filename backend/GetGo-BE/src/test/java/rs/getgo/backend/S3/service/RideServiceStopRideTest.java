@@ -1,4 +1,4 @@
-package rs.getgo.backend.service;
+package rs.getgo.backend.S3.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +14,10 @@ import rs.getgo.backend.model.enums.RideStatus;
 import rs.getgo.backend.repositories.*;
 import rs.getgo.backend.services.NotificationService;
 import rs.getgo.backend.services.impl.rides.RideServiceImpl;
+import rs.getgo.backend.exceptions.RideNotFoundException;
+import rs.getgo.backend.exceptions.InvalidRideStateException;
+import rs.getgo.backend.exceptions.NullPayingPassengerException;
+import rs.getgo.backend.exceptions.DatabaseException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -45,7 +49,6 @@ public class RideServiceStopRideTest {
     @Mock
     private NotificationService notificationService;
 
-    // additional mocks used by RideServiceImpl during stopRide
     @Mock
     private DriverRepository driverRepository;
 
@@ -131,7 +134,7 @@ public class RideServiceStopRideTest {
         when(activeRideRepository.findById(2L)).thenReturn(Optional.empty());
 
         StopRideDTO dto = new StopRideDTO();
-        assertThrows(IllegalStateException.class, () -> rideService.stopRide(2L, dto));
+        assertThrows(RideNotFoundException.class, () -> rideService.stopRide(2L, dto));
     }
 
     @Test
@@ -141,7 +144,7 @@ public class RideServiceStopRideTest {
         when(activeRideRepository.findById(1L)).thenReturn(Optional.of(r));
 
         StopRideDTO dto = new StopRideDTO();
-        assertThrows(IllegalStateException.class, () -> rideService.stopRide(1L, dto));
+        assertThrows(InvalidRideStateException.class, () -> rideService.stopRide(1L, dto));
     }
 
     @Test
@@ -181,7 +184,6 @@ public class RideServiceStopRideTest {
 
     @Test
     public void testStopRide_EstimatedDurationZero_UsesEstimatedPrice() {
-        // set estimated duration to zero -> fallback to estimatedPrice
         activeRide.getRoute().setEstTimeMin(0.0);
         activeRide.setEstimatedPrice(123.45);
 
@@ -202,13 +204,11 @@ public class RideServiceStopRideTest {
         RideCompletionDTO result = rideService.stopRide(1L, dto);
 
         assertNotNull(result);
-        // price should equal estimatedPrice when est duration <= 0
         assertEquals(123.45, result.getPrice(), 0.0001);
     }
 
     @Test
     public void testStopRide_NoDriver_DoesNotTryToSaveDriver() {
-        // ensure driver release logic executes: driver exists and must be saved as active=true
         Driver drv = activeRide.getDriver();
         drv.setActive(false);
 
@@ -229,15 +229,12 @@ public class RideServiceStopRideTest {
         RideCompletionDTO result = rideService.stopRide(1L, dto);
 
         assertNotNull(result);
-        // driverRepository.save should be called to set driver active
         verify(driverRepository, times(1)).save(any(Driver.class));
-        // notifications still created for passenger
         verify(notificationService, atLeastOnce()).createAndNotify(anyLong(), any(), anyString(), anyString(), any(LocalDateTime.class));
     }
 
     @Test
     public void testStopRide_LinkedPassengers_ReportLinkedToCompletedRide() {
-        // add one linked passenger and prepare a report
         Passenger linked = new Passenger();
         linked.setId(8L);
         linked.setEmail("linked@example.com");
@@ -264,13 +261,11 @@ public class RideServiceStopRideTest {
         RideCompletionDTO result = rideService.stopRide(1L, dto);
 
         assertNotNull(result);
-        // verify report was saved with completedRide set
         verify(reportRepository, atLeastOnce()).save(argThat(r -> ((InconsistencyReport) r).getCompletedRide() != null));
     }
 
     @Test
     public void testStopRide_NullPayingPassenger_Throws() {
-        // simulate missing paying passenger
         activeRide.setPayingPassenger(null);
         when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
 
@@ -278,7 +273,7 @@ public class RideServiceStopRideTest {
         dto.setLatitude(1.0);
         dto.setLongitude(1.0);
 
-        assertThrows(NullPointerException.class, () -> rideService.stopRide(1L, dto));
+        assertThrows(NullPayingPassengerException.class, () -> rideService.stopRide(1L, dto));
     }
 
     @Test
@@ -346,5 +341,4 @@ public class RideServiceStopRideTest {
             int cnt=0; for(Object o: iter){ if(o instanceof Panic){ Panic pp=(Panic)o; if(pp.getRideId()!=null && pp.getRideId().equals(1L)) cnt++; }} return cnt==1;
         }));
     }
-
 }

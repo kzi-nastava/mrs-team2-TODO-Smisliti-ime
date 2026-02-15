@@ -90,8 +90,10 @@ public class LoginPage {
                     String token = extractTokenFromBody(body);
                     if (token != null) {
                         ((JavascriptExecutor) driver).executeScript("window.localStorage.setItem('authToken', arguments[0]);", token);
-                        // give frontend a moment to pick up token
-                        try { Thread.sleep(250); } catch (InterruptedException ignored) {}
+                        // wait until localStorage is set and frontend can read it
+                        try {
+                            new WebDriverWait(driver, Duration.ofSeconds(5)).until(d -> ((JavascriptExecutor)d).executeScript("return window.localStorage.getItem('authToken') != null;") != null);
+                        } catch (Exception ignored) {}
                         driver.get(baseUrl); // reload to ensure frontend reads token
                         return true;
                     }

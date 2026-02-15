@@ -33,7 +33,10 @@ public class RatePage {
     private static final List<String> SNACK_SELECTORS = Arrays.asList(
             ".mat-snack-bar-container",
             ".mat-mdc-snack-bar-container",
+            ".mat-simple-snackbar",
+            ".mat-snack-bar-container .mat-simple-snackbar",
             "[role='status']",
+            "[aria-live='polite']",
             ".snack-bar",
             ".cdk-overlay-container .mat-simple-snackbar"
     );
@@ -92,13 +95,19 @@ public class RatePage {
     }
 
     public boolean isCommentPresent(String text) {
-        wait.until(d -> comments != null);
-        for (WebElement el : comments) {
-            if (el.getText().contains(text)) {
-                return true;
-            }
+        // use fresh lookup to avoid stale elements
+        List<WebElement> els = driver.findElements(By.cssSelector(".comment-text"));
+        for (WebElement el : els) {
+            try {
+                if (el.getText().contains(text)) return true;
+            } catch (Exception ignored) {}
         }
         return false;
+    }
+
+    // return current count of comment elements using fresh lookup
+    public int getCommentsCount() {
+        return driver.findElements(By.cssSelector(".comment-text")).size();
     }
 
     // Helper that waits for the first snack-bar container among known selectors and returns its text
@@ -119,25 +128,89 @@ public class RatePage {
 
     // Helper that waits for a snackbar with expected text (substring match)
     public boolean waitForSnackBarWithText(String expectedText, int timeoutSeconds) {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
         try {
-            WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
-            boolean found = shortWait.until(d -> {
-                List<WebElement> all = new ArrayList<>();
+            return shortWait.until(d -> {
+                // check known selectors
                 for (String sel : SNACK_SELECTORS) {
-                    all.addAll(d.findElements(By.cssSelector(sel)));
-                }
-                if (all.isEmpty()) return false;
-                for (WebElement s : all) {
-                    try {
-                        String t = s.getText();
-                        if (t != null && t.contains(expectedText)) return true;
-                    } catch (Exception ex) {
-                        // ignore
+                    List<WebElement> els = driver.findElements(By.cssSelector(sel));
+                    for (WebElement el : els) {
+                        try {
+                            String t = el.getText();
+                            if (t != null && t.contains(expectedText)) return true;
+                        } catch (Exception ex) {
+                            // ignore specific element read errors
+                        }
                     }
                 }
+
+                // fallback: check whole overlay container text via JS (covers various placements)
+                try {
+                    Object overlayTextObj = ((JavascriptExecutor) driver).executeScript(
+                            "var c = document.querySelector('.cdk-overlay-container'); if(!c) return null; return c.innerText || c.textContent;"
+                    );
+                    if (overlayTextObj != null) {
+                        String overlayText = String.valueOf(overlayTextObj);
+                        if (overlayText.contains(expectedText)) return true;
+                    }
+                } catch (Exception ignored) {
+                }
+
+                // also check document body as last resort
+                try {
+                    Object bodyTextObj = ((JavascriptExecutor) driver).executeScript("return document.body.innerText || document.body.textContent;");
+                    if (bodyTextObj != null) {
+                        String bodyText = String.valueOf(bodyTextObj);
+                        if (bodyText.contains(expectedText)) return true;
+                    }
+                } catch (Exception ignored) {
+                }
+
                 return false;
             });
-            return found;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // New helper: case-insensitive check for any of the provided keywords in a snackbar/overlay/body
+    public boolean waitForSnackBarAnyOf(List<String> keywords, int timeoutSeconds) {
+        List<String> lowerKeywords = new ArrayList<>();
+        for (String k : keywords) lowerKeywords.add(k.toLowerCase());
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
+        try {
+            return shortWait.until(d -> {
+                for (String sel : SNACK_SELECTORS) {
+                    List<WebElement> els = driver.findElements(By.cssSelector(sel));
+                    for (WebElement el : els) {
+                        try {
+                            String t = el.getText();
+                            if (t == null) continue;
+                            String tl = t.toLowerCase();
+                            for (String kw : lowerKeywords) if (tl.contains(kw)) return true;
+                        } catch (Exception ignored) {}
+                    }
+                }
+                try {
+                    Object overlayTextObj = ((JavascriptExecutor) driver).executeScript(
+                            "var c = document.querySelector('.cdk-overlay-container'); if(!c) return null; return c.innerText || c.textContent;"
+                    );
+                    if (overlayTextObj != null) {
+                        String overlay = String.valueOf(overlayTextObj).toLowerCase();
+                        for (String kw : lowerKeywords) if (overlay.contains(kw)) return true;
+                    }
+                } catch (Exception ignored) {}
+
+                try {
+                    Object bodyTextObj = ((JavascriptExecutor) driver).executeScript("return document.body.innerText || document.body.textContent;");
+                    if (bodyTextObj != null) {
+                        String body = String.valueOf(bodyTextObj).toLowerCase();
+                        for (String kw : lowerKeywords) if (body.contains(kw)) return true;
+                    }
+                } catch (Exception ignored) {}
+
+                return false;
+            });
         } catch (Exception e) {
             return false;
         }

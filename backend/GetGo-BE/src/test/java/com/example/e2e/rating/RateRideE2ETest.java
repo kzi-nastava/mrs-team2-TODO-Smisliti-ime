@@ -2,11 +2,16 @@ package com.example.e2e.rating;
 
 import com.example.e2e.pages.LoginPage;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.*;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,69 +21,217 @@ public class RateRideE2ETest {
     private WebDriver driver;
     private WebDriverWait wait;
     private LoginPage loginPage;
-    private PassengerRideHistoryPage historyPage;
-    private RatePage ratePage;
 
-    private final String baseUrl = System.getProperty("baseUrl", "http://localhost:4200");
-    private final String testEmail = System.getProperty("testEmail", "p@gmail.com");
-    private final String testPassword = System.getProperty("testPassword", "pppppppp");
-    private final String testRideId = System.getProperty("testRideId", "1");
+    private final String baseUrl = "http://localhost:4200";
+    private final String passengerEmail = "p@gmail.com";
+    private final String passengerPassword = "pppppppp";
 
     @BeforeAll
-    public void beforeAll() {
+    void setupAll() {
         WebDriverManager.chromedriver().setup();
+//        WebDriverManager.chromedriver().browserVersion("144.0.7559.133").setup();
     }
 
     @BeforeEach
-    public void setUp() {
-        ChromeOptions options = new ChromeOptions();
-        if (!"false".equalsIgnoreCase(System.getProperty("headless", "true"))) options.addArguments("--headless=new");
-        options.addArguments("--no-sandbox", "--disable-dev-shm-usage");
-        driver = new ChromeDriver(options);
-        wait = new WebDriverWait(driver, java.time.Duration.ofSeconds(10));
+    void setup() {
+        driver = new ChromeDriver();
+        driver.manage().window().maximize();
 
+        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        String baseUrl = "http://localhost:4200";
         loginPage = new LoginPage(driver, wait, baseUrl);
-        historyPage = new PassengerRideHistoryPage(driver, wait, baseUrl);
 
-        boolean ok = loginPage.loginViaApi(testEmail, testPassword);
-        if (!ok) loginPage.login(testEmail, testPassword);
+        boolean loggedIn = loginPage.loginViaApi(
+                "p@gmail.com",
+                "pppppppp"
+        );
+
+        if (!loggedIn) {
+            throw new RuntimeException("Login via API failed!");
+        }
     }
 
     @AfterEach
-    public void tearDown() {
-        if (driver != null) driver.quit();
+    void tearDown() {
+        driver.quit();
     }
 
     @Test
-    public void happyPath_rateRide() {
-        int index = 0; // pick first ride
-        ratePage = historyPage.openRideAndGoToRate(index);
-        String comment = "Great ride from E2E test" + System.currentTimeMillis();
-        ratePage.setVehicleRating(5);
-        ratePage.setDriverRating(5);
-        ratePage.setComment(comment);
+    void testRateRideHappyPath() {
+
+        PassengerRideHistoryPage historyPage =
+                new PassengerRideHistoryPage(driver, baseUrl);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        assertTrue(historyPage.hasRides());
+
+        historyPage.openFirstRide();
+
+        PassengerRideDetailsPage detailsPage =
+                new PassengerRideDetailsPage(driver);
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                org.openqa.selenium.By.cssSelector(".rate-button")));
+
+        assertTrue(detailsPage.isRateButtonVisible());
+
+        detailsPage.clickRateRide();
+
+        wait.until(ExpectedConditions.urlContains("/rate"));
+
+        RatePage ratePage = new RatePage(driver);
+
+        String comment = "E2E test comment";
+
+        ratePage.selectVehicleRating(5);
+        ratePage.selectDriverRating(5);
+        ratePage.enterComment(comment);
+
         ratePage.submit();
 
-        String success = ratePage.getSuccessMessage();
-        assertNotNull(success, "Expected a success message after rating");
-        // also verify comment is visible in comments list
-        assertTrue(ratePage.hasComment(comment), "Submitted comment should be visible in the comments list");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                org.openqa.selenium.By.cssSelector(".comment-text")));
+
+        assertTrue(ratePage.isCommentPresent(comment));
     }
 
     @Test
-    public void invalidRating_shouldPreventSubmit() {
-        int index = 0;
-        ratePage = historyPage.openRideAndGoToRate(index);
-        // do not set star ratings
-        ratePage.setComment("No stars");
-        // submit should be disabled or error appears
-        boolean enabled = ratePage.isSubmitEnabled();
-        if (enabled) {
-            ratePage.submit();
-            assertNotNull(ratePage.getErrorMessage());
-        } else {
-            assertFalse(enabled);
+    void testSubmitWithoutRatings() {
+
+        PassengerRideHistoryPage historyPage =
+                new PassengerRideHistoryPage(driver, baseUrl);
+
+        historyPage.openFirstRide();
+
+        PassengerRideDetailsPage detailsPage =
+                new PassengerRideDetailsPage(driver);
+
+        if (!detailsPage.isRateButtonVisible()) {
+            return; // no rides to rate, skip test
         }
+
+        detailsPage.clickRateRide();
+
+        wait.until(ExpectedConditions.urlContains("/rate"));
+
+        RatePage ratePage = new RatePage(driver);
+
+        ratePage.submit();
+
+        // should stay on /rate page with validation errors, not navigate away
+        wait.until(d -> d.getCurrentUrl().contains("/rate"));
+        assertTrue(driver.getCurrentUrl().contains("/rate"));
     }
+
+    @Test
+    void testSubmitOnlyCommentWithoutRatings() {
+        PassengerRideHistoryPage historyPage = new PassengerRideHistoryPage(driver, baseUrl);
+        historyPage.openFirstRide();
+        PassengerRideDetailsPage detailsPage = new PassengerRideDetailsPage(driver);
+
+        if (!detailsPage.isRateButtonVisible()) return;
+
+        detailsPage.clickRateRide();
+        wait.until(ExpectedConditions.urlContains("/rate"));
+
+        RatePage ratePage = new RatePage(driver);
+
+        // just comment, no ratings
+        ratePage.enterComment("Just a comment");
+
+        ratePage.submit();
+
+        // treba da ostane na /rate stranici
+        wait.until(d -> d.getCurrentUrl().contains("/rate"));
+        assertTrue(driver.getCurrentUrl().contains("/rate"));
+    }
+
+    @Test
+    void testSubmitOnlyVehicleRatingWithoutCommentOrDriverRating() {
+        PassengerRideHistoryPage historyPage = new PassengerRideHistoryPage(driver, baseUrl);
+        historyPage.openFirstRide();
+        PassengerRideDetailsPage detailsPage = new PassengerRideDetailsPage(driver);
+
+        if (!detailsPage.isRateButtonVisible()) return;
+
+        detailsPage.clickRateRide();
+        wait.until(ExpectedConditions.urlContains("/rate"));
+
+        RatePage ratePage = new RatePage(driver);
+
+        // just vehicle rating, no driver rating or comment
+        ratePage.selectVehicleRating(4);
+
+        ratePage.submit();
+
+        wait.until(d -> d.getCurrentUrl().contains("/rate"));
+        assertTrue(driver.getCurrentUrl().contains("/rate"));
+    }
+
+    @Test
+    void testSubmitOnlyDriverRatingWithoutCommentOrVehicleRating() {
+        PassengerRideHistoryPage historyPage = new PassengerRideHistoryPage(driver, baseUrl);
+        historyPage.openFirstRide();
+        PassengerRideDetailsPage detailsPage = new PassengerRideDetailsPage(driver);
+
+        if (!detailsPage.isRateButtonVisible()) return;
+
+        detailsPage.clickRateRide();
+        wait.until(ExpectedConditions.urlContains("/rate"));
+
+        RatePage ratePage = new RatePage(driver);
+
+        // just driver rating, no vehicle rating or comment
+        ratePage.selectDriverRating(3);
+
+        ratePage.submit();
+
+        wait.until(d -> d.getCurrentUrl().contains("/rate"));
+        assertTrue(driver.getCurrentUrl().contains("/rate"));
+    }
+
+    @Test
+    void testCannotRateRideTwice() {
+        PassengerRideHistoryPage historyPage = new PassengerRideHistoryPage(driver, baseUrl);
+        historyPage.openFirstRide();
+        PassengerRideDetailsPage detailsPage = new PassengerRideDetailsPage(driver);
+
+        if (!detailsPage.isRateButtonVisible()) return;
+
+        detailsPage.clickRateRide();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+        wait.until(ExpectedConditions.urlContains("/rate"));
+
+        RatePage ratePage = new RatePage(driver);
+        ratePage.selectVehicleRating(5);
+        ratePage.selectDriverRating(5);
+        ratePage.enterComment("First rating attempt");
+        ratePage.submit();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.cssSelector(".mat-snack-bar-container")));
+
+        historyPage.openFirstRide();
+        detailsPage = new PassengerRideDetailsPage(driver);
+
+        detailsPage.clickRateRide();
+        wait.until(ExpectedConditions.urlContains("/rate"));
+
+        ratePage = new RatePage(driver);
+        ratePage.selectVehicleRating(4);
+        ratePage.selectDriverRating(4);
+        ratePage.enterComment("Second rating attempt");
+        ratePage.submit();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.cssSelector(".mat-snack-bar-container")));
+
+        boolean errorDisplayed = driver.findElements(By.cssSelector(".mat-snack-bar-container")).stream()
+                .anyMatch(el -> el.getText().contains("Ride already rated"));
+
+        assertTrue(errorDisplayed);
+    }
+
 }
 

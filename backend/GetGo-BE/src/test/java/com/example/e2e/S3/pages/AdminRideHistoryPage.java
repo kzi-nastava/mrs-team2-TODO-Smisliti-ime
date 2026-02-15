@@ -195,6 +195,7 @@ public class AdminRideHistoryPage {
         };
 
         WebElement reset = null;
+        boolean usedJsFallback = false;
         for (By locator : locators) {
             try {
                 reset = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
@@ -217,32 +218,53 @@ public class AdminRideHistoryPage {
 
         if (reset == null) {
             System.out.println("WARN clickReset: Reset button not found with any locator");
-            throw new NoSuchElementException("Reset button not found");
-        }
-
-        try {
-            // scroll into view and click using safe patterns
-            try { ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", reset); } catch (Exception ignored) {}
-            WebDriverWait clickableWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(10));
-            clickableWait.until(ExpectedConditions.elementToBeClickable(reset));
+            // fallback: try to reset the form via JS (clear inputs and date, attempt to close selects)
             try {
-                reset.click();
-            } catch (org.openqa.selenium.ElementClickInterceptedException ex) {
-                try { ((JavascriptExecutor) driver).executeScript("arguments[0].click();", reset); } catch (Exception jsEx) { throw ex; }
-            }
-        } catch (Exception e) {
-            try { ((JavascriptExecutor) driver).executeScript("arguments[0].click();", reset); } catch (Exception ex) {
-                System.out.println("WARN clickReset: failed to click reset: " + ex.getMessage());
-                throw new RuntimeException(ex);
+                String js = "(function(){ try{ var email = document.querySelector('input[formcontrolname=\\'email\\']'); if(email){ email.value=''; email.dispatchEvent(new Event('input',{bubbles:true})); email.dispatchEvent(new Event('change',{bubbles:true})); } var d = document.querySelector('input[formcontrolname=\\'date\\']'); if(d){ d.value=''; d.dispatchEvent(new Event('input',{bubbles:true})); d.dispatchEvent(new Event('change',{bubbles:true})); } var sels = document.querySelectorAll('mat-select'); sels.forEach(function(s){ try{ var span = s.querySelector('.mat-select-value-text span'); if(span) span.textContent=''; }catch(e){} }); return true; }catch(e){ return false; } })();";
+                Object r = ((JavascriptExecutor) driver).executeScript(js);
+                System.out.println("DEBUG clickReset: performed JS fallback to clear form, execRes=" + r);
+                usedJsFallback = true;
+            } catch (Exception ex) {
+                System.out.println("ERROR clickReset: JS fallback failed: " + ex.getMessage());
+                throw new NoSuchElementException("Reset button not found and JS fallback failed");
             }
         }
 
-        try {
-            waitForItemsLoaded();
-            ensureItemsPopulated();
-        } catch (Exception e) {
-            System.out.println("WARN clickReset: wait after reset failed: " + e.getMessage());
-            dumpDebug("after-reset-wait-failed");
+        // If a reset button was located, try to click it; otherwise we've done JS fallback so continue
+        if (reset != null) {
+            try {
+                // scroll into view and click using safe patterns
+                try { ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(0);", reset); } catch (Exception ignored) {}
+                WebDriverWait clickableWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(10));
+                clickableWait.until(ExpectedConditions.elementToBeClickable(reset));
+                try {
+                    reset.click();
+                } catch (org.openqa.selenium.ElementClickInterceptedException ex) {
+                    try { ((JavascriptExecutor) driver).executeScript("arguments[0].click();", reset); } catch (Exception jsEx) { throw ex; }
+                }
+            } catch (Exception e) {
+                try { ((JavascriptExecutor) driver).executeScript("arguments[0].click();", reset); } catch (Exception ex) {
+                    System.out.println("WARN clickReset: failed to click reset: " + ex.getMessage());
+                    throw new RuntimeException(ex);
+                }
+            }
+        } else {
+            // reset null, JS fallback already executed
+            System.out.println("INFO clickReset: no Reset button found, used JS fallback to clear form");
+        }
+
+        // Only wait for items to appear when we actually clicked a Reset button.
+        if (!usedJsFallback) {
+            try {
+                waitForItemsLoaded();
+                ensureItemsPopulated();
+            } catch (Exception e) {
+                System.out.println("WARN clickReset: wait after reset failed: " + e.getMessage());
+                dumpDebug("after-reset-wait-failed");
+            }
+        } else {
+            // Skip waiting since JS fallback may leave the page in a clean/empty state
+            System.out.println("DEBUG clickReset: skipped post-reset wait because JS fallback was used");
         }
     }
 
@@ -288,6 +310,92 @@ public class AdminRideHistoryPage {
         } catch (Exception ignored) {
         }
         return driver.findElements(By.cssSelector(".list .item"));
+    }
+
+    // Write debug artifacts (screenshot + page source) to target/ when a wait fails
+    public void dumpDebug(String prefix) {
+        try {
+            String ts = String.valueOf(System.currentTimeMillis());
+            if (driver instanceof TakesScreenshot) {
+                File scr = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+                java.nio.file.Files.copy(scr.toPath(), Path.of("target", prefix + "-" + ts + ".png"));
+            }
+            String src = driver.getPageSource();
+            java.nio.file.Files.writeString(Path.of("target", prefix + "-" + ts + ".html"), src);
+            System.out.println("Wrote debug files: target/" + prefix + "-" + ts + ".png/html");
+        } catch (Exception e) {
+            System.out.println("Failed to write debug state: " + e.getMessage());
+        }
+    }
+
+    // Ensure items area has at least some indicative content (price/date/text)
+    private void ensureItemsPopulated() {
+        WebDriverWait shortWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(3));
+        shortWait.pollingEvery(java.time.Duration.ofMillis(200));
+        try {
+            shortWait.until(d -> {
+                try {
+                    if (!d.findElements(By.cssSelector(".list .item .card-price")).isEmpty()) return true;
+                    if (!d.findElements(By.cssSelector(".list .item .card-date")).isEmpty()) return true;
+                    List<WebElement> items = d.findElements(By.cssSelector(".list .item"));
+                    for (WebElement it : items) {
+                        try {
+                            String t = it.getText();
+                            if (t != null && (t.toLowerCase().contains("rsd") || java.util.regex.Pattern.compile("\\d{2}\\.\\d{2}\\.\\d{4}").matcher(t).find())) return true;
+                        } catch (StaleElementReferenceException ignored) {}
+                    }
+                } catch (Exception ignored) {
+                }
+                return false;
+            });
+        } catch (Exception ignored) {
+        }
+    }
+
+    private boolean isNextPageAvailable() {
+        try {
+            WebElement nextBtn = driver.findElement(By.cssSelector("mat-paginator button[aria-label='Next page']"));
+            String ariaDisabled = nextBtn.getAttribute("aria-disabled");
+            String disabled = nextBtn.getAttribute("disabled");
+            if ((ariaDisabled != null && ariaDisabled.equalsIgnoreCase("true")) || (disabled != null && disabled.equalsIgnoreCase("true"))) {
+                return false;
+            }
+            return true;
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
+    private void clickNextPageWithWait(String prevFirstText) {
+        try {
+            WebElement nextBtn = driver.findElement(By.cssSelector("mat-paginator button[aria-label='Next page']"));
+            try { ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", nextBtn); } catch (Exception ignored) {}
+            try { nextBtn.click(); } catch (org.openqa.selenium.ElementClickInterceptedException ex) {
+                try { ((JavascriptExecutor) driver).executeScript("arguments[0].click();", nextBtn); } catch (Exception e) { System.out.println("DEBUG clickNextPage: click failed: " + e.getMessage()); return; }
+            }
+            WebDriverWait shortWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(5));
+            shortWait.pollingEvery(java.time.Duration.ofMillis(200));
+            try {
+                shortWait.until(d -> {
+                    try {
+                        waitForItemsLoaded();
+                        ensureItemsPopulated();
+                        List<WebElement> items = d.findElements(By.cssSelector(".list .item"));
+                        if (items.isEmpty()) return true;
+                        String first = items.get(0).getText();
+                        if (prevFirstText == null) return true;
+                        return !first.equals(prevFirstText);
+                    } catch (Exception e) { return false; }
+                });
+            } catch (Exception ignored) {}
+        } catch (NoSuchElementException e) {
+        }
+    }
+
+    private void clickNextPage() { clickNextPageWithWait(null); }
+
+    public int countPriceElements() {
+        try { return driver.findElements(By.cssSelector(".list .item .card-price")).size(); } catch (Exception e) { return 0; }
     }
 
     public List<Integer> parsePrices(List<WebElement> items) {
@@ -366,13 +474,6 @@ public class AdminRideHistoryPage {
             }
             return false;
         });
-    }
-
-    public List<WebElement> fetchUnsortedForEmail(String email) {
-        searchWithAll(email, "Passenger", null, null, null);
-        List<WebElement> items = getResultItems();
-        if (items.isEmpty()) dumpDebug("fetch-unsorted-empty");
-        return items;
     }
 
     public List<Integer> collectAllPricesForEmail(String email) {
@@ -481,136 +582,227 @@ public class AdminRideHistoryPage {
         return all;
     }
 
-    public int countPriceElements() {
-        try {
-            return driver.findElements(By.cssSelector(".list .item .card-price")).size();
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    public List<String> getItemTexts() {
-        List<WebElement> items = driver.findElements(By.cssSelector(".list .item"));
-        List<String> texts = new ArrayList<>();
-        for (WebElement it : items) {
-            try {
-                texts.add(it.getText());
-            } catch (StaleElementReferenceException e) {
-                texts.add("<stale>");
+    // Collect durations for a given email across pages (seconds) - mirrors collectAllPricesForEmail pattern
+    public List<Integer> collectAllDurationsForEmail(String email) {
+        searchWithAll(email, "Passenger", null, null, null);
+        List<Integer> all = new ArrayList<>();
+        boolean firstIteration = true;
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        while (true) {
+            waitForItemsLoaded();
+            ensureItemsPopulated();
+            List<WebElement> items = getResultItems();
+            if (firstIteration && (items == null || items.isEmpty())) {
+                dumpDebug("collect-durations-empty-firstpage");
             }
-        }
-        return texts;
-    }
-
-    private boolean isNextPageAvailable() {
-        try {
-            WebElement nextBtn = driver.findElement(By.cssSelector("mat-paginator button[aria-label='Next page']"));
-            String ariaDisabled = nextBtn.getAttribute("aria-disabled");
-            String disabled = nextBtn.getAttribute("disabled");
-            if ((ariaDisabled != null && ariaDisabled.equalsIgnoreCase("true")) || (disabled != null && disabled.equalsIgnoreCase("true"))) {
-                return false;
-            }
-            return true;
-        } catch (NoSuchElementException e) {
-            return false;
-        }
-    }
-
-    private boolean clickNextPageWithWait(String prevFirstText) {
-        try {
-            WebElement nextBtn = driver.findElement(By.cssSelector("mat-paginator button[aria-label='Next page']"));
-            try {
-                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", nextBtn);
-            } catch (Exception ignored) {}
-            try {
-                nextBtn.click();
-            } catch (org.openqa.selenium.ElementClickInterceptedException ex) {
+            firstIteration = false;
+            List<WebElement> unique = new ArrayList<>();
+            for (WebElement it : items) {
                 try {
-                    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", nextBtn);
+                    String sig = it.getText();
+                    if (sig == null) continue;
+                    if (seen.contains(sig)) continue;
+                    seen.add(sig);
+                    unique.add(it);
+                } catch (StaleElementReferenceException sere) {
+                }
+            }
+            all.addAll(parseDurations(unique));
+            if (!isNextPageAvailable()) break;
+            clickNextPage();
+        }
+        return all;
+    }
+
+    // Collect distances for a given email across pages (km) - mirrors collectAllPricesForEmail pattern
+    public List<Double> collectAllDistancesForEmail(String email) {
+        searchWithAll(email, "Passenger", null, null, null);
+        List<Double> all = new ArrayList<>();
+        boolean firstIteration = true;
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        while (true) {
+            waitForItemsLoaded();
+            ensureItemsPopulated();
+            List<WebElement> items = getResultItems();
+            if (firstIteration && (items == null || items.isEmpty())) {
+                dumpDebug("collect-distances-empty-firstpage");
+            }
+            firstIteration = false;
+            List<WebElement> unique = new ArrayList<>();
+            for (WebElement it : items) {
+                try {
+                    String sig = it.getText();
+                    if (sig == null) continue;
+                    if (seen.contains(sig)) continue;
+                    seen.add(sig);
+                    unique.add(it);
+                } catch (StaleElementReferenceException sere) {
+                }
+            }
+            all.addAll(parseDistances(unique));
+            if (!isNextPageAvailable()) break;
+            clickNextPage();
+        }
+        return all;
+    }
+
+    // Parse durations (seconds) from item list
+    public List<Integer> parseDurations(List<WebElement> items) {
+        List<Integer> durations = new ArrayList<>();
+        if (items == null || items.isEmpty()) items = driver.findElements(By.cssSelector(".list .item"));
+        java.util.regex.Pattern pMinDec = java.util.regex.Pattern.compile("(\\d+[\\.,]?\\d*)\\s*min", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Pattern pHms = java.util.regex.Pattern.compile("(\\d+):(\\d{2})(?::(\\d{2}))?");
+        for (WebElement item : items) {
+            try {
+                String txt = null;
+                try {
+                    txt = (String) ((JavascriptExecutor) driver).executeScript("return (arguments[0].textContent || arguments[0].innerText || '');", item);
                 } catch (Exception e) {
-                    System.out.println("DEBUG clickNextPage: click failed: " + e.getMessage());
-                    return false;
+                    try { txt = item.getText(); } catch (Exception ignored) { txt = null; }
                 }
-            }
-            WebDriverWait shortWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(5));
-            shortWait.pollingEvery(java.time.Duration.ofMillis(200));
-            try {
-                shortWait.until(d -> {
-                    try {
-                        waitForItemsLoaded();
-                        ensureItemsPopulated();
-                        List<WebElement> items = d.findElements(By.cssSelector(".list .item"));
-                        if (items.isEmpty()) return true;
-                        String first = items.get(0).getText();
-                        if (prevFirstText == null) return true;
-                        return !first.equals(prevFirstText);
-                    } catch (Exception e) {
-                        return false;
-                    }
-                });
-            } catch (Exception ignored) {
-            }
-            return true;
-        } catch (NoSuchElementException e) {
-            return false;
-        }
-    }
-
-    private void clickNextPage() {
-        clickNextPageWithWait(null);
-    }
-
-    public void dumpDebug(String prefix) {
-        try {
-            String ts = String.valueOf(System.currentTimeMillis());
-            if (driver instanceof TakesScreenshot) {
-                File scr = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-                java.nio.file.Files.copy(scr.toPath(), Path.of("target", prefix + "-" + ts + ".png"));
-            }
-            String src = driver.getPageSource();
-            java.nio.file.Files.writeString(Path.of("target", prefix + "-" + ts + ".html"), src);
-            System.out.println("Wrote debug files: target/" + prefix + "-" + ts + ".png/html");
-        } catch (Exception e) {
-            System.out.println("Failed to write debug state: " + e.getMessage());
-        }
-    }
-
-    private void ensureItemsPopulated() {
-        WebDriverWait shortWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(3));
-        shortWait.pollingEvery(java.time.Duration.ofMillis(200));
-        try {
-            shortWait.until(d -> {
-                try {
-                    if (!d.findElements(By.cssSelector(".list .item .card-price")).isEmpty()) return true;
-                    if (!d.findElements(By.cssSelector(".list .item .card-date")).isEmpty()) return true;
-                    List<WebElement> items = d.findElements(By.cssSelector(".list .item"));
-                    for (WebElement it : items) {
+                if (txt == null) continue;
+                String lower = txt.toLowerCase();
+                int pos = lower.indexOf("estimated duration");
+                if (pos >= 0) {
+                    String snippet = txt.substring(pos, Math.min(txt.length(), pos + 80));
+                    java.util.regex.Matcher m1 = pMinDec.matcher(snippet);
+                    if (m1.find()) {
                         try {
-                            String t = it.getText();
-                            if (t != null && (t.toLowerCase().contains("rsd") || java.util.regex.Pattern.compile("\\d{2}\\.\\d{2}\\.\\d{4}").matcher(t).find())) return true;
-                        } catch (StaleElementReferenceException ignored) {}
+                            String num = m1.group(1).replace(',', '.');
+                            double minutes = Double.parseDouble(num);
+                            durations.add((int) Math.round(minutes * 60.0));
+                            continue;
+                        } catch (Exception ignored) {}
                     }
-                } catch (Exception ignored) {
+                    java.util.regex.Matcher m2 = pHms.matcher(snippet);
+                    if (m2.find()) {
+                        try {
+                            int h = Integer.parseInt(m2.group(1));
+                            int m = Integer.parseInt(m2.group(2));
+                            int s = m2.group(3) != null ? Integer.parseInt(m2.group(3)) : 0;
+                            durations.add(h * 3600 + m * 60 + s);
+                            continue;
+                        } catch (Exception ignored) {}
+                    }
                 }
-                return false;
-            });
-        } catch (Exception ignored) {
+
+                // fallback: search whole item text for minute pattern
+                java.util.regex.Matcher mWhole = pMinDec.matcher(txt);
+                if (mWhole.find()) {
+                    try {
+                        String num = mWhole.group(1).replace(',', '.');
+                        double minutes = Double.parseDouble(num);
+                        durations.add((int) Math.round(minutes * 60.0));
+                        continue;
+                    } catch (Exception ignored) {}
+                }
+
+                // fallback: look for h:mm:ss or mm:ss
+                java.util.regex.Matcher mHms = pHms.matcher(txt);
+                if (mHms.find()) {
+                    try {
+                        int h = Integer.parseInt(mHms.group(1));
+                        int m = Integer.parseInt(mHms.group(2));
+                        int s = mHms.group(3) != null ? Integer.parseInt(mHms.group(3)) : 0;
+                        durations.add(h * 3600 + m * 60 + s);
+                        continue;
+                    } catch (Exception ignored) {}
+                }
+
+                // as last resort, avoid capturing arbitrary standalone numbers (to prevent picking price/distance)
+            } catch (StaleElementReferenceException e) {
+                // element went stale; skip
+            }
         }
+        return durations;
     }
 
+    // Parse distances (km) from item list
+    public List<Double> parseDistances(List<WebElement> items) {
+        List<Double> distances = new ArrayList<>();
+        if (items == null || items.isEmpty()) items = driver.findElements(By.cssSelector(".list .item"));
+        java.util.regex.Pattern pKm = java.util.regex.Pattern.compile("(\\d+[\\.,]?\\d*)\\s*km", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Pattern pNum = java.util.regex.Pattern.compile("(\\d+[\\.,]?\\d*)");
+        for (WebElement item : items) {
+            try {
+                String txt = (String) ((JavascriptExecutor) driver).executeScript("return arguments[0].textContent;", item);
+                if (txt == null) txt = item.getText();
+                if (txt == null) continue;
+                txt = txt.replace(',', '.');
+                java.util.regex.Matcher m1 = pKm.matcher(txt);
+                if (m1.find()) {
+                    try { distances.add(Double.parseDouble(m1.group(1))); continue; } catch (Exception ignored) {}
+                }
+                java.util.regex.Matcher m2 = pNum.matcher(txt);
+                if (m2.find()) {
+                    try { distances.add(Double.parseDouble(m2.group(1))); } catch (Exception ignored) {}
+                }
+            } catch (StaleElementReferenceException e) {
+            }
+        }
+        return distances;
+    }
+
+    // Collect durations across pages for the current filter
+    public List<Integer> collectAllDurationsForCurrentFilter() {
+        List<Integer> all = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        while (true) {
+            waitForItemsLoaded();
+            ensureItemsPopulated();
+            List<WebElement> items = getResultItems();
+            List<WebElement> unique = new ArrayList<>();
+            for (WebElement it : items) {
+                try {
+                    String sig = it.getText();
+                    if (sig == null) continue;
+                    if (seen.contains(sig)) continue;
+                    seen.add(sig);
+                    unique.add(it);
+                } catch (StaleElementReferenceException ignored) {}
+            }
+            all.addAll(parseDurations(unique));
+            if (!isNextPageAvailable()) break;
+            String prev = items.isEmpty() ? null : items.get(0).getText();
+            clickNextPageWithWait(prev);
+        }
+        return all;
+    }
+
+    // Collect distances across pages for the current filter
+    public List<Double> collectAllDistancesForCurrentFilter() {
+        List<Double> all = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        while (true) {
+            waitForItemsLoaded();
+            ensureItemsPopulated();
+            List<WebElement> items = getResultItems();
+            List<WebElement> unique = new ArrayList<>();
+            for (WebElement it : items) {
+                try {
+                    String sig = it.getText();
+                    if (sig == null) continue;
+                    if (seen.contains(sig)) continue;
+                    seen.add(sig);
+                    unique.add(it);
+                } catch (StaleElementReferenceException ignored) {}
+            }
+            all.addAll(parseDistances(unique));
+            if (!isNextPageAvailable()) break;
+            String prev = items.isEmpty() ? null : items.get(0).getText();
+            clickNextPageWithWait(prev);
+        }
+        return all;
+    }
+
+    // Collect prices across pages for the current filter
     public List<Integer> collectAllPricesForCurrentFilter() {
         List<Integer> all = new ArrayList<>();
-        int page = 0;
         java.util.Set<String> seen = new java.util.HashSet<>();
         while (true) {
             waitForItemsLoaded();
             ensureItemsPopulated();
             List<WebElement> items = getResultItems();
-            System.out.println("DEBUG collectAllPricesForCurrentFilter: page=" + page + " itemsFound=" + items.size());
-            if (!items.isEmpty()) {
-                try { System.out.println("DEBUG first item text: " + items.get(0).getText().replaceAll("\n"," ").substring(0, Math.min(200, items.get(0).getText().length()))); } catch (Exception ignored) {}
-            }
-
             List<WebElement> unique = new ArrayList<>();
             for (WebElement it : items) {
                 try {
@@ -619,38 +811,24 @@ public class AdminRideHistoryPage {
                     if (seen.contains(sig)) continue;
                     seen.add(sig);
                     unique.add(it);
-                } catch (StaleElementReferenceException sere) {
-                }
+                } catch (StaleElementReferenceException ignored) {}
             }
-
             all.addAll(parsePrices(unique));
-             if (!isNextPageAvailable()) break;
-             String prev = items.isEmpty() ? null : items.get(0).getText();
-             clickNextPageWithWait(prev);
-             page++;
-         }
-         if (all.isEmpty()) {
-             String src = driver.getPageSource();
-             if (src.contains("rsd")) {
-                 List<Integer> fromSrc = extractPricesFromPageSource(src);
-                 if (!fromSrc.isEmpty()) return fromSrc;
-             }
-         }
-         return all;
-     }
+            if (!isNextPageAvailable()) break;
+            String prev = items.isEmpty() ? null : items.get(0).getText();
+            clickNextPageWithWait(prev);
+        }
+        return all;
+    }
 
+    // Collect dates across pages for the current filter
     public List<LocalDate> collectAllDatesForCurrentFilter() {
         List<LocalDate> all = new ArrayList<>();
-        int page = 0;
         java.util.Set<String> seen = new java.util.HashSet<>();
         while (true) {
             waitForItemsLoaded();
             ensureItemsPopulated();
             List<WebElement> items = getResultItems();
-            System.out.println("DEBUG collectAllDatesForCurrentFilter: page=" + page + " itemsFound=" + items.size());
-            if (!items.isEmpty()) {
-                try { System.out.println("DEBUG first item text: " + items.get(0).getText().replaceAll("\n"," ").substring(0, Math.min(200, items.get(0).getText().length()))); } catch (Exception ignored) {}
-            }
             List<WebElement> unique = new ArrayList<>();
             for (WebElement it : items) {
                 try {
@@ -659,17 +837,15 @@ public class AdminRideHistoryPage {
                     if (seen.contains(sig)) continue;
                     seen.add(sig);
                     unique.add(it);
-                } catch (StaleElementReferenceException sere) {
-                }
+                } catch (StaleElementReferenceException ignored) {}
             }
             all.addAll(parseDates(unique));
-             if (!isNextPageAvailable()) break;
-             String prev = items.isEmpty() ? null : items.get(0).getText();
-             clickNextPageWithWait(prev);
-             page++;
-         }
-         return all;
-     }
+            if (!isNextPageAvailable()) break;
+            String prev = items.isEmpty() ? null : items.get(0).getText();
+            clickNextPageWithWait(prev);
+        }
+        return all;
+    }
 
     public String fetchRidesJson(String email, int page, int size, String sortBy, String direction, String startDate) {
         String backendBase = System.getProperty("backendBaseUrl", "http://localhost:8080");
@@ -689,30 +865,23 @@ public class AdminRideHistoryPage {
         return res == null ? null : res.toString();
     }
 
-    public String fetchAllPricesFromBackend(String email, String sortBy, String direction, String startDate) {
-        String backendBase = System.getProperty("backendBaseUrl", "http://localhost:8080");
-        try {
-            Object res = ((JavascriptExecutor) driver).executeAsyncScript(
-                    "var email=arguments[0]; var sortBy=arguments[1]; var dir=arguments[2]; var startDate=arguments[3]; var base=arguments[4]; var cb=arguments[arguments.length-1];\n" +
-                            "var url = base + '/api/admin/rides/passenger?email=' + encodeURIComponent(email) + '&page=0&size=1000';\n" +
-                            "if(sortBy) url += '&sort=' + encodeURIComponent(sortBy); if(dir) url += '&direction=' + encodeURIComponent(dir); if(startDate) url += '&startDate=' + encodeURIComponent(startDate);\n" +
-                            "var headers={'Content-Type':'application/json'}; var token = window.localStorage.getItem('authToken'); if(token) headers['Authorization']='Bearer ' + token;\n" +
-                            "fetch(url, {method:'GET', headers: headers, credentials: 'include'}).then(r=>r.json()).then(j=>{ try{ var arr = (j && j.content) ? j.content.map(function(x){ return Math.round(x.price); }) : []; cb(JSON.stringify(arr)); }catch(e){ cb('ERR:'+e.message);} }).catch(e=>cb('ERR:'+e.message));",
-                    email, sortBy, direction, startDate, backendBase);
-            if (res == null) return null;
-            String s = res.toString();
-            if (s.startsWith("ERR:")) {
-                System.out.println("DEBUG fetchAllPricesFromBackend: fetch error: " + s);
-                return null;
-            }
-            return s;
-        } catch (Exception e) {
-            System.out.println("DEBUG fetchAllPricesFromBackend failed: " + e.getMessage());
-            return null;
-        }
-    }
-
     public void searchWithAll(String email, String userType, String sortBy, String sortDirection, String dateStr) {
+        // Ensure we're on the admin ride history page; some tests call searchWithAll without opening first.
+        try {
+            driver.findElement(By.cssSelector("input[formcontrolname='email']"));
+        } catch (Exception e) {
+            String base = System.getProperty("baseUrl", "http://localhost:4200");
+            System.out.println("DEBUG searchWithAll: navigating to admin page " + base + "/admin/admin-ride-history");
+            open(base);
+        }
+
+        // Ensure page is scrolled to top and filter form is visible so inputs are interactable and fully visible
+        try {
+            ((JavascriptExecutor) driver).executeScript("window.scrollTo(0,0);");
+            WebElement form = driver.findElement(By.cssSelector(".filter-form"));
+            try { ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", form); } catch (Exception ignored) {}
+        } catch (Exception ignored) {}
+
         clickReset();
         if (email != null) setEmail(email);
         if (userType != null) setUserType(userType);
@@ -721,6 +890,8 @@ public class AdminRideHistoryPage {
         if (dateStr != null && !dateStr.isEmpty()) setDate(dateStr);
 
         clickSearch();
+        // After performing a search, ensure the paginator is on the first page so test reads results from page 1
+        try { goToFirstPage(); } catch (Exception e) { System.out.println("WARN goToFirstPage failed: " + e.getMessage()); }
         WebDriverWait longWait = new WebDriverWait(driver, java.time.Duration.ofSeconds(10));
         longWait.pollingEvery(java.time.Duration.ofMillis(200));
         try {
@@ -739,4 +910,29 @@ public class AdminRideHistoryPage {
             dumpDebug("search-with-all-timeout");
         }
     }
+
+    // Navigate paginator to the first page by repeatedly clicking the "Previous page" button until disabled
+    public void goToFirstPage() {
+        try {
+            // Try up to 10 clicks to avoid infinite loops if paginator misbehaves
+            int tries = 0;
+            while (tries < 10) {
+                WebElement prevBtn = null;
+                try { prevBtn = driver.findElement(By.cssSelector("mat-paginator button[aria-label='Previous page']")); } catch (Exception e) { return; }
+                if (prevBtn == null) return;
+                String ariaDisabled = prevBtn.getAttribute("aria-disabled");
+                String disabled = prevBtn.getAttribute("disabled");
+                if ((ariaDisabled != null && ariaDisabled.equalsIgnoreCase("true")) || (disabled != null && disabled.equalsIgnoreCase("true"))) {
+                    return; // already at first page
+                }
+                try { prevBtn.click(); } catch (Exception ex) { try { ((JavascriptExecutor) driver).executeScript("arguments[0].click();", prevBtn); } catch (Exception jsEx) { System.out.println("WARN goToFirstPage: click failed: " + jsEx.getMessage()); return; } }
+                // wait for items to refresh
+                try { waitForItemsLoaded(); ensureItemsPopulated(); } catch (Exception ignored) {}
+                tries++;
+            }
+        } catch (Exception e) {
+            System.out.println("ERROR goToFirstPage: " + e.getMessage());
+        }
+    }
 }
+

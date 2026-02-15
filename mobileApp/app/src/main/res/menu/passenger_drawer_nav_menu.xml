@@ -10,10 +10,6 @@
             android:icon="@drawable/ic_car"
             android:title="@string/my_rides"/>
         <item
-            android:id="@+id/nav_bottom_rate_ride"
-            android:icon="@drawable/ic_rate"
-            android:title="@string/rate_ride"/>
-        <item
             android:id="@+id/nav_bottom_ride_tracking"
             android:icon="@drawable/ic_navigation_arrow"
             android:title="@string/ride_tracking"/>

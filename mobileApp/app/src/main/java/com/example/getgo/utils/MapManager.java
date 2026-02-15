@@ -26,8 +26,10 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -52,6 +54,7 @@ public class MapManager {
     // ===== ROUTE =====
     private Polyline routePolyline;
     private List<LatLng> currentRoute = new ArrayList<>();
+    private final Map<Long, Marker> activeDriverMarkersMap = new HashMap<>();
 
     // ===== INTERFACES =====
     public interface AddressCallback {
@@ -189,19 +192,16 @@ public class MapManager {
 
     // ===== ACTIVE DRIVER MARKERS (for passengers viewing available drivers) =====
     public void updateDriverLocations(List<GetActiveDriverLocationDTO> drivers) {
-        // Clear old markers
-        for (Marker marker : activeDriverMarkers) {
-            if (marker != null) {
-                marker.remove();
-            }
-        }
-        activeDriverMarkers.clear();
-
-        // Add new markers
+        // Prolazimo kroz sve dolazne lokacije
         for (GetActiveDriverLocationDTO driver : drivers) {
-            if (driver.getLatitude() != null && driver.getLongitude() != null) {
-                LatLng position = new LatLng(driver.getLatitude(), driver.getLongitude());
+            if (driver.getLatitude() == null || driver.getLongitude() == null) continue;
 
+            LatLng position = new LatLng(driver.getLatitude(), driver.getLongitude());
+
+            Marker marker = activeDriverMarkersMap.get(driver.getDriverId());
+
+            if (marker == null) {
+                // Kreiraj novi marker ako ne postoji
                 int iconRes = driver.getIsAvailable() ? R.drawable.ic_car_green : R.drawable.ic_car_red;
                 BitmapDescriptor icon = ImageUtils.getBitmapDescriptorFromDrawable(context, iconRes);
 
@@ -212,10 +212,18 @@ public class MapManager {
                         .title(title)
                         .icon(icon);
 
-                Marker marker = map.addMarker(markerOptions);
-                activeDriverMarkers.add(marker);
+                marker = map.addMarker(markerOptions);
+                activeDriverMarkersMap.put(driver.getDriverId(), marker);
+            } else {
+                // Ažuriraj poziciju postojećeg markera
+                marker.setPosition(position);
             }
         }
+
+        // Opcionalno: ukloni markere koji više nisu aktivni
+        activeDriverMarkersMap.keySet().removeIf(driverId ->
+                drivers.stream().noneMatch(d -> d.getDriverId().equals(driverId))
+        );
     }
 
     public void clearActiveDrivers() {

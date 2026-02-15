@@ -193,4 +193,12 @@ public class WebSocketController {
                 linkedRideAccepted
         );
     }
+
+    public void broadcastAllDriversLocation(GetDriverLocationDTO locationDTO) {
+        messagingTemplate.convertAndSend(
+                "/socket-publisher/drivers/location",
+                locationDTO
+        );
+    }
+
 }

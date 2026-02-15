@@ -106,8 +106,6 @@ public class NavigationHelper {
             return PassengerHomeFragment.newInstance();
         } else if (itemId == R.id.nav_bottom_profile) {
             return PassengerProfileInfoFragment.newInstance();
-        } else if (itemId == R.id.nav_bottom_rate_ride) {
-            return new PassengerRateDriverVehicleFragment();
         } else if (itemId == R.id.nav_bottom_ride_tracking) {
             return new PassengerRideTrackingFragment();
         } else if (itemId == R.id.nav_drawer_support) {

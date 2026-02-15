@@ -336,6 +336,7 @@ public class RideServiceImpl implements RideService {
         }
     }
 
+
     private void initializeDriverToPickupMovement(ActiveRide ride) {
         Driver driver = ride.getDriver();
         WayPoint pickupPoint = ride.getRoute().getWaypoints().getFirst();
@@ -650,7 +651,6 @@ public class RideServiceImpl implements RideService {
             if (nextRideOpt.isPresent()) {
                 // Driver has a scheduled ride → mark as busy (not available)
                 driver.setActive(false);
-                // TODO: here we could send the next ride data to the frontend
             } else {
                 // No scheduled rides → driver is available for new rides
                 driver.setActive(true);

@@ -3,6 +3,8 @@ package rs.getgo.backend.services.impl.rides;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import rs.getgo.backend.controllers.WebSocketController;
+import rs.getgo.backend.dtos.driver.GetDriverLocationDTO;
 import rs.getgo.backend.model.entities.Driver;
 import rs.getgo.backend.model.entities.DriverRoamingState;
 import rs.getgo.backend.model.enums.RideStatus;
@@ -22,6 +24,7 @@ public class IdleDriverMovementService {
     private final ActiveRideRepository activeRideRepository;
     private final DriverRoamingStateRepository roamingStateRepository;
     private final MapboxRoutingService routingService;
+    private final WebSocketController webSocketController;
 
     // Key: fromIndex-toIndex, value: coordinate list
     private final Map<String, List<MapboxRoutingService.Coordinate>> pathCache = new ConcurrentHashMap<>();
@@ -43,12 +46,14 @@ public class IdleDriverMovementService {
             DriverRepository driverRepository,
             ActiveRideRepository activeRideRepository,
             DriverRoamingStateRepository roamingStateRepository,
-            MapboxRoutingService routingService
+            MapboxRoutingService routingService,
+            WebSocketController webSocketController
     ) {
         this.driverRepository = driverRepository;
         this.activeRideRepository = activeRideRepository;
         this.roamingStateRepository = roamingStateRepository;
         this.routingService = routingService;
+        this.webSocketController = webSocketController;
     }
 
     @Scheduled(fixedRate = 1000)
@@ -100,6 +105,16 @@ public class IdleDriverMovementService {
 
         state.setCurrentPathIndex(nextIndex);
         roamingStateRepository.save(state);
+
+        GetDriverLocationDTO locationUpdate = new GetDriverLocationDTO(
+                driver.getId(),
+                null, // idle driver doesn't have an active ride
+                driver.getCurrentLatitude(),
+                driver.getCurrentLongitude(),
+                "" // IDLE
+        );
+
+        webSocketController.broadcastAllDriversLocation(locationUpdate);
     }
 
     private void assignNewRoamingPath(Driver driver, DriverRoamingState existingState) {
@@ -127,6 +142,14 @@ public class IdleDriverMovementService {
         state.setCurrentPathIndex(0);
         state.setTargetWaypointIndex(toWaypoint);
         roamingStateRepository.save(state);
+
+        webSocketController.broadcastAllDriversLocation(new GetDriverLocationDTO(
+                driver.getId(),
+                null,
+                driver.getCurrentLatitude(),
+                driver.getCurrentLongitude(),
+                "" // IDLE
+        ));
     }
 
     private List<MapboxRoutingService.Coordinate> getOrFetchPath(int fromIndex, int toIndex) {

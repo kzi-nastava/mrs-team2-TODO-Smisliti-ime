@@ -28,7 +28,7 @@ public class AdminRideHistoryE2ETest {
     private final String adminPassword = System.getProperty("adminPassword", "aaaaaaaa");
 
     // test email can be overridden with -DtestEmail
-    private final String testEmail = System.getProperty("testEmail", "o@gmail.com");
+    private final String testEmail = System.getProperty("testEmail", "jova@gmail.com");
 
     private LoginPage loginPage;
     private AdminRideHistoryPage historyPage;

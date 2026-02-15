@@ -248,9 +248,15 @@ public class PassengerRideDetailFragment extends Fragment {
         Button btnReorderRide = view.findViewById(R.id.btnReorderRide);
         Button btnRateRide = view.findViewById(R.id.btnRateRide);
 
-        if (btnRateRide != null) {
-            btnRateRide.setVisibility(View.GONE);
+        if (btnRateRide != null && ride != null) {
+            if ("FINISHED".equals(ride.getStatus())) {
+                btnRateRide.setVisibility(View.VISIBLE);
+                btnRateRide.setOnClickListener(v -> openRateRideFragment());
+            } else {
+                btnRateRide.setVisibility(View.GONE);
+            }
         }
+
 
         if (btnReorderRide != null) {
             btnReorderRide.setOnClickListener(v -> reorderRide(ride));
@@ -259,6 +265,28 @@ public class PassengerRideDetailFragment extends Fragment {
         btnFavoriteRide.setOnClickListener(v -> favoriteRide());
         btnUnfavoriteRide.setOnClickListener(v -> unfavoriteRide());
     }
+
+
+    private void openRateRideFragment() {
+        if (ride == null || ride.getDriverId() == null) return;
+
+        PassengerRateDriverVehicleFragment fragment =
+                new PassengerRateDriverVehicleFragment();
+
+        Bundle args = new Bundle();
+        args.putLong("rideId", ride.getId());
+        args.putLong("driverId", ride.getDriverId());
+        fragment.setArguments(args);
+
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+
+
 
     private void reorderRide(GetRideDTO ride) {
         PassengerHomeFragment fragment = PassengerHomeFragment.newInstance();

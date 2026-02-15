@@ -33,13 +33,13 @@ export class LoginComponent {
 
   createLoginForm = new FormGroup({
     email: new FormControl('', [
-      // Validators.required,
-      // Validators.email,
-      // Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+      Validators.required,
+      Validators.email,
+      Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
     ]),
     password: new FormControl('', [
-      // Validators.required,
-      // Validators.minLength(8)
+      Validators.required,
+      Validators.minLength(8)
     ]),
     stayLoggedIn: new FormControl(false),
   });
@@ -57,7 +57,6 @@ export class LoginComponent {
   ) {
     this.route.queryParams.subscribe(params => {
         console.log('Login query params:', params);
-        // vise ne treba redirectToRate i rideId
       });
     }
 

@@ -144,7 +144,7 @@ class RideOrderServiceImplTest {
     }
 
     private void mockValidatorSuccess(Passenger payingPassenger, List<Passenger> linkedPassengers,
-                                          LocalDateTime scheduledTime) {
+                                      LocalDateTime scheduledTime) {
         RideOrderValidator.ValidationResult validationResult =
                 RideOrderValidator.ValidationResult.success(payingPassenger, linkedPassengers, scheduledTime);
         when(rideOrderValidator.validateRideOrder(any(CreateRideRequestDTO.class), anyString()))

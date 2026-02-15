@@ -19,7 +19,6 @@ import rs.getgo.backend.services.RidePriceService;
 import rs.getgo.backend.services.impl.rides.ScheduledRideService;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;

@@ -1,4 +1,4 @@
-package rs.getgo.backend.repository;
+package rs.getgo.backend.S1.repository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DataJpaTest
 @ActiveProfiles("test")
 @ContextConfiguration(classes = rs.getgo.backend.GetGoBeApplication.class)
-@Sql("/sql/active-ride-test-data.sql")
+@Sql("/sql/S1/active-ride-test-data.sql")
 @TestPropertySource(locations = "classpath:application-test.properties")
 public class ActiveRideRepositoryTest {
 

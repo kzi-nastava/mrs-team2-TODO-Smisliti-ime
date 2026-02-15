@@ -1,4 +1,4 @@
-package com.example.e2e.pages;
+package com.example.e2e.S3.pages;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;

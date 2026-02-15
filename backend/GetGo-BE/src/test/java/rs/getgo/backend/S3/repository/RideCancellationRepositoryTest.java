@@ -1,4 +1,4 @@
-package rs.getgo.backend.repository;
+package rs.getgo.backend.S3.repository;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,8 +8,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import rs.getgo.backend.GetGoBeApplication;
-import rs.getgo.backend.model.entities.CompletedRide;
-import rs.getgo.backend.repositories.CompletedRideRepository;
+import rs.getgo.backend.model.entities.RideCancellation;
+import rs.getgo.backend.repositories.RideCancellationRepository;
 
 import java.util.Optional;
 
@@ -19,17 +19,17 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("test")
 @ContextConfiguration(classes = GetGoBeApplication.class)
 @TestPropertySource(locations = "classpath:application-test.properties")
-@Sql(scripts = "/sql/completed-ride-test-data.sql")
-public class CompletedRideRepositoryTest {
+@Sql(scripts = "/sql/S3/ride-cancellation-test-data.sql")
+public class RideCancellationRepositoryTest {
 
     @Autowired
-    private CompletedRideRepository completedRideRepository;
+    private RideCancellationRepository repo;
 
     @Test
-    public void fixture_shouldLoadCompletedRide() {
-        Optional<CompletedRide> cr = completedRideRepository.findById(11L);
-        assertTrue(cr.isPresent());
-        assertEquals(150.0, cr.get().getEstimatedPrice());
+    public void fixture_shouldLoadCancellation() {
+        Optional<RideCancellation> rc = repo.findById(1L);
+        assertTrue(rc.isPresent());
+        assertEquals("test reason", rc.get().getReason());
     }
 
 }

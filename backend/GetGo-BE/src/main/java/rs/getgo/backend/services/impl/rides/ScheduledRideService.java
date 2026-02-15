@@ -60,7 +60,10 @@ public class ScheduledRideService {
     public void sendScheduledRideReminders() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime reminderWindow = now.plusMinutes(15);
+        handleRideReminders(now, reminderWindow);
+    }
 
+    public void handleRideReminders(LocalDateTime now, LocalDateTime reminderWindow) {
         List<ActiveRide> upcomingRides = activeRideRepository
                 .findByStatusAndScheduledTimeBetween(RideStatus.SCHEDULED, now, reminderWindow);
 
@@ -96,7 +99,7 @@ public class ScheduledRideService {
                 .toList();
     }
 
-    private void activateScheduledRides() {
+    public void activateScheduledRides() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime activationThreshold = now.plusMinutes(ACTIVATION_MINUTES_BEFORE);
 
@@ -121,22 +124,22 @@ public class ScheduledRideService {
         if (driver == null) return;
 
         ride.setDriver(driver);
-        resolveVehicleTypeIfNeeded(ride, driver);
-        resolveRideStatus(ride, driver);
+        determineVehicleType(ride, driver);
+        determineRideStatus(ride, driver);
         activeRideRepository.save(ride);
 
         notifyDriverScheduledRideAssigned(ride);
         notifyPassengerScheduledDriverAssigned(ride);
     }
 
-    private void resolveVehicleTypeIfNeeded(ActiveRide ride, Driver driver) {
+    private void determineVehicleType(ActiveRide ride, Driver driver) {
         if (ride.getVehicleType() != null) return;
         VehicleType vehicleType = driver.getVehicle().getType();
         ride.setVehicleType(vehicleType);
         ride.setEstimatedPrice(ridePriceService.calculateRidePrice(vehicleType, ride.getRoute().getEstDistanceKm()));
     }
 
-    private void resolveRideStatus(ActiveRide ride, Driver driver) {
+    private void determineRideStatus(ActiveRide ride, Driver driver) {
         if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
             ride.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
         } else {
@@ -182,7 +185,7 @@ public class ScheduledRideService {
         );
     }
 
-    private void cancelOverdueScheduledRides() {
+    public void cancelOverdueScheduledRides() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime cancellationThreshold = now.minusMinutes(GRACE_PERIOD);
 
@@ -202,7 +205,6 @@ public class ScheduledRideService {
     }
 
     private void cancelOverdueScheduledRide(ActiveRide ride) {
-        // Create and save ride cancellation
         RideCancellation cancellation = new RideCancellation();
         cancellation.setRideId(ride.getId());
         cancellation.setCancelerId(null);

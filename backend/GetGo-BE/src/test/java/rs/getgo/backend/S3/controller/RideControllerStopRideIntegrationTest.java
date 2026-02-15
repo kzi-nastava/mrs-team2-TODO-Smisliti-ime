@@ -1,4 +1,4 @@
-package rs.getgo.backend.controllers;
+package rs.getgo.backend.S3.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;

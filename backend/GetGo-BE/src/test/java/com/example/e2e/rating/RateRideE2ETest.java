@@ -6,6 +6,7 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -122,6 +123,8 @@ public class RateRideE2ETest {
         // should stay on /rate page with validation errors, not navigate away
         wait.until(d -> d.getCurrentUrl().contains("/rate"));
         assertTrue(driver.getCurrentUrl().contains("/rate"));
+
+        assertTrue(ratePage.waitForSnackBarWithText("Please fill all fields", 5));
     }
 
     @Test
@@ -145,6 +148,18 @@ public class RateRideE2ETest {
         // treba da ostane na /rate stranici
         wait.until(d -> d.getCurrentUrl().contains("/rate"));
         assertTrue(driver.getCurrentUrl().contains("/rate"));
+
+        // debug dump if snackbar not found
+        boolean found = ratePage.waitForSnackBarWithText("Please fill all fields", 5);
+        if (!found) {
+            try {
+                Object bodyText = ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("return document.body.innerText || document.body.textContent;");
+                System.out.println("DEBUG: body text after submit:\n" + String.valueOf(bodyText).substring(0, Math.min(2000, String.valueOf(bodyText).length())));
+            } catch (Exception ignored) {
+            }
+        }
+
+        assertTrue(found);
     }
 
     @Test
@@ -167,6 +182,8 @@ public class RateRideE2ETest {
 
         wait.until(d -> d.getCurrentUrl().contains("/rate"));
         assertTrue(driver.getCurrentUrl().contains("/rate"));
+
+        assertTrue(ratePage.waitForSnackBarWithText("Please fill all fields", 5));
     }
 
     @Test
@@ -182,14 +199,14 @@ public class RateRideE2ETest {
 
         RatePage ratePage = new RatePage(driver);
 
-        // just driver rating, no vehicle rating or comment
+        // samo ocena za vozača, bez komentara i ocene vozila
         ratePage.selectDriverRating(3);
-
         ratePage.submit();
 
-        wait.until(d -> d.getCurrentUrl().contains("/rate"));
-        assertTrue(driver.getCurrentUrl().contains("/rate"));
+        assertTrue(ratePage.waitForSnackBarWithText("Please fill all fields", 5));
+
     }
+
 
     @Test
     void testCannotRateRideTwice() {
@@ -224,14 +241,9 @@ public class RateRideE2ETest {
         ratePage.enterComment("Second rating attempt");
         ratePage.submit();
 
-        wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.cssSelector(".mat-snack-bar-container")));
-
-        boolean errorDisplayed = driver.findElements(By.cssSelector(".mat-snack-bar-container")).stream()
-                .anyMatch(el -> el.getText().contains("Ride already rated"));
+        boolean errorDisplayed = ratePage.waitForSnackBarWithText("Ride already rated", 5);
 
         assertTrue(errorDisplayed);
     }
 
 }
-

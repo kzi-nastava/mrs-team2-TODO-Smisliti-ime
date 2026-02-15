@@ -11,6 +11,8 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class RatePage {
@@ -21,11 +23,20 @@ public class RatePage {
     @FindBy(id = "comment")
     WebElement commentField;
 
-    @FindBy(xpath = "//button[text()='Submit']")
+    @FindBy(xpath = "//button[normalize-space(text())='Submit']")
     WebElement submitButton;
 
     @FindBy(css = ".comment-text")
     List<WebElement> comments;
+
+    // possible selectors for material snackbars across versions
+    private static final List<String> SNACK_SELECTORS = Arrays.asList(
+            ".mat-snack-bar-container",
+            ".mat-mdc-snack-bar-container",
+            "[role='status']",
+            ".snack-bar",
+            ".cdk-overlay-container .mat-simple-snackbar"
+    );
 
     public RatePage(WebDriver driver) {
         this.driver = driver;
@@ -67,7 +78,14 @@ public class RatePage {
             submitButton.click();
         } catch (Exception e) {
             try {
-                ((JavascriptExecutor) driver).executeScript("var b = document.querySelector(\"button[type=button], button[type=submit], button:contains('Submit')\"); if(b) b.click();");
+                // fallback: find a button whose innerText trimmed equals 'Submit' and click it
+                String script = "var buttons = document.querySelectorAll('button');\n" +
+                        "for(var i=0;i<buttons.length;i++){ var b = buttons[i]; if(b.innerText && b.innerText.trim() === 'Submit'){ b.click(); return true; }} return false;";
+                Object clicked = ((JavascriptExecutor) driver).executeScript(script);
+                if (clicked == null || Boolean.FALSE.equals(clicked)) {
+                    // as last resort click the first button
+                    ((JavascriptExecutor) driver).executeScript("var b = document.querySelector('button[type=button], button[type=submit]'); if(b) b.click();");
+                }
             } catch (Exception ignored) {
             }
         }
@@ -81,6 +99,73 @@ public class RatePage {
             }
         }
         return false;
+    }
+
+    // Helper that waits for the first snack-bar container among known selectors and returns its text
+    public String waitForSnackBarText(int timeoutSeconds) {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
+        for (String sel : SNACK_SELECTORS) {
+            try {
+                WebElement snack = shortWait.until(
+                        ExpectedConditions.visibilityOfElementLocated(By.cssSelector(sel))
+                );
+                return snack.getText();
+            } catch (Exception ignored) {
+                // try next selector
+            }
+        }
+        throw new RuntimeException("No snack-bar found using known selectors");
+    }
+
+    // Helper that waits for a snackbar with expected text (substring match)
+    public boolean waitForSnackBarWithText(String expectedText, int timeoutSeconds) {
+        try {
+            WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
+            boolean found = shortWait.until(d -> {
+                List<WebElement> all = new ArrayList<>();
+                for (String sel : SNACK_SELECTORS) {
+                    all.addAll(d.findElements(By.cssSelector(sel)));
+                }
+                if (all.isEmpty()) return false;
+                for (WebElement s : all) {
+                    try {
+                        String t = s.getText();
+                        if (t != null && t.contains(expectedText)) return true;
+                    } catch (Exception ex) {
+                        // ignore
+                    }
+                }
+                return false;
+            });
+            if (!found) {
+                List<WebElement> all = new ArrayList<>();
+                for (String sel : SNACK_SELECTORS) all.addAll(driver.findElements(By.cssSelector(sel)));
+                System.out.println("DEBUG: snack-bar containers found: " + all.size());
+                for (int i = 0; i < all.size(); i++) {
+                    try {
+                        System.out.println("DEBUG: snack[" + i + "] text='" + all.get(i).getText() + "' (selector?)");
+                    } catch (Exception ex) {
+                        System.out.println("DEBUG: snack[" + i + "] unable to get text: " + ex.getMessage());
+                    }
+                }
+            }
+            return found;
+        } catch (Exception e) {
+            try {
+                List<WebElement> all = new ArrayList<>();
+                for (String sel : SNACK_SELECTORS) all.addAll(driver.findElements(By.cssSelector(sel)));
+                System.out.println("DEBUG(EX): snack-bar containers found: " + all.size());
+                for (int i = 0; i < all.size(); i++) {
+                    try {
+                        System.out.println("DEBUG(EX): snack[" + i + "] text='" + all.get(i).getText() + "'");
+                    } catch (Exception ex) {
+                        System.out.println("DEBUG(EX): snack[" + i + "] unable to get text: " + ex.getMessage());
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+            return false;
+        }
     }
 
 }

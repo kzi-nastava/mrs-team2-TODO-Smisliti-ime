@@ -1,7 +1,7 @@
-package com.example.e2e;
+package com.example.e2e.S3;
 
-import com.example.e2e.pages.AdminRideHistoryPage;
-import com.example.e2e.pages.LoginPage;
+import com.example.e2e.S3.pages.AdminRideHistoryPage;
+import com.example.e2e.S3.pages.LoginPage;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.WebDriver;

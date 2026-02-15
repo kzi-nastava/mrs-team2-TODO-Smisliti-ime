@@ -1,4 +1,4 @@
-package rs.getgo.backend.repository;
+package rs.getgo.backend.S3.repository;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DataJpaTest
 @ActiveProfiles("test")
 @ContextConfiguration(classes = rs.getgo.backend.GetGoBeApplication.class)
-@Sql("/sql/completed-ride-test-data.sql")
+@Sql("/sql/S3/completed-ride-test-data.sql")
 @TestPropertySource(locations = "classpath:application-test.properties")
 public class CompletedRideRepositoryTest {
 
@@ -30,21 +30,21 @@ public class CompletedRideRepositoryTest {
     void shouldReturnAllDriverRides_WhenAllEndTimesAreAfterGivenTime() {
         List<CompletedRide> result = completedRideRepository.findByDriverIdAndEndTimeAfter(
                 1L, LocalDateTime.of(2025, 1, 1, 0, 0));
-        assertEquals(2, result.size());
+        assertEquals(3, result.size());
     }
 
     @Test
     void shouldReturnOnlyLaterRide_WhenCutoffIsBetweenEndTimes() {
         List<CompletedRide> result = completedRideRepository.findByDriverIdAndEndTimeAfter(
                 1L, LocalDateTime.of(2025, 4, 1, 0, 0));
-        assertEquals(1, result.size());
-        assertEquals(2L, result.getFirst().getId());
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(r -> r.getId().equals(2L)));
     }
 
     @Test
     void shouldReturnEmptyList_WhenAllEndTimesAreBeforeGivenTime() {
         List<CompletedRide> result = completedRideRepository.findByDriverIdAndEndTimeAfter(
-                1L, LocalDateTime.of(2026, 1, 1, 0, 0));
+                1L, LocalDateTime.of(2027, 1, 1, 0, 0));
         assertTrue(result.isEmpty());
     }
 
@@ -60,14 +60,15 @@ public class CompletedRideRepositoryTest {
         List<CompletedRide> result = completedRideRepository.findByDriverIdAndEndTimeAfter(
                 2L, LocalDateTime.of(2025, 1, 1, 0, 0));
         assertEquals(1, result.size());
-        assertEquals(3L, result.getFirst().getId());
+        assertEquals(3L, result.get(0).getId());
     }
 
     @Test
     void shouldExcludeRide_WhenEndTimeEqualsGivenTime() {
         List<CompletedRide> result = completedRideRepository.findByDriverIdAndEndTimeAfter(
                 1L, LocalDateTime.of(2025, 6, 1, 14, 45, 0));
-        assertTrue(result.isEmpty());
+        assertEquals(1, result.size());
+        assertEquals(11L, result.get(0).getId());
     }
 
     @Test

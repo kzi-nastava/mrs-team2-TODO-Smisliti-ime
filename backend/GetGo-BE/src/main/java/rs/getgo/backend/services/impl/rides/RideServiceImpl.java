@@ -726,10 +726,14 @@ public class RideServiceImpl implements RideService {
     @Override
     public RideCompletionDTO stopRide(Long rideId, StopRideDTO stopRideDTO) {
         ActiveRide ride = activeRideRepository.findById(rideId)
-                .orElseThrow(() -> new IllegalStateException("Ride not found"));
+                .orElseThrow(() -> new rs.getgo.backend.exceptions.RideNotFoundException("Ride not found"));
 
         if (ride.getStatus() != RideStatus.ACTIVE) {
-            throw new IllegalStateException("Only ACTIVE rides can be stopped");
+            throw new rs.getgo.backend.exceptions.InvalidRideStateException("Only ACTIVE rides can be stopped");
+        }
+
+        if (ride.getPayingPassenger() == null) {
+            throw new rs.getgo.backend.exceptions.NullPayingPassengerException("Paying passenger is missing for active ride");
         }
 
         LocalDateTime endTime = LocalDateTime.now();
@@ -754,7 +758,11 @@ public class RideServiceImpl implements RideService {
                     last.setLongitude(lng);
                     last.setAddress("Stopped location");
                 }
-                routeRepository.save(ride.getRoute());
+                try {
+                    routeRepository.save(ride.getRoute());
+                } catch (RuntimeException e) {
+                    throw new rs.getgo.backend.exceptions.DatabaseException("Failed to save route", e);
+                }
             }
         }
 
@@ -790,7 +798,11 @@ public class RideServiceImpl implements RideService {
         completedRide.setStoppedEarly(true);
         completedRide.setPanicPressed(false);
 
-        completedRide = completedRideRepository.save(completedRide);
+        try {
+            completedRide = completedRideRepository.save(completedRide);
+        } catch (RuntimeException e) {
+            throw new rs.getgo.backend.exceptions.DatabaseException("Failed to save completed ride", e);
+        }
 
         // Link all reports of this passenger without CompletedRide to this completed ride
         List<Passenger> allPassengers = new ArrayList<>();
@@ -803,7 +815,11 @@ public class RideServiceImpl implements RideService {
             List<InconsistencyReport> reports = reportRepository.findUnlinkedReportsByPassenger(p);
             for (InconsistencyReport report : reports) {
                 report.setCompletedRide(completedRide);
-                reportRepository.save(report);
+                try {
+                    reportRepository.save(report);
+                } catch (RuntimeException e) {
+                    throw new rs.getgo.backend.exceptions.DatabaseException("Failed to save inconsistency report", e);
+                }
             }
         }
 
@@ -811,17 +827,29 @@ public class RideServiceImpl implements RideService {
         Driver driver = ride.getDriver();
         if (driver != null) {
             driver.setActive(true);
-            driverRepository.save(driver);
+            try {
+                driverRepository.save(driver);
+            } catch (RuntimeException e) {
+                throw new rs.getgo.backend.exceptions.DatabaseException("Failed to save driver", e);
+            }
         }
 
         // Remove active ride
-        activeRideRepository.delete(ride);
+        try {
+            activeRideRepository.delete(ride);
+        } catch (RuntimeException e) {
+            throw new rs.getgo.backend.exceptions.DatabaseException("Failed to delete active ride", e);
+        }
 
         List<Panic> ridePanics = panicRepository.findAll().stream()
                 .filter(p -> p.getRideId() != null && p.getRideId().equals(ride.getId()))
                 .collect(Collectors.toList());
         if (!ridePanics.isEmpty()) {
-            panicRepository.deleteAll(ridePanics);
+            try {
+                panicRepository.deleteAll(ridePanics);
+            } catch (RuntimeException e) {
+                throw new rs.getgo.backend.exceptions.DatabaseException("Failed to delete panic records", e);
+            }
         }
 
         // NEW: WS notification to passenger

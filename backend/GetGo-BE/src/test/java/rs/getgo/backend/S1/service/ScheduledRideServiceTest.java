@@ -1,4 +1,4 @@
-package rs.getgo.backend.service;
+package rs.getgo.backend.S1.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

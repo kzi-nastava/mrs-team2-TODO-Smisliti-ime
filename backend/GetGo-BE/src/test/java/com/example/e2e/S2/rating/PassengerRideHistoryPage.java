@@ -1,4 +1,4 @@
-package com.example.e2e.rating;
+package com.example.e2e.S2.rating;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;

@@ -1,4 +1,0 @@
-package rs.getgo.backend.service;
-
-public class DriverScheduledServiceImplTest {
-}

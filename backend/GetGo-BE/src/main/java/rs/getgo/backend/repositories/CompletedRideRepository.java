@@ -12,7 +12,7 @@ import java.util.List;
 
 public interface CompletedRideRepository extends JpaRepository<CompletedRide, Long> {
     Page<CompletedRide> findByDriverId(Long driverId, Pageable pageable);
-    List<CompletedRide> findByDriverIdAndEndTimeAfter(Long driverId, LocalDateTime last24Hours);
+    List<CompletedRide> findByDriverIdAndEndTimeAfter(Long driverId, LocalDateTime time);
     Page<CompletedRide> findByDriverIdAndStartTimeBetween(Long driverId, LocalDateTime start, LocalDateTime end, Pageable pageable);
 
     // Find all rides where passenger is either paying or linked

@@ -5,6 +5,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.Map;
 
 public class LoginPage {
     private final WebDriver driver;
@@ -75,8 +76,8 @@ public class LoginPage {
                     email, password, backendBase);
 
             if (res == null) return false;
-            if (res instanceof java.util.Map) {
-                java.util.Map m = (java.util.Map) res;
+            if (res instanceof Map) {
+                Map m = (Map) res;
                 if (m.containsKey("err")) {
                     System.out.println("DEBUG loginViaApi: fetch error: " + m.get("err"));
                     return false;
@@ -84,24 +85,80 @@ public class LoginPage {
                 Object statusObj = m.get("status");
                 int status = statusObj instanceof Number ? ((Number) statusObj).intValue() : 0;
                 Object body = m.get("body");
-                if (status == 200 && body instanceof java.util.Map) {
-                    java.util.Map bodyMap = (java.util.Map) body;
-                    Object tokenObj = bodyMap.get("token");
-                    if (tokenObj != null) {
-                        String token = tokenObj.toString();
+                if (status == 200 && body != null) {
+                    // body may be a Map or a String. Try to extract token flexibly.
+                    String token = extractTokenFromBody(body);
+                    if (token != null) {
                         ((JavascriptExecutor) driver).executeScript("window.localStorage.setItem('authToken', arguments[0]);", token);
-                        // navigate to base to ensure frontend picks it up
-                        driver.get(baseUrl);
+                        // wait until localStorage is set and frontend can read it
+                        try {
+                            new WebDriverWait(driver, Duration.ofSeconds(5)).until(d -> ((JavascriptExecutor)d).executeScript("return window.localStorage.getItem('authToken') != null;") != null);
+                        } catch (Exception ignored) {}
+                        driver.get(baseUrl); // reload to ensure frontend reads token
                         return true;
                     }
                 } else {
                     System.out.println("DEBUG loginViaApi: unexpected response status=" + status + " body=" + body);
                     return false;
                 }
+            } else if (res instanceof String) {
+                // unexpected, but log
+                System.out.println("DEBUG loginViaApi: unexpected string response: " + res);
             }
         } catch (Exception e) {
             System.out.println("DEBUG loginViaApi failed: " + e.getMessage());
         }
+        return false;
+    }
+
+    // recursively search for a plausible token string in a nested map/array body
+    private String extractTokenFromBody(Object body) {
+        try {
+            if (body == null) return null;
+            if (body instanceof Map) {
+                Map map = (Map) body;
+                // common keys
+                String[] keys = new String[]{"token", "accessToken", "access_token", "jwt", "authToken", "accessJwt"};
+                for (String k : keys) {
+                    Object v = map.get(k);
+                    if (v instanceof String) {
+                        String s = (String) v;
+                        if (looksLikeToken(s)) return s;
+                    }
+                }
+                // try to find any string value that looks like a token
+                for (Object val : map.values()) {
+                    if (val instanceof String) {
+                        String s = (String) val;
+                        if (looksLikeToken(s)) return s;
+                    } else {
+                        String nested = extractTokenFromBody(val);
+                        if (nested != null) return nested;
+                    }
+                }
+            } else if (body instanceof String) {
+                String s = (String) body;
+                if (looksLikeToken(s)) return s;
+            } else if (body instanceof Object[]) {
+                Object[] arr = (Object[]) body;
+                for (Object o : arr) {
+                    String nested = extractTokenFromBody(o);
+                    if (nested != null) return nested;
+                }
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
+    }
+
+    private boolean looksLikeToken(String s) {
+        if (s == null) return false;
+        s = s.trim();
+        // JWT has two dots typically e.g. header.payload.signature
+        if (s.split("\\.").length >= 3 && s.length() > 20) return true;
+        // or long base64-ish token
+        if (s.length() > 40) return true;
         return false;
     }
 }

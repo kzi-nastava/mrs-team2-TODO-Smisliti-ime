@@ -29,6 +29,7 @@ public class AdminRideHistoryE2ETest {
 
     // test email can be overridden with -DtestEmail
     private final String testEmail = System.getProperty("testEmail", "jova@gmail.com");
+//    private final String testEmail = System.getProperty("testEmail", "p@gmail.com");
 
     private LoginPage loginPage;
     private AdminRideHistoryPage historyPage;

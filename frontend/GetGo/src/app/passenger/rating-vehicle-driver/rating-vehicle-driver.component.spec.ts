@@ -15,14 +15,14 @@ describe('RatingVehicleDriverComponent', () => {
 
 
   beforeEach(async () => {
-    // Kreiramo spy za RatingService
+    // Create spies for RatingService methods
     ratingServiceSpy = jasmine.createSpyObj('RatingService', [
       'createRating',
       'setDriver',
       'reloadRatings'
     ]);
 
-    // Stubuj ratings kao funkciju koja vraća prazan niz
+    // Stub the properties that the component uses from RatingService
     (ratingServiceSpy as any).ratings = jasmine.createSpy('ratings').and.returnValue([]);
     (ratingServiceSpy as any).avgVehicleRating = jasmine.createSpy('avgVehicleRating').and.returnValue(0);
     (ratingServiceSpy as any).avgDriverRating = jasmine.createSpy('avgDriverRating').and.returnValue(0);
@@ -60,13 +60,13 @@ describe('RatingVehicleDriverComponent', () => {
 
 
   fit('should show validation snackbar when fields missing', () => {
-      // leave all signals default (null / '') to simulate missing fields
       component.driverRating.set(null);
       component.vehicleRating.set(null);
       component.commentText.set('');
       component.submitRating();
       expect(snackBarSpy.open).toHaveBeenCalledWith('Please fill all fields', 'Close', jasmine.any(Object));
-    });
+      expect(ratingServiceSpy.createRating).not.toHaveBeenCalled();
+  });
 
   fit('should submit rating (happy path) and reset signals and show success snackbar', (done) => {
       // arrange
@@ -87,11 +87,21 @@ describe('RatingVehicleDriverComponent', () => {
       setTimeout(() => {
         // createRating should be called with object containing rideId
         expect(ratingServiceSpy.createRating).toHaveBeenCalled();
+        expect(ratingServiceSpy.createRating).toHaveBeenCalledWith(
+          jasmine.objectContaining({
+            driverRating: 5,
+            vehicleRating: 5,
+            comment: 'Good ride',
+            rideId: 123
+          })
+        );
+
         expect(snackBarSpy.open).toHaveBeenCalledWith('Rating submitted successfully!', 'Close', jasmine.any(Object));
         // signals reset
         expect(component.driverRating()).toBeNull();
         expect(component.vehicleRating()).toBeNull();
         expect(component.commentText()).toBe('');
+
         done();
       }, 10);
     });

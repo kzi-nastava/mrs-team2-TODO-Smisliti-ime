@@ -4,13 +4,15 @@ import { RatingService } from '../../service/rating/rating.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 
 import { RatingVehicleDriverComponent } from './rating-vehicle-driver.component';
+import {GetRatingDTO} from '../../model/rating.model';
 
 describe('RatingVehicleDriverComponent', () => {
   let component: RatingVehicleDriverComponent;
   let fixture: ComponentFixture<RatingVehicleDriverComponent>;
-  let ratingServiceSpy: jasmine.SpyObj<RatingService>;
+  let ratingServiceSpy: any;
   let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
   let httpTestingController: HttpTestingController;
   let activatedRouteParams: BehaviorSubject<any>;
@@ -25,16 +27,15 @@ describe('RatingVehicleDriverComponent', () => {
 
   beforeEach(async () => {
     // Create spies for RatingService methods
-    ratingServiceSpy = jasmine.createSpyObj('RatingService', [
-      'createRating',
-      'setDriver',
-      'reloadRatings'
-    ]);
+    ratingServiceSpy = {
+      createRating: jasmine.createSpy('createRating'),
+      setDriver: jasmine.createSpy('setDriver'),
+      reloadRatings: jasmine.createSpy('reloadRatings'),
 
-    // Stub the properties that the component uses from RatingService
-    (ratingServiceSpy as any).ratings = jasmine.createSpy('ratings').and.returnValue([]);
-    (ratingServiceSpy as any).avgVehicleRating = jasmine.createSpy('avgVehicleRating').and.returnValue(0);
-    (ratingServiceSpy as any).avgDriverRating = jasmine.createSpy('avgDriverRating').and.returnValue(0);
+      ratings: signal<GetRatingDTO[]>([]),
+      avgVehicleRating: signal<number>(0),
+      avgDriverRating: signal<number>(0)
+    };
 
     // MatSnackBar spy
     snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
@@ -42,7 +43,7 @@ describe('RatingVehicleDriverComponent', () => {
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     activatedRouteParams = new BehaviorSubject({});
 
-    await TestBed.configureTestingModule({
+    TestBed.configureTestingModule({
       imports: [RatingVehicleDriverComponent, HttpClientTestingModule],
       providers: [
         { provide: RatingService, useValue: ratingServiceSpy },

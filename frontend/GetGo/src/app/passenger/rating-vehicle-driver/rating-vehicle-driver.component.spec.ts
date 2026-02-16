@@ -46,7 +46,6 @@ describe('RatingVehicleDriverComponent', () => {
 
     await TestBed.compileComponents();
 
-
     fixture = TestBed.createComponent(RatingVehicleDriverComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -68,59 +67,55 @@ describe('RatingVehicleDriverComponent', () => {
       expect(ratingServiceSpy.createRating).not.toHaveBeenCalled();
   });
 
-  fit('should submit rating (happy path) and reset signals and show success snackbar', (done) => {
-      // arrange
-      const returned = { id: 1, passengerId: 5, rideId: 123, driverId: 10, vehicleId: 10, driverRating: 5, vehicleRating: 5, comment: 'ok' };
-      ratingServiceSpy.createRating.and.returnValue(of(returned));
+  fit('should submit rating (happy path) and reset signals and show success snackbar', fakeAsync(() => {
+    const returned = { id: 1, passengerId: 5, rideId: 123, driverId: 10, vehicleId: 10, driverRating: 5, vehicleRating: 5, comment: 'ok' };
+    ratingServiceSpy.createRating.and.returnValue(of(returned));
 
-      // set signals
-      component.driverRating.set(5);
-      component.vehicleRating.set(5);
-      component.commentText.set('Good ride');
-      // ensure component has rideId from route
-      component.rideId = 123;
+    // set signals
+    component.driverRating.set(5);
+    component.vehicleRating.set(5);
+    component.commentText.set('Good ride');
+    // ensure component has rideId from route
+    component.rideId = 123;
 
-      // act
-      component.submitRating();
+    // act
+    component.submitRating();
 
-      // assert async
-      setTimeout(() => {
-        // createRating should be called with object containing rideId
-        expect(ratingServiceSpy.createRating).toHaveBeenCalled();
-        expect(ratingServiceSpy.createRating).toHaveBeenCalledWith(
-          jasmine.objectContaining({
-            driverRating: 5,
-            vehicleRating: 5,
-            comment: 'Good ride',
-            rideId: 123
-          })
-        );
+    // flush microtasks so subscription runs
+    tick();
 
-        expect(snackBarSpy.open).toHaveBeenCalledWith('Rating submitted successfully!', 'Close', jasmine.any(Object));
-        // signals reset
-        expect(component.driverRating()).toBeNull();
-        expect(component.vehicleRating()).toBeNull();
-        expect(component.commentText()).toBe('');
+    // createRating should be called with object containing rideId
+    expect(ratingServiceSpy.createRating).toHaveBeenCalled();
+    expect(ratingServiceSpy.createRating).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        driverRating: 5,
+        vehicleRating: 5,
+        comment: 'Good ride',
+        rideId: 123
+      })
+    );
 
-        done();
-      }, 10);
-    });
+    expect(snackBarSpy.open).toHaveBeenCalledWith('Rating submitted successfully!', 'Close', jasmine.any(Object));
+    // signals reset
+    expect(component.driverRating()).toBeNull();
+    expect(component.vehicleRating()).toBeNull();
+    expect(component.commentText()).toBe('');
+  }));
 
-    fit('should show server error message when createRating fails with 400 and message', (done) => {
-      const serverError = { status: 400, error: { message: 'Ride already rated' } };
-      ratingServiceSpy.createRating.and.returnValue(throwError(() => serverError));
+  fit('should show server error message when createRating fails with 400 and message', fakeAsync(() => {
+    const serverError = { status: 400, error: { message: 'Ride already rated' } };
+    ratingServiceSpy.createRating.and.returnValue(throwError(() => serverError));
 
-      component.driverRating.set(5);
-      component.vehicleRating.set(5);
-      component.commentText.set('Nice');
-      component.rideId = 123;
+    component.driverRating.set(5);
+    component.vehicleRating.set(5);
+    component.commentText.set('Nice');
+    component.rideId = 123;
 
-      component.submitRating();
+    component.submitRating();
 
-      setTimeout(() => {
-        expect(snackBarSpy.open).toHaveBeenCalledWith('Ride already rated', 'Close', jasmine.any(Object));
-        done();
-      }, 10);
-    });
+    tick();
+
+    expect(snackBarSpy.open).toHaveBeenCalledWith('Ride already rated', 'Close', jasmine.any(Object));
+  }));
 
 });

@@ -9,6 +9,9 @@ describe('RatingService', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
+    // ensure storages are clean before each test
+    sessionStorage.removeItem('authToken');
+    localStorage.removeItem('authToken');
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
       providers: [RatingService, ]
@@ -27,48 +30,55 @@ describe('RatingService', () => {
     localStorage.removeItem('authToken');
   });
 
-  fit('createRating should send Authorization header from sessionStorage and call reloadRatings', (done) => {
+  fit('createRating should send Authorization header from sessionStorage and call reloadRatings', () => {
     const token = 'abc123';
     sessionStorage.setItem('authToken', token);
 
-    // spy reloadRatings method
-    spyOn<any>(service, 'reloadRatings').and.callThrough();
+    // spy reloadRatings but don't call through (no side effects)
+    spyOn<any>(service, 'reloadRatings');
 
     const payload = { driverRating: 5, vehicleRating: 5, comment: 'ok', rideId: 42 };
 
-    service.createRating(payload).subscribe({
-      next: () => {
-        // after flush we will assert
-      },
-      error: () => fail('should not error')
-    });
+    let responseBody: any = null;
+    service.createRating(payload).subscribe(res => responseBody = res);
 
     const req = httpMock.expectOne(`${environment.apiHost}/api/ratings?rideId=42`);
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('Authorization')).toBe(`Bearer ${token}`);
+
+    // send response; this calls the subscribe callback synchronously
     req.flush({ id: 1, ...payload });
 
-    // reloadRatings should be called
+    // now we can assert synchronously that subscriber saw the response
+    expect(responseBody).toEqual(jasmine.objectContaining({ id: 1, ...payload }));
+
+    // reloadRatings should have been invoked by the tap operator
     expect((service as any).reloadRatings).toHaveBeenCalled();
-    done();
   });
 
-  fit('createRating should not include Authorization header when token missing', (done) => {
+
+  fit('createRating should not include Authorization header when token missing', () => {
+    // Ensure no token anywhere
     sessionStorage.removeItem('authToken');
     localStorage.removeItem('authToken');
 
     const payload = { driverRating: 4, vehicleRating: 4, comment: 'fine', rideId: 100 };
 
-    service.createRating(payload).subscribe({
-      next: () => {},
-      error: () => fail('should not error')
-    });
+    let responseBody: any = null;
+    // subscribe and capture response synchronously when flush is called
+    service.createRating(payload).subscribe(res => responseBody = res, err => fail('should not error'));
 
     const req = httpMock.expectOne(`${environment.apiHost}/api/ratings?rideId=100`);
     expect(req.request.method).toBe('POST');
-    // header may be absent or empty depending on implementation
+
+    // Authorization header should not be present when no token anywhere
     expect(req.request.headers.has('Authorization')).toBe(false);
+
+    // send mocked response (synchronously triggers subscribe)
     req.flush({ id: 2, ...payload });
-    done();
+
+    // assert subscriber received expected response body
+    expect(responseBody).toEqual(jasmine.objectContaining({ id: 2, ...payload }));
   });
+
 });

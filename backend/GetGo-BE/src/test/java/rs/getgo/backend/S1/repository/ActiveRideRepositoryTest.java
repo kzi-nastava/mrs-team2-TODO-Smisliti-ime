@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DataJpaTest
 @ActiveProfiles("test")
 @ContextConfiguration(classes = rs.getgo.backend.GetGoBeApplication.class)
-@Sql("/sql/S1/active-ride-test-data.sql")
+@Sql("/sql/S1/repository/active-ride-test-data.sql")
 @TestPropertySource(locations = "classpath:application-test.properties")
 public class ActiveRideRepositoryTest {
 

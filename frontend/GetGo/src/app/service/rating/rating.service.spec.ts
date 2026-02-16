@@ -17,16 +17,17 @@ describe('RatingService', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  it('should be created', () => {
+  fit('should be created', () => {
     expect(service).toBeTruthy();
   });
 
   afterEach(() => {
     httpMock.verify();
     sessionStorage.removeItem('authToken'); // cleanup
+    localStorage.removeItem('authToken');
   });
 
-  it('createRating should send Authorization header from sessionStorage and call reloadRatings', (done) => {
+  fit('createRating should send Authorization header from sessionStorage and call reloadRatings', (done) => {
     const token = 'abc123';
     sessionStorage.setItem('authToken', token);
 
@@ -52,8 +53,10 @@ describe('RatingService', () => {
     done();
   });
 
-  it('createRating should not include Authorization header when token missing', (done) => {
+  fit('createRating should not include Authorization header when token missing', (done) => {
     sessionStorage.removeItem('authToken');
+    localStorage.removeItem('authToken');
+
     const payload = { driverRating: 4, vehicleRating: 4, comment: 'fine', rideId: 100 };
 
     service.createRating(payload).subscribe({

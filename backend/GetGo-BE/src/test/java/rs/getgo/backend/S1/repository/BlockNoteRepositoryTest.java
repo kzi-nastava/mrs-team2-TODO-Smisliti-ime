@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DataJpaTest
 @ActiveProfiles("test")
 @ContextConfiguration(classes = rs.getgo.backend.GetGoBeApplication.class)
-@Sql("/sql/S1/block-note-test-data.sql")
+@Sql("/sql/S1/repository/block-note-test-data.sql")
 @TestPropertySource(locations = "classpath:application-test.properties")
 public class BlockNoteRepositoryTest {
 

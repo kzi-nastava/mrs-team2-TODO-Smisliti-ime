@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 @ContextConfiguration(classes = GetGoBeApplication.class)
 @TestPropertySource(locations = "classpath:application-test.properties")
-@Sql({"/sql/S1/active-ride-test-data.sql", "/sql/S3/panic-test-data.sql", "/sql/S3/inconsistency-report-test-data.sql", "/sql/S3/completed-ride-test-data.sql"})
+@Sql({"/sql/S1/repository/active-ride-test-data.sql", "/sql/S3/panic-test-data.sql", "/sql/S3/inconsistency-report-test-data.sql", "/sql/S3/completed-ride-test-data.sql"})
 public class FinishRideRepositoryTest {
 
     @Autowired

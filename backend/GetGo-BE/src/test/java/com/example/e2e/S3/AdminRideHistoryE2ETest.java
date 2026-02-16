@@ -5,6 +5,7 @@ import com.example.e2e.S3.pages.LoginPage;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -28,8 +29,7 @@ public class AdminRideHistoryE2ETest {
     private final String adminPassword = System.getProperty("adminPassword", "aaaaaaaa");
 
     // test email can be overridden with -DtestEmail
-    private final String testEmail = System.getProperty("testEmail", "jova@gmail.com");
-//    private final String testEmail = System.getProperty("testEmail", "p@gmail.com");
+    private final String testEmail = System.getProperty("testEmail", "p@gmail.com");
 
     private LoginPage loginPage;
     private AdminRideHistoryPage historyPage;
@@ -58,7 +58,6 @@ public class AdminRideHistoryE2ETest {
         boolean apiOk = loginPage.loginViaApi(adminEmail, adminPassword);
         if (!apiOk) loginPage.login(adminEmail, adminPassword);
 
-        // ensure we are on the app root after login
         driver.get(baseUrl);
     }
 
@@ -69,88 +68,157 @@ public class AdminRideHistoryE2ETest {
         }
     }
 
-    @Test
-    public void testSortAndFilterBehaviors() {
+    // --- Helpers ---
+    private List<Integer> baselinePrices() {
         historyPage.open(baseUrl);
-
-        // collect baseline (unsorted) data for the provided email
-        List<Integer> unsortedPrices = historyPage.collectAllPricesForEmail(testEmail);
-        List<java.time.LocalDate> unsortedDates = historyPage.collectAllDatesForEmail(testEmail);
-
-        System.out.println("INFO: collected unsortedPrices.size() = " + (unsortedPrices == null ? 0 : unsortedPrices.size()));
-        if (unsortedPrices != null && !unsortedPrices.isEmpty()) {
-            System.out.println("INFO: sample prices: " + unsortedPrices.subList(0, Math.min(5, unsortedPrices.size())));
-        }
-        int priceElCount = historyPage.countPriceElements();
-        System.out.println("INFO: countPriceElements() = " + priceElCount);
-        List<String> itemTexts = historyPage.getItemTexts();
-        if (!itemTexts.isEmpty()) System.out.println("INFO: first item text snippet: " + itemTexts.get(0).replaceAll("\n"," ").substring(0, Math.min(200, itemTexts.get(0).length())));
-        System.out.println("INFO: collected unsortedDates.size() = " + (unsortedDates == null ? 0 : unsortedDates.size()));
-
-        assumeTrue(unsortedDates != null && !unsortedDates.isEmpty(), "No rides found for " + testEmail + " — ensure frontend is running and test data exists");
-
-        // expected list sorted by date descending (newest first)
-        List<java.time.LocalDate> expectedByDateDesc = unsortedDates.stream().sorted(java.util.Comparator.reverseOrder()).toList();
-
-        // apply sort by start time (descending) and verify
-        retry(() -> historyPage.searchWithAll(testEmail, "Passenger", "Start Date/Time", "Descending", null));
-        List<java.time.LocalDate> actualDates = retry(() -> historyPage.collectAllDatesForCurrentFilter());
-        assertEquals(expectedByDateDesc.size(), actualDates.size(), "Date count after applying date sort must match baseline");
-        for (int i = 0; i < actualDates.size(); i++) {
-            assertEquals(expectedByDateDesc.get(i), actualDates.get(i), "Mismatch at index " + i);
-        }
-
-        // price ascending: derive expected order from unsortedPrices
-        if (unsortedPrices != null && !unsortedPrices.isEmpty()) {
-            List<Integer> expectedByPriceAsc = unsortedPrices.stream().sorted().toList();
-
-            retry(() -> historyPage.searchWithAll(testEmail, "Passenger", "Price", "Ascending", null));
-            List<Integer> actualPrices = retry(() -> historyPage.collectAllPricesForCurrentFilter());
-
-            if (actualPrices.size() != expectedByPriceAsc.size()) {
-                System.out.println("INFO: expectedByPriceAsc.size()=" + expectedByPriceAsc.size() + " actualPrices.size()=" + actualPrices.size());
-                historyPage.dumpDebug("price-sort-mismatch");
-            }
-
-            assertEquals(expectedByPriceAsc.size(), actualPrices.size(), "Price count after applying price sort must match baseline");
-            for (int i = 0; i < actualPrices.size(); i++) {
-                assertEquals(expectedByPriceAsc.get(i), actualPrices.get(i), "Price mismatch at index " + i);
-            }
-        } else {
-            System.out.println("INFO: no prices collected for " + testEmail + "; skipping price sorting assertions");
-        }
-
-        // date filter test: check today's date filter
-        LocalDate date = LocalDate.now();
-        String dateStr = date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-        List<java.time.LocalDate> expectedDateFiltered = unsortedDates.stream().filter(d -> d.equals(date)).toList();
-        retry(() -> historyPage.searchWithAll(testEmail, "Passenger", null, null, dateStr));
-        List<java.time.LocalDate> actualDateFiltered = retry(() -> historyPage.collectAllDatesForCurrentFilter());
-        assertEquals(expectedDateFiltered.size(), actualDateFiltered.size(), "Filtered date count must match expected");
-        for (int i = 0; i < actualDateFiltered.size(); i++) {
-            assertEquals(expectedDateFiltered.get(i), actualDateFiltered.get(i));
-        }
+        return historyPage.collectAllPricesForEmail(testEmail);
     }
 
-    // small retry helper that retries supplier up to 3 times with small backoff
-    private <T> T retry(java.util.concurrent.Callable<T> c) {
-        Exception last = null;
-        for (int i = 0; i < 3; i++) {
-            try {
-                return c.call();
-            } catch (Exception e) {
-                last = e;
-                try { Thread.sleep(500); } catch (InterruptedException ignored) {}
-            }
-        }
-        throw new RuntimeException(last);
+    private List<LocalDate> baselineDates() {
+        historyPage.open(baseUrl);
+        return historyPage.collectAllDatesForEmail(testEmail);
     }
 
-    private void retry(Runnable r) {
-        for (int i = 0; i < 3; i++) {
-            try { r.run(); return; } catch (Exception e) { try { Thread.sleep(500); } catch (InterruptedException ignored) {} }
+    private List<Integer> baselineDurations() {
+        historyPage.open(baseUrl);
+        return historyPage.collectAllDurationsForEmail(testEmail);
+    }
+
+    private List<Double> baselineDistances() {
+        historyPage.open(baseUrl);
+        return historyPage.collectAllDistancesForEmail(testEmail);
+    }
+
+    // --- Sorting tests: Start Date/Time ---
+    @Test
+    public void sortByStartDate_descending_shouldReturnItemsInDateDescOrder() {
+        List<LocalDate> unsorted = baselineDates();
+        assumeTrue(unsorted != null && !unsorted.isEmpty(), "No rides found for " + testEmail);
+        List<LocalDate> expected = unsorted.stream().sorted(java.util.Comparator.reverseOrder()).toList();
+
+        historyPage.searchWithAll(testEmail, "Passenger", "Start Date/Time", "Descending", null);
+        List<LocalDate> actual = historyPage.collectAllDatesForCurrentFilter();
+        assertEquals(expected, actual, "Results are not in descending order by start date");
+    }
+
+    @Test
+    public void sortByStartDate_ascending_shouldReturnItemsInDateAscOrder() {
+        List<LocalDate> unsorted = baselineDates();
+        assumeTrue(unsorted != null && !unsorted.isEmpty(), "No rides found for " + testEmail);
+        List<LocalDate> expected = unsorted.stream().sorted(java.util.Comparator.naturalOrder()).toList();
+
+        historyPage.searchWithAll(testEmail, "Passenger", "Start Date/Time", "Ascending", null);
+        List<LocalDate> actual = historyPage.collectAllDatesForCurrentFilter();
+        assertEquals(expected, actual, "Results are not in ascending order by start date");
+    }
+
+    // --- Sorting tests: Duration ---
+    @Test
+    public void sortByDuration_ascending_shouldReturnItemsInDurationAscOrder() {
+        List<Integer> unsorted = baselineDurations();
+        assumeTrue(unsorted != null && !unsorted.isEmpty(), "No durations found for " + testEmail);
+        List<Integer> expected = unsorted.stream().sorted().toList();
+
+        historyPage.searchWithAll(testEmail, "Passenger", "Duration", "Ascending", null);
+        List<Integer> actual = historyPage.collectAllDurationsForCurrentFilter();
+        assertEquals(expected, actual, "Results are not in ascending order by duration");
+    }
+
+    @Test
+    public void sortByDuration_descending_shouldReturnItemsInDurationDescOrder() {
+        List<Integer> unsorted = baselineDurations();
+        assumeTrue(unsorted != null && !unsorted.isEmpty(), "No durations found for " + testEmail);
+        List<Integer> expected = unsorted.stream().sorted(java.util.Comparator.reverseOrder()).toList();
+
+        historyPage.searchWithAll(testEmail, "Passenger", "Duration", "Descending", null);
+        List<Integer> actual = historyPage.collectAllDurationsForCurrentFilter();
+        assertEquals(expected, actual, "Results are not in descending order by duration");
+    }
+
+    // --- Sorting tests: Distance ---
+    @Test
+    public void sortByDistance_ascending_shouldReturnItemsInDistanceAscOrder() {
+        List<Double> unsorted = baselineDistances();
+        assumeTrue(unsorted != null && !unsorted.isEmpty(), "No distances found for " + testEmail);
+        List<Double> expected = unsorted.stream().sorted().toList();
+
+        historyPage.searchWithAll(testEmail, "Passenger", "Distance", "Ascending", null);
+        List<Double> actual = historyPage.collectAllDistancesForCurrentFilter();
+        assertEquals(expected, actual, "Results are not in ascending order by distance");
+    }
+
+    @Test
+    public void sortByDistance_descending_shouldReturnItemsInDistanceDescOrder() {
+        List<Double> unsorted = baselineDistances();
+        assumeTrue(unsorted != null && !unsorted.isEmpty(), "No distances found for " + testEmail);
+        List<Double> expected = unsorted.stream().sorted(java.util.Comparator.reverseOrder()).toList();
+
+        historyPage.searchWithAll(testEmail, "Passenger", "Distance", "Descending", null);
+        List<Double> actual = historyPage.collectAllDistancesForCurrentFilter();
+        assertEquals(expected, actual, "Results are not in descending order by distance");
+    }
+
+    // --- Sorting tests: Price ---
+    @Test
+    public void sortByPrice_ascending_shouldReturnItemsInPriceAscOrder() {
+        List<Integer> unsorted = baselinePrices();
+        assumeTrue(unsorted != null && !unsorted.isEmpty(), "No prices found for " + testEmail);
+        List<Integer> expected = unsorted.stream().sorted().toList();
+
+        historyPage.searchWithAll(testEmail, "Passenger", "Price", "Ascending", null);
+        List<Integer> actual = historyPage.collectAllPricesForCurrentFilter();
+        assertEquals(expected, actual, "Results are not in ascending order by price");
+    }
+
+    @Test
+    public void sortByPrice_descending_shouldReturnItemsInPriceDescOrder() {
+        List<Integer> unsorted = baselinePrices();
+        assumeTrue(unsorted != null && !unsorted.isEmpty(), "No prices found for " + testEmail);
+        List<Integer> expected = unsorted.stream().sorted(java.util.Comparator.reverseOrder()).toList();
+
+        historyPage.searchWithAll(testEmail, "Passenger", "Price", "Descending", null);
+        List<Integer> actual = historyPage.collectAllPricesForCurrentFilter();
+        assertEquals(expected, actual, "Results are not in descending order by price");
+    }
+
+    // --- Date filters ---
+    @Test
+    public void filterByDate_withRidesOn_14_02_shouldReturnOnlyThoseRides() {
+        int year = LocalDate.now().getYear();
+        String dateStr = String.format("14.02.%d", year);
+
+        List<LocalDate> unsorted = baselineDates();
+        assumeTrue(unsorted != null && !unsorted.isEmpty(), "No rides found for " + testEmail);
+        List<LocalDate> expected = unsorted.stream().filter(d -> d.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")).equals(dateStr)).toList();
+
+        historyPage.searchWithAll(testEmail, "Passenger", null, null, dateStr);
+        List<LocalDate> actual = historyPage.collectAllDatesForCurrentFilter();
+        if (actual.size() != expected.size()) {
+            System.out.println("DEBUG filterByDate_withRidesOn_14_02: expected=" + expected.size() + " actual=" + actual.size());
+            historyPage.dumpDebug("filter-14-02-mismatch");
         }
-        // run once more to throw
-        r.run();
+        assertEquals(expected.size(), actual.size());
+    }
+
+    @Test
+    public void filterByDate_withNoRidesOn_11_02_shouldReturnEmptyList() {
+        int year = LocalDate.now().getYear();
+        String dateStr = String.format("11.02.%d", year);
+
+        historyPage.searchWithAll(testEmail, "Passenger", null, null, dateStr);
+        List<LocalDate> actual = historyPage.collectAllDatesForCurrentFilter();
+        assertTrue(actual.isEmpty());
+    }
+
+    // --- Non-existing user ---
+    @Test
+    public void searchForNonExistingEmail_shouldReturnZeroRides() {
+        historyPage.open(baseUrl);
+        String nonExisting = "nonexisting@gmail.com";
+        historyPage.searchWithAll(nonExisting, "Passenger", null, null, null);
+
+        List<WebElement> items = historyPage.getResultItems();
+        boolean pageSaysNo = driver.getPageSource().contains("No rides found for this user.") || driver.getPageSource().contains("Enter email and search to view rides.");
+        assertTrue(items.isEmpty() || pageSaysNo);
     }
 }

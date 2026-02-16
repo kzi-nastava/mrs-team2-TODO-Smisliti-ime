@@ -184,4 +184,76 @@ describe('RatingVehicleDriverComponent', () => {
     expect(snackBarSpy.open).toHaveBeenCalledWith('Ride already rated', 'Close', jasmine.any(Object));
   }));
 
+  it('should show validation snackbar when comment is only whitespace', fakeAsync(() => {
+    createComponent({});
+    component.rideId = 123;
+    component.driverRating.set(5);
+    component.vehicleRating.set(4);
+    component.commentText.set('    '); // only whitespace
+
+    component.submitRating();
+    tick();
+
+    expect(snackBarSpy.open).toHaveBeenCalledWith('Please fill all fields', 'Close', jasmine.any(Object));
+    expect(ratingServiceSpy.createRating).not.toHaveBeenCalled();
+  }));
+
+  it('should not submit rating when rideId is null', fakeAsync(() => {
+    createComponent({});
+    component.rideId = null;
+
+    component.driverRating.set(5);
+    component.vehicleRating.set(5);
+    component.commentText.set('Good');
+
+    component.submitRating();
+    tick();
+
+    expect(ratingServiceSpy.createRating).not.toHaveBeenCalled();
+    expect(snackBarSpy.open).not.toHaveBeenCalled();
+  }));
+
+  it('should show generic error message when createRating fails without specific message', fakeAsync(() => {
+    createComponent({});
+    component.rideId = 123;
+
+    const serverError = { status: 500, error: {} };
+    ratingServiceSpy.createRating.and.returnValue(throwError(() => serverError));
+
+    component.driverRating.set(3);
+    component.vehicleRating.set(4);
+    component.commentText.set('Average');
+
+    component.submitRating();
+    tick();
+
+    expect(snackBarSpy.open).toHaveBeenCalledWith('Something went wrong', 'Close', jasmine.any(Object));
+  }));
+
+  it('should show validation snackbar when only driverRating is missing', fakeAsync(() => {
+    createComponent({});
+    component.driverRating.set(null);
+    component.vehicleRating.set(5);
+    component.commentText.set('Good');
+
+    component.submitRating();
+    tick();
+
+    expect(snackBarSpy.open).toHaveBeenCalledWith('Please fill all fields', 'Close', jasmine.any(Object));
+    expect(ratingServiceSpy.createRating).not.toHaveBeenCalled();
+  }));
+
+  it('should show validation snackbar when only vehicleRating is missing', fakeAsync(() => {
+    createComponent({});
+    component.driverRating.set(5);
+    component.vehicleRating.set(null);
+    component.commentText.set('Good');
+
+    component.submitRating();
+    tick();
+
+    expect(snackBarSpy.open).toHaveBeenCalledWith('Please fill all fields', 'Close', jasmine.any(Object));
+    expect(ratingServiceSpy.createRating).not.toHaveBeenCalled();
+  }));
+
 });

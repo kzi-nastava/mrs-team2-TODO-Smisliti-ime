@@ -81,4 +81,68 @@ describe('RatingService', () => {
     expect(responseBody).toEqual(jasmine.objectContaining({ id: 2, ...payload }));
   });
 
+  it('createRating should send Authorization header from localStorage when sessionStorage is empty', () => {
+    const token = 'local-456';
+    sessionStorage.removeItem('authToken');
+    localStorage.setItem('authToken', token);
+
+    spyOn<any>(service, 'reloadRatings');
+
+    const payload = { driverRating: 3, vehicleRating: 4, comment: 'ok', rideId: 7 };
+
+    let responseBody: any = null;
+    service.createRating(payload).subscribe(res => responseBody = res, err => fail('should not error'));
+
+    const req = httpMock.expectOne(`${environment.apiHost}/api/ratings?rideId=7`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Authorization')).toBe(`Bearer ${token}`);
+
+    req.flush({ id: 3, ...payload });
+
+    expect(responseBody).toEqual(jasmine.objectContaining({ id: 3, ...payload }));
+    expect((service as any).reloadRatings).toHaveBeenCalled();
+  });
+
+  it('createRating should not send Authorization header when token is null string', () => {
+    sessionStorage.setItem('authToken', 'null');
+
+    const payload = { driverRating: 2, vehicleRating: 3, comment: 'test', rideId: 50 };
+
+    service.createRating(payload).subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiHost}/api/ratings?rideId=50`);
+    expect(req.request.headers.has('Authorization')).toBe(false);
+
+    req.flush({ id: 10, ...payload });
+  });
+
+  it('createRating should not send Authorization header when token is whitespace only', () => {
+    sessionStorage.setItem('authToken', '   ');
+
+    const payload = { driverRating: 1, vehicleRating: 2, comment: 'bad', rideId: 99 };
+
+    service.createRating(payload).subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiHost}/api/ratings?rideId=99`);
+    expect(req.request.headers.has('Authorization')).toBe(false);
+
+    req.flush({ id: 11, ...payload });
+  });
+
+  it('createRating should prioritize sessionStorage over localStorage', () => {
+    const sessionToken = 'session-token';
+    const localToken = 'local-token';
+    sessionStorage.setItem('authToken', sessionToken);
+    localStorage.setItem('authToken', localToken);
+
+    const payload = { driverRating: 5, vehicleRating: 5, comment: 'great', rideId: 33 };
+
+    service.createRating(payload).subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiHost}/api/ratings?rideId=33`);
+    expect(req.request.headers.get('Authorization')).toBe(`Bearer ${sessionToken}`);
+
+    req.flush({ id: 12, ...payload });
+  });
+
 });

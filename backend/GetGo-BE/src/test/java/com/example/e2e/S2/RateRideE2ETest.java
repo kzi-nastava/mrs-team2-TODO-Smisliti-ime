@@ -1,5 +1,8 @@
-package com.example.e2e.S2.rating;
+package com.example.e2e.S2;
 
+import com.example.e2e.S2.rating.PassengerRideDetailsPage;
+import com.example.e2e.S2.rating.PassengerRideHistoryPage;
+import com.example.e2e.S2.rating.RatePage;
 import com.example.e2e.S3.pages.LoginPage;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.*;

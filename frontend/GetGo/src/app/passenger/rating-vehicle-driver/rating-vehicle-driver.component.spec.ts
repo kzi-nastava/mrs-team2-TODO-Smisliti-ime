@@ -1,23 +1,116 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
+import { RatingService } from '../../service/rating/rating.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute } from '@angular/router'
+import { provideRouter } from '@angular/router';
 
 import { RatingVehicleDriverComponent } from './rating-vehicle-driver.component';
 
 describe('RatingVehicleDriverComponent', () => {
   let component: RatingVehicleDriverComponent;
   let fixture: ComponentFixture<RatingVehicleDriverComponent>;
+  let ratingServiceSpy: jasmine.SpyObj<RatingService>;
+  let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
+
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [RatingVehicleDriverComponent]
-    })
-    .compileComponents();
+    // Kreiramo spy za RatingService
+    ratingServiceSpy = jasmine.createSpyObj('RatingService', [
+      'createRating',
+      'setDriver',
+      'reloadRatings'
+    ]);
+
+    // Stubuj ratings kao funkciju koja vraća prazan niz
+    (ratingServiceSpy as any).ratings = jasmine.createSpy('ratings').and.returnValue([]);
+    (ratingServiceSpy as any).avgVehicleRating = jasmine.createSpy('avgVehicleRating').and.returnValue(0);
+    (ratingServiceSpy as any).avgDriverRating = jasmine.createSpy('avgDriverRating').and.returnValue(0);
+
+    // MatSnackBar spy
+    snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
+
+    TestBed.configureTestingModule({
+      imports: [RatingVehicleDriverComponent],
+      providers: [
+        { provide: RatingService, useValue: ratingServiceSpy },
+        // provide MatSnackBar but also override below to be safe
+        { provide: MatSnackBar, useValue: snackBarSpy },
+        { provide: ActivatedRoute, useValue: { params: of({ rideId: '123' }) }},
+        provideRouter([])
+      ]
+    });
+
+    // Ensure the standalone component's injector uses our spy for MatSnackBar
+    TestBed.overrideProvider(MatSnackBar, { useValue: snackBarSpy });
+
+    await TestBed.compileComponents();
+
 
     fixture = TestBed.createComponent(RatingVehicleDriverComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
     await fixture.whenStable();
   });
 
-  it('should create', () => {
+
+  fit('should create', () => {
     expect(component).toBeTruthy();
   });
+
+
+  fit('should show validation snackbar when fields missing', () => {
+      // leave all signals default (null / '') to simulate missing fields
+      component.driverRating.set(null);
+      component.vehicleRating.set(null);
+      component.commentText.set('');
+      component.submitRating();
+      expect(snackBarSpy.open).toHaveBeenCalledWith('Please fill all fields', 'Close', jasmine.any(Object));
+    });
+
+  fit('should submit rating (happy path) and reset signals and show success snackbar', (done) => {
+      // arrange
+      const returned = { id: 1, passengerId: 5, rideId: 123, driverId: 10, vehicleId: 10, driverRating: 5, vehicleRating: 5, comment: 'ok' };
+      ratingServiceSpy.createRating.and.returnValue(of(returned));
+
+      // set signals
+      component.driverRating.set(5);
+      component.vehicleRating.set(5);
+      component.commentText.set('Good ride');
+      // ensure component has rideId from route
+      component.rideId = 123;
+
+      // act
+      component.submitRating();
+
+      // assert async
+      setTimeout(() => {
+        // createRating should be called with object containing rideId
+        expect(ratingServiceSpy.createRating).toHaveBeenCalled();
+        expect(snackBarSpy.open).toHaveBeenCalledWith('Rating submitted successfully!', 'Close', jasmine.any(Object));
+        // signals reset
+        expect(component.driverRating()).toBeNull();
+        expect(component.vehicleRating()).toBeNull();
+        expect(component.commentText()).toBe('');
+        done();
+      }, 10);
+    });
+
+    fit('should show server error message when createRating fails with 400 and message', (done) => {
+      const serverError = { status: 400, error: { message: 'Ride already rated' } };
+      ratingServiceSpy.createRating.and.returnValue(throwError(() => serverError));
+
+      component.driverRating.set(5);
+      component.vehicleRating.set(5);
+      component.commentText.set('Nice');
+      component.rideId = 123;
+
+      component.submitRating();
+
+      setTimeout(() => {
+        expect(snackBarSpy.open).toHaveBeenCalledWith('Ride already rated', 'Close', jasmine.any(Object));
+        done();
+      }, 10);
+    });
+
 });

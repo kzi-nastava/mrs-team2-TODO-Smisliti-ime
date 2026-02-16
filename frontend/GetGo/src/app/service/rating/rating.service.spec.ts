@@ -20,7 +20,7 @@ describe('RatingService', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  fit('should be created', () => {
+  it('should be created', () => {
     expect(service).toBeTruthy();
   });
 
@@ -30,7 +30,7 @@ describe('RatingService', () => {
     localStorage.removeItem('authToken');
   });
 
-  fit('createRating should send Authorization header from sessionStorage and call reloadRatings', () => {
+  it('createRating should send Authorization header from sessionStorage and call reloadRatings', () => {
     const token = 'abc123';
     sessionStorage.setItem('authToken', token);
 
@@ -57,7 +57,7 @@ describe('RatingService', () => {
   });
 
 
-  fit('createRating should not include Authorization header when token missing', () => {
+  it('createRating should not include Authorization header when token missing', () => {
     // Ensure no token anywhere
     sessionStorage.removeItem('authToken');
     localStorage.removeItem('authToken');

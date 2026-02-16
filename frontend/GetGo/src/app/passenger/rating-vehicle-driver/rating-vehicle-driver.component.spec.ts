@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { of, throwError, BehaviorSubject } from 'rxjs';
 import { RatingService } from '../../service/rating/rating.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ActivatedRoute } from '@angular/router'
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 
 import { RatingVehicleDriverComponent } from './rating-vehicle-driver.component';
 
@@ -12,7 +12,16 @@ describe('RatingVehicleDriverComponent', () => {
   let fixture: ComponentFixture<RatingVehicleDriverComponent>;
   let ratingServiceSpy: jasmine.SpyObj<RatingService>;
   let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
+  let httpTestingController: HttpTestingController;
+  let activatedRouteParams: BehaviorSubject<any>;
+  let routerSpy: jasmine.SpyObj<Router>;
 
+  function createComponent(params: any = {}) {
+    activatedRouteParams.next(params);
+    fixture = TestBed.createComponent(RatingVehicleDriverComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  }
 
   beforeEach(async () => {
     // Create spies for RatingService methods
@@ -30,61 +39,117 @@ describe('RatingVehicleDriverComponent', () => {
     // MatSnackBar spy
     snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
 
-    TestBed.configureTestingModule({
-      imports: [RatingVehicleDriverComponent],
+    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    activatedRouteParams = new BehaviorSubject({});
+
+    await TestBed.configureTestingModule({
+      imports: [RatingVehicleDriverComponent, HttpClientTestingModule],
       providers: [
         { provide: RatingService, useValue: ratingServiceSpy },
-        // provide MatSnackBar but also override below to be safe
         { provide: MatSnackBar, useValue: snackBarSpy },
-        { provide: ActivatedRoute, useValue: { params: of({ rideId: '123' }) }},
-        provideRouter([])
+        { provide: Router, useValue: routerSpy },
+        { provide: ActivatedRoute, useValue: { params: activatedRouteParams }}
       ]
     });
 
-    // Ensure the standalone component's injector uses our spy for MatSnackBar
-    TestBed.overrideProvider(MatSnackBar, { useValue: snackBarSpy });
+    TestBed.overrideComponent(RatingVehicleDriverComponent, {
+      set: {
+        providers: [
+          { provide: ActivatedRoute, useValue: { params: activatedRouteParams } },
+          { provide: Router, useValue: routerSpy }
+        ]
+      }
+    });
 
     await TestBed.compileComponents();
 
-    fixture = TestBed.createComponent(RatingVehicleDriverComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-    await fixture.whenStable();
+    TestBed.overrideProvider(MatSnackBar, { useValue: snackBarSpy });
+    TestBed.overrideProvider(ActivatedRoute, { useValue: { params: activatedRouteParams } });
+
+    httpTestingController = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpTestingController.verify();
   });
 
 
-  fit('should create', () => {
+  it('should create', () => {
+    createComponent();
     expect(component).toBeTruthy();
   });
 
+  it('should load rideId from route params and fetch driverId', fakeAsync(() => {
+    createComponent({ rideId: '123' });
 
-  fit('should show validation snackbar when fields missing', () => {
-      component.driverRating.set(null);
-      component.vehicleRating.set(null);
-      component.commentText.set('');
-      component.submitRating();
-      expect(snackBarSpy.open).toHaveBeenCalledWith('Please fill all fields', 'Close', jasmine.any(Object));
-      expect(ratingServiceSpy.createRating).not.toHaveBeenCalled();
-  });
+    tick();
+    expect(component.rideId).toBe(123);
 
-  fit('should submit rating (happy path) and reset signals and show success snackbar', fakeAsync(() => {
+    const req = httpTestingController.expectOne(req =>
+      req.url.includes('/api/completed-rides/123/driver')
+    );
+    expect(req.request.method).toBe('GET');
+
+    req.flush(42);
+    tick();
+
+    expect(ratingServiceSpy.setDriver).toHaveBeenCalledWith(42);
+  }));
+
+  it('should handle HTTP error when fetching driverId', fakeAsync(() => {
+    createComponent({ rideId: '123' });
+
+    tick();
+    expect(component.rideId).toBe(123);
+
+    spyOn(console, 'error');
+
+    const req = httpTestingController.expectOne(req =>
+      req.url.includes('/api/completed-rides/123/driver')
+    );
+
+    req.error(new ProgressEvent('error'), { status: 404 });
+    tick();
+
+    expect(console.error).toHaveBeenCalledWith('Failed to get driverId', jasmine.any(Object));
+    expect(ratingServiceSpy.setDriver).not.toHaveBeenCalled();
+  }));
+
+  it('should not fetch driverId if rideId is null', fakeAsync(() => {
+    createComponent({});
+
+    tick();
+    expect(component.rideId).toBeNull();
+
+    httpTestingController.expectNone(req => req.url.includes('/api/completed-rides'));
+    expect(ratingServiceSpy.setDriver).not.toHaveBeenCalled();
+  }));
+
+  it('should show validation snackbar when fields missing', fakeAsync(() => {
+    createComponent({});
+    component.driverRating.set(null);
+    component.vehicleRating.set(null);
+    component.commentText.set('');
+    component.submitRating();
+    tick();
+    expect(snackBarSpy.open).toHaveBeenCalledWith('Please fill all fields', 'Close', jasmine.any(Object));
+    expect(ratingServiceSpy.createRating).not.toHaveBeenCalled();
+  }));
+
+  it('should submit rating (happy path) and reset signals and show success snackbar', fakeAsync(() => {
+    createComponent({});
+    component.rideId = 123;
+
     const returned = { id: 1, passengerId: 5, rideId: 123, driverId: 10, vehicleId: 10, driverRating: 5, vehicleRating: 5, comment: 'ok' };
     ratingServiceSpy.createRating.and.returnValue(of(returned));
 
-    // set signals
     component.driverRating.set(5);
     component.vehicleRating.set(5);
     component.commentText.set('Good ride');
-    // ensure component has rideId from route
-    component.rideId = 123;
 
-    // act
     component.submitRating();
-
-    // flush microtasks so subscription runs
     tick();
 
-    // createRating should be called with object containing rideId
     expect(ratingServiceSpy.createRating).toHaveBeenCalled();
     expect(ratingServiceSpy.createRating).toHaveBeenCalledWith(
       jasmine.objectContaining({
@@ -96,20 +161,21 @@ describe('RatingVehicleDriverComponent', () => {
     );
 
     expect(snackBarSpy.open).toHaveBeenCalledWith('Rating submitted successfully!', 'Close', jasmine.any(Object));
-    // signals reset
     expect(component.driverRating()).toBeNull();
     expect(component.vehicleRating()).toBeNull();
     expect(component.commentText()).toBe('');
   }));
 
-  fit('should show server error message when createRating fails with 400 and message', fakeAsync(() => {
+  it('should show server error message when createRating fails with 400 and message', fakeAsync(() => {
+    createComponent({});
+    component.rideId = 123;
+
     const serverError = { status: 400, error: { message: 'Ride already rated' } };
     ratingServiceSpy.createRating.and.returnValue(throwError(() => serverError));
 
     component.driverRating.set(5);
     component.vehicleRating.set(5);
     component.commentText.set('Nice');
-    component.rideId = 123;
 
     component.submitRating();
 

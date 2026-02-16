@@ -1,0 +1,260 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #8FABD4;
+  padding-top: 40px;
+}
+
+.reports-page {
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.reports-container {
+  width: 100%;
+  max-width: 900px;
+  background-color: #CBDCEB;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  color: #133E87;
+}
+
+.reports-container h1 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #133E87;
+}
+
+/* Report Type Selection */
+.report-type-selection {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #133E87;
+  font-weight: 500;
+}
+
+.radio-label input[type="radio"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: #133E87;
+}
+
+.radio-label:hover span {
+  color: #0f2f6b;
+}
+
+/* Person Selection */
+.person-selection {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.person-selection label {
+  display: block;
+  font-size: 13px;
+  color: #133E87;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.person-selection input {
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(19, 62, 135, 0.08);
+  background: #ffffff;
+  color: #133E87;
+  font-family: inherit;
+}
+
+.person-selection input:focus {
+  outline: none;
+  border-color: #133E87;
+}
+
+/* Date Range */
+.date-range {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: #133E87;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.form-group input {
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(19, 62, 135, 0.08);
+  background: #ffffff;
+  color: #133E87;
+  font-family: inherit;
+}
+
+.generate-btn {
+  padding: 10px 20px;
+  background: #133E87;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 120ms ease;
+}
+
+.generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(19, 62, 135, 0.18);
+}
+
+.generate-btn:disabled {
+  background: #A0B3C8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Summary Cards */
+.summary-cards {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.summary-card {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.summary-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #133E87;
+}
+
+.summary-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #133E87;
+  margin-top: 4px;
+}
+
+.summary-avg {
+  font-size: 12px;
+  color: #608EC1;
+  margin-top: 2px;
+}
+
+/* Charts */
+.charts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Hide charts when visibility is hidden, but keep them in DOM */
+.charts-grid[style*="visibility: hidden"] {
+  height: 0;
+  overflow: hidden;
+}
+
+.chart-container {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 16px;
+  height: 260px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.chart-container canvas {
+  max-height: 100%;
+}
+
+/* Messages */
+.error {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.hint {
+  background-color: #E8EEF5;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #133E87;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: #608EC1;
+  font-size: 14px;
+}
+
+@media (max-width: 880px) {
+  .reports-page {
+    padding: 16px;
+  }
+
+  .report-type-selection {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .date-range {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .generate-btn {
+    width: 100%;
+  }
+
+  .summary-cards {
+    flex-direction: column;
+  }
+
+  .reports-container {
+    padding: 16px;
+  }
+}

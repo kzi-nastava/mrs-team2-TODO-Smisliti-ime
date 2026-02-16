@@ -8,13 +8,12 @@ import rs.getgo.backend.dtos.admin.*;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.*;
-import rs.getgo.backend.dtos.report.GetReportDTO;
+import rs.getgo.backend.dtos.report.ReportResponseDTO;
 import rs.getgo.backend.dtos.request.*;
 import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.dtos.user.BlockUserRequestDTO;
 import rs.getgo.backend.dtos.user.BlockUserResponseDTO;
-import rs.getgo.backend.dtos.user.CreatedUserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +23,6 @@ import rs.getgo.backend.services.AdminService;
 import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @PreAuthorize("hasRole('ADMIN')")
 @RestController
@@ -73,17 +71,6 @@ public class AdminController {
         String email = AuthUtils.getCurrentUserEmail();
         BlockUserResponseDTO response = adminService.unblockUser(id, email);
         return ResponseEntity.ok(response);
-    }
-
-    // 2.9.3 – View reports
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/reports")
-    public ResponseEntity<List<GetReportDTO>> getReports(
-            @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to) {
-
-        GetReportDTO report = new GetReportDTO("01-01-2025 / 31-01-2025", 120, 860.5, 750.0);
-        return ResponseEntity.ok(List.of(report));
     }
 
     // 2.9.3 – Create admin profile

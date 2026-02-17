@@ -17,6 +17,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.time.Duration;
 import java.util.List;
 
@@ -31,6 +34,7 @@ public class RateRideE2ETest {
     private final String baseUrl = "http://localhost:4200";
     private final String passengerEmail = "p@gmail.com";
     private final String passengerPassword = "pppppppp";
+
 
     @BeforeAll
     void setupAll() {
@@ -60,8 +64,32 @@ public class RateRideE2ETest {
 
     @AfterEach
     void tearDown() {
+        cleanRatings();
         driver.quit();
     }
+
+    private void cleanRatings() {
+        try {
+            String url = "jdbc:postgresql://localhost:5432/getgo_e2e";
+            String username = "postgres";
+            String password = "MerisPSQL";
+//            String url = System.getProperty("spring.datasource.url");
+//            String username = System.getProperty("spring.datasource.username");
+//            String password = System.getProperty("spring.datasource.password");
+
+            Connection conn = DriverManager.getConnection(url, username, password);
+            Statement stmt = conn.createStatement();
+
+            System.out.println("CLEANING RATINGS...");
+            stmt.execute("DELETE FROM ratings");
+
+            stmt.close();
+            conn.close();
+        } catch (Exception e) {
+            System.out.println("Rating cleanup failed: " + e.getMessage());
+        }
+    }
+
 
     @Test
     void testRateRideHappyPath() {
@@ -209,7 +237,6 @@ public class RateRideE2ETest {
 
         RatePage ratePage = new RatePage(driver);
 
-        // samo ocena za vozača, bez komentara i ocene vozila
         ratePage.selectDriverRating(3);
         ratePage.submit();
 
@@ -313,35 +340,33 @@ public class RateRideE2ETest {
         assertTrue(errorDisplayed);
     }
 
-    // New test: verify rating is rejected after 3-day window (requires a test-only backend endpoint to set finish time)
+    // Verify rating is rejected after 3-day window
     @Test
     void testRatingWindowExpired() {
         PassengerRideHistoryPage historyPage = new PassengerRideHistoryPage(driver, baseUrl);
 
-        // Provera da li postoje vožnje
+        // Check if there are at least 2 rides to ensure we can open an older one for expiry test
         assertTrue(historyPage.hasRides(), "No rides available to test");
 
-        // Otvorimo neku staru vožnju - deterministički napravimo expired vožnju u backendu
         historyPage.openOlderRide();
 
         PassengerRideDetailsPage detailsPage = new PassengerRideDetailsPage(driver);
 
-        // Kliknemo "Rate" ako je dugme vidljivo
         if (detailsPage.isRateButtonVisible()) {
             detailsPage.clickRateRide();
             wait.until(ExpectedConditions.urlContains("/rate"));
 
             RatePage ratePage = new RatePage(driver);
 
-            // Pokušaj ocenjivanja nakon što je prošao 3-dnevni prozor
+            // Try to submit a rating for an older ride that should be expired
             ratePage.selectVehicleRating(5);
             ratePage.selectDriverRating(5);
             ratePage.enterComment("Attempt after expiry");
             ratePage.submit();
 
-            // Očekujemo da se prikaže poruka o isteku roka
+            // Look for error messages indicating the rating window has expired
             boolean sawExpiry = ratePage.waitForSnackBarAnyOf(
-                    List.of("expired", "deadline", "rating window", "too late", "cannot rate"),
+                    List.of("expired"),
                     7
             );
 

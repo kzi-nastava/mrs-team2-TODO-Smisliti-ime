@@ -27,9 +27,8 @@ public class CompletedRideRepositoryTest {
 
     @Test
     public void fixture_shouldLoadCompletedRide() {
-        Optional<CompletedRide> cr = completedRideRepository.findById(201L);
+        Optional<CompletedRide> cr = completedRideRepository.findById(8L);
         assertThat(cr).isPresent();
         assertThat(cr.get().getEstimatedPrice()).isEqualTo(120.0);
     }
 }
-

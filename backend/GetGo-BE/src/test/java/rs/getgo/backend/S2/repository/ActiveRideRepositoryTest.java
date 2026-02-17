@@ -31,7 +31,7 @@ public class ActiveRideRepositoryTest {
 
     @Test
     public void fixture_shouldLoadActiveRide() {
-        Optional<ActiveRide> ar = activeRideRepository.findById(101L);
+        Optional<ActiveRide> ar = activeRideRepository.findById(1L);
         assertThat(ar).isPresent();
         assertThat(ar.get().getEstimatedPrice()).isEqualTo(150.0);
     }
@@ -41,13 +41,13 @@ public class ActiveRideRepositoryTest {
         List<ActiveRide> list = activeRideRepository.findByStatus(RideStatus.ACTIVE);
         // our S2 fixture has one active ride
         assertThat(list).isNotEmpty();
-        assertThat(list.stream().anyMatch(r -> r.getId().equals(101L))).isTrue();
+        assertThat(list.stream().anyMatch(r -> r.getId().equals(1L))).isTrue();
     }
 
     @Test
     public void shouldExistByDriverAndStatusIn() {
         // load the active ride and get the driver from the relation instead of autowiring DriverRepository
-        ActiveRide ar = activeRideRepository.findById(101L).orElseThrow();
+        ActiveRide ar = activeRideRepository.findById(1L).orElseThrow();
         Driver drv = ar.getDriver();
         boolean exists = activeRideRepository.existsByDriverAndStatusIn(drv, List.of(RideStatus.ACTIVE));
         assertThat(exists).isTrue();
@@ -56,11 +56,11 @@ public class ActiveRideRepositoryTest {
     @Test
     public void shouldFindByPayingPassengerAndStatusIn() {
         // get passenger via the active ride relation instead of autowiring PassengerRepository
-        ActiveRide ar = activeRideRepository.findById(101L).orElseThrow();
+        ActiveRide ar = activeRideRepository.findById(1L).orElseThrow();
         Passenger p = ar.getPayingPassenger();
         Optional<ActiveRide> opt = activeRideRepository.findActiveRideForPassenger(p, List.of(RideStatus.ACTIVE));
         assertThat(opt).isPresent();
-        assertThat(opt.get().getId()).isEqualTo(101L);
+        assertThat(opt.get().getId()).isEqualTo(1L);
     }
 
     @Test
@@ -71,4 +71,3 @@ public class ActiveRideRepositoryTest {
     }
 
 }
-

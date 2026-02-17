@@ -49,6 +49,8 @@ public class PassengerRideHistoryPage {
         rideItems.get(0).click();
     }
 
+    public void openOlderRide() {rideItems.get(1).click();}
+
     public int getRideCount() {
         return rideItems.size();
     }

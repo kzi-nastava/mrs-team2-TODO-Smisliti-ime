@@ -123,6 +123,52 @@ public class DataInitializerE2E {
             ride.setStoppedEarly(false);
             completedRideRepository.save(ride);
 
+            Route recentRoute = new Route();
+            recentRoute.setStartingPoint("26, Bulevar patrijarha Pavla, Novi Sad");
+            recentRoute.setEndingPoint("9, Melhiora Erdujheljija, Novi Sad");
+            recentRoute.setEstDistanceKm(1.2);
+            recentRoute.setEstTimeMin(5.0);
+            recentRoute.setEncodedPolyline("[]");
+
+            WayPoint rwp1 = new WayPoint();
+            rwp1.setAddress("26, Bulevar patrijarha Pavla, Novi Sad");
+            rwp1.setLatitude(45.25);
+            rwp1.setLongitude(19.80);
+            rwp1.setReachedAt(LocalDateTime.now().minusHours(2));
+
+            WayPoint rwp2 = new WayPoint();
+            rwp2.setAddress("9, Melhiora Erdujheljija, Novi Sad");
+            rwp2.setLatitude(45.26);
+            rwp2.setLongitude(19.81);
+            rwp2.setReachedAt(LocalDateTime.now().minusHours(1));
+
+            recentRoute.setWaypoints(List.of(rwp1, rwp2));
+
+            CompletedRide recentRide = new CompletedRide();
+            recentRide.setRoute(recentRoute);
+            recentRide.setStartTime(LocalDateTime.now().minusHours(2));
+            recentRide.setEndTime(LocalDateTime.now().minusHours(1));
+            recentRide.setEstimatedPrice(350.0);
+            recentRide.setEstDistanceKm(1.2);
+            recentRide.setEstTime(5.0);
+            recentRide.setVehicleType(VehicleType.VAN);
+            recentRide.setNeedsBabySeats(false);
+            recentRide.setNeedsPetFriendly(false);
+            recentRide.setDriverId(savedDriver.getId());
+            recentRide.setDriverName("Driver One");
+            recentRide.setDriverEmail("d@gmail.com");
+            recentRide.setPayingPassengerId(savedPassenger.getId());
+            recentRide.setPayingPassengerName("Passenger Pass Passone");
+            recentRide.setPayingPassengerEmail("p@gmail.com");
+            recentRide.setCompletedNormally(true);
+            recentRide.setPanicPressed(false);
+            recentRide.setCancelled(false);
+            recentRide.setStoppedEarly(false);
+
+            completedRideRepository.save(recentRide);
+
+
+
             log.info("E2E test data initialized");
         };
     }

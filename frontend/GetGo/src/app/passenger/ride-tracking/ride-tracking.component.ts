@@ -14,6 +14,7 @@ import {
 import { WebSocketService } from '../../service/websocket/websocket.service';
 import { Subscription } from 'rxjs';
 import { SnackBarService } from '../../service/snackBar/snackBar.service';
+import { environment } from '../../../env/environment';
 
 @Component({
   selector: 'app-ride-tracking',
@@ -32,6 +33,8 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
 
   showReportForm = false;
   reportText = '';
+  apiHost = environment.apiHost
+
 
   // Ride data
   activeRide: GetPassengerActiveRideDTO | null = null;

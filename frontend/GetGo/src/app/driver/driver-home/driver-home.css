@@ -611,6 +611,27 @@ button.mini:disabled {
   /* These classes are no longer used */
 }
 
+.ride-profile-pic {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #133E87;
+  flex-shrink: 0;
+}
+
+.driver-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.driver-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 /* Responsive */
 @media (max-width: 880px) {
   .home {

@@ -4,6 +4,8 @@ import { Observable, tap, of } from 'rxjs';
 import { GetRatingDTO } from '../../model/rating.model';
 import { environment } from '../../../env/environment';
 import {rxResource} from '@angular/core/rxjs-interop';
+import { HttpHeaders } from '@angular/common/http';
+
 
 @Injectable({
   providedIn: 'root',
@@ -28,16 +30,6 @@ export class RatingService {
     }
   });
 
-
-//   ratingsResource = rxResource({
-//       params: () => ({ rideId: this.rideId() }),
-//       stream: ({params}) => {
-//         return this.http.get<GetRatingDTO[]>(
-//           `${environment.apiHost}/api/ratings/ride/${params.rideId}`
-//         );
-//       }
-//     })
-
   ratings = computed(() => {
     const rs = this.ratingsResource.value() ?? []
     return [...rs].sort((a, b) => b.id - a.id);});
@@ -61,13 +53,21 @@ export class RatingService {
     this.reloadRatings();
   }
 
+
   createRating(rating: { driverRating: number, vehicleRating: number, comment: string, rideId: number }): Observable<GetRatingDTO> {
-//     const token = localStorage.getItem(this.TOKEN_KEY);
-    const token = sessionStorage.getItem(this.TOKEN_KEY);
+    // Get token from sessionStorage (null if not present)
+    const token = sessionStorage.getItem(this.TOKEN_KEY) ?? localStorage.getItem(this.TOKEN_KEY);
+
+// Build options only if token exists and is non-empty
+    let options: { headers?: HttpHeaders } = {};
+    if (token && token.trim().length > 0 && token !== 'null') {
+      options.headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    }
+
     return this.http.post<GetRatingDTO>(
       `${environment.apiHost}/api/ratings?rideId=${rating.rideId}`,
       rating,
-      { headers: { Authorization: `Bearer ${token}` } }
+      options
     ).pipe(tap(_ => this.reloadRatings()));
   }
 

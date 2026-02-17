@@ -23,6 +23,7 @@ import com.example.getgo.fragments.passengers.PassengerProfileInfoFragment;
 import com.example.getgo.fragments.passengers.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.drivers.DriverRideHistoryFragment;
 import com.example.getgo.fragments.passengers.PassengerHomeFragment;
+import com.example.getgo.fragments.passengers.PassengerReportFragment;
 import com.example.getgo.model.UserRole;
 import com.example.getgo.fragments.passengers.PassengerRideTrackingFragment;
 
@@ -97,7 +98,7 @@ public class NavigationHelper {
             return SupportChatFragment.newInstance("DRIVER");
         } else if (itemId == R.id.nav_drawer_notifications) {
             return new NotificationsFragment();
-        } else if (itemId == R.id.nav_driver_reports) {
+        } else if (itemId == R.id.nav_drawer_reports) {
             return DriverReportFragment.newInstance();
         }
 
@@ -115,6 +116,8 @@ public class NavigationHelper {
             return SupportChatFragment.newInstance("PASSENGER");
         } else if (itemId == R.id.nav_drawer_notifications) {
             return new NotificationsFragment();
+        } else if (itemId == R.id.nav_drawer_reports) {
+            return PassengerReportFragment.newInstance();
         }
         return null;
     }

@@ -3,9 +3,11 @@ package rs.getgo.backend.S2.service;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import rs.getgo.backend.controllers.WebSocketController;
 import rs.getgo.backend.dtos.ride.UpdateRideDTO;
 import rs.getgo.backend.dtos.ride.UpdatedRideDTO;
@@ -315,4 +317,38 @@ public class FinishRideServiceTest {
         verify(emailService).sendRideFinishedEmail(eq(linked.getEmail()), eq(linked.getName()), eq(result.getId()), eq(linked.getId()));
     }
 
+    @Test
+    public void testFinishRide_ActivatesWaitingRide_NotifiesDriverAndPassenger() {
+        // Arrange: create a waiting ride for the same driver
+        ActiveRide waiting = new ActiveRide();
+        waiting.setId(222L);
+        waiting.setDriver(driver);
+        waiting.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
+
+        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(completedRideRepository.save(any())).thenAnswer(invocation -> {
+            CompletedRide cr = invocation.getArgument(0);
+            cr.setId(444L);
+            return cr;
+        });
+        // return a waiting ride that should be activated
+        when(activeRideRepository.findByDriverAndStatus(eq(driver), eq(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE))).thenReturn(Optional.of(waiting));
+        when(reportRepository.findUnlinkedReportsByPassenger(any())).thenReturn(List.of());
+        when(panicRepository.findByRideId(11L)).thenReturn(List.of());
+
+        UpdateRideDTO req = new UpdateRideDTO();
+
+        // Act
+        UpdatedRideDTO result = rideService.finishRide(11L, req);
+
+        // Assert
+        assertNotNull(result);
+        // waiting ride should be updated to DRIVER_READY and saved
+        verify(activeRideRepository).save(argThat(ar -> ar.getId().equals(waiting.getId()) && ar.getStatus() == RideStatus.DRIVER_READY));
+
+        // Verify web socket notifications for driver about next ride assigned
+        verify(webSocketController).notifyDriverRideAssigned(eq(driver.getEmail()), any());
+        // Verify passenger was notified about driver status update for waiting ride
+        verify(webSocketController).notifyPassengerRideStatusUpdate(eq(waiting.getId()), eq(RideStatus.DRIVER_READY.toString()), anyString());
+    }
 }

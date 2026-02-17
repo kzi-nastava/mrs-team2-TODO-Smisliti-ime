@@ -49,14 +49,12 @@ public class FinishRideRepositoryTest {
 
     private ActiveRide activeRide1;
     private Driver driver1;
-    private Passenger passenger1;
 
     @BeforeEach
     void setUp() {
         // load entities inserted by SQL fixtures
         activeRide1 = activeRideRepository.findById(1L).orElse(null);
         driver1 = driverRepository.findById(1L).orElse(null);
-        passenger1 = passengerRepository.findById(3L).orElse(null);
     }
 
     @Test

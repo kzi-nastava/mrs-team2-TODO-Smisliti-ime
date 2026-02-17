@@ -317,65 +317,40 @@ public class RateRideE2ETest {
     @Test
     void testRatingWindowExpired() {
         PassengerRideHistoryPage historyPage = new PassengerRideHistoryPage(driver, baseUrl);
-        Assumptions.assumeTrue(historyPage.hasRides(), "No rides available to test");
-        historyPage.openFirstRide();
 
-        // try to extract rideId from DOM using several heuristics
-        Object rideIdObj = ((JavascriptExecutor) driver).executeScript(
-                "var sel = document.querySelector('[data-ride-id]') || document.querySelector('[data-id]') || document.querySelector('.item a[href*=\\'/rides/\\']');\n" +
-                        "if(!sel) return null; if(sel.getAttribute) return sel.getAttribute('data-ride-id') || sel.getAttribute('data-id') || (sel.getAttribute('href')||'').split('/').pop(); return null;"
-        );
-        Assumptions.assumeTrue(rideIdObj != null, "Could not determine rideId from DOM; test requires test-only backend endpoint to set finish time");
+        // Provera da li postoje vožnje
+        assertTrue(historyPage.hasRides(), "No rides available to test");
 
-        long rideId;
-        try {
-            rideId = Long.parseLong(String.valueOf(rideIdObj));
-        } catch (Exception e) {
-            Assumptions.assumeTrue(false, "Parsed rideId is invalid: " + rideIdObj);
-            return;
-        }
+        // Otvorimo neku staru vožnju - deterministički napravimo expired vožnju u backendu
+        historyPage.openOlderRide();
 
-        String backendBase = System.getProperty("backendBaseUrl", "http://localhost:8080");
-        long fourDaysAgo = System.currentTimeMillis() - (4L * 24 * 60 * 60 * 1000);
-
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("%s/api/test/rides/%d/finish-time?timestamp=%d", backendBase, rideId, fourDaysAgo)))
-                .PUT(HttpRequest.BodyPublishers.noBody())
-                .build();
-
-        HttpResponse<String> resp;
-        try {
-            resp = client.send(req, HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) {
-            Assumptions.assumeTrue(false, "Test API unavailable or request failed: " + e.getMessage());
-            return;
-        }
-
-        // If test endpoint not available or not successful, skip the test rather than failing CI
-        Assumptions.assumeTrue(resp.statusCode() == 200, () -> "Test API to set finish-time is not available or returned " + resp.statusCode() + ": " + resp.body());
-
-        // refresh page and proceed to rate flow
-        driver.navigate().refresh();
         PassengerRideDetailsPage detailsPage = new PassengerRideDetailsPage(driver);
 
-        // If rate button is hidden after expiry, treat as pass
-        if (!detailsPage.isRateButtonVisible()) {
-            return;
+        // Kliknemo "Rate" ako je dugme vidljivo
+        if (detailsPage.isRateButtonVisible()) {
+            detailsPage.clickRateRide();
+            wait.until(ExpectedConditions.urlContains("/rate"));
+
+            RatePage ratePage = new RatePage(driver);
+
+            // Pokušaj ocenjivanja nakon što je prošao 3-dnevni prozor
+            ratePage.selectVehicleRating(5);
+            ratePage.selectDriverRating(5);
+            ratePage.enterComment("Attempt after expiry");
+            ratePage.submit();
+
+            // Očekujemo da se prikaže poruka o isteku roka
+            boolean sawExpiry = ratePage.waitForSnackBarAnyOf(
+                    List.of("expired", "deadline", "rating window", "too late", "cannot rate"),
+                    7
+            );
+
+            assertTrue(sawExpiry, "Expected rating to be rejected due to expiry (3 days)");
+        } else {
+            fail("Rate button not visible — cannot test expired ride");
         }
-
-        detailsPage.clickRateRide();
-        wait.until(ExpectedConditions.urlContains("/rate"));
-
-        RatePage ratePage = new RatePage(driver);
-        ratePage.selectVehicleRating(5);
-        ratePage.selectDriverRating(5);
-        ratePage.enterComment("Attempt after expiry");
-        ratePage.submit();
-
-        boolean sawExpiry = ratePage.waitForSnackBarAnyOf(List.of("expired", "deadline", "rating window", "too late", "cannot rate"), 7);
-        assertTrue(sawExpiry, "Expected rating to be rejected due to expiry (3 days)");
     }
+
 
     // Verify submission is rejected when auth token is missing
     @Test

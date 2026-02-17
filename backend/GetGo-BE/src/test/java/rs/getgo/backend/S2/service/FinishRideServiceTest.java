@@ -3,9 +3,12 @@ package rs.getgo.backend.S2.service;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import rs.getgo.backend.controllers.WebSocketController;
 import rs.getgo.backend.dtos.ride.UpdateRideDTO;
 import rs.getgo.backend.dtos.ride.UpdatedRideDTO;
@@ -26,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+
 
 public class FinishRideServiceTest {
 
@@ -109,10 +113,10 @@ public class FinishRideServiceTest {
 
         // Build a minimal ActiveRide in ACTIVE status
         activeRide = new ActiveRide();
-        activeRide.setId(11L);
+        activeRide.setId(1L);
 
         Route route = new Route();
-        route.setId(21L);
+        route.setId(2L);
         route.setEstTimeMin(30.0);
         route.setEstDistanceKm(12.0);
         route.setWaypoints(new java.util.LinkedList<>());
@@ -125,15 +129,15 @@ public class FinishRideServiceTest {
         activeRide.setStatus(RideStatus.ACTIVE);
 
         driver = new Driver();
-        driver.setId(31L);
-        driver.setEmail("drv@example.com");
+        driver.setId(3L);
+        driver.setEmail("drv@gmail.com");
         driver.setName("Drv");
         driver.setActive(false);
         activeRide.setDriver(driver);
 
         payingPassenger = new Passenger();
-        payingPassenger.setId(41L);
-        payingPassenger.setEmail("pass@example.com");
+        payingPassenger.setId(4L);
+        payingPassenger.setEmail("pass@gmail.com");
         payingPassenger.setName("Pass");
         payingPassenger.setSurname("Surname");
         activeRide.setPayingPassenger(payingPassenger);
@@ -149,29 +153,29 @@ public class FinishRideServiceTest {
     @Test
     public void testFinishRide_HappyPath() {
         // Arrange
-        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
         when(completedRideRepository.save(any())).thenAnswer(invocation -> {
             CompletedRide cr = invocation.getArgument(0);
-            cr.setId(500L);
+            cr.setId(5L);
             return cr;
         });
         when(reportRepository.findUnlinkedReportsByPassenger(any())).thenReturn(List.of());
         when(activeRideRepository.findFirstByDriverAndStatusOrderByScheduledTimeAsc(any(Driver.class), any())).thenReturn(Optional.empty());
-        when(panicRepository.findByRideId(11L)).thenReturn(List.of());
+        when(panicRepository.findByRideId(1L)).thenReturn(List.of());
 
         UpdateRideDTO req = new UpdateRideDTO();
 
         // Act
-        UpdatedRideDTO result = rideService.finishRide(11L, req);
+        UpdatedRideDTO result = rideService.finishRide(1L, req);
 
         // Assert
         assertNotNull(result);
-        assertEquals(500L, result.getId());
+        assertEquals(5L, result.getId());
         assertEquals("FINISHED", result.getStatus());
         assertNotNull(result.getEndTime());
 
         verify(completedRideRepository, times(1)).save(any(CompletedRide.class));
-        verify(emailService, times(1)).sendRideFinishedEmail(eq(payingPassenger.getEmail()), eq(payingPassenger.getName()), eq(500L), eq(payingPassenger.getId()));
+        verify(emailService, times(1)).sendRideFinishedEmail(eq(payingPassenger.getEmail()), eq(payingPassenger.getName()), eq(5L), eq(payingPassenger.getId()));
         verify(webSocketController, times(1)).notifyDriverRideFinished(eq(driver.getEmail()), eq(activeRide.getId()), anyDouble(), any(LocalDateTime.class), any(LocalDateTime.class), eq(driver.getId()));
         verify(webSocketController, times(1)).notifyPassengerRideFinished(eq(activeRide.getId()), anyDouble(), any(LocalDateTime.class), any(LocalDateTime.class), eq(driver.getId()));
         verify(activeRideRepository, times(1)).delete(activeRide);
@@ -182,82 +186,82 @@ public class FinishRideServiceTest {
     @Test
     public void testFinishRide_ReportLinking_savesReports() {
         // Arrange
-        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
         when(completedRideRepository.save(any())).thenAnswer(invocation -> {
             CompletedRide cr = invocation.getArgument(0);
-            cr.setId(600L);
+            cr.setId(6L);
             return cr;
         });
 
         InconsistencyReport rep = new InconsistencyReport();
-        rep.setId(300L);
+        rep.setId(7L);
         when(reportRepository.findUnlinkedReportsByPassenger(any())).thenReturn(List.of(rep));
 
         UpdateRideDTO req = new UpdateRideDTO();
 
         // Act
-        UpdatedRideDTO result = rideService.finishRide(11L, req);
+        UpdatedRideDTO result = rideService.finishRide(1L, req);
 
         // Assert
         assertNotNull(result);
-        assertEquals(600L, result.getId());
+        assertEquals(6L, result.getId());
         // verify that reportRepository.save was called for the report
         verify(reportRepository, times(1)).save(any(InconsistencyReport.class));
     }
 
     @Test
     public void testFinishRide_RepoSaveThrows_propagatesException() {
-        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
         when(completedRideRepository.save(any())).thenThrow(new RuntimeException("DB down"));
 
         UpdateRideDTO req = new UpdateRideDTO();
 
-        assertThrows(RuntimeException.class, () -> rideService.finishRide(11L, req));
+        assertThrows(RuntimeException.class, () -> rideService.finishRide(1L, req));
 
         verify(completedRideRepository, times(1)).save(any(CompletedRide.class));
     }
 
     @Test
     public void testFinishRide_RideNotFound() {
-        when(activeRideRepository.findById(99L)).thenReturn(Optional.empty());
+        when(activeRideRepository.findById(10L)).thenReturn(Optional.empty());
         UpdateRideDTO req = new UpdateRideDTO();
-        assertThrows(IllegalStateException.class, () -> rideService.finishRide(99L, req));
+        assertThrows(IllegalStateException.class, () -> rideService.finishRide(10L, req));
     }
 
     @Test
     public void testFinishRide_InvalidStatus_Throws() {
         activeRide.setStatus(RideStatus.DRIVER_READY);
-        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
         UpdateRideDTO req = new UpdateRideDTO();
-        assertThrows(IllegalStateException.class, () -> rideService.finishRide(11L, req));
+        assertThrows(IllegalStateException.class, () -> rideService.finishRide(1L, req));
     }
 
     @Test
     public void testFinishRide_PanicsLinkedToCompletedRide() {
         // Arrange
-        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
         when(completedRideRepository.save(any())).thenAnswer(invocation -> {
             CompletedRide cr = invocation.getArgument(0);
-            cr.setId(777L);
+            cr.setId(7L);
             return cr;
         });
         when(reportRepository.findUnlinkedReportsByPassenger(any())).thenReturn(List.of());
 
         Panic panic = new Panic();
-        panic.setId(900L);
+        panic.setId(10L);
         // Return a single present Optional
-        when(panicRepository.findByRideId(11L)).thenReturn(List.of(Optional.of(panic)));
+        when(panicRepository.findByRideId(1L)).thenReturn(List.of(Optional.of(panic)));
 
         UpdateRideDTO req = new UpdateRideDTO();
 
         // Act
-        UpdatedRideDTO result = rideService.finishRide(11L, req);
+        UpdatedRideDTO result = rideService.finishRide(1L, req);
 
         // Assert
         assertNotNull(result);
-        assertEquals(777L, result.getId());
+        assertEquals(7L, result.getId());
         // panic object should have been mutated to point to completed ride id
-        assertEquals(777L, panic.getRideId());
+        assertEquals(7L, panic.getRideId());
         // completedRideRepository.save should have been called at least twice (initial save + update when panic attached)
         verify(completedRideRepository, atLeast(2)).save(any(CompletedRide.class));
     }
@@ -265,10 +269,10 @@ public class FinishRideServiceTest {
     @Test
     public void testFinishRide_DriverHasNextScheduledRide_MarksDriverBusy() {
         // Arrange: driver has next scheduled ride
-        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
         when(completedRideRepository.save(any())).thenAnswer(invocation -> {
             CompletedRide cr = invocation.getArgument(0);
-            cr.setId(888L);
+            cr.setId(8L);
             return cr;
         });
         // simulate there is a scheduled ride for this driver
@@ -278,7 +282,7 @@ public class FinishRideServiceTest {
         UpdateRideDTO req = new UpdateRideDTO();
 
         // Act
-        UpdatedRideDTO result = rideService.finishRide(11L, req);
+        UpdatedRideDTO result = rideService.finishRide(1L, req);
 
         // Assert
         assertNotNull(result);
@@ -290,15 +294,15 @@ public class FinishRideServiceTest {
     public void testFinishRide_SendsEmailToLinkedPassengers() {
         // Arrange
         Passenger linked = new Passenger();
-        linked.setId(55L);
-        linked.setEmail("linked@example.com");
+        linked.setId(9L);
+        linked.setEmail("linked@gmail.com");
         linked.setName("Lnk");
         activeRide.setLinkedPassengers(List.of(linked));
 
-        when(activeRideRepository.findById(11L)).thenReturn(Optional.of(activeRide));
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
         when(completedRideRepository.save(any())).thenAnswer(invocation -> {
             CompletedRide cr = invocation.getArgument(0);
-            cr.setId(999L);
+            cr.setId(9L);
             return cr;
         });
         when(reportRepository.findUnlinkedReportsByPassenger(any())).thenReturn(List.of());
@@ -307,7 +311,7 @@ public class FinishRideServiceTest {
         UpdateRideDTO req = new UpdateRideDTO();
 
         // Act
-        UpdatedRideDTO result = rideService.finishRide(11L, req);
+        UpdatedRideDTO result = rideService.finishRide(1L, req);
 
         // Assert
         assertNotNull(result);
@@ -315,4 +319,38 @@ public class FinishRideServiceTest {
         verify(emailService).sendRideFinishedEmail(eq(linked.getEmail()), eq(linked.getName()), eq(result.getId()), eq(linked.getId()));
     }
 
+    @Test
+    public void testFinishRide_ActivatesWaitingRide_NotifiesDriverAndPassenger() {
+        // Arrange: create a waiting ride for the same driver
+        ActiveRide waiting = new ActiveRide();
+        waiting.setId(2L);
+        waiting.setDriver(driver);
+        waiting.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
+
+        when(activeRideRepository.findById(1L)).thenReturn(Optional.of(activeRide));
+        when(completedRideRepository.save(any())).thenAnswer(invocation -> {
+            CompletedRide cr = invocation.getArgument(0);
+            cr.setId(10L);
+            return cr;
+        });
+        // return a waiting ride that should be activated
+        when(activeRideRepository.findByDriverAndStatus(eq(driver), eq(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE))).thenReturn(Optional.of(waiting));
+        when(reportRepository.findUnlinkedReportsByPassenger(any())).thenReturn(List.of());
+        when(panicRepository.findByRideId(1L)).thenReturn(List.of());
+
+        UpdateRideDTO req = new UpdateRideDTO();
+
+        // Act
+        UpdatedRideDTO result = rideService.finishRide(1L, req);
+
+        // Assert
+        assertNotNull(result);
+        // waiting ride should be updated to DRIVER_READY and saved
+        verify(activeRideRepository).save(argThat(ar -> ar.getId().equals(waiting.getId()) && ar.getStatus() == RideStatus.DRIVER_READY));
+
+        // Verify web socket notifications for driver about next ride assigned
+        verify(webSocketController).notifyDriverRideAssigned(eq(driver.getEmail()), any());
+        // Verify passenger was notified about driver status update for waiting ride
+        verify(webSocketController).notifyPassengerRideStatusUpdate(eq(waiting.getId()), eq(RideStatus.DRIVER_READY.toString()), anyString());
+    }
 }

@@ -1,0 +1,112 @@
+<app-nav-bar></app-nav-bar>
+
+<div class="reports-page">
+  <div class="reports-container">
+    <h1>{{ reportTitle }}</h1>
+
+    <div class="report-type-selection">
+      <label class="radio-label">
+        <input
+          type="radio"
+          name="reportType"
+          value="all-drivers"
+          [(ngModel)]="reportType"
+          (change)="onReportTypeChange()"
+        />
+        <span>All Drivers</span>
+      </label>
+      <label class="radio-label">
+        <input
+          type="radio"
+          name="reportType"
+          value="all-passengers"
+          [(ngModel)]="reportType"
+          (change)="onReportTypeChange()"
+        />
+        <span>All Passengers</span>
+      </label>
+      <label class="radio-label">
+        <input
+          type="radio"
+          name="reportType"
+          value="specific-driver"
+          [(ngModel)]="reportType"
+          (change)="onReportTypeChange()"
+        />
+        <span>Specific Driver</span>
+      </label>
+      <label class="radio-label">
+        <input
+          type="radio"
+          name="reportType"
+          value="specific-passenger"
+          [(ngModel)]="reportType"
+          (change)="onReportTypeChange()"
+        />
+        <span>Specific Passenger</span>
+      </label>
+    </div>
+
+    <div *ngIf="needsPersonSelection" class="person-selection">
+      <label for="personEmail">Enter Person's Email</label>
+      <input
+        type="email"
+        id="personEmail"
+        [(ngModel)]="selectedPersonEmail"
+        placeholder="user@example.com"
+      />
+    </div>
+
+    <div class="date-range">
+      <div class="form-group">
+        <label for="startDate">Start Date</label>
+        <input type="date" id="startDate" [(ngModel)]="startDate" />
+      </div>
+      <div class="form-group">
+        <label for="endDate">End Date</label>
+        <input type="date" id="endDate" [(ngModel)]="endDate" />
+      </div>
+      <button class="generate-btn" (click)="generateReport()" [disabled]="isLoading">
+        {{ isLoading ? 'Loading...' : 'Generate Report' }}
+      </button>
+    </div>
+
+    <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+    <div *ngIf="isLoading" class="hint">Loading report data...</div>
+
+    <!-- Summary Cards -->
+    <div *ngIf="report" class="summary-cards">
+      <div class="summary-card">
+        <span class="summary-value">{{ report.totalRides }}</span>
+        <span class="summary-label">Total Rides</span>
+        <span class="summary-avg">avg {{ report.avgRidesPerDay }}/day</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-value">{{ report.totalKilometers }} km</span>
+        <span class="summary-label">Total Distance</span>
+        <span class="summary-avg">avg {{ report.avgKilometersPerDay }} km/day</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-value">{{ report.totalMoney | number:'1.2-2' }} RSD</span>
+        <span class="summary-label">{{ moneyLabel }}</span>
+        <span class="summary-avg">avg {{ report.avgMoneyPerDay | number:'1.2-2' }} RSD/day</span>
+      </div>
+    </div>
+
+    <div class="charts-grid" [style.visibility]="report ? 'visible' : 'hidden'">
+      <div class="chart-container">
+        <canvas #ridesChart></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas #kmChart></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas #moneyChart></canvas>
+      </div>
+    </div>
+
+    <div *ngIf="!report && !isLoading && !errorMessage" class="no-data">
+      Select report type, date range and generate a report.
+    </div>
+  </div>
+</div>

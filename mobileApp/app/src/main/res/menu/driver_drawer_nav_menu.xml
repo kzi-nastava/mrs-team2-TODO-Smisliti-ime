@@ -17,13 +17,13 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_drawer_reports"
-            android:icon="@drawable/ic_car"
-            android:title="@string/generate_reports"/>
-        <item
             android:id="@+id/nav_drawer_support"
             android:icon="@drawable/ic_profile"
             android:title="@string/live_support"/>
+        <item
+            android:id="@+id/nav_drawer_reports"
+            android:icon="@drawable/ic_profile"
+            android:title="@string/reports"/>
     </group>
 
     <item android:title="@string/other">

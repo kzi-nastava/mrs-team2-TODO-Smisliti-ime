@@ -46,9 +46,14 @@ public class FavoriteRoutesE2ETest {
 
     private static void cleanDatabase() {
         try {
-            String url = System.getProperty("spring.datasource.url");
-            String username = System.getProperty("spring.datasource.username");
-            String password = System.getProperty("spring.datasource.password");
+//            String url = System.getProperty("spring.datasource.url");
+//            String username = System.getProperty("spring.datasource.username");
+//            String password = System.getProperty("spring.datasource.password");
+
+            String url = "jdbc:postgresql://localhost:5432/getgo_e2e";
+            String username = "postgres";
+            String password = "MerisPSQL";
+
 
             Connection conn = DriverManager.getConnection(url, username, password);
             Statement stmt = conn.createStatement();

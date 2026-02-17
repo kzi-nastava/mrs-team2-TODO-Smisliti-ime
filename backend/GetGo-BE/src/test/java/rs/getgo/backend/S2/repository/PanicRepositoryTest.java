@@ -29,15 +29,14 @@ public class PanicRepositoryTest {
     public void fixture_shouldLoadPanic() {
         List<Panic> panics = panicRepository.findAll();
         assertThat(panics).isNotEmpty();
-        assertThat(panics.get(0).getRideId()).isEqualTo(101L);
+        assertThat(panics.get(0).getRideId()).isEqualTo(1L);
     }
 
     @Test
     public void findByRideId_returnsOptionalList() {
-        List<java.util.Optional<Panic>> result = panicRepository.findByRideId(101L);
+        List<java.util.Optional<Panic>> result = panicRepository.findByRideId(1L);
         assertThat(result).isNotEmpty();
         assertThat(result.get(0)).isPresent();
-        assertThat(result.get(0).get().getId()).isEqualTo(51L);
+        assertThat(result.get(0).get().getId()).isEqualTo(5L);
     }
 }
-

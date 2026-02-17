@@ -27,9 +27,8 @@ public class DriverRepositoryTest {
 
     @Test
     public void fixture_shouldLoadDriver() {
-        Optional<Driver> drv = driverRepository.findById(201L);
+        Optional<Driver> drv = driverRepository.findById(1L);
         assertThat(drv).isPresent();
         assertThat(drv.get().getActive()).isTrue();
     }
 }
-

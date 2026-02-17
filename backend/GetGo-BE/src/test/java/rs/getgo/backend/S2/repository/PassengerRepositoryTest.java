@@ -26,8 +26,8 @@ public class PassengerRepositoryTest {
     private PassengerRepository passengerRepository;
 
     @Test
-    public void fixture_shouldLoadS2Passenger() {
-        Optional<Passenger> p = passengerRepository.findById(203L);
+    public void fixture_shouldLoadPassenger() {
+        Optional<Passenger> p = passengerRepository.findById(2L);
         assertThat(p).isPresent();
         assertThat(p.get().isCanAccessSystem()).isTrue();
     }

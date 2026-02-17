@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -30,6 +31,7 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.example.getgo.R;
 import com.example.getgo.activities.MainActivity;
 import com.example.getgo.api.ApiClient;
@@ -90,6 +92,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
     private LinearLayout reportForm;
     private EditText editReport;
     private Button btnSubmitReport, btnCancelReport;
+    private ImageView ivDriverPhoto;
 
     private GetPassengerActiveRideDTO currentRide;
     private boolean panicSent = false;
@@ -132,6 +135,7 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
         tvStartPoint = root.findViewById(R.id.tvStartPoint);
         tvDestination = root.findViewById(R.id.tvDestination);
         tvDriverName = root.findViewById(R.id.tvDriverName);
+        ivDriverPhoto = root.findViewById(R.id.ivDriverPhoto);
         tvEstimatedTime = root.findViewById(R.id.tvEstimatedTime);
         tvEstimatedPrice = root.findViewById(R.id.tvEstimatedPrice);
 
@@ -404,7 +408,8 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 
         tvStartPoint.setText(currentRide.getStartingPoint());
         tvDestination.setText(currentRide.getEndingPoint());
-        tvDriverName.setText(currentRide.getDriverName() != null ? currentRide.getDriverName() : "Assigning...");
+        tvDriverName.setText(currentRide.getDriverName());
+        loadProfilePicture(currentRide.getDriverProfilePictureUrl(), ivDriverPhoto);
         estimatedTime = (int) Math.round(currentRide.getEstimatedTimeMin());
         tvEstimatedTime.setText(String.format(Locale.ENGLISH, "%.0f min", currentRide.getEstimatedTimeMin()));
         tvEstimatedPrice.setText(String.format(Locale.ENGLISH, "%.2f RSD", currentRide.getEstimatedPrice()));
@@ -415,6 +420,20 @@ public class PassengerRideTrackingFragment extends Fragment implements OnMapRead
 
         updateStatusMessage(currentRide.getStatus(), null);
         updateButtonVisibility(currentRide.getStatus());
+    }
+
+    private void loadProfilePicture(String url, ImageView imageView) {
+        if (url != null && !url.isEmpty()) {
+            String fullUrl = ApiClient.SERVER_URL + url;
+            Glide.with(this)
+                    .load(fullUrl)
+                    .placeholder(R.drawable.unregistered_profile)
+                    .error(R.drawable.unregistered_profile)
+                    .circleCrop()
+                    .into(imageView);
+        } else {
+            imageView.setImageResource(R.drawable.unregistered_profile);
+        }
     }
 
     private void updateStatusMessage(String status, String customMessage) {

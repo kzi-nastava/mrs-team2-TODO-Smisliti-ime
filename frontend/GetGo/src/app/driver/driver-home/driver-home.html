@@ -54,18 +54,23 @@
         </div>
 
         <div class="info-row">
-          <label>Starting Point:</label>
+          <label>Starting Point: </label>
           <span>{{ activeRide.startingPoint }}</span>
         </div>
 
         <div class="info-row">
-          <label>Destination:</label>
+          <label>Destination: </label>
           <span>{{ activeRide.endingPoint }}</span>
         </div>
 
-        <div class="info-row">
-          <label>Passenger:</label>
-          <span>{{ activeRide.passengerName }}</span>
+        <div class="info-row driver-info-row">
+          <div>
+            <label>Passenger: </label>
+            <span>{{ activeRide.passengerName }}</span>
+          </div>
+          <img [src]="activeRide.passengerProfilePictureUrl? apiHost + activeRide.passengerProfilePictureUrl: 'assets/images/pfp.png'"
+               alt="Passenger Photo"
+               class="ride-profile-pic" />
         </div>
 
         <div class="info-row">

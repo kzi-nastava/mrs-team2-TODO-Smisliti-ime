@@ -37,7 +37,7 @@ public class DriverController {
     }
 
     // 2.9.2 - Get driver rides
-//    @PreAuthorize("hasRole('DRIVER')")
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping(value = "/rides", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getDriverRides(
             @RequestParam(defaultValue = "0") int page,
@@ -46,7 +46,6 @@ public class DriverController {
     ) {
 
         String email = AuthUtils.getCurrentUserEmail();
-//        String email = "d@gmail.com"; // Currently hardcoded
 
         Page<GetRideDTO> rides =
                 driverService.getDriverRides(email, startDate, page, size);

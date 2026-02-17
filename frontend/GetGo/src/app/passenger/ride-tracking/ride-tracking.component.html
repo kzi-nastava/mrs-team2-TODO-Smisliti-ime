@@ -31,6 +31,13 @@
             {{ activeRide.endingPoint }}
           </div>
 
+          <div *ngIf="activeRide.driverName" class="driver-info">
+            <img [src]="activeRide.driverProfilePictureUrl? apiHost + activeRide.driverProfilePictureUrl: 'assets/images/pfp.png'"
+                 alt="Driver Photo"
+                 class="ride-profile-pic" />
+            <p><strong>Driver:</strong> {{ activeRide.driverName }}</p>
+          </div>
+
           <!-- Driver Info -->
           <div *ngIf="activeRide.driverName" class="driver-info">
             <p><strong>Driver:</strong> {{ activeRide.driverName }}</p>

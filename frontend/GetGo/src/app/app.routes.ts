@@ -9,13 +9,14 @@ import {RideDetailsComponent} from './driver/ride-details/ride-details.component
 import { PassengerHome } from './passenger/passenger-home/passenger-home';
 import { PassengerProfileInfo } from './passenger/passenger-profile-info/passenger-profile-info';
 import { PassengerChangePassword } from './passenger/passenger-change-password/passenger-change-password';
-import { DriverHome } from './driver/driver-home/driver-home'
+import { DriverHome } from './driver/driver-home/driver-home';
 import { DriverActivate } from './driver/driver-activate/driver-activate';
 import { DriverProfile } from './driver/driver-profile/driver-profile';
 import { DriverChangePassword } from './driver/driver-change-password/driver-change-password';
 import { DriverAllScheduledRides } from './driver/driver-all-scheduled-rides/driver-all-scheduled-rides';
 import { ScheduledRideDetails } from './driver/scheduled-ride-details/scheduled-ride-details';
-import { AdminHome } from './admin/admin-home/admin-home'
+import { DriverReports } from './driver/driver-reports/driver-reports';
+import { AdminHome } from './admin/admin-home/admin-home';
 import { AdminProfile } from './admin/admin-profile/admin-profile';
 import { AdminChangePassword } from './admin/admin-change-password/admin-change-password';
 import { AdminReviewDriverRequests } from './admin/admin-review-driver-requests/admin-review-driver-requests'
@@ -31,6 +32,7 @@ import {ResetPasswordComponent} from './pages/authentication/reset-password/rese
 import {ActivateComponent} from './pages/authentication/activate/activate';
 import {PassengerRidesComponent} from './passenger/passenger-ride-history/passenger-rides.component';
 import {PassengerRideDetailsComponent} from './passenger/passenger-ride-details/ride-details.component';
+import { PassengerReports } from './passenger/passenger-reports/passenger-reports';
 import { SupportChatComponent } from './layout/support-chat/support-chat.component';
 import { AdminSupportChatComponent } from './admin/admin-support-chat/admin-support-chat.component';
 import {AdminRideDetailsComponent} from './admin/admin-ride-details/admin-ride-details.component';
@@ -38,6 +40,7 @@ import {AdminRideHistoryComponent} from './admin/admin-ride-history/admin-ride-h
 import { AdminActiveRidesComponent } from './admin/admin-active-rides/admin-active-rides.component';
 import { ActiveRideDetailsComponent } from './admin/active-ride-details/active-ride-details.component';
 import { AdminRidePriceComponent } from './admin/admin-ride-price/admin-ride-price.component';
+import { AdminReports } from './admin/admin-reports/admin-reports'
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -58,12 +61,14 @@ export const routes: Routes = [
   { path: 'passenger/rides/:id', component: PassengerRideDetailsComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger]}},
   { path: 'passenger/passenger-ride-history', component: PassengerRidesComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'passenger/ride-tracking', component: RideTrackingComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
+  { path: 'passenger/passenger-reports', component: PassengerReports, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger] } },
   { path: 'driver/activate/:token', component: DriverActivate },
   { path: 'driver/driver-home', component: DriverHome, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'driver/driver-profile', component: DriverProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'driver/change-password', component: DriverChangePassword, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'driver/all-scheduled', component: DriverAllScheduledRides, canActivate: [AuthGuard], data: { roles: [UserRole.Driver ] } },
   { path: 'driver/scheduled-rides/:id', component: ScheduledRideDetails, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
+  { path: 'driver/driver-reports', component: DriverReports, canActivate: [AuthGuard], data: { roles: [UserRole.Driver] } },
   { path: 'admin/admin-home', component: AdminHome, canActivate: [AuthGuard], data: {roles: [UserRole.Admin] } },
   { path: 'admin/admin-profile', component: AdminProfile, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'admin/review-driver-requests', component: AdminReviewDriverRequests, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
@@ -79,5 +84,6 @@ export const routes: Routes = [
   { path: 'admin/block-users', component: BlockUsers, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
   { path: 'support-chat', component: SupportChatComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Passenger, UserRole.Driver, UserRole.Admin] } },
   { path: 'admin/support-chat', component: AdminSupportChatComponent, canActivate: [AuthGuard], data: { roles: [UserRole.Admin] } },
+  { path: 'admin/admin-reports', component: AdminReports, canActivate: [AuthGuard], data: {roles: [UserRole.Admin] } },
   { path: '**', component: NotFoundComponent }
 ];

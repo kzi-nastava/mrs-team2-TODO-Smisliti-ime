@@ -1,6 +1,5 @@
 package com.example.getgo.utils;
 
-import android.util.Log;
 
 import androidx.fragment.app.Fragment;
 
@@ -13,15 +12,17 @@ import com.example.getgo.fragments.admins.AdminHomeFragment;
 import com.example.getgo.fragments.admins.AdminProfileInfoFragment;
 import com.example.getgo.fragments.admins.AdminReviewDriverRequestsFragment;
 import com.example.getgo.fragments.admins.AdminRidePricingFragment;
+import com.example.getgo.fragments.admin.AdminReportFragment;
 import com.example.getgo.fragments.drivers.DriverHomeFragment;
 import com.example.getgo.fragments.drivers.DriverProfileInfoFragment;
+import com.example.getgo.fragments.drivers.DriverReportFragment;
 import com.example.getgo.fragments.guests.GuestHomeFragment;
 import com.example.getgo.fragments.layouts.SupportChatFragment;
 import com.example.getgo.fragments.layouts.NotificationsFragment;
 import com.example.getgo.fragments.passengers.PassengerProfileInfoFragment;
-import com.example.getgo.fragments.passengers.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.drivers.DriverRideHistoryFragment;
 import com.example.getgo.fragments.passengers.PassengerHomeFragment;
+import com.example.getgo.fragments.passengers.PassengerReportFragment;
 import com.example.getgo.model.UserRole;
 import com.example.getgo.fragments.passengers.PassengerRideTrackingFragment;
 
@@ -96,6 +97,8 @@ public class NavigationHelper {
             return SupportChatFragment.newInstance("DRIVER");
         } else if (itemId == R.id.nav_drawer_notifications) {
             return new NotificationsFragment();
+        } else if (itemId == R.id.nav_drawer_reports) {
+            return DriverReportFragment.newInstance();
         }
 
         return null;
@@ -112,6 +115,8 @@ public class NavigationHelper {
             return SupportChatFragment.newInstance("PASSENGER");
         } else if (itemId == R.id.nav_drawer_notifications) {
             return new NotificationsFragment();
+        } else if (itemId == R.id.nav_drawer_reports) {
+            return PassengerReportFragment.newInstance();
         }
         return null;
     }
@@ -133,6 +138,8 @@ public class NavigationHelper {
             return new AdminActiveRidesFragment();
         } else if (itemId == R.id.nav_drawer_pricing) {
             return new AdminRidePricingFragment();
+        } else if (itemId == R.id.nav_bottom_reports) {
+            return AdminReportFragment.newInstance();
         }
 
         return null;

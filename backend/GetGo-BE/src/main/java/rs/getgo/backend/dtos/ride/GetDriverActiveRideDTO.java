@@ -25,4 +25,5 @@ public class GetDriverActiveRideDTO {
     private List<Double> longitudes;
     private List<String> addresses;
     private LocalDateTime scheduledTime; // Null if not scheduled
+    private String passengerProfilePictureUrl;
 }

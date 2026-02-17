@@ -39,6 +39,7 @@ export interface GetDriverActiveRideDTO {
   longitudes?: number[];
   addresses?: string[];
   scheduledTime?: string; // Null if ride not scheduled
+  passengerProfilePictureUrl?: string;
 }
 
 export interface UpdatedRideDTO {
@@ -89,6 +90,7 @@ export interface GetPassengerActiveRideDTO {
   latitudes: number[];
   longitudes: number[];
   addresses: string[];
+  driverProfilePictureUrl: string;
 }
 
 export interface PassengerStatusUpdateDTO {

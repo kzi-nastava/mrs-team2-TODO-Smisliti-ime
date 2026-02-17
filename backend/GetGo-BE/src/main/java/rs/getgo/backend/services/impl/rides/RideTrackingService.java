@@ -79,6 +79,8 @@ public class RideTrackingService {
                 .map(WayPoint::getAddress)
                 .toList());
 
+        dto.setDriverProfilePictureUrl(ride.getDriver().getProfilePictureUrl());
+
         return dto;
     }
 

@@ -15,6 +15,7 @@ import { AuthService } from '../../service/auth-service/auth.service';
 import { SnackBarService } from '../../service/snackBar/snackBar.service';
 import { Subscription } from 'rxjs';
 import {FormsModule} from '@angular/forms';
+import { environment } from '../../../env/environment';
 
 @Component({
   selector: 'app-driver-home',
@@ -34,6 +35,7 @@ export class DriverHome implements OnInit {
   isAccepting = false;
   isStopping = false;
   isEnding = false;
+  apiHost = environment.apiHost
 
   errorMessage: string | null = null;
   successMessage: string | null = null;

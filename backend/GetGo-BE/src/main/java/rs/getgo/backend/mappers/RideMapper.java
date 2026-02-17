@@ -33,6 +33,8 @@ public class RideMapper {
                 .map(WayPoint::getAddress)
                 .toList());
 
+        dto.setPassengerProfilePictureUrl(ride.getPayingPassenger().getProfilePictureUrl());
+
         return dto;
     }
 

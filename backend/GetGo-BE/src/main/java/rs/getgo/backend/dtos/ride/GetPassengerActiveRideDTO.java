@@ -24,4 +24,5 @@ public class GetPassengerActiveRideDTO {
     private List<Double> longitudes;
     private List<String> addresses;
     private LocalDateTime scheduledTime;
+    private String driverProfilePictureUrl;
 }

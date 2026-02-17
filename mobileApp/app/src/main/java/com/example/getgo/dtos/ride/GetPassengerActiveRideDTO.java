@@ -15,6 +15,7 @@ public class GetPassengerActiveRideDTO {
     private List<Double> longitudes;
     private List<String> addresses;
     private LocalDateTime scheduledTime;
+    private String driverProfilePictureUrl;
 
     public GetPassengerActiveRideDTO() {}
 
@@ -53,4 +54,12 @@ public class GetPassengerActiveRideDTO {
     }
 
     public void setScheduledTime(LocalDateTime scheduledTime) { this.scheduledTime = scheduledTime; }
+
+    public String getDriverProfilePictureUrl() {
+        return driverProfilePictureUrl;
+    }
+
+    public void setDriverProfilePictureUrl(String driverProfilePictureUrl) {
+        this.driverProfilePictureUrl = driverProfilePictureUrl;
+    }
 }

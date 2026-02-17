@@ -1,0 +1,61 @@
+<app-nav-bar></app-nav-bar>
+
+<div class="reports-page">
+  <div class="reports-container">
+    <h1>My Ride Reports</h1>
+
+    <!-- Date Range Picker -->
+    <div class="date-range">
+      <div class="form-group">
+        <label for="startDate">Start Date</label>
+        <input type="date" id="startDate" [(ngModel)]="startDate" />
+      </div>
+      <div class="form-group">
+        <label for="endDate">End Date</label>
+        <input type="date" id="endDate" [(ngModel)]="endDate" />
+      </div>
+      <button class="generate-btn" (click)="generateReport()" [disabled]="isLoading">
+        {{ isLoading ? 'Loading...' : 'Generate Report' }}
+      </button>
+    </div>
+
+    <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+    <div *ngIf="isLoading" class="hint">Loading report data...</div>
+
+    <!-- Summary Cards -->
+    <div *ngIf="report" class="summary-cards">
+      <div class="summary-card">
+        <span class="summary-value">{{ report.totalRides }}</span>
+        <span class="summary-label">Total Rides</span>
+        <span class="summary-avg">avg {{ report.avgRidesPerDay }}/day</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-value">{{ report.totalKilometers }} km</span>
+        <span class="summary-label">Total Distance</span>
+        <span class="summary-avg">avg {{ report.avgKilometersPerDay }} km/day</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-value">{{ report.totalMoney | number:'1.2-2' }} RSD</span>
+        <span class="summary-label">Money Spent</span>
+        <span class="summary-avg">avg {{ report.avgMoneyPerDay | number:'1.2-2' }} RSD/day</span>
+      </div>
+    </div>
+
+    <!-- Charts - always in DOM, visibility controlled by CSS -->
+    <div class="charts-grid" [style.visibility]="report ? 'visible' : 'hidden'">
+      <div class="chart-container">
+        <canvas #ridesChart></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas #kmChart></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas #moneyChart></canvas>
+      </div>
+    </div>
+
+    <div *ngIf="!report && !isLoading && !errorMessage" class="no-data">
+      Select a date range and generate a report.
+    </div>
+  </div>
+</div>

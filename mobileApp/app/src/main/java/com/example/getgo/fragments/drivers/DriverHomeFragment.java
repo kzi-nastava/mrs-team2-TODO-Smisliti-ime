@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,7 +22,9 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.example.getgo.R;
+import com.example.getgo.api.ApiClient;
 import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideFinishedDTO;
 import com.example.getgo.dtos.ride.RideCompletionDTO;
@@ -77,6 +80,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
     private TextView tvFinalPrice, tvDuration;
     private Button btnPrimaryAction, btnSecondaryAction, btnOk, btnConfirmCancel, btnDismissCancel;
     private EditText etCancelReason;
+    private ImageView ivPassengerPhoto;
 
     private GetDriverActiveRideDTO currentRide;
     private String driverEmail;
@@ -119,6 +123,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         tvStartPoint = root.findViewById(R.id.tvStartPoint);
         tvDestination = root.findViewById(R.id.tvDestination);
         tvPassengerInfo = root.findViewById(R.id.tvPassengerInfo);
+        ivPassengerPhoto = root.findViewById(R.id.ivPassengerPhoto);
         tvPassengerCount = root.findViewById(R.id.tvPassengerCount);
         tvEstimatedTime = root.findViewById(R.id.tvEstimatedTime);
         tvEstimatedPrice = root.findViewById(R.id.tvEstimatedPrice);
@@ -324,6 +329,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         tvStartPoint.setText(currentRide.getStartingPoint());
         tvDestination.setText(currentRide.getEndingPoint());
         tvPassengerInfo.setText(currentRide.getPassengerName());
+        loadProfilePicture(currentRide.getPassengerProfilePictureUrl(), ivPassengerPhoto);
         tvPassengerCount.setText(String.valueOf(currentRide.getPassengerCount()));
         estimatedTime = (int) Math.round(currentRide.getEstimatedTimeMin());
         tvEstimatedTime.setText(getString(R.string.time_format, currentRide.getEstimatedTimeMin()));
@@ -382,6 +388,20 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
             default:
                 showNoRide();
                 break;
+        }
+    }
+
+    private void loadProfilePicture(String url, ImageView imageView) {
+        if (url != null && !url.isEmpty()) {
+            String fullUrl = ApiClient.SERVER_URL + url;
+            Glide.with(this)
+                    .load(fullUrl)
+                    .placeholder(R.drawable.unregistered_profile)
+                    .error(R.drawable.unregistered_profile)
+                    .circleCrop()
+                    .into(imageView);
+        } else {
+            imageView.setImageResource(R.drawable.unregistered_profile);
         }
     }
 

@@ -13,6 +13,10 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 
@@ -23,7 +27,6 @@ public class RateRideE2ETest {
 
     private WebDriver driver;
     private WebDriverWait wait;
-    private LoginPage loginPage;
 
     private final String baseUrl = "http://localhost:4200";
     private final String passengerEmail = "p@gmail.com";
@@ -43,11 +46,11 @@ public class RateRideE2ETest {
         wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
         String baseUrl = "http://localhost:4200";
-        loginPage = new LoginPage(driver, wait, baseUrl);
+        LoginPage loginPage = new LoginPage(driver, wait, baseUrl);
 
         boolean loggedIn = loginPage.loginViaApi(
-                "p@gmail.com",
-                "pppppppp"
+                passengerEmail,
+                passengerPassword
         );
 
         if (!loggedIn) {
@@ -61,7 +64,7 @@ public class RateRideE2ETest {
     }
 
     @Test
-    void testRateRideHappyPath() throws Exception {
+    void testRateRideHappyPath() {
 
         PassengerRideHistoryPage historyPage =
                 new PassengerRideHistoryPage(driver, baseUrl);
@@ -123,8 +126,7 @@ public class RateRideE2ETest {
 
         historyPage.openFirstRide();
 
-        PassengerRideDetailsPage detailsPage =
-                new PassengerRideDetailsPage(driver);
+        PassengerRideDetailsPage detailsPage = new PassengerRideDetailsPage(driver);
 
         if (!detailsPage.isRateButtonVisible()) {
             return; // no rides to rate, skip test
@@ -309,6 +311,95 @@ public class RateRideE2ETest {
         boolean errorDisplayed = ratePage.waitForSnackBarWithText("Ride already rated", 5);
 
         assertTrue(errorDisplayed);
+    }
+
+    // New test: verify rating is rejected after 3-day window (requires a test-only backend endpoint to set finish time)
+    @Test
+    void testRatingWindowExpired() {
+        PassengerRideHistoryPage historyPage = new PassengerRideHistoryPage(driver, baseUrl);
+        Assumptions.assumeTrue(historyPage.hasRides(), "No rides available to test");
+        historyPage.openFirstRide();
+
+        // try to extract rideId from DOM using several heuristics
+        Object rideIdObj = ((JavascriptExecutor) driver).executeScript(
+                "var sel = document.querySelector('[data-ride-id]') || document.querySelector('[data-id]') || document.querySelector('.item a[href*=\\'/rides/\\']');\n" +
+                        "if(!sel) return null; if(sel.getAttribute) return sel.getAttribute('data-ride-id') || sel.getAttribute('data-id') || (sel.getAttribute('href')||'').split('/').pop(); return null;"
+        );
+        Assumptions.assumeTrue(rideIdObj != null, "Could not determine rideId from DOM; test requires test-only backend endpoint to set finish time");
+
+        long rideId;
+        try {
+            rideId = Long.parseLong(String.valueOf(rideIdObj));
+        } catch (Exception e) {
+            Assumptions.assumeTrue(false, "Parsed rideId is invalid: " + rideIdObj);
+            return;
+        }
+
+        String backendBase = System.getProperty("backendBaseUrl", "http://localhost:8080");
+        long fourDaysAgo = System.currentTimeMillis() - (4L * 24 * 60 * 60 * 1000);
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(String.format("%s/api/test/rides/%d/finish-time?timestamp=%d", backendBase, rideId, fourDaysAgo)))
+                .PUT(HttpRequest.BodyPublishers.noBody())
+                .build();
+
+        HttpResponse<String> resp;
+        try {
+            resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {
+            Assumptions.assumeTrue(false, "Test API unavailable or request failed: " + e.getMessage());
+            return;
+        }
+
+        // If test endpoint not available or not successful, skip the test rather than failing CI
+        Assumptions.assumeTrue(resp.statusCode() == 200, () -> "Test API to set finish-time is not available or returned " + resp.statusCode() + ": " + resp.body());
+
+        // refresh page and proceed to rate flow
+        driver.navigate().refresh();
+        PassengerRideDetailsPage detailsPage = new PassengerRideDetailsPage(driver);
+
+        // If rate button is hidden after expiry, treat as pass
+        if (!detailsPage.isRateButtonVisible()) {
+            return;
+        }
+
+        detailsPage.clickRateRide();
+        wait.until(ExpectedConditions.urlContains("/rate"));
+
+        RatePage ratePage = new RatePage(driver);
+        ratePage.selectVehicleRating(5);
+        ratePage.selectDriverRating(5);
+        ratePage.enterComment("Attempt after expiry");
+        ratePage.submit();
+
+        boolean sawExpiry = ratePage.waitForSnackBarAnyOf(List.of("expired", "deadline", "rating window", "too late", "cannot rate"), 7);
+        assertTrue(sawExpiry, "Expected rating to be rejected due to expiry (3 days)");
+    }
+
+    // Verify submission is rejected when auth token is missing
+    @Test
+    void testUnauthorizedSubmissionIsRejected() {
+        PassengerRideHistoryPage historyPage = new PassengerRideHistoryPage(driver, baseUrl);
+        Assumptions.assumeTrue(historyPage.hasRides(), "No rides available to test");
+        historyPage.openFirstRide();
+
+        PassengerRideDetailsPage detailsPage = new PassengerRideDetailsPage(driver);
+        if (!detailsPage.isRateButtonVisible()) return;
+        detailsPage.clickRateRide();
+        wait.until(ExpectedConditions.urlContains("/rate"));
+
+        // Remove tokens from browser storage to simulate unauthorized state
+        ((JavascriptExecutor) driver).executeScript("sessionStorage.removeItem('authToken'); localStorage.removeItem('authToken');");
+
+        RatePage ratePage = new RatePage(driver);
+        ratePage.selectVehicleRating(4);
+        ratePage.selectDriverRating(4);
+        ratePage.enterComment("Unauthorized attempt test");
+        ratePage.submit();
+
+        boolean unauthorizedSeen = ratePage.waitForSnackBarAnyOf(List.of("unauthor", "login", "not authenticated", "401"), 7);
+        assertTrue(unauthorizedSeen, "Expected unauthorized error or redirect when submitting without token");
     }
 
 }

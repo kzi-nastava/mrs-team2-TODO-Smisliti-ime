@@ -15,6 +15,7 @@ import com.example.getgo.fragments.admins.AdminReviewDriverRequestsFragment;
 import com.example.getgo.fragments.admins.AdminRidePricingFragment;
 import com.example.getgo.fragments.drivers.DriverHomeFragment;
 import com.example.getgo.fragments.drivers.DriverProfileInfoFragment;
+import com.example.getgo.fragments.drivers.DriverReportFragment;
 import com.example.getgo.fragments.guests.GuestHomeFragment;
 import com.example.getgo.fragments.layouts.SupportChatFragment;
 import com.example.getgo.fragments.layouts.NotificationsFragment;
@@ -96,6 +97,8 @@ public class NavigationHelper {
             return SupportChatFragment.newInstance("DRIVER");
         } else if (itemId == R.id.nav_drawer_notifications) {
             return new NotificationsFragment();
+        } else if (itemId == R.id.nav_driver_reports) {
+            return DriverReportFragment.newInstance();
         }
 
         return null;

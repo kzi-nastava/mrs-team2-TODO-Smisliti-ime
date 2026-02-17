@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DriverService } from '../service/driver.service';
+import { SnackBarService } from '../../service/snackBar/snackBar.service';
 
 @Component({
   selector: 'app-driver-activate',
@@ -27,6 +28,7 @@ export class DriverActivate implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private driverService: DriverService,
+    private snackBar: SnackBarService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -67,15 +69,15 @@ export class DriverActivate implements OnInit {
 
   setPassword(): void {
     if (!this.passwordData.password || !this.passwordData.confirmPassword) {
-      alert('Please fill in all fields');
+      this.snackBar.show('Please fill in all fields')
       return;
     }
     if (this.passwordData.password !== this.passwordData.confirmPassword) {
-      alert('Passwords do not match');
+      this.snackBar.show('Passwords do not match')
       return;
     }
     if (this.passwordData.password.length < 6) {
-      alert('Password must be at least 6 characters long');
+      this.snackBar.show('Password must be at least 6 characters long')
       return;
     }
 
@@ -86,15 +88,15 @@ export class DriverActivate implements OnInit {
     }).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('Account activated successfully! You can now log in.');
+          this.snackBar.show('Account activated successfully! You can now log in.', true)
           this.router.navigate(['/login']);
         } else {
-          alert(response.message);
+          this.snackBar.show(response.message)
         }
       },
       error: (error) => {
         console.error('Error setting password:', error);
-        alert('Failed to set password. Please try again.');
+        this.snackBar.show('Failed to set password. Please try again.')
       }
     });
   }

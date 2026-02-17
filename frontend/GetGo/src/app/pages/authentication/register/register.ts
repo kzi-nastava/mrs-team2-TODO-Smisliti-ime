@@ -8,7 +8,7 @@ import { HttpClient } from '@angular/common/http';
 import {CommonModule} from '@angular/common';
 import {AuthService} from '../../../service/auth-service/auth.service';
 import {environment} from '../../../../env/environment';
-import { SnackBarService } from '../../../service/snackBar/snackBar.service';
+import {SnackBarService} from '../../../service/snackBar/snackBar.service';
 
 @Component({
   selector: 'app-register',
@@ -104,7 +104,7 @@ export class RegisterComponent {
       // Validate file type
       if (!file.type.startsWith('image/')) {
         console.error('Selected file is not an image');
-        alert('Please select an image file');
+        this.snackBarService.show('Please select an image file')
         return;
       }
 
@@ -112,7 +112,7 @@ export class RegisterComponent {
       const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
         console.error('File size exceeds 5MB');
-        alert('Image size must be less than 5MB');
+        this.snackBarService.show('Image size must be less than 5MB')
         return;
       }
 

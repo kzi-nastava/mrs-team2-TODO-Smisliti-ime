@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminNavBarComponent } from '../../layout/admin-nav-bar/admin-nav-bar.component';
 import { AdminService, GetAdminDTO, UpdateAdminDTO } from '../service/admin.service';
+import { SnackBarService } from '../../service/snackBar/snackBar.service';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -23,7 +24,8 @@ export class AdminProfile implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private snackBar: SnackBarService
   ) {}
 
   ngOnInit(): void {
@@ -56,14 +58,13 @@ export class AdminProfile implements OnInit {
       this.adminService.updateProfile(updateData).subscribe({
         next: (response) => {
           console.log('Profile updated successfully:', response);
-          // Update local data with response
           this.admin = response;
           this.cdr.detectChanges();
-          alert('Profile updated successfully!'); // Simple feedback
+          this.snackBar.show('Profile updated successfully!')
         },
         error: (error) => {
           console.error('Error updating profile:', error);
-          alert('Failed to update profile. Please try again.');
+          this.snackBar.show('Failed to update profile. Please try again.')
         }
       });
   }

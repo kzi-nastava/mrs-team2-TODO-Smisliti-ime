@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,7 +38,7 @@ public class SupportChatController {
     }
 
     @PostMapping("/messages")
-    public ResponseEntity<GetMessageDTO> sendMessage(@RequestBody CreateMessageDTO dto, Authentication auth) {
+    public ResponseEntity<GetMessageDTO> sendMessage(@Valid @RequestBody CreateMessageDTO dto, Authentication auth) {
         GetMessageDTO getMessageDTO = service.sendUserMessage(auth, dto.getText());
         return ResponseEntity.ok(getMessageDTO);
     }
@@ -59,7 +60,7 @@ public class SupportChatController {
     @PostMapping("/admin/messages/{chatId}")
     public ResponseEntity<GetMessageDTO> sendMessageAdmin(
             @PathVariable Long chatId,
-            @RequestBody CreateMessageDTO dto) {
+            @Valid @RequestBody CreateMessageDTO dto) {
 
         GetMessageDTO getMessageDTO = service.sendAdminMessage(chatId, dto.getText());
         return ResponseEntity.ok(getMessageDTO);

@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class RidePriceController {
     @PutMapping("/prices/{vehicleType}")
     public ResponseEntity<Void> updatePrice(
             @PathVariable VehicleType vehicleType,
-            @RequestBody UpdateRidePriceDTO dto) {
+            @Valid @RequestBody UpdateRidePriceDTO dto) {
 
         ridePriceService.updatePrice(
                 vehicleType,

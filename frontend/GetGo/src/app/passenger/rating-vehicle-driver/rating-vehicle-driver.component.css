@@ -10,6 +10,12 @@ body {
   margin: 0;
   padding: 0;
 }
+
+.page-bg {
+  background-color: #8FABD4;
+  padding-bottom: 100px;
+}
+
 .rating-form {
   background: #CBDCEB;
   border-radius: 12px;

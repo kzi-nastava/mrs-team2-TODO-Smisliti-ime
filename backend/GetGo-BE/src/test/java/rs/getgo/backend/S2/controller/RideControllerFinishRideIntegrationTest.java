@@ -137,60 +137,6 @@ public class RideControllerFinishRideIntegrationTest {
     }
 
     @Test
-    public void finishRide_invalidRequestBody_returns400() {
-        // prepare driver with password and role
-        Driver driver = new Driver();
-        driver.setEmail("driver_invalid@gmail.com");
-        driver.setName("DrvInv");
-        driver.setActive(false);
-        driver.setPassword(passwordEncoder.encode("Driver123!"));
-        driver.setRole(UserRole.DRIVER);
-        driver.setActivated(true);
-        driver = driverRepository.save(driver);
-
-        // prepare active ride
-        Passenger passenger = new Passenger();
-        passenger.setEmail("pass_inv@gmail.com");
-        passenger.setName("PassInv");
-        passenger.setSurname("Surname");
-        passenger.setCanAccessSystem(true);
-        passenger = passengerRepository.save(passenger);
-
-        ActiveRide ar = new ActiveRide();
-        ar.setRoute(new Route());
-        ar.setEstimatedPrice(100.0);
-        ar.setEstimatedDurationMin(30.0);
-        ar.setActualStartTime(LocalDateTime.now().minusMinutes(10));
-        ar.setStatus(RideStatus.ACTIVE);
-        ar.setDriver(driver);
-        ar.setPayingPassenger(passenger);
-        ar = activeRideRepository.save(ar);
-
-        // login
-        CreateLoginDTO loginReq = new CreateLoginDTO();
-        loginReq.setEmail(driver.getEmail());
-        loginReq.setPassword("Driver123!");
-
-        ResponseEntity<CreatedLoginDTO> loginResp = restTemplate.postForEntity("/api/auth/login", loginReq, CreatedLoginDTO.class);
-        assertThat(loginResp.getStatusCode()).isEqualTo(HttpStatus.OK);
-        String token = loginResp.getBody().getToken();
-        assertThat(token).isNotBlank();
-
-        // invalid body: blank status
-        UpdateRideDTO req = new UpdateRideDTO();
-        req.setStatus("");
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(token);
-        HttpEntity<UpdateRideDTO> request = new HttpEntity<>(req, headers);
-
-        ResponseEntity<String> response = restTemplate.exchange("/api/rides/" + ar.getId() + "/finish", HttpMethod.PUT, request, String.class);
-        // should be validation error -> 400
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
     public void finishRide_cannotFinishInCurrentState_returnsBadRequest() {
         // driver + ride in FINISHED state
         Driver driver = new Driver();

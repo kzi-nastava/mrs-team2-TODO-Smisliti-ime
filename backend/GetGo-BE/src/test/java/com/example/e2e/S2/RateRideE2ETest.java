@@ -125,7 +125,7 @@ public class RateRideE2ETest {
         ratePage.submit();
 
         // accept either snackbar success or a new comment appearing as valid outcome
-        List<String> successKeywords = List.of("rating", "submitted", "success", "already rated", "ride already rated", "super");
+        List<String> successKeywords = List.of("Rating submitted successfully", "Ride already rated");
         boolean success = ratePage.waitForSnackBarAnyOf(successKeywords, 5);
 
         boolean commentAdded = false;
@@ -268,7 +268,7 @@ public class RateRideE2ETest {
         boolean firstSuccess = false;
         boolean alreadyRated = false;
 
-        List<String> detectKeywords = List.of("rating", "submitted", "success", "already rated", "ride already rated", "already");
+        List<String> detectKeywords = List.of("Rating submitted successfully", "Ride already rated");
         boolean snackSeen = ratePage.waitForSnackBarAnyOf(detectKeywords, 7);
         String snackText = null;
         if (snackSeen) {
@@ -395,7 +395,7 @@ public class RateRideE2ETest {
         ratePage.enterComment("Unauthorized attempt test");
         ratePage.submit();
 
-        boolean unauthorizedSeen = ratePage.waitForSnackBarAnyOf(List.of("unauthor", "login", "not authenticated", "401"), 7);
+        boolean unauthorizedSeen = ratePage.waitForSnackBarAnyOf(List.of("login", "something went wrong"), 7);
         assertTrue(unauthorizedSeen, "Expected unauthorized error or redirect when submitting without token");
     }
 

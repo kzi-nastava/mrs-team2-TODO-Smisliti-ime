@@ -252,14 +252,42 @@ class RideOrderValidatorTest {
     }
 
     @Test
+    void should_fail_when_payingPassengerIsAlsoLinkedPassenger() {
+        Passenger paying = new Passenger();
+        paying.setId(1L);
+        paying.setEmail("paying@gmail.com");
+        paying.setBlocked(false);
+
+        Passenger linked = new Passenger();
+        linked.setId(1L);
+        linked.setEmail("paying@gmail.com");
+
+        CreatedRideResponseDTO result = validator.validateLinkedPassengers(
+                List.of("paying@gmail.com"),
+                List.of(linked),
+                paying
+        );
+
+        assertNotNull(result);
+        assertEquals("INVALID_LINKED_PASSENGERS", result.getStatus());
+        assertEquals("Paying passenger cannot be linked passenger", result.getMessage());
+    }
+
+    @Test
     void should_pass_when_friendEmailsIsNull() {
-        CreatedRideResponseDTO result = validator.validateLinkedPassengers(null, List.of());
+        Passenger paying = new Passenger();
+        paying.setId(1L);
+
+        CreatedRideResponseDTO result = validator.validateLinkedPassengers(null, List.of(), paying);
 
         assertNull(result);
     }
 
     @Test
     void should_pass_when_linkedPassengersAreAvailable() {
+        Passenger paying = new Passenger();
+        paying.setId(1L);
+
         Passenger linked1 = new Passenger();
         linked1.setId(2L);
         linked1.setEmail("friend1@gmail.com");
@@ -281,7 +309,8 @@ class RideOrderValidatorTest {
 
         CreatedRideResponseDTO result = validator.validateLinkedPassengers(
                 List.of("friend1@gmail.com", "friend2@gmail.com"),
-                List.of(linked1, linked2)
+                List.of(linked1, linked2),
+                paying
         );
 
         assertNull(result);
@@ -289,6 +318,9 @@ class RideOrderValidatorTest {
 
     @Test
     void should_fail_when_linkedPassengerHasActiveRide() {
+        Passenger paying = new Passenger();
+        paying.setId(1L);
+
         Passenger linked = new Passenger();
         linked.setId(2L);
         linked.setEmail("friend@gmail.com");
@@ -298,7 +330,8 @@ class RideOrderValidatorTest {
 
         CreatedRideResponseDTO result = validator.validateLinkedPassengers(
                 List.of("friend@gmail.com"),
-                List.of(linked)
+                List.of(linked),
+                paying
         );
 
         assertNotNull(result);
@@ -308,6 +341,9 @@ class RideOrderValidatorTest {
 
     @Test
     void should_fail_when_linkedPassengerIsInActiveRide() {
+        Passenger paying = new Passenger();
+        paying.setId(1L);
+
         Passenger linked = new Passenger();
         linked.setId(2L);
         linked.setEmail("friend@gmail.com");
@@ -319,7 +355,8 @@ class RideOrderValidatorTest {
 
         CreatedRideResponseDTO result = validator.validateLinkedPassengers(
                 List.of("friend@gmail.com"),
-                List.of(linked)
+                List.of(linked),
+                paying
         );
 
         assertNotNull(result);
@@ -329,6 +366,9 @@ class RideOrderValidatorTest {
 
     @Test
     void should_fail_when_linkedPassengerHasUpcomingScheduledRide() {
+        Passenger paying = new Passenger();
+        paying.setId(1L);
+
         Passenger linked = new Passenger();
         linked.setId(2L);
         linked.setEmail("friend@gmail.com");
@@ -343,7 +383,8 @@ class RideOrderValidatorTest {
 
         CreatedRideResponseDTO result = validator.validateLinkedPassengers(
                 List.of("friend@gmail.com"),
-                List.of(linked)
+                List.of(linked),
+                paying
         );
 
         assertNotNull(result);

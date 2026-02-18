@@ -76,8 +76,8 @@ export class DriverActivate implements OnInit {
       this.snackBar.show('Passwords do not match')
       return;
     }
-    if (this.passwordData.password.length < 6) {
-      this.snackBar.show('Password must be at least 6 characters long')
+    if (this.passwordData.password.length < 8) {
+      this.snackBar.show('Password must be at least 8 characters long')
       return;
     }
 

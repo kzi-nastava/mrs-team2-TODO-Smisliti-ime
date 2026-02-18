@@ -41,13 +41,6 @@ public class PassengerHomePage {
         element.click();
     }
 
-
-//    public void openFavorites() {
-//        wait.until(ExpectedConditions.elementToBeClickable(favoritesToggleButton));
-//        favoritesToggleButton.click();
-//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("favorites-list")));
-//    }
-
     public void openFavorites() {
         safeClick(favoritesToggleButton);
         wait.until(ExpectedConditions.visibilityOfElementLocated(
@@ -88,15 +81,6 @@ public class PassengerHomePage {
         wait.until(ExpectedConditions.visibilityOf(favoritesToggleButton));
         return favoritesToggleButton.getText();
     }
-
-//    public boolean isFavoritesEmpty() {
-//        wait.until(ExpectedConditions.elementToBeClickable(favoritesToggleButton));
-//        favoritesToggleButton.click();
-//        WebElement emptyMsg = wait.until(ExpectedConditions.visibilityOfElementLocated(
-//                By.className("favorites-empty")
-//        ));
-//        return emptyMsg.isDisplayed();
-//    }
 
     public boolean isFavoritesEmpty() {
         safeClick(favoritesToggleButton);

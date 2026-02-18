@@ -133,7 +133,6 @@ public class ScheduledRideService {
     }
 
     private void determineVehicleType(ActiveRide ride, Driver driver) {
-        if (ride.getVehicleType() != null) return;
         VehicleType vehicleType = driver.getVehicle().getType();
         ride.setVehicleType(vehicleType);
         ride.setEstimatedPrice(ridePriceService.calculateRidePrice(vehicleType, ride.getRoute().getEstDistanceKm()));

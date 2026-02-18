@@ -127,7 +127,7 @@ public class RideOrderServiceImpl implements RideOrderService {
 
         ride.setDriver(driver);
         ride.setVehicleType(driver.getVehicle().getType());
-        ride.setEstimatedPrice(ridePriceService.calculateRidePrice(requestedVehicleType, route.getEstDistanceKm()));
+        ride.setEstimatedPrice(ridePriceService.calculateRidePrice(driver.getVehicle().getType(), route.getEstDistanceKm()));
 
         if (activeRideRepository.existsByDriverAndStatus(driver, RideStatus.ACTIVE)) {
             ride.setStatus(RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE);
@@ -269,11 +269,6 @@ public class RideOrderServiceImpl implements RideOrderService {
         if (vehicleTypeStr == null || vehicleTypeStr.trim().isEmpty()) {
             return null;
         }
-
-        try {
-            return VehicleType.valueOf(vehicleTypeStr.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        return VehicleType.valueOf(vehicleTypeStr.toUpperCase());
     }
 }

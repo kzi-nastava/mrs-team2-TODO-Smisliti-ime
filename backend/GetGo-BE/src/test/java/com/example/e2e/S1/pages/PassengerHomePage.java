@@ -1,6 +1,7 @@
 package com.example.e2e.S1.pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -13,6 +14,7 @@ import java.util.List;
 
 public class PassengerHomePage {
     private final WebDriverWait wait;
+    private final WebDriver driver;
 
     @FindBy(className = "favorites-toggle-btn")
     private WebElement favoritesToggleButton;
@@ -21,14 +23,36 @@ public class PassengerHomePage {
     private WebElement orderRideButton;
 
     public PassengerHomePage(WebDriver driver) {
+        this.driver = driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         PageFactory.initElements(driver, this);
     }
 
+    private void safeClick(WebElement element) {
+        wait.until(ExpectedConditions.visibilityOf(element));
+
+        ((JavascriptExecutor) driver)
+                .executeScript(
+                        "arguments[0].scrollIntoView({block: 'center'});",
+                        element
+                );
+
+        wait.until(ExpectedConditions.elementToBeClickable(element));
+        element.click();
+    }
+
+
+//    public void openFavorites() {
+//        wait.until(ExpectedConditions.elementToBeClickable(favoritesToggleButton));
+//        favoritesToggleButton.click();
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("favorites-list")));
+//    }
+
     public void openFavorites() {
-        wait.until(ExpectedConditions.elementToBeClickable(favoritesToggleButton));
-        favoritesToggleButton.click();
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("favorites-list")));
+        safeClick(favoritesToggleButton);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.className("favorites-list")
+        ));
     }
 
     public void selectFirstFavorite() {
@@ -65,12 +89,24 @@ public class PassengerHomePage {
         return favoritesToggleButton.getText();
     }
 
+//    public boolean isFavoritesEmpty() {
+//        wait.until(ExpectedConditions.elementToBeClickable(favoritesToggleButton));
+//        favoritesToggleButton.click();
+//        WebElement emptyMsg = wait.until(ExpectedConditions.visibilityOfElementLocated(
+//                By.className("favorites-empty")
+//        ));
+//        return emptyMsg.isDisplayed();
+//    }
+
     public boolean isFavoritesEmpty() {
-        wait.until(ExpectedConditions.elementToBeClickable(favoritesToggleButton));
-        favoritesToggleButton.click();
-        WebElement emptyMsg = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.className("favorites-empty")
-        ));
+        safeClick(favoritesToggleButton);
+
+        WebElement emptyMsg = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.className("favorites-empty")
+                )
+        );
         return emptyMsg.isDisplayed();
     }
+
 }

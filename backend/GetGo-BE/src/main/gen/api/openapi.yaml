@@ -1,0 +1,1941 @@
+openapi: 3.0.3
+info:
+  description: Generated OpenAPI 3.0.3 description from controllers and DTOs under
+    rs.getgo.backend (draft).
+  title: GetGo Backend API (generated)
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+paths:
+  /api/auth/login:
+    post:
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLoginDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedLoginDTO'
+          description: OK
+      summary: Login
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/auth/register:
+    post:
+      operationId: registerWithFile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/registerWithFile_request'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedUserDTO'
+          description: Created
+      summary: Register (multipart/form-data)
+      x-content-type: multipart/form-data
+      x-accepts:
+      - application/json
+  /api/auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordDTO'
+        required: true
+      responses:
+        "200":
+          description: OK
+      summary: Forgot password
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/auth/reset-password:
+    post:
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resetPassword_200_response'
+          description: OK
+        "400":
+          description: Bad Request
+      summary: Reset password
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/users/me:
+    get:
+      operationId: getProfile
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Profile map
+      summary: Get current user profile
+      x-accepts:
+      - application/json
+  /api/rides/order:
+    post:
+      operationId: orderRide
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRideRequestDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedRideResponseDTO'
+          description: Created ride response
+      summary: Order a ride
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/rides/estimate:
+    post:
+      operationId: createRideEstimate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRideEstimateDTO'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedRideEstimateDTO'
+          description: Created estimate
+      summary: Create ride estimate
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/rides/{id}/tracking:
+    get:
+      operationId: getRideTracking
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRideTrackingDTO'
+          description: Ride tracking DTO
+      summary: Get ride tracking
+      x-accepts:
+      - application/json
+  /api/rides/{rideId}/stop:
+    post:
+      operationId: stopRidePost
+      parameters:
+      - explode: false
+        in: path
+        name: rideId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StopRideDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideCompletionDTO'
+          description: Ride completion
+      summary: Stop ride
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/rides/{rideId}/cancel/driver:
+    post:
+      operationId: cancelRideByDriver
+      parameters:
+      - explode: false
+        in: path
+        name: rideId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelRideRequestDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideCompletionDTO'
+          description: RideCompletion
+        "400":
+          description: Bad request
+      summary: Driver cancels assigned ride
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/rides/{rideId}/cancel/passenger:
+    post:
+      operationId: cancelRideByPassenger
+      parameters:
+      - explode: false
+        in: path
+        name: rideId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelRideRequestDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideCompletionDTO'
+          description: RideCompletion
+        "400":
+          description: Bad request
+      summary: Passenger cancels ride
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/rides/driver/active:
+    get:
+      operationId: getDriverActiveRide
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDriverActiveRideDTO'
+          description: GetDriverActiveRideDTO
+      summary: Get driver active ride
+      x-accepts:
+      - application/json
+  /api/rides/favorites:
+    get:
+      operationId: getFavoriteRides
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GetFavoriteRideDTO'
+                type: array
+          description: List of favorite rides
+      summary: Get favorite rides
+      x-accepts:
+      - application/json
+  /api/notifications/me:
+    get:
+      operationId: getMyNotifications
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NotificationDTO'
+                type: array
+          description: List of NotificationDTO
+      summary: Get my notifications
+      x-accepts:
+      - application/json
+  /api/vehicles/active:
+    get:
+      operationId: getActiveVehicles
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GetVehicleDTO'
+                type: array
+          description: Collection of GetVehicleDTO
+      summary: Get active vehicles
+      x-accepts:
+      - application/json
+  /api/vehicles/types:
+    get:
+      operationId: getVehicleTypes
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+          description: List of strings (vehicle types)
+      summary: Get vehicle types
+      x-accepts:
+      - application/json
+  /api/ratings/ride/{rideId}:
+    get:
+      operationId: getRatingsByRide
+      parameters:
+      - explode: false
+        in: path
+        name: rideId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GetRatingDTO'
+                type: array
+          description: list of GetRatingDTO
+      summary: Get ratings by ride
+      x-accepts:
+      - application/json
+  /api/passenger/profile:
+    get:
+      operationId: getPassengerProfile
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPassengerDTO'
+          description: GetPassengerDTO
+      summary: Get current passenger profile
+      x-accepts:
+      - application/json
+    put:
+      operationId: updatePassengerProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePassengerDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatedPassengerDTO'
+          description: UpdatedPassengerDTO
+      summary: Update passenger profile
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/passenger/rides:
+    get:
+      operationId: getPassengerRides
+      parameters:
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 0
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: size
+        required: false
+        schema:
+          default: 10
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: startDate
+        required: false
+        schema:
+          format: date
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: sort
+        required: false
+        schema:
+          default: startTime
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: direction
+        required: false
+        schema:
+          default: DESC
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getPassengerRides_200_response'
+          description: Page of GetRideDTO
+      summary: Get passenger rides (paged)
+      x-accepts:
+      - application/json
+  /api/drivers/profile:
+    get:
+      operationId: getDriverProfile
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDriverDTO'
+          description: GetDriverDTO
+      summary: Get current driver profile
+      x-accepts:
+      - application/json
+  /api/auth/logout:
+    post:
+      operationId: logout
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: boolean
+          description: Allowed to logout
+        "401":
+          description: Unauthorized
+      summary: Logout check
+      x-accepts:
+      - application/json
+  /api/auth/activate-mobile:
+    get:
+      operationId: activateAccountMobileEntry
+      parameters:
+      - explode: true
+        in: query
+        name: token
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            text/html:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: '#/components/schemas/activateAccountMobileEntry_200_response'
+          description: HTML or JSON success
+        "400":
+          description: Invalid or expired token
+      summary: Mobile activation entry (returns HTML or JSON)
+      x-accepts:
+      - application/json
+      - text/html
+  /api/auth/reset-password-mobile:
+    get:
+      operationId: resetPasswordMobileEntry
+      parameters:
+      - explode: true
+        in: query
+        name: token
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            text/html:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resetPasswordMobileEntry_200_response'
+          description: HTML or JSON
+        "400":
+          description: Invalid token
+      summary: Mobile reset password entry (returns HTML or JSON)
+      x-accepts:
+      - application/json
+      - text/html
+  /api/notifications/{id}:
+    put:
+      operationId: readNotification
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDTO'
+          description: NotificationDTO
+        "404":
+          description: Not found
+      summary: Mark notification as read
+      x-accepts:
+      - application/json
+  /api/notifications/request-unread:
+    post:
+      operationId: requestUnread
+      responses:
+        "200":
+          description: OK
+      summary: Request unread notifications fetch
+      x-accepts:
+      - application/json
+  /api/passenger/profile/picture:
+    post:
+      operationId: uploadProfilePicture
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/uploadProfilePicture_request'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatedProfilePictureDTO'
+          description: UpdatedProfilePictureDTO
+      summary: Upload passenger profile picture
+      x-content-type: multipart/form-data
+      x-accepts:
+      - application/json
+  /api/passenger/rides/{id}:
+    get:
+      operationId: getRideById
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetReorderRideDTO'
+          description: GetReorderRideDTO
+      summary: Get passenger ride by id
+      x-accepts:
+      - application/json
+  /api/rides/{rideId}/panic:
+    post:
+      operationId: createPanic
+      parameters:
+      - explode: false
+        in: path
+        name: rideId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resetPassword_200_response'
+          description: Panic triggered
+      summary: Trigger panic for ride
+      x-accepts:
+      - application/json
+  /api/rides/{rideId}/accept:
+    put:
+      operationId: acceptRide
+      parameters:
+      - explode: false
+        in: path
+        name: rideId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatedRideDTO'
+          description: UpdatedRideDTO
+      summary: Driver accepts ride
+      x-accepts:
+      - application/json
+  /api/rides/{rideId}/start:
+    put:
+      operationId: startRide
+      parameters:
+      - explode: false
+        in: path
+        name: rideId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatedRideDTO'
+          description: UpdatedRideDTO
+      summary: Driver starts ride
+      x-accepts:
+      - application/json
+  /api/rides/{completedRideId}/favorite:
+    delete:
+      operationId: unfavoriteRide
+      parameters:
+      - explode: false
+        in: path
+        name: completedRideId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: No content
+      summary: Unfavorite a completed ride
+      x-accepts:
+      - application/json
+    post:
+      operationId: favoriteRide
+      parameters:
+      - explode: false
+        in: path
+        name: completedRideId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedFavoriteRideDTO'
+          description: CreatedFavoriteRideDTO
+      summary: Favorite a completed ride
+      x-accepts:
+      - application/json
+  /api/completed-rides/{rideId}/driver:
+    get:
+      operationId: getDriverId
+      parameters:
+      - explode: false
+        in: path
+        name: rideId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                format: int64
+                type: integer
+          description: driver id
+      summary: Get driver id for completed ride
+      x-accepts:
+      - application/json
+  /api/completed-rides/{rideId}/inconsistencies:
+    get:
+      operationId: getInconsistencyReport
+      parameters:
+      - explode: false
+        in: path
+        name: rideId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GetInconsistencyReportDTO'
+                type: array
+          description: list of GetInconsistencyReportDTO
+      summary: Get inconsistencies for completed ride
+      x-accepts:
+      - application/json
+  /api/ride-price/prices/{vehicleType}:
+    get:
+      operationId: getPrice
+      parameters:
+      - explode: false
+        in: path
+        name: vehicleType
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRidePriceDTO'
+          description: GetRidePriceDTO
+      summary: Get ride price for vehicle type
+      x-accepts:
+      - application/json
+    put:
+      operationId: updatePrice
+      parameters:
+      - explode: false
+        in: path
+        name: vehicleType
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRidePriceDTO'
+        required: true
+      responses:
+        "200":
+          description: OK
+      summary: Update ride price for vehicle type
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/support/messages:
+    get:
+      operationId: getMessages
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GetMessageDTO'
+                type: array
+          description: List<GetMessageDTO>
+      summary: Get user messages
+      x-accepts:
+      - application/json
+    post:
+      operationId: sendMessage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMessageDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMessageDTO'
+          description: GetMessageDTO
+      summary: Send user message
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/support/admin/chats:
+    get:
+      operationId: getAllChats
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GetChatDTO'
+                type: array
+          description: List<GetChatDTO>
+      summary: Get all chats (admin)
+      x-accepts:
+      - application/json
+  /api/support/admin/messages/{chatId}:
+    get:
+      operationId: getChatMessages
+      parameters:
+      - explode: false
+        in: path
+        name: chatId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GetMessageDTO'
+                type: array
+          description: List<GetMessageDTO>
+      summary: Get chat messages (admin)
+      x-accepts:
+      - application/json
+    post:
+      operationId: sendMessageAdmin
+      parameters:
+      - explode: false
+        in: path
+        name: chatId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMessageDTO'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMessageDTO'
+          description: GetMessageDTO
+      summary: Send admin message to chat
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+  /api/support/chat/my:
+    get:
+      operationId: getMyChat
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUserChatDTO'
+          description: GetUserChatDTO
+      summary: Get my chat
+      x-accepts:
+      - application/json
+  /api/panic/admin/unread:
+    get:
+      operationId: getUnread
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/PanicAlertDTO'
+                type: array
+          description: List of PanicAlertDTO
+      summary: Get unread panic alerts (admin)
+      x-accepts:
+      - application/json
+  /api/panic/admin/read/{panicId}:
+    put:
+      operationId: markRead
+      parameters:
+      - explode: false
+        in: path
+        name: panicId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: OK
+      summary: Mark panic read (admin)
+      x-accepts:
+      - application/json
+  /api/panic/admin/read-all:
+    put:
+      operationId: markAllRead
+      responses:
+        "200":
+          description: OK
+      summary: Mark all panics read (admin)
+      x-accepts:
+      - application/json
+  /api/admin/users/unblocked:
+    get:
+      operationId: getUnblockedUsers
+      parameters:
+      - explode: true
+        in: query
+        name: search
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 0
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: size
+        required: false
+        schema:
+          default: 10
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getUnblockedUsers_200_response'
+          description: Page of UserEmailDTO
+      summary: Get unblocked users (paged)
+      x-accepts:
+      - application/json
+components:
+  schemas:
+    CreateLoginDTO:
+      example:
+        password: password
+        email: email
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+      - email
+      - password
+      type: object
+    CreatedLoginDTO:
+      example:
+        role: role
+        id: 0
+        token: token
+      properties:
+        id:
+          format: int64
+          type: integer
+        role:
+          type: string
+        token:
+          type: string
+      type: object
+    ForgotPasswordDTO:
+      example:
+        email: email
+      properties:
+        email:
+          type: string
+      required:
+      - email
+      type: object
+    ResetPasswordDTO:
+      example:
+        password: password
+        token: token
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+      required:
+      - password
+      - token
+      type: object
+    CreatedUserDTO:
+      example:
+        profilePictureUrl: profilePictureUrl
+        surname: surname
+        name: name
+        id: 0
+        email: email
+      properties:
+        id:
+          format: int64
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
+        profilePictureUrl:
+          type: string
+      type: object
+    CreateRideRequestDTO:
+      example:
+        endPoint: endPoint
+        scheduledTime: 2000-01-23T04:56:07.000+00:00
+        startPoint: startPoint
+        intermediateStops:
+        - intermediateStops
+        - intermediateStops
+        passengerEmails:
+        - passengerEmails
+        - passengerEmails
+        vehicleType: vehicleType
+        allowsBabies: true
+        allowsPets: true
+      properties:
+        startPoint:
+          type: string
+        endPoint:
+          type: string
+        intermediateStops:
+          items:
+            type: string
+          type: array
+        vehicleType:
+          type: string
+        allowsBabies:
+          type: boolean
+        allowsPets:
+          type: boolean
+        passengerEmails:
+          items:
+            type: string
+          type: array
+        scheduledTime:
+          format: date-time
+          type: string
+      type: object
+    CreatedRideResponseDTO:
+      example:
+        message: message
+        rideId: 0
+        status: status
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        rideId:
+          format: int64
+          type: integer
+      type: object
+    CreateRideEstimateDTO:
+      example:
+        coordinates:
+        - lng: 6.027456183070403
+          lat: 0.8008281904610115
+        - lng: 6.027456183070403
+          lat: 0.8008281904610115
+      properties:
+        coordinates:
+          items:
+            $ref: '#/components/schemas/Coordinate'
+          type: array
+      type: object
+    Coordinate:
+      example:
+        lng: 6.027456183070403
+        lat: 0.8008281904610115
+      properties:
+        lat:
+          format: double
+          type: number
+        lng:
+          format: double
+          type: number
+      type: object
+    CreatedRideEstimateDTO:
+      example:
+        durationMinutes: 6
+        price: 0.8008281904610115
+        distanceKm: 1.4658129805029452
+      properties:
+        price:
+          format: double
+          type: number
+        durationMinutes:
+          type: integer
+        distanceKm:
+          format: double
+          type: number
+      type: object
+    GetRideDTO:
+      example:
+        passengers:
+        - surname: surname
+          name: name
+          passengerId: 1
+          email: email
+        - surname: surname
+          name: name
+          passengerId: 1
+          email: email
+        isCancelled: true
+        startPoint: startPoint
+        cancelledBy: cancelledBy
+        panicActivated: true
+        estTime: 7.061401241503109
+        duration: 5
+        endPoint: endPoint
+        driverId: 6
+        price: 5.637376656633329
+        startingTime: 2000-01-23T04:56:07.000+00:00
+        finishedTime: 2000-01-23T04:56:07.000+00:00
+        id: 0
+        cancelReason: cancelReason
+        isFavourite: true
+        estDistance: 2.3021358869347655
+        status: status
+      properties:
+        id:
+          type: integer
+        driverId:
+          type: integer
+        passengers:
+          items:
+            $ref: '#/components/schemas/GetRidePassengerDTO'
+          type: array
+        startPoint:
+          type: string
+        endPoint:
+          type: string
+        startingTime:
+          format: date-time
+          type: string
+        finishedTime:
+          format: date-time
+          type: string
+        duration:
+          type: integer
+        isCancelled:
+          type: boolean
+        isFavourite:
+          type: boolean
+        status:
+          type: string
+        price:
+          format: double
+          type: number
+        panicActivated:
+          type: boolean
+        estDistance:
+          format: double
+          type: number
+        estTime:
+          format: double
+          type: number
+        cancelReason:
+          type: string
+        cancelledBy:
+          type: string
+      type: object
+    GetRidePassengerDTO:
+      example:
+        surname: surname
+        name: name
+        passengerId: 1
+        email: email
+      properties:
+        passengerId:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
+      type: object
+    UpdateRideDTO:
+      properties:
+        status:
+          type: string
+      type: object
+    UpdatedRideDTO:
+      example:
+        id: 0
+        message: message
+        status: status
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        message:
+          type: string
+      type: object
+    CancelRideRequestDTO:
+      example:
+        reason: reason
+      properties:
+        reason:
+          type: string
+      type: object
+    RideCompletionDTO:
+      example:
+        notificationMessage: notificationMessage
+        rideId: 0
+        status: status
+      properties:
+        rideId:
+          type: integer
+        status:
+          type: string
+        notificationMessage:
+          type: string
+      type: object
+    StopRideDTO:
+      example:
+        stoppedAt: 2000-01-23T04:56:07.000+00:00
+        latitude: 0.8008281904610115
+        longitude: 6.027456183070403
+      properties:
+        latitude:
+          format: double
+          type: number
+        longitude:
+          format: double
+          type: number
+        stoppedAt:
+          format: date-time
+          type: string
+      type: object
+    GetRideTrackingDTO:
+      example:
+        details:
+          key: ""
+        id: 0
+        status: status
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        details:
+          additionalProperties: true
+          type: object
+      type: object
+    GetPassengerActiveRideDTO:
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+      type: object
+    GetDriverActiveRideDTO:
+      example:
+        id: 0
+        status: status
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+      type: object
+    NotificationDTO:
+      example:
+        read: true
+        id: 0
+        type: type
+        title: title
+        message: message
+        timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        read:
+          type: boolean
+        timestamp:
+          format: date-time
+          type: string
+      type: object
+    GetVehicleDTO:
+      example:
+        lng: 1.4658129805029452
+        driverId: 5
+        id: 0
+        type: type
+        lat: 6.027456183070403
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        lat:
+          format: double
+          type: number
+        lng:
+          format: double
+          type: number
+        driverId:
+          type: integer
+      type: object
+    GetRatingDTO:
+      example:
+        rating: 5
+        passengerId: 1
+        comment: comment
+        id: 0
+        rideId: 6
+      properties:
+        id:
+          type: integer
+        rideId:
+          type: integer
+        passengerId:
+          type: integer
+        rating:
+          type: integer
+        comment:
+          type: string
+      type: object
+    GetPassengerDTO:
+      example:
+        name: name
+        id: 0
+        email: email
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+      type: object
+    UpdatePassengerDTO:
+      type: object
+    UpdatedPassengerDTO:
+      type: object
+    UpdatedProfilePictureDTO:
+      example:
+        profilePictureUrl: profilePictureUrl
+        success: true
+        id: 0
+        message: message
+      properties:
+        id:
+          format: int64
+          type: integer
+        profilePictureUrl:
+          type: string
+        success:
+          type: boolean
+        message:
+          type: string
+      type: object
+    UpdatePasswordDTO:
+      properties:
+        oldPassword:
+          type: string
+        newPassword:
+          type: string
+      type: object
+    UpdatedPasswordDTO:
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      type: object
+    PanicAlertDTO:
+      example:
+        userEmail: userEmail
+        triggeredAt: 2000-01-23T04:56:07.000+00:00
+        rideId: 0
+        message: message
+        userId: 6
+      properties:
+        rideId:
+          type: integer
+        userId:
+          type: integer
+        userEmail:
+          type: string
+        triggeredAt:
+          format: date-time
+          type: string
+        message:
+          type: string
+      type: object
+    GetDriverDTO:
+      example:
+        name: name
+        id: 0
+        email: email
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+      type: object
+    GetFavoriteRideDTO:
+      example:
+        duration: 1
+        price: 6.027456183070403
+        id: 0
+      properties:
+        id:
+          type: integer
+        price:
+          format: double
+          type: number
+        duration:
+          type: integer
+      type: object
+    CreatedFavoriteRideDTO:
+      example:
+        price: 1.4658129805029452
+        completedRideId: 6
+        id: 0
+      properties:
+        id:
+          type: integer
+        completedRideId:
+          type: integer
+        price:
+          format: double
+          type: number
+      type: object
+    GetReorderRideDTO:
+      example:
+        endPoint: endPoint
+        price: 6.027456183070403
+        startingTime: 2000-01-23T04:56:07.000+00:00
+        startPoint: startPoint
+        id: 0
+      properties:
+        id:
+          type: integer
+        startPoint:
+          type: string
+        endPoint:
+          type: string
+        startingTime:
+          format: date-time
+          type: string
+        price:
+          format: double
+          type: number
+      type: object
+    GetInconsistencyReportDTO:
+      example:
+        id: 0
+        reportedBy: 6
+        message: message
+      properties:
+        id:
+          type: integer
+        reportedBy:
+          type: integer
+        message:
+          type: string
+      type: object
+    GetRidePriceDTO:
+      example:
+        startPrice: 6.027456183070403
+        pricePerKm: 0.8008281904610115
+      properties:
+        pricePerKm:
+          format: double
+          type: number
+        startPrice:
+          format: double
+          type: number
+      type: object
+    UpdateRidePriceDTO:
+      example:
+        startPrice: 6.027456183070403
+        pricePerKm: 0.8008281904610115
+      properties:
+        pricePerKm:
+          format: double
+          type: number
+        startPrice:
+          format: double
+          type: number
+      type: object
+    GetMessageDTO:
+      example:
+        id: 0
+        text: text
+        authorId: 6
+        timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        authorId:
+          type: integer
+        timestamp:
+          format: date-time
+          type: string
+      type: object
+    CreateMessageDTO:
+      example:
+        text: text
+      properties:
+        text:
+          type: string
+      type: object
+    GetChatDTO:
+      example:
+        chatId: 0
+        participantCount: 6
+      properties:
+        chatId:
+          type: integer
+        participantCount:
+          type: integer
+      type: object
+    GetUserChatDTO:
+      example:
+        chatId: 0
+        messages:
+        - id: 0
+          text: text
+          authorId: 6
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        - id: 0
+          text: text
+          authorId: 6
+          timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        chatId:
+          type: integer
+        messages:
+          items:
+            $ref: '#/components/schemas/GetMessageDTO'
+          type: array
+      type: object
+    GetActiveRideAdminDTO:
+      properties:
+        id:
+          type: integer
+        driverEmail:
+          type: string
+        passengerEmail:
+          type: string
+        startTime:
+          format: date-time
+          type: string
+      type: object
+    GetActiveRideAdminDetailsDTO:
+      properties:
+        id:
+          type: integer
+        driverEmail:
+          type: string
+        passengerEmail:
+          type: string
+        path:
+          items:
+            type: string
+          type: array
+      type: object
+    UserEmailDTO:
+      example:
+        id: 0
+        email: email
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+      type: object
+    CreateAdminDTO:
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
+      type: object
+    CreatedAdminDTO:
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+      type: object
+    CreateDriverDTO:
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
+      type: object
+    CreatedDriverDTO:
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+      type: object
+    GetAdminDTO:
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+      type: object
+    UpdateAdminDTO:
+      properties:
+        name:
+          type: string
+        surname:
+          type: string
+      type: object
+    UpdatedAdminDTO:
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+      type: object
+    CreateDriverChangeRequestDTO:
+      properties:
+        field:
+          type: string
+        oldValue:
+          type: string
+        newValue:
+          type: string
+      type: object
+    CreatedDriverChangeRequestDTO:
+      properties:
+        id:
+          type: integer
+        field:
+          type: string
+        newValue:
+          type: string
+      type: object
+    GetPersonalDriverChangeRequestDTO:
+      properties:
+        id:
+          type: integer
+        driverId:
+          type: integer
+        field:
+          type: string
+        newValue:
+          type: string
+      type: object
+    GetDriverVehicleChangeRequestDTO:
+      properties:
+        id:
+          type: integer
+        driverId:
+          type: integer
+        vehicleField:
+          type: string
+        newValue:
+          type: string
+      type: object
+    GetDriverAvatarChangeRequestDTO:
+      properties:
+        id:
+          type: integer
+        driverId:
+          type: integer
+        pictureUrl:
+          type: string
+      type: object
+    AcceptDriverChangeRequestDTO:
+      properties:
+        accepted:
+          type: boolean
+        message:
+          type: string
+      type: object
+    RejectDriverChangeRequestDTO:
+      properties:
+        reason:
+          type: string
+      type: object
+    GetRideDTOPage:
+      properties:
+        content:
+          items:
+            $ref: '#/components/schemas/GetRideDTO'
+          type: array
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+      type: object
+    BlockUserRequestDTO:
+      properties:
+        days:
+          type: integer
+        reason:
+          type: string
+      type: object
+    BlockUserResponseDTO:
+      properties:
+        blocked:
+          type: boolean
+        expiresAt:
+          format: date-time
+          type: string
+      type: object
+    CreateRatingDTO:
+      properties:
+        rideId:
+          type: integer
+        rating:
+          type: integer
+        comment:
+          type: string
+      type: object
+    CreatedRatingDTO:
+      properties:
+        id:
+          type: integer
+        rating:
+          type: integer
+        comment:
+          type: string
+      type: object
+    registerWithFile_request:
+      properties:
+        file:
+          format: binary
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+      type: object
+    resetPassword_200_response:
+      example:
+        message: message
+      properties:
+        message:
+          type: string
+      type: object
+    getPassengerRides_200_response:
+      example:
+        number: 4
+        size: 2
+        totalPages: 3
+        content:
+        - passengers:
+          - surname: surname
+            name: name
+            passengerId: 1
+            email: email
+          - surname: surname
+            name: name
+            passengerId: 1
+            email: email
+          isCancelled: true
+          startPoint: startPoint
+          cancelledBy: cancelledBy
+          panicActivated: true
+          estTime: 7.061401241503109
+          duration: 5
+          endPoint: endPoint
+          driverId: 6
+          price: 5.637376656633329
+          startingTime: 2000-01-23T04:56:07.000+00:00
+          finishedTime: 2000-01-23T04:56:07.000+00:00
+          id: 0
+          cancelReason: cancelReason
+          isFavourite: true
+          estDistance: 2.3021358869347655
+          status: status
+        - passengers:
+          - surname: surname
+            name: name
+            passengerId: 1
+            email: email
+          - surname: surname
+            name: name
+            passengerId: 1
+            email: email
+          isCancelled: true
+          startPoint: startPoint
+          cancelledBy: cancelledBy
+          panicActivated: true
+          estTime: 7.061401241503109
+          duration: 5
+          endPoint: endPoint
+          driverId: 6
+          price: 5.637376656633329
+          startingTime: 2000-01-23T04:56:07.000+00:00
+          finishedTime: 2000-01-23T04:56:07.000+00:00
+          id: 0
+          cancelReason: cancelReason
+          isFavourite: true
+          estDistance: 2.3021358869347655
+          status: status
+        totalElements: 9
+      properties:
+        content:
+          items:
+            $ref: '#/components/schemas/GetRideDTO'
+          type: array
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+      type: object
+    activateAccountMobileEntry_200_response:
+      properties:
+        activated:
+          type: boolean
+        message:
+          type: string
+      type: object
+    resetPasswordMobileEntry_200_response:
+      properties:
+        valid:
+          type: boolean
+        token:
+          type: string
+      type: object
+    uploadProfilePicture_request:
+      properties:
+        file:
+          format: binary
+          type: string
+      type: object
+    getUnblockedUsers_200_response:
+      example:
+        number: 5
+        size: 5
+        totalPages: 1
+        content:
+        - id: 0
+          email: email
+        - id: 0
+          email: email
+        totalElements: 6
+      properties:
+        content:
+          items:
+            $ref: '#/components/schemas/UserEmailDTO'
+          type: array
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+      type: object
+

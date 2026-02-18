@@ -29,7 +29,7 @@ public class AdminRideHistoryE2ETest {
     private final String adminPassword = System.getProperty("adminPassword", "aaaaaaaa");
 
     // test email can be overridden with -DtestEmail
-    private final String testEmail = System.getProperty("testEmail", "p@gmail.com");
+    private final String testEmail = System.getProperty("testEmail", "jova@gmail.com");
 
     private LoginPage loginPage;
     private AdminRideHistoryPage historyPage;
@@ -54,11 +54,7 @@ public class AdminRideHistoryE2ETest {
         loginPage = new LoginPage(driver, wait, baseUrl);
         historyPage = new AdminRideHistoryPage(driver, wait);
 
-        // attempt login via API (faster) and fallback to UI login
-        boolean apiOk = loginPage.loginViaApi(adminEmail, adminPassword);
-        if (!apiOk) loginPage.login(adminEmail, adminPassword);
-
-        driver.get(baseUrl);
+        loginPage.login(adminEmail, adminPassword);
     }
 
     @AfterEach

@@ -203,10 +203,6 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO) {
-        if (!updatePasswordDTO.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
-            return new UpdatedPasswordDTO(false, "Passwords do not match");
-        }
-
         Administrator admin = adminRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 

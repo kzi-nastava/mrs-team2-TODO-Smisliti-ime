@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import rs.getgo.backend.validators.annotations.ValidVehicleType;
 
 import java.util.List;
 
@@ -36,5 +37,6 @@ public class CreateRideRequestDTO {
     private Boolean hasBaby;
     private Boolean hasPets;
 
+    @ValidVehicleType
     private String vehicleType; // null for vehicle type any
 }

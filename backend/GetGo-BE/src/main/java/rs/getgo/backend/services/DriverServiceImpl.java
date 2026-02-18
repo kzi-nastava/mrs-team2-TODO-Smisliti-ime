@@ -217,10 +217,6 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public UpdatedPasswordDTO setDriverPassword(UpdateDriverPasswordDTO passwordDTO) {
-        if (!passwordDTO.getPassword().equals(passwordDTO.getConfirmPassword())) {
-            return new UpdatedPasswordDTO(false, "Passwords do not match");
-        }
-
         try {
             DriverActivationToken activationToken = validateAndGetToken(passwordDTO.getToken());
 
@@ -273,10 +269,6 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO) {
-        if (!updatePasswordDTO.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
-            return new UpdatedPasswordDTO(false, "Passwords do not match");
-        }
-
         Driver driver = driverRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 

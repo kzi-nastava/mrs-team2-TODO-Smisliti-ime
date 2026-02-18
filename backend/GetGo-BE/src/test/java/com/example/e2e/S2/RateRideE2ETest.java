@@ -73,9 +73,6 @@ public class RateRideE2ETest {
             String url = "jdbc:postgresql://localhost:5432/getgo_e2e";
             String username = "postgres";
             String password = "MerisPSQL";
-//            String url = System.getProperty("spring.datasource.url");
-//            String username = System.getProperty("spring.datasource.username");
-//            String password = System.getProperty("spring.datasource.password");
 
             Connection conn = DriverManager.getConnection(url, username, password);
             Statement stmt = conn.createStatement();

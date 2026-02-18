@@ -76,7 +76,7 @@ public class RideOrderValidator {
 
         List<Passenger> linkedPassengers = collectLinkedPassengers(request.getFriendEmails());
         CreatedRideResponseDTO linkedError = validateLinkedPassengers(
-                request.getFriendEmails(), linkedPassengers
+                request.getFriendEmails(), linkedPassengers, payingPassenger
         );
         if (linkedError != null) return ValidationResult.error(linkedError);
 
@@ -157,9 +157,20 @@ public class RideOrderValidator {
 
     public CreatedRideResponseDTO validateLinkedPassengers(
             List<String> friendEmails,
-            List<Passenger> linkedPassengers
+            List<Passenger> linkedPassengers,
+            Passenger payingPassenger
     ) {
         if (friendEmails == null) return null;
+
+        for (Passenger linked : linkedPassengers) {
+            if (linked.getId().equals(payingPassenger.getId())) {
+                return new CreatedRideResponseDTO(
+                        "INVALID_LINKED_PASSENGERS",
+                        "Paying passenger cannot be linked passenger",
+                        null
+                );
+            }
+        }
 
         LocalDateTime soonThreshold = LocalDateTime.now().plusHours(1);
 

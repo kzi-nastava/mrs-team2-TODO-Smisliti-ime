@@ -12,7 +12,6 @@ import jakarta.validation.constraints.NotBlank;
 @Setter
 public class UpdateRideDTO {
 
-    @NotBlank(message = "Status is required")
     private String status;
 
 }

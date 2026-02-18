@@ -92,12 +92,12 @@ public class WebSecurityConfig {
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/activate")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/api/auth/activate-mobile")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/uploads/*")).permitAll()
-                    .requestMatchers(new AntPathRequestMatcher("/api/ratings/**")).permitAll() // TODO: Remove later?
-                    .requestMatchers(new AntPathRequestMatcher("/api/drivers/**")).permitAll() // TODO: Remove later?
-                    .requestMatchers(new AntPathRequestMatcher("/api/rides/**")).permitAll() // TODO: Remove later?
-                    .requestMatchers(new AntPathRequestMatcher("/api/vehicles/**")).permitAll() // TODO: Remove later?
-                    .requestMatchers(new AntPathRequestMatcher("/api/completed-rides/**")).permitAll() // TODO: Remove later?
-                    .requestMatchers(new AntPathRequestMatcher("/api/admin/active-rides/**")).permitAll() // TODO: Remove later?
+                    .requestMatchers(new AntPathRequestMatcher("/api/ratings/**")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/drivers/**")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/rides/**")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/vehicles/**")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/completed-rides/**")).permitAll()
+                    .requestMatchers(new AntPathRequestMatcher("/api/admin/active-rides/**")).permitAll()
                     .requestMatchers(new AntPathRequestMatcher("/socket/**")).permitAll()
                     .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated();

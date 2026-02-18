@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { DriverNavBarComponent } from '../../layout/driver-nav-bar/driver-nav-bar.component';
 import { DriverService, GetDriverDTO, UpdateDriverPersonalDTO, UpdateDriverVehicleDTO } from '../service/driver.service';
+import { VehicleService } from '../../service/vehicle-service/vehicle.service'
+import { SnackBarService } from '../../service/snackBar/snackBar.service';
 import { environment } from '../../../env/environment';
 
 @Component({
@@ -13,10 +15,14 @@ import { environment } from '../../../env/environment';
   styleUrl: './driver-profile.css',
 })
 export class DriverProfile implements OnInit {
+  vehicleTypes: string[] = [];
+
   profileImageUrl: string = 'assets/images/pfp.png';
   selectedFile: File | null = null;
   activeTab: string = 'driver';
   recentHoursWorked: number = 0;
+  blocked: boolean = false;
+  blockReason: string | null = null;
 
   driverData = {
     id: 0,
@@ -38,11 +44,24 @@ export class DriverProfile implements OnInit {
 
   constructor(
     private driverService: DriverService,
-    private cdr: ChangeDetectorRef
+    private vehicleService: VehicleService,
+    private cdr: ChangeDetectorRef,
+    private snackBar: SnackBarService
   ) {}
 
   ngOnInit(): void {
     this.loadProfile();
+    this.loadVehicleTypes();
+  }
+
+  loadVehicleTypes(): void {
+    this.vehicleService.getVehicleTypes().subscribe({
+      next: (types) => {
+        this.vehicleTypes = types;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load vehicle types:', err)
+    });
   }
 
   loadProfile(): void {
@@ -74,11 +93,14 @@ export class DriverProfile implements OnInit {
 
         this.recentHoursWorked = data.recentHoursWorked || 0;
 
+        this.blocked = data.blocked || false;
+        this.blockReason = data.blockReason || null;
+
         this.cdr.detectChanges();
       },
       error: (error: any) => {
         console.error('Error loading profile:', error);
-        alert('Failed to load profile');
+        this.snackBar.show('Failed to load profile')
       }
     });
   }
@@ -130,18 +152,18 @@ export class DriverProfile implements OnInit {
     this.driverService.requestPersonalInfoChange(updateData).subscribe({
       next: (response) => {
         console.log('Personal info change request created:', response);
-        alert(`Change request submitted successfully! Request ID: ${response.requestId}\nStatus: ${response.status}`);
+        this.snackBar.show(`Change request submitted successfully! Request ID: ${response.requestId}\nStatus: ${response.status}`)
       },
       error: (error) => {
         console.error('Error creating personal change request:', error);
-        alert('Failed to submit personal change request');
+        this.snackBar.show('Failed to submit personal change request')
       }
     });
   }
 
   private saveVehicleInfo(): void {
     if (!this.vehicleData.seats) {
-      alert('Please enter number of seats');
+      this.snackBar.show('Please enter number of seats')
       return;
     }
 
@@ -157,11 +179,11 @@ export class DriverProfile implements OnInit {
     this.driverService.requestVehicleInfoChange(updateData).subscribe({
       next: (response) => {
         console.log('Vehicle info change request created:', response);
-        alert(`Change request submitted successfully! Request ID: ${response.requestId}\nStatus: ${response.status}`);
+        this.snackBar.show(`Change request submitted successfully! Request ID: ${response.requestId}\nStatus: ${response.status}`)
       },
       error: (error) => {
         console.error('Error creating vehicle change request:', error);
-        alert('Failed to submit vehicle change request');
+        this.snackBar.show('Failed to submit vehicle change request')
       }
     });
   }
@@ -172,12 +194,12 @@ export class DriverProfile implements OnInit {
     this.driverService.requestProfilePictureChange(this.selectedFile).subscribe({
       next: (response) => {
         console.log('Profile picture change request created:', response);
-        alert(`Profile picture change request submitted! Request ID: ${response.requestId}\nStatus: ${response.status}`);
+        this.snackBar.show(`Profile picture change request submitted! Request ID: ${response.requestId}\nStatus: ${response.status}`)
         this.selectedFile = null;
       },
       error: (error) => {
         console.error('Error creating picture change request:', error);
-        alert('Failed to submit picture change request');
+        this.snackBar.show('Failed to submit picture change request')
       }
     });
   }

@@ -26,4 +26,7 @@ public class GetDriverDTO {
     private Integer vehicleSeats;
     private Boolean vehicleHasBabySeats;
     private Boolean vehicleAllowsPets;
+    // Status info
+    private Boolean blocked;
+    private String blockReason;
 }

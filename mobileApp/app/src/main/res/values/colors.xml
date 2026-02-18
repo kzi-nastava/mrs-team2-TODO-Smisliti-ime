@@ -8,4 +8,9 @@
     <color name="selected_blue">#2168DF</color>
     <color name="switch_track_color">#4CAF50</color>
     <color name="red">#FF0000</color>
+    <color name="panic_red">#D32F2F</color>
+    <color name="muted_blue">#608EC1</color>
+    <color name="info_bg">#E8EEF5</color>
+    <color name="error_bg">#ffebee</color>
+    <color name="error_text">#c62828</color>
 </resources>

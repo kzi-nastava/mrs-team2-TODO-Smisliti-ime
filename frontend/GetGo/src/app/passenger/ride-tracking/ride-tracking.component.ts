@@ -1,4 +1,4 @@
-import { Component, inject, computed, effect, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,6 +14,7 @@ import {
 import { WebSocketService } from '../../service/websocket/websocket.service';
 import { Subscription } from 'rxjs';
 import { SnackBarService } from '../../service/snackBar/snackBar.service';
+import { environment } from '../../../env/environment';
 
 @Component({
   selector: 'app-ride-tracking',
@@ -32,6 +33,8 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
 
   showReportForm = false;
   reportText = '';
+  apiHost = environment.apiHost
+
 
   // Ride data
   activeRide: GetPassengerActiveRideDTO | null = null;
@@ -62,10 +65,6 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     try {
-      // Connect to WebSocket
-      await this.webSocketService.connect();
-      console.log('WebSocket connected');
-
       // Load active ride
       this.loadActiveRide();
 
@@ -77,14 +76,11 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    // Clean up subscriptions
     if (this.locationSubscription) this.locationSubscription.unsubscribe();
     if (this.statusSubscription) this.statusSubscription.unsubscribe();
     if (this.completionSubscription) this.completionSubscription.unsubscribe();
     if (this.stopSubscription) this.stopSubscription.unsubscribe();
     if (this.cancelSubscription) this.cancelSubscription.unsubscribe();
-
-    this.webSocketService.disconnect();
   }
 
   loadActiveRide() {
@@ -141,7 +137,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       .subscribeToRideStatusUpdates(rideId)
       .subscribe({
         next: (update: PassengerStatusUpdateDTO) => {
-          console.log('🔔 Status update received:', update);
+          console.log('Status update received:', update);
           if (this.activeRide) {
             this.activeRide.status = update.status;
             this.statusMessage = update.message;
@@ -156,7 +152,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       .subscribeToPassengerRideFinished(rideId)
       .subscribe({
         next: (completion: PassengerRideFinishedDTO) => {
-          console.log('🎉 Ride finished:', completion);
+          console.log('Ride finished:', completion);
           this.rideCompletion = completion;
           if (this.activeRide) {
             this.activeRide.status = 'FINISHED';
@@ -170,7 +166,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       .subscribeToPassengerRideStopped(rideId)
       .subscribe({
         next: (data: any) => {
-          console.log('⏸️ Ride stopped:', data);
+          console.log('⏸Ride stopped:', data);
           if (this.activeRide) {
             this.activeRide.status = 'STOPPED';
             this.statusMessage = 'Ride has been stopped.';
@@ -185,7 +181,7 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
       .subscribeToPassengerRideCancelled(rideId)
       .subscribe({
         next: (data: any) => {
-          console.log('❌ Ride cancelled:', data);
+          console.log('Ride cancelled:', data);
           if (this.activeRide) {
             this.activeRide.status = 'CANCELLED';
             this.statusMessage = data.reason
@@ -364,8 +360,14 @@ export class RideTrackingComponent implements OnInit, OnDestroy {
     this.rideService
       .cancelRideByPassenger(this.activeRide.rideId, { reason: '' })
       .subscribe({
-        next: () => {
-          console.log('Ride cancelled successfully');
+        next: (completion) => {
+          console.log('Ride cancelled successfully', completion);
+          const notif = (completion as any)?.notificationMessage;
+          if (notif) {
+            this.snackBarService.show(notif, false);
+          } else {
+            this.snackBarService.show('Ride has been cancelled.');
+          }
           this.activeRide = null;
           this.rideCompletion = null;
           this.statusMessage = 'Ride has been cancelled.';

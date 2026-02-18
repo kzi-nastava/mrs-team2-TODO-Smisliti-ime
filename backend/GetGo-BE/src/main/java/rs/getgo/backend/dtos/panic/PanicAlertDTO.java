@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 public class PanicAlertDTO {
     private Long panicId;
     private Long rideId;
+    private Long driverId;
     private Long triggeredByUserId;
     private LocalDateTime triggeredAt;
     private Boolean status; // e.g. "PANIC"

@@ -180,12 +180,13 @@
                         android:layout_height="1dp"
                         android:background="#1A133E87"/>
 
-                    <!-- Driver Name -->
+                    <!-- Driver Info with Photo -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:paddingVertical="8dp">
+                        android:paddingVertical="8dp"
+                        android:gravity="center_vertical">
 
                         <TextView
                             android:layout_width="0dp"
@@ -196,14 +197,28 @@
                             android:textStyle="bold"
                             android:textColor="#133E87"/>
 
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="8dp"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="2dp">
+
+                            <ImageView
+                                android:id="@+id/ivDriverPhoto"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/unregistered_profile"/>
+
+                        </com.google.android.material.card.MaterialCardView>
+
                         <TextView
                             android:id="@+id/tvDriverName"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textSize="14sp"
-                            android:textColor="#133E87"
-                            android:gravity="end"/>
+                            android:textColor="#133E87"/>
 
                     </LinearLayout>
 

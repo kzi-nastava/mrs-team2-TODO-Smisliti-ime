@@ -22,6 +22,9 @@
     <string name="logout">Logout</string>
     <string name="other">Other</string>
     <string name="driver_requests">Driver Requests</string>
+    <string name="driver_register">Register Driver</string>
+    <string name="block_users">Block Users</string>
+    <string name="notifications">Notifications</string>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="Password">Password</string>
@@ -169,9 +172,11 @@
     <!-- Maps -->
     <string name="mapbox_access_token">pk.eyJ1IjoibWVyaXMxMCIsImEiOiJjbWpxandnNmIwd2piM2dzYzVlc3N6NXExIn0.-OX2bzr7c8eGfjaUX-gwZw</string>
 
-<!--    this is for google maps api-->
-<!--    AIzaSyCBpfJRsfmQwttGjqAApSL8EjTaB4guK5c-->
+    <!--    this is for google maps api-->
+    <!--    AIzaSyCBpfJRsfmQwttGjqAApSL8EjTaB4guK5c-->
 
     <string name="driver_active">Active</string>
     <string name="driver_inactive">Inactive</string>
+    <string name="plus">+</string>
+    <string name="minus">-</string>
 </resources>

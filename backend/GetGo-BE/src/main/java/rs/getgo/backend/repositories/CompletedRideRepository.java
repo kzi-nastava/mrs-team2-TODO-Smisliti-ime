@@ -12,7 +12,7 @@ import java.util.List;
 
 public interface CompletedRideRepository extends JpaRepository<CompletedRide, Long> {
     Page<CompletedRide> findByDriverId(Long driverId, Pageable pageable);
-    List<CompletedRide> findByDriverIdAndEndTimeAfter(Long driverId, LocalDateTime last24Hours);
+    List<CompletedRide> findByDriverIdAndEndTimeAfter(Long driverId, LocalDateTime time);
     Page<CompletedRide> findByDriverIdAndStartTimeBetween(Long driverId, LocalDateTime start, LocalDateTime end, Pageable pageable);
 
     // Find all rides where passenger is either paying or linked
@@ -26,4 +26,16 @@ public interface CompletedRideRepository extends JpaRepository<CompletedRide, Lo
             @Param("startOfDay") java.time.LocalDateTime startOfDay,
             @Param("endOfDay") java.time.LocalDateTime endOfDay,
             Pageable pageable);
+
+    List<CompletedRide> findByDriverEmailAndEndTimeBetween(String driverEmail, LocalDateTime start, LocalDateTime end);
+    List<CompletedRide> findByPayingPassengerEmailAndEndTimeBetween(String email, LocalDateTime start, LocalDateTime end);
+    List<CompletedRide> findByEndTimeBetween(LocalDateTime start, LocalDateTime end);
+
+    @Query("SELECT r FROM CompletedRide r JOIN r.linkedPassengerIds lpId " +
+            "WHERE lpId IN (SELECT p.id FROM Passenger p WHERE p.email = :passengerEmail) " +
+            "AND r.endTime BETWEEN :start AND :end")
+    List<CompletedRide> findByLinkedPassengerEmailAndEndTimeBetween(
+            @Param("passengerEmail") String passengerEmail,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }

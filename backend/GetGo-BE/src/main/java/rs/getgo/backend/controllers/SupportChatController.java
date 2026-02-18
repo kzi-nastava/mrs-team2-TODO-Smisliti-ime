@@ -1,5 +1,6 @@
 package rs.getgo.backend.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,29 +38,29 @@ public class SupportChatController {
     }
 
     @PostMapping("/messages")
-    public ResponseEntity<GetMessageDTO> sendMessage(@RequestBody CreateMessageDTO dto, Authentication auth) {
+    public ResponseEntity<GetMessageDTO> sendMessage(@Valid @RequestBody CreateMessageDTO dto, Authentication auth) {
         GetMessageDTO getMessageDTO = service.sendUserMessage(auth, dto.getText());
         return ResponseEntity.ok(getMessageDTO);
     }
 
 
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/chats")
     public List<GetChatDTO> getAllChats() {
         return service.getAllChatsDTO();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/messages/{chatId}")
     public List<GetMessageDTO> getChatMessages(@PathVariable Long chatId) {
         return service.getChatMessagesDTO(chatId);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/messages/{chatId}")
     public ResponseEntity<GetMessageDTO> sendMessageAdmin(
             @PathVariable Long chatId,
-            @RequestBody CreateMessageDTO dto) {
+            @Valid @RequestBody CreateMessageDTO dto) {
 
         GetMessageDTO getMessageDTO = service.sendAdminMessage(chatId, dto.getText());
         return ResponseEntity.ok(getMessageDTO);

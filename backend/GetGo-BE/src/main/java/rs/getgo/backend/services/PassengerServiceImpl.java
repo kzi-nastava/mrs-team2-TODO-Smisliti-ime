@@ -73,28 +73,16 @@ public class PassengerServiceImpl implements PassengerService {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
-        if (updatePassengerDTO.getName() != null && !updatePassengerDTO.getName().trim().isEmpty()) {
-            passenger.setName(updatePassengerDTO.getName().trim());
-        }
-        if (updatePassengerDTO.getSurname() != null && !updatePassengerDTO.getSurname().trim().isEmpty()) {
-            passenger.setSurname(updatePassengerDTO.getSurname().trim());
-        }
-        if (updatePassengerDTO.getPhone() != null && !updatePassengerDTO.getPhone().trim().isEmpty()) {
-            passenger.setPhone(updatePassengerDTO.getPhone().trim());
-        }
-        if (updatePassengerDTO.getAddress() != null && !updatePassengerDTO.getAddress().trim().isEmpty()) {
-            passenger.setAddress(updatePassengerDTO.getAddress().trim());
-        }
+        passenger.setName(updatePassengerDTO.getName().trim());
+        passenger.setSurname(updatePassengerDTO.getSurname().trim());
+        passenger.setPhone(updatePassengerDTO.getPhone().trim());
+        passenger.setAddress(updatePassengerDTO.getAddress().trim());
 
         Passenger savedPassenger = passengerRepo.save(passenger);
         return modelMapper.map(savedPassenger, UpdatedPassengerDTO.class);
     }
 
     public UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO) {
-        if (!updatePasswordDTO.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
-            return new UpdatedPasswordDTO(false, "Passwords do not match");
-        }
-
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
@@ -112,6 +100,8 @@ public class PassengerServiceImpl implements PassengerService {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
+        fileStorageService.validateImageFile(file);
+
         // Delete old picture if exists
         if (passenger.getProfilePictureUrl() != null) {
             fileStorageService.deleteFile(passenger.getProfilePictureUrl());
@@ -127,11 +117,15 @@ public class PassengerServiceImpl implements PassengerService {
     }
 
     @Override
-    public Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size) {
+    public Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction) {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        String normalizedSort = normalizeSortField(sortBy);
+        // Ensure nulls are sorted last to avoid null startTime/price pushing to top
+        Sort.Order order = new Sort.Order(sortDirection, normalizedSort).with(Sort.NullHandling.NULLS_LAST);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(order));
 
         Page<CompletedRide> ridesPage;
         if (startDate != null) {
@@ -147,6 +141,26 @@ public class PassengerServiceImpl implements PassengerService {
         }
 
         return ridesPage.map(this::mapCompletedRideToDTO);
+    }
+
+    // Map allowed frontend sort keys to entity properties. Defaults to startTime.
+    private String normalizeSortField(String sortBy) {
+        if (sortBy == null) return "startTime";
+        String key = sortBy.trim();
+        String candidate = switch (key) {
+            case "startTime", "startingTime", "Start Date/Time", "StartDate", "start_date" -> "startTime";
+            case "estimatedPrice", "price", "Price" -> "estimatedPrice";
+            case "estTime", "duration", "Duration" -> "estTime";
+            case "estDistanceKm", "distance", "Distance" -> "estDistanceKm";
+            default -> key;
+        };
+        // Verify candidate exists on CompletedRide entity; if not, fallback to startTime
+        try {
+            java.lang.reflect.Field f = rs.getgo.backend.model.entities.CompletedRide.class.getDeclaredField(candidate);
+            if (f != null) return candidate;
+        } catch (NoSuchFieldException ignored) {
+        }
+        return "startTime";
     }
 
     @Override

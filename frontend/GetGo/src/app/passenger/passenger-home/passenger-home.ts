@@ -4,7 +4,10 @@ import { CommonModule } from '@angular/common';
 import { MapComponent } from '../../layout/map/map.component';
 import { NavBarComponent } from '../../layout/nav-bar/nav-bar.component';
 import { RideService, CreateRideRequestDTO, CreatedRideResponseDTO, GetFavoriteRideDTO } from '../../service/ride/ride.service';
+import { VehicleService } from '../../service/vehicle-service/vehicle.service'
 import { ActivatedRoute } from '@angular/router';
+import { WebSocketService } from '../../service/websocket/websocket.service';
+import * as L from 'leaflet';
 
 @Component({
   selector: 'app-passenger-home',
@@ -14,6 +17,8 @@ import { ActivatedRoute } from '@angular/router';
   styleUrls: ['./passenger-home.css']
 })
 export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
+  vehicleTypes: string[] = [];
+
   travelForm: FormGroup;
   isLoading = false;
   estimateMinutes: number | null = null;
@@ -27,7 +32,6 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
 
   // Store coordinates per destination
   private destinationCoords: Array<{ lat: number; lng: number } | null> = [null, null];
-
   private mapClickListener?: (ev: Event) => void;
 
   @ViewChild('appMap', {static: false}) private mapComponent?: MapComponent;
@@ -35,6 +39,7 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
   constructor(
     private fb: FormBuilder,
     private rideService: RideService,
+    private vehicleService: VehicleService,
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute
   ) {
@@ -55,7 +60,7 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
 
   ngOnInit(): void {
     this.loadFavoriteRides();
-
+    this.loadVehicleTypes();
     // Check for query params from rebook
     this.route.queryParams.subscribe(params => {
       if (params['from'] && params['to']) {
@@ -104,6 +109,16 @@ export class PassengerHome implements AfterViewInit, OnDestroy, OnInit {
           this.cdr.detectChanges();
         }, 3000);
       }
+    });
+  }
+
+  loadVehicleTypes(): void {
+    this.vehicleService.getVehicleTypes().subscribe({
+      next: (types) => {
+        this.vehicleTypes = types;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load vehicle types:', err)
     });
   }
 

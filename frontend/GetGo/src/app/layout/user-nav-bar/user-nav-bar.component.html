@@ -1,7 +1,7 @@
 <mat-toolbar>
   <!--  <mat-icon class="hamburger"> menu </mat-icon>-->
 
-  <button mat-icon-button [matMenuTriggerFor]="menu" disableRipple class="no-bg">
+  <button mat-icon-button [matMenuTriggerFor]="menu" disableRipple class="no-bg" id="nav-hamburger">
     <mat-icon class="hamburger">menu</mat-icon>
   </button>
 
@@ -12,12 +12,12 @@
 </mat-toolbar>
 
 <mat-menu #menu="matMenu">
-  <button mat-menu-item [routerLink]="['/home']">
+  <button mat-menu-item [routerLink]="['/home']" id="nav-home">
     <mat-icon>home</mat-icon>
     <span>Home</span>
   </button>
 
-  <button mat-menu-item [routerLink]="['/passenger/passenger-ride-history']">
+  <button mat-menu-item [routerLink]="['/passenger/passenger-ride-history']" id="nav-ride-history">
     <mat-icon>directions_car</mat-icon>
     <span>Ride history</span>
   </button>
@@ -40,6 +40,11 @@
   <button mat-menu-item [routerLink]="['/support-chat']">
     <mat-icon>message</mat-icon>
     <span>Live support</span>
+  </button>
+
+  <button mat-menu-item [routerLink]="['/passenger/passenger-reports']">
+    <mat-icon>edit</mat-icon>
+    <span>Reports</span>
   </button>
 
   <button mat-menu-item (click)="logout()">

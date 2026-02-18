@@ -200,7 +200,6 @@ export class AdminRideHistoryComponent implements OnInit {
 
         if (err.status === 404) {
           console.warn(`No rides found or endpoint does not exist for ${userType}: ${email}`);
-          // Don't show alert, just display empty state
         }
 
         this.adminRideService.setRides([]);

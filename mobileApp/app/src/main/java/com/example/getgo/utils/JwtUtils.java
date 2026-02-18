@@ -30,4 +30,26 @@ public class JwtUtils {
             return null;
         }
     }
+
+    public static Long getUserIdFromToken(String token) {
+        try {
+            String[] parts = token.split("\\.");
+            String payload = new String(Base64.decode(parts[1], Base64.URL_SAFE | Base64.NO_WRAP));
+
+            Log.d("JwtUtils", "JWT Payload: " + payload);
+
+            JSONObject json = new JSONObject(payload);
+
+            if (json.has("id")) {
+                return json.getLong("id");
+            } else {
+                Log.d("JwtUtils", "JWT does NOT contain 'id' field");
+                return null;
+            }
+
+        } catch (Exception e) {
+            Log.e("JwtUtils", "Failed to decode JWT", e);
+            return null;
+        }
+    }
 }

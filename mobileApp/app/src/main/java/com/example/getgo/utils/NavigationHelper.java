@@ -1,19 +1,28 @@
 package com.example.getgo.utils;
 
-import android.util.Log;
 
 import androidx.fragment.app.Fragment;
 
 import com.example.getgo.R;
+import com.example.getgo.fragments.admins.AdminBlockUsersFragment;
+import com.example.getgo.fragments.admins.AdminActiveRidesFragment;
+import com.example.getgo.fragments.admins.AdminDriverRegistrationFragment;
+import com.example.getgo.fragments.admins.AdminChatListFragment;
+import com.example.getgo.fragments.admins.AdminHomeFragment;
 import com.example.getgo.fragments.admins.AdminProfileInfoFragment;
 import com.example.getgo.fragments.admins.AdminReviewDriverRequestsFragment;
+import com.example.getgo.fragments.admins.AdminRidePricingFragment;
+import com.example.getgo.fragments.admin.AdminReportFragment;
 import com.example.getgo.fragments.drivers.DriverHomeFragment;
 import com.example.getgo.fragments.drivers.DriverProfileInfoFragment;
+import com.example.getgo.fragments.drivers.DriverReportFragment;
 import com.example.getgo.fragments.guests.GuestHomeFragment;
+import com.example.getgo.fragments.layouts.SupportChatFragment;
+import com.example.getgo.fragments.layouts.NotificationsFragment;
 import com.example.getgo.fragments.passengers.PassengerProfileInfoFragment;
-import com.example.getgo.fragments.passengers.PassengerRateDriverVehicleFragment;
 import com.example.getgo.fragments.drivers.DriverRideHistoryFragment;
 import com.example.getgo.fragments.passengers.PassengerHomeFragment;
+import com.example.getgo.fragments.passengers.PassengerReportFragment;
 import com.example.getgo.model.UserRole;
 import com.example.getgo.fragments.passengers.PassengerRideTrackingFragment;
 
@@ -71,7 +80,7 @@ public class NavigationHelper {
             case PASSENGER:
                 return new PassengerHomeFragment();
             case ADMIN:
-                return new DriverHomeFragment(); // TODO: Create AdminDashboardFragment
+                return new AdminHomeFragment();
             default:
                 return new DriverHomeFragment();
         }
@@ -84,6 +93,12 @@ public class NavigationHelper {
             return new DriverRideHistoryFragment();
         } else if (itemId == R.id.nav_bottom_profile) {
             return DriverProfileInfoFragment.newInstance();
+        } else if (itemId == R.id.nav_drawer_support) {
+            return SupportChatFragment.newInstance("DRIVER");
+        } else if (itemId == R.id.nav_drawer_notifications) {
+            return new NotificationsFragment();
+        } else if (itemId == R.id.nav_drawer_reports) {
+            return DriverReportFragment.newInstance();
         }
 
         return null;
@@ -94,21 +109,37 @@ public class NavigationHelper {
             return PassengerHomeFragment.newInstance();
         } else if (itemId == R.id.nav_bottom_profile) {
             return PassengerProfileInfoFragment.newInstance();
-        } else if (itemId == R.id.nav_bottom_rate_ride) {
-            return new PassengerRateDriverVehicleFragment();
         } else if (itemId == R.id.nav_bottom_ride_tracking) {
             return new PassengerRideTrackingFragment();
+        } else if (itemId == R.id.nav_drawer_support) {
+            return SupportChatFragment.newInstance("PASSENGER");
+        } else if (itemId == R.id.nav_drawer_notifications) {
+            return new NotificationsFragment();
+        } else if (itemId == R.id.nav_drawer_reports) {
+            return PassengerReportFragment.newInstance();
         }
         return null;
     }
 
     private Fragment getAdminFragment(int itemId) {
         if (itemId == R.id.nav_bottom_dashboard) {
-            return new DriverHomeFragment();
+            return new AdminHomeFragment();
         } else if (itemId == R.id.nav_bottom_profile) {
             return new AdminProfileInfoFragment();
         } else if (itemId == R.id.nav_review_requests) {
             return AdminReviewDriverRequestsFragment.newInstance();
+        } else if (itemId == R.id.nav_register_driver) {
+            return AdminDriverRegistrationFragment.newInstance();
+        } else if (itemId == R.id.nav_block_users) {
+            return AdminBlockUsersFragment.newInstance();
+        } else if (itemId == R.id.nav_drawer_support_chats) {
+            return new AdminChatListFragment();
+        } else if (itemId == R.id.nav_drawer_active_rides) {
+            return new AdminActiveRidesFragment();
+        } else if (itemId == R.id.nav_drawer_pricing) {
+            return new AdminRidePricingFragment();
+        } else if (itemId == R.id.nav_bottom_reports) {
+            return AdminReportFragment.newInstance();
         }
 
         return null;

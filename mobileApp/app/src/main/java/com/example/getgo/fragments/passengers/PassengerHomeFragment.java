@@ -1,9 +1,20 @@
 package com.example.getgo.fragments.passengers;
 
+import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,32 +24,68 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+
 import com.example.getgo.R;
+import com.example.getgo.activities.MainActivity;
+import com.example.getgo.api.ApiClient;
+import com.example.getgo.api.services.RideApiService;
+import com.example.getgo.api.services.UserApiService;
+import com.example.getgo.api.services.VehicleApiService;
 import com.example.getgo.dtos.driver.GetActiveDriverLocationDTO;
+import com.example.getgo.dtos.driver.GetDriverLocationDTO;
 import com.example.getgo.dtos.ride.CreateRideRequestDTO;
 import com.example.getgo.dtos.ride.CreatedRideResponseDTO;
+import com.example.getgo.dtos.ride.GetFavoriteRideDTO;
 import com.example.getgo.dtos.ride.GetRideDTO;
+import com.example.getgo.model.UserProfile;
 import com.example.getgo.repositories.DriverRepository;
 import com.example.getgo.repositories.RideRepository;
+import com.example.getgo.utils.JwtUtils;
 import com.example.getgo.utils.MapManager;
+import com.example.getgo.utils.ToastHelper;
+import com.example.getgo.utils.WebSocketManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class PassengerHomeFragment extends Fragment implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private MapManager mapManager;
+    private VehicleApiService vehicleApiService;
+    private RideApiService rideApiService;
 
     private TextInputEditText etStartPoint, etDestination;
     private LinearLayout layoutWaypoints, layoutFriendEmailsList, layoutScheduledTime, layoutFriendEmails;
@@ -47,6 +94,16 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
     private TextInputEditText etScheduledTime;
     private Button btnOrderRide, btnCancel, btnAddWaypoint, btnRemoveWaypoint, btnAddFriendEmail, btnRemoveFriendEmail;
 
+    private MaterialButton btnToggleFavorites;
+    private MaterialCardView cvFavoritesContainer;
+    private LinearLayout layoutFavoritesList;
+    private boolean showFavorites = false;
+    private List<GetFavoriteRideDTO> favoriteRides = new ArrayList<>();
+
+    private RideRepository rideRepository;
+    private ExecutorService executor;
+    private Handler mainHandler;
+
     private List<TextInputEditText> waypointInputs = new ArrayList<>();
     private List<LatLng> waypointCoords = new ArrayList<>();
     private List<TextInputEditText> friendEmailInputs = new ArrayList<>();
@@ -54,7 +111,14 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
     private LatLng startPointCoord = null;
     private LatLng destinationCoord = null;
 
-    private Integer activeInputIndex = null; // -1 start, -2 dest, 0... waypoint
+    private Integer activeInputIndex = null;
+
+    private UserApiService userApiService;
+    private Long passengerId;
+
+    private WebSocketManager webSocketManager;
+    private final Map<Long, Marker> driverMarkers = new HashMap<>();
+
 
     public PassengerHomeFragment() {}
 
@@ -63,21 +127,52 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
     }
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        vehicleApiService = ApiClient.getClient().create(VehicleApiService.class);
+        rideApiService = ApiClient.getClient().create(RideApiService.class);
+
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_passenger_home, container, false);
+
+        rideRepository = RideRepository.getInstance();
+        executor = Executors.newSingleThreadExecutor();
+        mainHandler = new Handler(Looper.getMainLooper());
 
         initializeViews(root);
         setupMap();
         setupDropdowns();
         setupListeners();
+        loadFavoriteRides();
 
         // Check for re-order data
         if (getArguments() != null && getArguments().containsKey("REORDER_RIDE")) {
             GetRideDTO reorderRide = (GetRideDTO) getArguments().getSerializable("REORDER_RIDE");
             prefillRideData(reorderRide);
         }
+
+        userApiService = ApiClient.getUserApiService();
+        SharedPreferences prefs = requireContext()
+                .getSharedPreferences("getgo_prefs", Context.MODE_PRIVATE);
+
+        String token = prefs.getString("jwt_token", null);
+
+        Long userIdFromToken = JwtUtils.getUserIdFromToken(token);
+
+        Log.d("PassengerHome", "UserId from token: " + userIdFromToken);
+
         return root;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        executor.shutdown();
     }
 
     private void prefillRideData(GetRideDTO ride) {
@@ -111,17 +206,14 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         btnRemoveWaypoint = root.findViewById(R.id.btnRemoveWaypoint);
         btnAddFriendEmail = root.findViewById(R.id.btnAddFriendEmail);
         btnRemoveFriendEmail = root.findViewById(R.id.btnRemoveFriendEmail);
+
+        btnToggleFavorites = root.findViewById(R.id.btnToggleFavorites);
+        cvFavoritesContainer = root.findViewById(R.id.cvFavoritesContainer);
+        layoutFavoritesList = root.findViewById(R.id.layoutFavoritesList);
     }
 
     private void setupDropdowns() {
-        String[] vehicleTypes = {"Any", "SUV", "SEDAN", "LUXURY"};
-        ArrayAdapter<String> vehicleAdapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_dropdown_item_1line,
-                vehicleTypes
-        );
-        actvVehicleType.setAdapter(vehicleAdapter);
-        actvVehicleType.setText(vehicleAdapter.getItem(0), false);
+        loadVehicleTypes();
 
         String[] orderTimings = {"Order now", "Order later"};
         ArrayAdapter<String> timingAdapter = new ArrayAdapter<>(
@@ -140,6 +232,34 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         );
         actvTravelOption.setAdapter(travelAdapter);
         actvTravelOption.setText(travelAdapter.getItem(0), false);
+    }
+
+    private void loadVehicleTypes() {
+        executor.execute(() -> {
+            try {
+                VehicleApiService vehicleApi = ApiClient.getClient().create(VehicleApiService.class);
+                retrofit2.Response<List<String>> response = vehicleApi.getVehicleTypes().execute();
+
+                if (response.isSuccessful() && response.body() != null) {
+                    List<String> types = new ArrayList<>();
+                    types.add(0, "ANY");
+                    types.addAll(response.body());
+
+                    mainHandler.post(() -> {
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                                requireContext(),
+                                android.R.layout.simple_dropdown_item_1line,
+                                types
+                        );
+                        actvVehicleType.setAdapter(adapter);
+                        actvVehicleType.setText("ANY", false);
+                    });
+                }
+            } catch (Exception e) {
+                mainHandler.post(() -> Toast.makeText(requireContext(),
+                        "Failed to load vehicle types", Toast.LENGTH_SHORT).show());
+            }
+        });
     }
 
     private void setupListeners() {
@@ -179,6 +299,137 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
         btnOrderRide.setOnClickListener(v -> orderRide());
         btnCancel.setOnClickListener(v -> resetForm());
+
+        btnToggleFavorites.setOnClickListener(v -> toggleFavorites());
+    }
+
+    private void loadFavoriteRides() {
+        executor.execute(() -> {
+            try {
+                List<GetFavoriteRideDTO> favorites = rideRepository.getFavoriteRides();
+
+                mainHandler.post(() -> {
+                    favoriteRides = favorites;
+                    btnToggleFavorites.setText(favorites.isEmpty()
+                            ? "Favorites"
+                            : String.format(Locale.ENGLISH, "Favorites (%d)", favorites.size()));
+                });
+            } catch (Exception e) {
+                Log.e("PassengerHome", "Failed to load favorites", e);
+            }
+        });
+    }
+
+    private void toggleFavorites() {
+        showFavorites = !showFavorites;
+
+        if (showFavorites) {
+            btnToggleFavorites.setText("Hide");
+            cvFavoritesContainer.setVisibility(View.VISIBLE);
+            populateFavoritesList();
+        } else {
+            btnToggleFavorites.setText(favoriteRides.isEmpty()
+                    ? "Favorites"
+                    : String.format(Locale.ENGLISH, "Favorites (%d)", favoriteRides.size()));
+            cvFavoritesContainer.setVisibility(View.GONE);
+        }
+    }
+
+    private void populateFavoritesList() {
+        layoutFavoritesList.removeAllViews();
+
+        if (favoriteRides.isEmpty()) {
+            TextView tvEmpty = new TextView(requireContext());
+            tvEmpty.setText("No favorite rides yet");
+            tvEmpty.setTextColor(0xFF133E87);
+            tvEmpty.setPadding(16, 16, 16, 16);
+            layoutFavoritesList.addView(tvEmpty);
+            return;
+        }
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        for (GetFavoriteRideDTO favorite : favoriteRides) {
+            View itemView = inflater.inflate(R.layout.item_favorite_ride, layoutFavoritesList, false);
+
+            TextView tvStart = itemView.findViewById(R.id.tvFavStart);
+            TextView tvDest = itemView.findViewById(R.id.tvFavDestination);
+            TextView tvBadges = itemView.findViewById(R.id.tvFavBadges);
+
+            List<String> addresses = favorite.getAddresses();
+            tvStart.setText("Start: " + addresses.get(0));
+            tvDest.setText("Dest: " + addresses.get(addresses.size() - 1));
+
+            StringBuilder badges = new StringBuilder();
+            if (favorite.isNeedsBabySeats()) badges.append("BABY  ");
+            if (favorite.isNeedsPetFriendly()) badges.append("PETS  ");
+            if (favorite.getVehicleType() != null && !favorite.getVehicleType().equals("ANY")) {
+                badges.append(favorite.getVehicleType());
+            }
+            tvBadges.setText(badges.toString().trim());
+            tvBadges.setVisibility(badges.length() > 0 ? View.VISIBLE : View.GONE);
+
+            itemView.setOnClickListener(v -> loadFavoriteRide(favorite));
+            layoutFavoritesList.addView(itemView);
+        }
+    }
+
+    private void loadFavoriteRide(GetFavoriteRideDTO favorite) {
+        resetForm();
+
+        List<String> addresses = favorite.getAddresses();
+        List<Double> lats = favorite.getLatitudes();
+        List<Double> lngs = favorite.getLongitudes();
+
+        // Set start point with marker
+        etStartPoint.setText(addresses.get(0));
+        startPointCoord = new LatLng(lats.get(0), lngs.get(0));
+        mapManager.addWaypointMarker(startPointCoord, 0, "Start Point");
+
+        // Set destination with marker
+        etDestination.setText(addresses.get(addresses.size() - 1));
+        destinationCoord = new LatLng(lats.get(lats.size() - 1), lngs.get(lngs.size() - 1));
+        mapManager.addWaypointMarker(destinationCoord, 100, "Destination");
+
+        // Add waypoints (intermediate points between start and destination)
+        for (int i = 1; i < addresses.size() - 1; i++) {
+            addWaypoint();
+            int waypointIndex = i - 1;
+            waypointInputs.get(waypointIndex).setText(addresses.get(i));
+            LatLng waypointCoord = new LatLng(lats.get(i), lngs.get(i));
+            waypointCoords.set(waypointIndex, waypointCoord);
+            mapManager.addWaypointMarker(waypointCoord, waypointIndex + 1, "Waypoint " + (waypointIndex + 1));
+        }
+
+        // Set vehicle type
+        String vehicleType = favorite.getVehicleType();
+        if (vehicleType != null && !vehicleType.equals("ANY")) {
+            actvVehicleType.setText(vehicleType, false);
+        }
+
+        // Set preferences
+        cbHasBaby.setChecked(favorite.isNeedsBabySeats());
+        cbHasPets.setChecked(favorite.isNeedsPetFriendly());
+
+        // Set friend emails if any
+        List<String> emails = favorite.getLinkedPassengerEmails();
+        if (emails != null && !emails.isEmpty()) {
+            actvTravelOption.setText("With friends", false);
+            layoutFriendEmails.setVisibility(View.VISIBLE);
+            for (String email : emails) {
+                addFriendEmail();
+                friendEmailInputs.get(friendEmailInputs.size() - 1).setText(email);
+            }
+        }
+
+        // Draw the complete route on the map
+        drawRouteIfReady();
+
+        // Hide favorites panel
+        showFavorites = false;
+        cvFavoritesContainer.setVisibility(View.GONE);
+        btnToggleFavorites.setText(String.format(Locale.ENGLISH, "Favorites (%d)", favoriteRides.size()));
+
+        ToastHelper.showShort(requireContext(), "Favorite ride loaded");
     }
 
     private void setupMap() {
@@ -198,9 +449,59 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
         loadActiveDrivers();
+        subscribeToDriverLocationUpdates();
 
         mMap.setOnMapClickListener(this::handleMapClick);
     }
+
+    private void subscribeToDriverLocationUpdates() {
+
+        webSocketManager.subscribeToAllDriversLocations(location -> {
+
+            if (!isAdded() || getActivity() == null) return;
+
+            getActivity().runOnUiThread(() -> {
+
+                if (!isAdded() || getContext() == null || mMap == null) return;
+
+                Long driverId = location.getDriverId();
+                LatLng newPosition =
+                        new LatLng(location.getLatitude(), location.getLongitude());
+
+                Marker marker = driverMarkers.get(driverId);
+
+                if (marker != null) {
+
+                    marker.setPosition(newPosition);
+
+                    marker.setIcon(bitmapDescriptorFromVector(
+                            getContext(),   // više ne koristimo requireContext()
+                            "".equals(location.getStatus())
+                                    ? R.drawable.ic_car_green
+                                    : R.drawable.ic_car_red,
+                            120, 120
+                    ));
+
+                } else {
+
+                    Marker newMarker = mMap.addMarker(
+                            new MarkerOptions()
+                                    .position(newPosition)
+                                    .icon(bitmapDescriptorFromVector(
+                                            getContext(),
+                                            "".equals(location.getStatus())
+                                                    ? R.drawable.ic_car_green
+                                                    : R.drawable.ic_car_red,
+                                            120, 120
+                                    ))
+                    );
+
+                    driverMarkers.put(driverId, newMarker);
+                }
+            });
+        });
+    }
+
 
     private void loadActiveDrivers() {
         new Thread(() -> {
@@ -209,13 +510,44 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
                 List<GetActiveDriverLocationDTO> drivers = repo.getActiveDriverLocations();
 
                 requireActivity().runOnUiThread(() -> {
-                    mapManager.updateDriverLocations(drivers);
-                    Log.d("PassengerHome", "Loaded " + drivers.size() + " active drivers");
+                    showDriversOnMap(drivers);
+                    Log.d("GuestHome", "Loaded " + drivers.size() + " active drivers");
                 });
             } catch (Exception e) {
-                Log.e("PassengerHome", "Failed to load active drivers", e);
+                Log.e("GuestHome", "Failed to load active drivers", e);
             }
         }).start();
+    }
+
+    private void showDriversOnMap(List<GetActiveDriverLocationDTO> drivers) {
+        if (mMap == null) return;
+
+        for (GetActiveDriverLocationDTO d : drivers) {
+            if (d.getLatitude() == null || d.getLongitude() == null) continue;
+
+            LatLng position = new LatLng(d.getLatitude(), d.getLongitude());
+
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                    .position(position)
+                    .title(d.getVehicleType())
+                    .snippet("Status: " + (d.getIsAvailable() ? "Free" : "Occupied"))
+                    .icon(bitmapDescriptorFromVector(
+                            getContext(),
+                            d.getIsAvailable() ? R.drawable.ic_car_green : R.drawable.ic_car_red,
+                            120, 120
+                    )));
+
+            driverMarkers.put(d.getDriverId(), marker);
+        }
+    }
+
+    private BitmapDescriptor bitmapDescriptorFromVector(@NonNull Context context, int vectorResId, int width, int height) {
+        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorResId);
+        vectorDrawable.setBounds(0, 0, width, height);
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.draw(canvas);
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 
     private void handleMapClick(LatLng latLng) {
@@ -231,7 +563,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
             @Override
             public void onError(String error) {
-                String displayValue = String.format("%.5f, %.5f", latLng.latitude, latLng.longitude);
+                String displayValue = String.format(Locale.ENGLISH, "%.5f, %.5f", latLng.latitude, latLng.longitude);
                 setLocationForActiveInput(latLng, displayValue);
                 activeInputIndex = null;
                 Toast.makeText(requireContext(), "Location set (geocoding failed)", Toast.LENGTH_SHORT).show();
@@ -245,48 +577,31 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
             etStartPoint.setText(displayText);
             etStartPoint.clearFocus();
             mapManager.addWaypointMarker(coordinates, 0, "Start Point");
-
         } else if (activeInputIndex == -2) {
             destinationCoord = coordinates;
             etDestination.setText(displayText);
             etDestination.clearFocus();
             mapManager.addWaypointMarker(coordinates, 100, "Destination");
-
         } else if (activeInputIndex >= 0 && activeInputIndex < waypointInputs.size()) {
             waypointCoords.set(activeInputIndex, coordinates);
             waypointInputs.get(activeInputIndex).setText(displayText);
             waypointInputs.get(activeInputIndex).clearFocus();
-            mapManager.addWaypointMarker(coordinates, activeInputIndex + 1, "Waypoint " + (activeInputIndex + 1)); // CHANGED: +1 to avoid overlap with start
+            mapManager.addWaypointMarker(coordinates, activeInputIndex + 1, "Waypoint " + (activeInputIndex + 1));
         }
     }
 
     private void drawRouteIfReady() {
         List<LatLng> allPoints = new ArrayList<>();
 
-        if (startPointCoord != null) {
-            allPoints.add(startPointCoord);
-            Log.d("PassengerHome", "Added start point: " + startPointCoord);
-        }
+        if (startPointCoord != null) allPoints.add(startPointCoord);
         for (LatLng waypoint : waypointCoords) {
-            if (waypoint != null) {
-                allPoints.add(waypoint);
-                Log.d("PassengerHome", "Added waypoint: " + waypoint);
-            }
+            if (waypoint != null) allPoints.add(waypoint);
         }
-        if (destinationCoord != null) {
-            allPoints.add(destinationCoord);
-            Log.d("PassengerHome", "Added destination: " + destinationCoord);
-        }
+        if (destinationCoord != null) allPoints.add(destinationCoord);
 
-        Log.d("PassengerHome", "Total points for route: " + allPoints.size());
+        if (allPoints.size() < 2) return;
 
-        if (allPoints.size() < 2) {
-            Log.d("PassengerHome", "Not enough points to draw route");
-            return;
-        }
-
-        Log.d("PassengerHome", "Calling mapManager.drawRoute()");
-        mapManager.drawRoute(allPoints, null);
+        mapManager.drawRouteOSRM(allPoints, null);
     }
 
     private void addWaypoint() {
@@ -362,7 +677,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         timePicker.addOnPositiveButtonClickListener(v -> {
             int hour = timePicker.getHour();
             int minute = timePicker.getMinute();
-            String time = String.format("%02d:%02d", hour, minute);
+            String time = String.format(Locale.ENGLISH, "%02d:%02d", hour, minute);
             etScheduledTime.setText(time);
         });
 
@@ -450,7 +765,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
             @Override
             public void onError(String error) {
-                Toast.makeText(requireContext(), "Failed to geocode: " + error, Toast.LENGTH_SHORT).show();
+                ToastHelper.showError(requireContext(), "Failed to geocode", error);
             }
         });
     }
@@ -467,7 +782,7 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
 
             @Override
             public void onError(String error) {
-                Toast.makeText(requireContext(), "Failed to geocode waypoint: " + error, Toast.LENGTH_SHORT).show();
+                ToastHelper.showError(requireContext(), "Failed to geocode waypoint", error);
             }
         });
     }
@@ -494,6 +809,9 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         lngs.add(destinationCoord.longitude);
         addrs.add(etDestination.getText().toString());
 
+        String vehicleType = actvVehicleType.getText().toString();
+        if ("ANY".equals(vehicleType)) vehicleType = "";
+
         CreateRideRequestDTO request = new CreateRideRequestDTO(
                 lats,
                 lngs,
@@ -502,29 +820,30 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
                 isWithFriends() ? getFriendEmails() : null,
                 cbHasBaby.isChecked(),
                 cbHasPets.isChecked(),
-                actvVehicleType.getText().toString()
+                vehicleType
         );
 
         btnOrderRide.setEnabled(false);
 
         new Thread(() -> {
             try {
-                RideRepository repo = RideRepository.getInstance();
-                CreatedRideResponseDTO response = repo.orderRide(request);
+                CreatedRideResponseDTO response = rideRepository.orderRide(request);
 
                 requireActivity().runOnUiThread(() -> {
                     btnOrderRide.setEnabled(true);
-                    Toast.makeText(requireContext(),
-                            "Ride ordered successfully! ID: " + response.getRideId(),
-                            Toast.LENGTH_LONG).show();
-                    resetForm();
+                    if ("blocked".equals(response.getStatus())) {
+                        ToastHelper.showShort(requireContext(), response.getMessage() != null ? response.getMessage() : "Blocked");
+                    } else if ("SUCCESS".equals(response.getStatus())) {
+                        ToastHelper.showShort(requireContext(), "Ride ordered");
+                        resetForm();
+                    } else {
+                        ToastHelper.showShort(requireContext(), response.getMessage() != null ? response.getMessage() : "Order failed");
+                    }
                 });
             } catch (Exception e) {
                 requireActivity().runOnUiThread(() -> {
                     btnOrderRide.setEnabled(true);
-                    Toast.makeText(requireContext(),
-                            "Failed to order ride: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
+                    ToastHelper.showError(requireContext(), "Failed to order ride", e.getMessage());
                 });
             }
         }).start();
@@ -566,10 +885,9 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         friendEmailInputs.clear();
         btnRemoveFriendEmail.setEnabled(false);
 
-        ArrayAdapter<String> vehicleAdapter = (ArrayAdapter<String>) actvVehicleType.getAdapter();
         ArrayAdapter<String> timingAdapter = (ArrayAdapter<String>) actvOrderTiming.getAdapter();
         ArrayAdapter<String> travelAdapter = (ArrayAdapter<String>) actvTravelOption.getAdapter();
-        actvVehicleType.setText(vehicleAdapter.getItem(0), false);
+        actvVehicleType.setText("ANY", false);
         actvOrderTiming.setText(timingAdapter.getItem(0), false);
         actvTravelOption.setText(travelAdapter.getItem(0), false);
 
@@ -582,5 +900,191 @@ public class PassengerHomeFragment extends Fragment implements OnMapReadyCallbac
         layoutFriendEmails.setVisibility(View.GONE);
 
         activeInputIndex = null;
+
+        if (mapManager != null) {
+            mapManager.clearWaypoints();
+            mapManager.clearRoute();
+        }
     }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        webSocketManager = new WebSocketManager();
+        webSocketManager.connect();
+
+        fetchLoggedInUserIdAndSubscribe();
+//        subscribeToAllDriversLiveUpdates();
+    }
+
+    private void subscribeToAllDriversLiveUpdates() {
+        webSocketManager.subscribeToAllDriversLocations(driverLocation -> {
+            mainHandler.post(() -> updateDriverMarker(driverLocation));
+        });
+    }
+
+    private void updateDriverMarker(GetDriverLocationDTO driverLocation) {
+        Long driverId = driverLocation.getDriverId();
+        LatLng latLng = new LatLng(driverLocation.getLatitude(), driverLocation.getLongitude());
+
+        Marker marker = driverMarkers.get(driverId);
+
+        if (marker != null) {
+            // Ako postoji, samo ažuriraj lokaciju
+            marker.setPosition(latLng);
+
+            // Ako marker ne postoji, dodaj novi
+//            marker = mMap.addMarker(new MarkerOptions()
+//                    .position(latLng)
+//                    .title("Driver " + driverId)
+//                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+//            );
+//            driverMarkers.put(driverId, marker);
+        } else {
+            // Ako marker ne postoji, dodaj novi
+//            marker = mMap.addMarker(new MarkerOptions()
+//                    .position(latLng)
+//                    .title("Driver " + driverId)
+//                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+//            );
+//            driverMarkers.put(driverId, marker);
+        }
+    }
+
+
+
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (webSocketManager != null) {
+            webSocketManager.disconnect();
+        }
+        driverMarkers.clear();
+    }
+
+    private void showRideTrackingNotification(Long rideId) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(),
+                    Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                requestPermissions(
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        1001
+                );
+                return;
+            }
+        }
+
+        String channelId = "ride_channel";
+        String channelName = "Ride Notifications";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    channelId,
+                    channelName,
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Notifications about rides");
+            NotificationManager manager = requireContext()
+                    .getSystemService(NotificationManager.class);
+            if (manager != null) manager.createNotificationChannel(channel);
+        }
+
+        Intent intent = new Intent(requireContext(), MainActivity.class);
+        intent.putExtra("OPEN_RIDE_TRACKING_FRAGMENT", true);
+        intent.putExtra("RIDE_ID", rideId);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                requireContext(),
+                rideId.intValue(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(requireContext(), channelId)
+                        .setSmallIcon(R.drawable.ic_notification)
+                        .setContentTitle("Your ride is active!")
+                        .setContentText("Tap to track your ride")
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent);
+
+        NotificationManagerCompat.from(requireContext())
+                .notify(rideId.intValue(), builder.build());
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == 1001) {
+            if (grantResults.length > 0 &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                Log.d("PassengerHome", "Notification permission granted");
+            } else {
+                Log.d("PassengerHome", "Notification permission denied");
+            }
+        }
+    }
+//    private void fetchLoggedInUserIdAndSubscribe() {
+//        userApiService.getUserProfile().enqueue(new Callback<UserProfile>() {
+//            @Override
+//            public void onResponse(Call<UserProfile> call, Response<UserProfile> response) {
+//                if (response.isSuccessful() && response.body() != null) {
+//                    passengerId = response.body().getId();
+//                    Log.d("PassengerHome", "Fetched userId: " + passengerId);
+//                    subscribeToLinkedRideAccepted(passengerId);
+//                    Log.d("PassengerHome", "Subscribing to linked ride accepted");
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<UserProfile> call, Throwable t) {
+//                Log.e("PassengerHome", "Failed to fetch user profile", t);
+//            }
+//        });
+//    }
+
+    private void fetchLoggedInUserIdAndSubscribe() {
+        SharedPreferences prefs = requireContext()
+                .getSharedPreferences("getgo_prefs", Context.MODE_PRIVATE);
+
+        String token = prefs.getString("jwt_token", null);
+        if (token == null) {
+            Log.e("PassengerHome", "JWT token not found");
+            return;
+        }
+
+        passengerId = JwtUtils.getUserIdFromToken(token);
+
+        if (passengerId != null) {
+            Log.d("PassengerHome", "UserId from token in fetchLoggedInUser: " + passengerId);
+            subscribeToLinkedRideAccepted(passengerId);
+        } else {
+            Log.e("PassengerHome", "Failed to extract userId from token");
+        }
+    }
+
+    private void subscribeToLinkedRideAccepted(Long passengerId) {
+        if (passengerId == null) return;
+
+        webSocketManager.setLinkedRideAcceptedListener(linkedRide -> {
+            Log.d("PassengerHome", "Received linked ride accepted WS event for rideId: " + linkedRide.getRideId());
+            mainHandler.post(() -> showRideTrackingNotification(linkedRide.getRideId()));
+        });
+
+        Log.d("PassengerHome", "Calling WebSocketManager subscribe for passengerId: " + passengerId);
+        webSocketManager.subscribeToLinkedRideAccepted(passengerId);
+    }
+
+
+
 }

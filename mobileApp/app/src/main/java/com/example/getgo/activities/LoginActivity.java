@@ -26,6 +26,7 @@ public class LoginActivity extends AppCompatActivity {
     private static final String PREFS_NAME = "getgo_prefs";
     private static final String PREF_BACKEND_URL = "backend_url";
     private static final String PREF_JWT = "jwt_token";
+    private static final String PREF_USER_ID = "user_id";
 
     private EditText etEmail;
     private EditText etPassword;
@@ -98,6 +99,9 @@ public class LoginActivity extends AppCompatActivity {
                     if (res.token != null) {
                         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
                         prefs.edit().putString(PREF_JWT, res.token).apply();
+                        if (res.userId != null && res.userId > 0) {
+                            prefs.edit().putLong(PREF_USER_ID, res.userId).apply();
+                        }
                     }
 
                     Intent intent = new Intent(this, MainActivity.class);

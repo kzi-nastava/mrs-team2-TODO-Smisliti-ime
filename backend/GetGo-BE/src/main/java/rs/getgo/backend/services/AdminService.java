@@ -9,6 +9,9 @@ import rs.getgo.backend.dtos.driver.CreatedDriverDTO;
 import rs.getgo.backend.dtos.request.*;
 import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
+import rs.getgo.backend.dtos.user.BlockUserRequestDTO;
+import rs.getgo.backend.dtos.user.BlockUserResponseDTO;
+import rs.getgo.backend.dtos.user.UserEmailDTO;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -47,12 +50,6 @@ public interface AdminService {
 
     AcceptDriverChangeRequestDTO rejectAvatarChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO);
 
-    void blockUser();
-
-    void unblockUser();
-
-    void getReports();
-
     CreatedAdminDTO createAdmin(CreateAdminDTO createAdminDTO);
 
     Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction);
@@ -62,4 +59,14 @@ public interface AdminService {
     Page<GetRideDTO> getDriverRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction);
 
     GetReorderRideDTO getDriverRideById(String email, Long rideId);
+
+    BlockUserResponseDTO blockUser(Long userId, String adminEmail, BlockUserRequestDTO dto);
+
+    BlockUserResponseDTO unblockUser(Long userId, String adminEmail);
+
+    Page<UserEmailDTO> getUnblockedUsers(String search, int page, int size);
+
+    Page<UserEmailDTO> getBlockedUsers(String search, int page, int size);
+
+    void getReports();
 }

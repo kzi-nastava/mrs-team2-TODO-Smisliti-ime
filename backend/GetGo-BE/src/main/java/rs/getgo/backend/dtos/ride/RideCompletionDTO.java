@@ -14,4 +14,5 @@ public class RideCompletionDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private long durationMinutes;
+    private String notificationMessage;
 }

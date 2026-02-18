@@ -13,6 +13,7 @@ import com.example.getgo.api.ApiClient;
 import com.example.getgo.api.services.DriverApiService;
 import com.example.getgo.dtos.authentication.UpdatePasswordDTO;
 import com.example.getgo.dtos.authentication.UpdatedPasswordDTO;
+import com.example.getgo.utils.ToastHelper;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -74,23 +75,23 @@ public class DriverChangePasswordFragment extends Fragment {
 
         UpdatePasswordDTO updatePasswordDTO = new UpdatePasswordDTO(oldPassword, newPassword, confirmPassword);
 
-        driverApiService.updatePassword(updatePasswordDTO).enqueue(new Callback<>() {
+        driverApiService.updatePassword(updatePasswordDTO).enqueue(new Callback<UpdatedPasswordDTO>() {
             @Override
             public void onResponse(@NonNull Call<UpdatedPasswordDTO> call, @NonNull Response<UpdatedPasswordDTO> response) {
                 btnSave.setEnabled(true);
 
                 if (response.isSuccessful() && response.body() != null) {
-                    Toast.makeText(requireContext(), "Password changed successfully!", Toast.LENGTH_SHORT).show();
+                    ToastHelper.showShort(requireContext(), "Password changed");
                     clearFields();
                 } else {
-                    Toast.makeText(requireContext(), "Failed to change password. Please try again.", Toast.LENGTH_SHORT).show();
+                    ToastHelper.showShort(requireContext(), "Change failed");
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<UpdatedPasswordDTO> call, @NonNull Throwable t) {
                 btnSave.setEnabled(true);
-                Toast.makeText(requireContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                ToastHelper.showError(requireContext(), "Password change failed", t.getMessage());
             }
         });
     }

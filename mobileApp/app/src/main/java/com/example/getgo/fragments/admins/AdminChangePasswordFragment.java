@@ -13,6 +13,7 @@ import com.example.getgo.api.ApiClient;
 import com.example.getgo.api.services.AdminApiService;
 import com.example.getgo.dtos.authentication.UpdatePasswordDTO;
 import com.example.getgo.dtos.authentication.UpdatedPasswordDTO;
+import com.example.getgo.utils.ToastHelper;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -91,7 +92,7 @@ public class AdminChangePasswordFragment extends Fragment {
             @Override
             public void onFailure(@NonNull Call<UpdatedPasswordDTO> call, @NonNull Throwable t) {
                 btnSave.setEnabled(true);
-                Toast.makeText(requireContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                ToastHelper.showError(requireContext(), "Password change failed", t.getMessage());
             }
         });
     }

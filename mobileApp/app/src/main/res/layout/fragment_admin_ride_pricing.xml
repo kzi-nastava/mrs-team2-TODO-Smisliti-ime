@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#8FABD4"
+    android:paddingTop="70dp">
+
+    <LinearLayout
+        android:id="@+id/ride_pricing_wrapper"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ride Pricing"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="20dp"
+            android:textColor="@android:color/black"/>
+
+        <TableLayout
+            android:id="@+id/price_table"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stretchColumns="*"
+            android:background="#f7f7f7">
+
+            <TableRow>
+                <TextView
+                    android:text="Vehicle Type"
+                    android:padding="10dp"
+                    android:background="@color/dark_blue"
+                    android:textColor="#ffffff"
+                    android:gravity="center"/>
+                <TextView
+                    android:text="Start Price"
+                    android:padding="10dp"
+                    android:background="@color/dark_blue"
+                    android:textColor="#ffffff"
+                    android:gravity="center"/>
+                <TextView
+                    android:text="Price / Km"
+                    android:padding="10dp"
+                    android:background="@color/dark_blue"
+                    android:textColor="#ffffff"
+                    android:gravity="center"/>
+            </TableRow>
+
+            <!-- Rows will be added dynamically from code -->
+
+        </TableLayout>
+
+    </LinearLayout>
+
+</ScrollView>

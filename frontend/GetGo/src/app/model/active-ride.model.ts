@@ -37,8 +37,8 @@ export interface GetActiveRideAdminDetailsDTO {
 
   currentAddress: string;
 
-  currentLat: number;           // trenutna lokacija vozaca - latitude
-  currentLng: number;           // trenutna lokacija vozaca - longitude
-  latitudes?: number[];         // niz latitude za rutu
+  currentLat: number;
+  currentLng: number;
+  latitudes?: number[];
   longitudes?: number[];
 }

@@ -7,35 +7,73 @@
     android:background="@color/dark_blue"
     android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-    <!-- Driver status toggle (visible only for drivers) -->
-    <LinearLayout
-        android:id="@+id/driverStatusLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="end"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingEnd="16dp"
-        android:paddingStart="0dp"
-        android:visibility="gone">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/tvDriverStatus"
+        <!-- Driver status toggle (visible only for drivers, on the LEFT after hamburger) -->
+        <LinearLayout
+            android:id="@+id/driverStatusLayout"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/driver_inactive"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
-            android:layout_marginEnd="8dp"/>
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="start|center_vertical"
+            android:layout_alignParentStart="true"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:visibility="gone">
 
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switchDriverActive"
+            <TextView
+                android:id="@+id/tvDriverStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/driver_inactive"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:layout_marginEnd="8dp"/>
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switchDriverActive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                app:thumbTint="@color/white"
+                app:trackTint="@color/switch_track_color"/>
+
+        </LinearLayout>
+
+        <!-- User Profile (always on the RIGHT) -->
+        <LinearLayout
+            android:id="@+id/userProfileLayout"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="false"
-            app:thumbTint="@color/white"
-            app:trackTint="@color/switch_track_color"/>
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="end|center_vertical"
+            android:layout_alignParentEnd="true"
+            android:paddingEnd="16dp"
+            android:paddingStart="8dp">
 
-    </LinearLayout>
+            <TextView
+                android:id="@+id/tvUserName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:layout_marginEnd="12dp"
+                android:maxLines="1"
+                android:ellipsize="end"/>
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/ivUserProfile"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_profile_placeholder"
+                app:civ_border_width="1dp"
+                app:civ_border_color="@android:color/white"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
 
 </androidx.appcompat.widget.Toolbar>

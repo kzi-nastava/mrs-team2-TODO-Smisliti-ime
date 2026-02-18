@@ -129,6 +129,35 @@ export interface Page<T> {
   number: number;
 }
 
+export interface UserEmailDTO {
+  id: number;
+  email: string;
+  role: string;
+}
+
+export interface UserDTO {
+  id: number;
+  email: string;
+  name: string;
+  surname: string;
+  address: string;
+  phone: string;
+  role: string;
+  isBlocked: boolean;
+}
+
+export interface BlockUserRequestDTO {
+  reason: string;
+}
+
+export interface BlockUserResponseDTO {
+  id: number;
+  email: string;
+  blocked: boolean;
+  blockReason: string;
+  blockedAt: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -195,6 +224,30 @@ export class AdminService {
     return this.http.put<ApproveRejectResponseDTO>(
       `${this.apiUrl}/driver-change-requests/picture/${requestId}/reject`,
       { reason }
+    );
+  }
+
+  getUnblockedUsers(search: string = '', page: number = 0, size: number = 10): Observable<Page<UserEmailDTO>> {
+    return this.http.get<Page<UserEmailDTO>>(
+      `${this.apiUrl}/users/unblocked?search=${encodeURIComponent(search)}&page=${page}&size=${size}`
+    );
+  }
+
+  getBlockedUsers(search: string = '', page: number = 0, size: number = 10): Observable<Page<UserEmailDTO>> {
+    return this.http.get<Page<UserEmailDTO>>(
+      `${this.apiUrl}/users/blocked?search=${encodeURIComponent(search)}&page=${page}&size=${size}`
+    );
+  }
+
+  blockUser(userId: number, reason: string): Observable<BlockUserResponseDTO> {
+    return this.http.put<BlockUserResponseDTO>(
+      `${this.apiUrl}/users/${userId}/block`, { reason }
+    );
+  }
+
+  unblockUser(userId: number): Observable<BlockUserResponseDTO> {
+    return this.http.put<BlockUserResponseDTO>(
+      `${this.apiUrl}/users/${userId}/unblock`, {}
     );
   }
 

@@ -37,33 +37,29 @@ export class ActiveRideDetailsComponent implements OnInit, OnDestroy {
     this.loadRideDetails();
 
     try {
-          await this.websocketService.connect();
-          console.log('WebSocket connected for admin');
+      this.locationSubscription = this.websocketService
+        .subscribeToRideDriverLocation(this.rideId)
+        .subscribe((pos: { latitude: number, longitude: number }) => {
+          console.log('WS update:', pos);
+          const currentRide = this.ride();
+          if (currentRide) {
+            this.ride.set({
+              ...currentRide,
+              currentLat: pos.latitude,
+              currentLng: pos.longitude
+            });
+          }
 
-          this.locationSubscription = this.websocketService
-                .subscribeToRideDriverLocation(this.rideId)
-                .subscribe((pos: { latitude: number, longitude: number }) => {
-                  console.log('WS update:', pos);
-                  const currentRide = this.ride();
-                  if (currentRide) {
-                    this.ride.set({
-                      ...currentRide,
-                      currentLat: pos.latitude,
-                      currentLng: pos.longitude
-                    });
-                  }
-
-                  if (this.mapComponent?.nativeElement) {
-                    console.log('Dispatching update-driver-position event');
-                    const event = new CustomEvent('update-driver-position', {
-                      detail: { lat: pos.latitude, lng: pos.longitude },
-                      bubbles: true
-                    });
-                    this.mapComponent.nativeElement.dispatchEvent(event);
-                  }
-
-                  this.cdr.detectChanges();
-                });
+          if (this.mapComponent?.nativeElement) {
+            console.log('Dispatching update-driver-position event');
+            const event = new CustomEvent('update-driver-position', {
+              detail: { lat: pos.latitude, lng: pos.longitude },
+              bubbles: true
+            });
+            this.mapComponent.nativeElement.dispatchEvent(event);
+          }
+            this.cdr.detectChanges();
+    });
 
         } catch (err) {
           console.error('Failed to connect WebSocket for admin', err);
@@ -103,6 +99,5 @@ export class ActiveRideDetailsComponent implements OnInit, OnDestroy {
     if (this.locationSubscription) {
       this.locationSubscription.unsubscribe();
     }
-    this.websocketService.disconnect();
   }
 }

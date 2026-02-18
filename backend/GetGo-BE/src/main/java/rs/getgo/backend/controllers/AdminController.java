@@ -8,21 +8,21 @@ import rs.getgo.backend.dtos.admin.*;
 import rs.getgo.backend.dtos.authentication.UpdatePasswordDTO;
 import rs.getgo.backend.dtos.authentication.UpdatedPasswordDTO;
 import rs.getgo.backend.dtos.driver.*;
-import rs.getgo.backend.dtos.report.GetReportDTO;
+import rs.getgo.backend.dtos.report.ReportResponseDTO;
 import rs.getgo.backend.dtos.request.*;
 import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
-import rs.getgo.backend.dtos.user.CreatedUserDTO;
+import rs.getgo.backend.dtos.user.BlockUserRequestDTO;
+import rs.getgo.backend.dtos.user.BlockUserResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rs.getgo.backend.dtos.user.UserEmailDTO;
 import rs.getgo.backend.services.AdminService;
 import rs.getgo.backend.utils.AuthUtils;
 
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.List;
 
 @PreAuthorize("hasRole('ADMIN')")
 @RestController
@@ -35,31 +35,42 @@ public class AdminController {
         this.adminService = adminService;
     }
 
+    @GetMapping("/users/unblocked")
+    public ResponseEntity<Page<UserEmailDTO>> getUnblockedUsers(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<UserEmailDTO> users = adminService.getUnblockedUsers(search, page, size);
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/users/blocked")
+    public ResponseEntity<Page<UserEmailDTO>> getBlockedUsers(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<UserEmailDTO> users = adminService.getBlockedUsers(search, page, size);
+        return ResponseEntity.ok(users);
+    }
+
     // 2.9.3 – Block user
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/users/{id}/block")
-    public ResponseEntity<CreatedUserDTO> blockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", true, null);
+    public ResponseEntity<BlockUserResponseDTO> blockUser(
+            @PathVariable Long id,
+            @RequestBody BlockUserRequestDTO blockUserRequestDTO) {
+        String email = AuthUtils.getCurrentUserEmail();
+        BlockUserResponseDTO response = adminService.blockUser(id, email, blockUserRequestDTO);
         return ResponseEntity.ok(response);
     }
 
     // 2.9.3 – Unblock user
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/users/{id}/unblock")
-    public ResponseEntity<CreatedUserDTO> unblockUser(@PathVariable Long id) {
-        CreatedUserDTO response = new CreatedUserDTO(id, "blocked@getgo.com", "Jovan", "Jovanovic", "a", "6475868979", false, null);
+    public ResponseEntity<BlockUserResponseDTO> unblockUser(@PathVariable Long id) {
+        String email = AuthUtils.getCurrentUserEmail();
+        BlockUserResponseDTO response = adminService.unblockUser(id, email);
         return ResponseEntity.ok(response);
-    }
-
-    // 2.9.3 – View reports
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/reports")
-    public ResponseEntity<List<GetReportDTO>> getReports(
-            @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to) {
-
-        GetReportDTO report = new GetReportDTO("01-01-2025 / 31-01-2025", 120, 860.5, 750.0);
-        return ResponseEntity.ok(List.of(report));
     }
 
     // 2.9.3 – Create admin profile

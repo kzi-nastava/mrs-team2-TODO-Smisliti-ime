@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import rs.getgo.backend.validators.annotations.ValidVehicleType;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,7 +41,7 @@ public class CreateDriverDTO {
     private String vehicleModel;
 
     @NotBlank(message = "Vehicle type is required")
-    @Pattern(regexp = "^(SEDAN|SUV|VAN|LUXURY)$", message = "Vehicle type must be SEDAN, SUV, VAN, or LUXURY")
+    @ValidVehicleType
     private String vehicleType;
 
     @NotBlank(message = "Vehicle license plate is required")

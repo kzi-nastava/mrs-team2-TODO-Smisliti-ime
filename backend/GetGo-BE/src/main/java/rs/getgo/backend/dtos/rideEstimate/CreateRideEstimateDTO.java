@@ -12,7 +12,6 @@ import java.util.List;
 public class CreateRideEstimateDTO {
     // getters and setters
     private List<Coordinate> coordinates; // List of coordinates: start, destination
-
     @Setter
     @Getter
     public static class Coordinate {

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavBarComponent } from '../../layout/nav-bar/nav-bar.component';
 import { RideTrackingMapComponent } from '../../layout/ride-tracking-map/ride-tracking-map.component';
@@ -15,6 +15,7 @@ import { AuthService } from '../../service/auth-service/auth.service';
 import { SnackBarService } from '../../service/snackBar/snackBar.service';
 import { Subscription } from 'rxjs';
 import {FormsModule} from '@angular/forms';
+import { environment } from '../../../env/environment';
 
 @Component({
   selector: 'app-driver-home',
@@ -34,6 +35,7 @@ export class DriverHome implements OnInit {
   isAccepting = false;
   isStopping = false;
   isEnding = false;
+  apiHost = environment.apiHost
 
   errorMessage: string | null = null;
   successMessage: string | null = null;
@@ -72,9 +74,6 @@ export class DriverHome implements OnInit {
     console.log('Driver Email:', driverEmail);
 
     try {
-      await this.webSocketService.connect();
-      console.log('WebSocket connected');
-
       this.subscribeToRideAssignments(driverEmail);
       this.subscribeToLocationUpdates(driverEmail);
       this.subscribeToStatusUpdates(driverEmail);
@@ -111,8 +110,6 @@ export class DriverHome implements OnInit {
     if (this.locationSubscription) this.locationSubscription.unsubscribe();
     if (this.statusSubscription) this.statusSubscription.unsubscribe();
     if (this.completionSubscription) this.completionSubscription.unsubscribe();
-
-    this.webSocketService.disconnect();
   }
 
   private subscribeToRideAssignments(driverEmail: string) {
@@ -399,7 +396,14 @@ export class DriverHome implements OnInit {
       this.rideService
         .cancelRideByDriver(this.activeRide.rideId, { reason: '' })
         .subscribe({
-          next: () => {
+          next: (completion) => {
+            // completion may contain notificationMessage set by backend
+            const notif = (completion as any)?.notificationMessage;
+            if (notif) {
+              this.snackBarService.show(notif, false);
+            } else {
+              this.snackBarService.show('Ride successfully cancelled.');
+            }
             this.successMessage = 'Ride successfully cancelled.';
             this.activeRide = null;
             this.isCancelling = false;
@@ -447,7 +451,13 @@ export class DriverHome implements OnInit {
     this.rideService
       .cancelRideByDriver(this.activeRide.rideId, { reason: this.cancelReason.trim() || '' })
       .subscribe({
-        next: () => {
+        next: (completion) => {
+          const notif2 = (completion as any)?.notificationMessage;
+          if (notif2) {
+            this.snackBarService.show(notif2, false);
+          } else {
+            this.snackBarService.show('Ride successfully cancelled.');
+          }
           this.successMessage = 'Ride successfully cancelled.';
           this.activeRide = null;
           this.showCancelForm = false;
@@ -455,12 +465,12 @@ export class DriverHome implements OnInit {
           this.resetMap();
           this.cdr.detectChanges();
         },
-        error: (err) => {
-          this.errorMessage = err.error?.message || 'Failed to cancel ride.';
-          this.isCancelling = false;
-          this.cdr.detectChanges();
-        }
-      });
+         error: (err) => {
+           this.errorMessage = err.error?.message || 'Failed to cancel ride.';
+           this.isCancelling = false;
+           this.cdr.detectChanges();
+         }
+       });
   }
 
   acknowledgeCompletion() {

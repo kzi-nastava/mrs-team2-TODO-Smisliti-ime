@@ -81,9 +81,7 @@
         <label>Vehicle Type</label>
         <select formControlName="vehicleType">
           <option value="">Any</option>
-          <option value="SUV">SUV</option>
-          <option value="SEDAN">Sedan</option>
-          <option value="LUXURY">Luxury</option>
+          <option *ngFor="let type of vehicleTypes" [value]="type">{{ type }}</option>
         </select>
       </div>
 
@@ -153,7 +151,7 @@
 
       <!-- Form Actions -->
       <div class="form-actions">
-        <button type="submit" [disabled]="isLoading">Order Ride</button>
+        <button type="submit" [disabled]="isLoading" id="order-ride-btn">Order Ride</button>
         <button type="button" (click)="cancel()" [disabled]="isLoading">Cancel</button>
       </div>
 

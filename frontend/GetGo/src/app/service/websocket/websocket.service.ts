@@ -196,4 +196,10 @@ export class WebSocketService {
   subscribeToPassengerRideCancelled(rideId: number) {
     return this.createSubscription(`/socket-publisher/ride/${rideId}/ride-cancelled`);
   }
+
+  subscribeToAllDriversLocations(): Observable<any> {
+    console.log('Subscribing to all drivers locations');
+    return this.createSubscription('/socket-publisher/drivers/location');
+  }
+
 }

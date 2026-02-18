@@ -14,6 +14,7 @@ import {environment} from '../../../../env/environment';
 import { SnackBarService } from '../../../service/snackBar/snackBar.service';
 import { UserRole } from '../../../model/user.model';
 import { ActivatedRoute } from '@angular/router';
+import { NotificationListenerService } from '../../../service/notification/notification-listener.service';
 
 @Component({
   selector: 'app-login',
@@ -32,13 +33,13 @@ export class LoginComponent {
 
   createLoginForm = new FormGroup({
     email: new FormControl('', [
-      // Validators.required,
-      // Validators.email,
-      // Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+      Validators.required,
+      Validators.email,
+      Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
     ]),
     password: new FormControl('', [
-      // Validators.required,
-      // Validators.minLength(8)
+      Validators.required,
+      Validators.minLength(8)
     ]),
     stayLoggedIn: new FormControl(false),
   });
@@ -51,11 +52,11 @@ export class LoginComponent {
     private router: Router,
     private http: HttpClient,
     private snackBarService: SnackBarService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private notificationListener: NotificationListenerService
   ) {
     this.route.queryParams.subscribe(params => {
         console.log('Login query params:', params);
-        // vise ne treba redirectToRate i rideId
       });
     }
 
@@ -95,7 +96,7 @@ export class LoginComponent {
     type LoginResponse = { token?: string; role?: 'admin' | 'driver' | 'passenger' };
 
     this.http.post<LoginResponse>(`${environment.apiHost}/api/auth/login`, payload).subscribe({
-      next: (res) => {
+      next: async (res) => {
         console.log('Login: server response', res);
 
         if (!res?.token) {
@@ -113,6 +114,8 @@ export class LoginComponent {
         }
 
         this.auth.setToken(res.token, stayLoggedIn);
+
+        await this.notificationListener.startListening();
 
         console.log('Login: token saved & role extracted from JWT');
 

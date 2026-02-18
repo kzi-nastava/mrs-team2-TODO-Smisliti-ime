@@ -39,6 +39,7 @@ export interface GetDriverActiveRideDTO {
   longitudes?: number[];
   addresses?: string[];
   scheduledTime?: string; // Null if ride not scheduled
+  passengerProfilePictureUrl?: string;
 }
 
 export interface UpdatedRideDTO {
@@ -69,6 +70,7 @@ export interface RideCompletionDTO {
   startTime: string;
   endTime: string;
   durationMinutes: number;
+  notificationMessage?: string;
 }
 
 export interface StopRideDTO {
@@ -88,6 +90,7 @@ export interface GetPassengerActiveRideDTO {
   latitudes: number[];
   longitudes: number[];
   addresses: string[];
+  driverProfilePictureUrl: string;
 }
 
 export interface PassengerStatusUpdateDTO {
@@ -152,7 +155,7 @@ export class RideService {
   }
 
   endRide(rideId: number): Observable<UpdatedRideDTO> {
-    return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/finish`, {});
+    return this.http.put<UpdatedRideDTO>(`${this.apiUrl}/${rideId}/finish`, {status: 'FINISHED'});
   }
 
   getPassengerActiveRide(): Observable<GetPassengerActiveRideDTO | null> {
@@ -163,12 +166,13 @@ export class RideService {
     return this.http.post<RideCompletionDTO>(`${this.apiUrl}/${rideId}/stop`, payload);
   }
 
-  cancelRideByDriver(rideId: number, body: CancelRideRequestDTO): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${rideId}/cancel/driver`, body);
+  // Backend now returns a RideCompletionDTO on cancel (same shape as stop)
+  cancelRideByDriver(rideId: number, body: CancelRideRequestDTO): Observable<RideCompletionDTO> {
+    return this.http.post<RideCompletionDTO>(`${this.apiUrl}/${rideId}/cancel/driver`, body);
   }
 
-  cancelRideByPassenger(rideId: number, body: CancelRideRequestDTO): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${rideId}/cancel/passenger`, body);
+  cancelRideByPassenger(rideId: number, body: CancelRideRequestDTO): Observable<RideCompletionDTO> {
+    return this.http.post<RideCompletionDTO>(`${this.apiUrl}/${rideId}/cancel/passenger`, body);
   }
 
   createPanic(rideId: number): Observable<void> {

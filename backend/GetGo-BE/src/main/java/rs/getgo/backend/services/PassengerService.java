@@ -20,7 +20,7 @@ public interface PassengerService {
     UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO dto);
     UpdatedProfilePictureDTO uploadProfilePicture(String email, MultipartFile file);
 
-    Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size);
+    Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction);
 
     GetPassengerDTO getPassengerById(Long passengerId);
     GetReorderRideDTO getPassengerRideById(String email, Long rideId);

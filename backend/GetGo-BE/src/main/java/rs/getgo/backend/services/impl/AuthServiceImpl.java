@@ -136,13 +136,6 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
-        if (user.isBlocked()) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "User is blocked"
-            );
-        }
-
         if (user.getRole() == UserRole.PASSENGER) {
             Passenger passenger = (Passenger) user;
             if (!passenger.isCanAccessSystem()) {

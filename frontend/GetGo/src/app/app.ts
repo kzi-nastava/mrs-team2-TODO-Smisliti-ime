@@ -1,4 +1,4 @@
-import { Component, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, signal, computed, effect } from '@angular/core';
 import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService } from './service/auth-service/auth.service';
@@ -6,6 +6,7 @@ import { UserRole } from './model/user.model';
 import { CommonModule } from '@angular/common';
 import { NavBarComponent } from './layout/nav-bar/nav-bar.component';
 import { UnregisteredNavBarComponent } from './layout/unregistered-nav-bar/unregistered-nav-bar.component';
+import { NotificationListenerService } from './service/notification/notification-listener.service';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +20,7 @@ import { UnregisteredNavBarComponent } from './layout/unregistered-nav-bar/unreg
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
-export class App {
+export class App implements OnInit {
   protected readonly title = signal('GetGo');
 
   isGuest = computed(() => {
@@ -28,7 +29,11 @@ export class App {
     return role === UserRole.Guest;
   });
 
-  constructor(private router: Router, public auth: AuthService) {
+  constructor(
+    private router: Router,
+    public auth: AuthService,
+    private notificationListener: NotificationListenerService
+    ) {
     console.log('App: constructor, initial role', this.auth.role());
 
     // Track role changes with effect
@@ -42,4 +47,10 @@ export class App {
       console.log('App: navigation event, current role', this.auth.role(), 'isGuest:', this.isGuest(), 'url:', e.url);
     });
   }
+
+    async ngOnInit() {
+      if (this.auth.role() !== UserRole.Guest) {
+        await this.notificationListener.startListening();
+      }
+    }
 }

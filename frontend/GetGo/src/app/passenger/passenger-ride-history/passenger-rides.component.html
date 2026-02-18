@@ -3,10 +3,28 @@
   <div class="filter-container">
     <form [formGroup]="searchRideForm" (ngSubmit)="searchRides()" class="filter-form">
       <mat-form-field appearance="fill" class="date-picker-field">
-        <mat-label>Filter by date</mat-label>
+        <mat-label>Filter by date</mat-label>task
         <input matInput [matDatepicker]="picker" formControlName="date">
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="sort-field">
+        <mat-label>Sort By</mat-label>
+        <mat-select formControlName="sortBy">
+          <mat-option value="startTime">Start Date/Time</mat-option>
+          <mat-option value="estTime">Duration</mat-option>
+          <mat-option value="estDistanceKm">Distance</mat-option>
+          <mat-option value="estimatedPrice">Price</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="sort-direction-field">
+        <mat-label>Order</mat-label>
+        <mat-select formControlName="sortDirection">
+          <mat-option value="DESC">Descending</mat-option>
+          <mat-option value="ASC">Ascending</mat-option>
+        </mat-select>
       </mat-form-field>
 
       <div class="buttons">

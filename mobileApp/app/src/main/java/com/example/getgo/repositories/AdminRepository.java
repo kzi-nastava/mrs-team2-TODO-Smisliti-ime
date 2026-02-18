@@ -4,12 +4,21 @@ import android.util.Log;
 
 import com.example.getgo.api.ApiClient;
 import com.example.getgo.api.services.AdminApiService;
+import com.example.getgo.dtos.activeRide.GetActiveRideAdminDTO;
+import com.example.getgo.dtos.activeRide.GetActiveRideAdminDetailsDTO;
+import com.example.getgo.dtos.driver.CreateDriverDTO;
+import com.example.getgo.dtos.driver.CreatedDriverDTO;
 import com.example.getgo.dtos.general.Page;
 import com.example.getgo.dtos.request.AcceptDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.GetDriverAvatarChangeRequestDTO;
 import com.example.getgo.dtos.request.GetDriverVehicleChangeRequestDTO;
 import com.example.getgo.dtos.request.GetPersonalDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.RejectDriverChangeRequestDTO;
+import com.example.getgo.dtos.user.BlockUserRequestDTO;
+import com.example.getgo.dtos.user.BlockUserResponseDTO;
+import com.example.getgo.dtos.user.UserEmailDTO;
+
+import java.util.List;
 
 import retrofit2.Response;
 
@@ -24,6 +33,75 @@ public class AdminRepository {
             instance = new AdminRepository();
         }
         return instance;
+    }
+
+    public BlockUserResponseDTO blockUser(Long userId, String reason) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        BlockUserRequestDTO dto = new BlockUserRequestDTO(reason);
+        Response<BlockUserResponseDTO> response = service.blockUser(userId, dto).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            Log.d(TAG, "User blocked: " + userId);
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to block user: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to block user: " + errBody);
+        }
+    }
+
+    public BlockUserResponseDTO unblockUser(Long userId) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<BlockUserResponseDTO> response = service.unblockUser(userId).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            Log.d(TAG, "User unblocked: " + userId);
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to unblock user: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to unblock user: " + errBody);
+        }
+    }
+
+    public Page<UserEmailDTO> getUnblockedUsers(String search, int page, int size) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<Page<UserEmailDTO>> response = service.getUnblockedUsers(search, page, size).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to fetch unblocked users: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to fetch unblocked users");
+        }
+    }
+
+    public Page<UserEmailDTO> getBlockedUsers(String search, int page, int size) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<Page<UserEmailDTO>> response = service.getBlockedUsers(search, page, size).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to fetch blocked users: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to fetch blocked users");
+        }
+    }
+
+    public CreatedDriverDTO registerDriver(CreateDriverDTO dto) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<CreatedDriverDTO> response = service.registerDriver(dto).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            Log.d(TAG, "Driver registered: " + response.body().getEmail());
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to register driver: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to register driver: " + errBody);
+        }
     }
 
     public Page<GetPersonalDriverChangeRequestDTO> getPendingPersonalRequests(int page, int size) throws Exception {
@@ -158,6 +236,32 @@ public class AdminRepository {
             String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
             Log.e(TAG, "Failed to reject avatar request: " + response.code() + " - " + errBody);
             throw new Exception("Failed to reject avatar request");
+        }
+    }
+
+    public List<GetActiveRideAdminDTO> getActiveRides() throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<List<GetActiveRideAdminDTO>> response = service.getActiveRides().execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to fetch active rides: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to fetch active rides");
+        }
+    }
+
+    public GetActiveRideAdminDetailsDTO getActiveRideDetails(int rideId) throws Exception {
+        AdminApiService service = ApiClient.getClient().create(AdminApiService.class);
+        Response<GetActiveRideAdminDetailsDTO> response = service.getActiveRideDetails(rideId).execute();
+
+        if (response.isSuccessful() && response.body() != null) {
+            return response.body();
+        } else {
+            String errBody = response.errorBody() != null ? response.errorBody().string() : "Unknown error";
+            Log.e(TAG, "Failed to fetch ride details: " + response.code() + " - " + errBody);
+            throw new Exception("Failed to fetch active ride details");
         }
     }
 }

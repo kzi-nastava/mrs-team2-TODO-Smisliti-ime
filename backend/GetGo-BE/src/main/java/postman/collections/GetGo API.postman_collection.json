@@ -520,7 +520,7 @@
 								"active"
 							]
 						},
-						"description": "Get all currently active vehicles.\n\n**Response:**\nArray of vehicle objects containing:\n- `id` (Long): Vehicle ID\n- `model` (string): Vehicle model\n- `type` (string): Vehicle type (Sedan, SUV, etc.)\n- `latitude` (double): Current latitude\n- `longitude` (double): Current longitude\n- `isActive` (boolean): Active status"
+						"description": "Get all currently active vehicles.\n\n**Response:**\nArray of vehicle objects containing:\n- `id` (Long): Vehicle ID\n- `model` (string): Vehicle model\n- `type` (string): Vehicle type (STANDARD, VAN, etc.)\n- `latitude` (double): Current latitude\n- `longitude` (double): Current longitude\n- `isActive` (boolean): Active status"
 					},
 					"response": []
 				},

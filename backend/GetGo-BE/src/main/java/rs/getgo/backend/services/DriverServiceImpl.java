@@ -19,6 +19,7 @@ import rs.getgo.backend.dtos.ride.GetRideDTO;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
 import rs.getgo.backend.model.enums.RideStatus;
+import rs.getgo.backend.model.enums.VehicleType;
 import rs.getgo.backend.repositories.*;
 
 import java.time.LocalDate;
@@ -38,6 +39,7 @@ public class DriverServiceImpl implements DriverService {
     private final VehicleChangeRequestRepository vehicleChangeRequestRepo;
     private final AvatarChangeRequestRepository avatarChangeRequestRepo;
     private final DriverActivationTokenRepository driverActivationTokenRepo;
+    private final BlockNoteRepository blockNoteRepository;
     private final ActiveRideRepository activeRideRepository;
     private final ModelMapper modelMapper;
     private final FileStorageService fileStorageService;
@@ -52,6 +54,7 @@ public class DriverServiceImpl implements DriverService {
             VehicleChangeRequestRepository vehicleChangeRequestRepo,
             AvatarChangeRequestRepository avatarChangeRequestRepo,
             DriverActivationTokenRepository driverActivationTokenRepo,
+            BlockNoteRepository blockNoteRepository,
             ActiveRideRepository activeRideRepository,
             ModelMapper modelMapper,
             FileStorageService fileStorageService,
@@ -65,6 +68,7 @@ public class DriverServiceImpl implements DriverService {
         this.vehicleChangeRequestRepo = vehicleChangeRequestRepo;
         this.avatarChangeRequestRepo = avatarChangeRequestRepo;
         this.driverActivationTokenRepo = driverActivationTokenRepo;
+        this.blockNoteRepository = blockNoteRepository;
         this.activeRideRepository = activeRideRepository;
         this.modelMapper = modelMapper;
         this.fileStorageService = fileStorageService;
@@ -184,63 +188,53 @@ public class DriverServiceImpl implements DriverService {
         );
     }
 
+    private DriverActivationToken validateAndGetToken(String token) {
+        DriverActivationToken activationToken = driverActivationTokenRepo.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid activation token"));
+
+        if (activationToken.isUsed()) {
+            throw new RuntimeException("Activation token has already been used");
+        }
+
+        if (activationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Activation token has expired");
+        }
+
+        return activationToken;
+    }
+
 
     @Override
     public GetActivationTokenDTO validateActivationToken(String token) {
-        Optional<DriverActivationToken> tokenOptional = driverActivationTokenRepo.findByToken(token);
-
-        if (tokenOptional.isEmpty()) {
-            return new GetActivationTokenDTO(false, null, "Invalid activation token");
+        try {
+            DriverActivationToken activationToken = validateAndGetToken(token);
+            Driver driver = activationToken.getDriver();
+            return new GetActivationTokenDTO(true, driver.getEmail(), null);
+        } catch (RuntimeException e) {
+            return new GetActivationTokenDTO(false, null, e.getMessage());
         }
-
-        DriverActivationToken activationToken = tokenOptional.get();
-
-        // Check if already used
-        if (activationToken.isUsed()) {
-            return new GetActivationTokenDTO(false, null, "Activation token has already been used");
-        }
-
-        // Check if expired
-        if (activationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return new GetActivationTokenDTO(false, null, "Activation token has expired");
-        }
-
-        // Token is valid
-        Driver driver = activationToken.getDriver();
-        return new GetActivationTokenDTO(true, driver.getEmail(), null);
     }
 
     @Override
     public UpdatedPasswordDTO setDriverPassword(UpdateDriverPasswordDTO passwordDTO) {
-        if (!passwordDTO.getPassword().equals(passwordDTO.getConfirmPassword())) {
-            return new UpdatedPasswordDTO(false, "Passwords do not match");
-        }
+        try {
+            DriverActivationToken activationToken = validateAndGetToken(passwordDTO.getToken());
 
-        Optional<DriverActivationToken> tokenOpt =
-                driverActivationTokenRepo.findByToken(passwordDTO.getToken());
-        if (tokenOpt.isEmpty()) {
-            return new UpdatedPasswordDTO(false, "Invalid activation token");
-        }
-        DriverActivationToken activationToken = tokenOpt.get();
-        if (activationToken.isUsed()) {
-            return new UpdatedPasswordDTO(false, "Activation token has already been used");
-        }
-        if (activationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return new UpdatedPasswordDTO(false, "Activation token expired");
-        }
+            // Set password and activate driver
+            Driver driver = activationToken.getDriver();
+            driver.setPassword(passwordEncoder.encode(passwordDTO.getPassword()));
+            driver.setActivated(true);
+            driverRepository.save(driver);
 
-        // Set password and activate driver
-        Driver driver = activationToken.getDriver();
-        driver.setPassword(passwordEncoder.encode(passwordDTO.getPassword()));
-        driver.setActivated(true);
-        driverRepository.save(driver);
+            // Mark token as used
+            activationToken.setUsed(true);
+            activationToken.setUsedAt(LocalDateTime.now());
+            driverActivationTokenRepo.save(activationToken);
 
-        // Mark token as used
-        activationToken.setUsed(true);
-        activationToken.setUsedAt(LocalDateTime.now());
-        driverActivationTokenRepo.save(activationToken);
-
-        return new UpdatedPasswordDTO(true, "Password set successfully. You can now log in.");
+            return new UpdatedPasswordDTO(true, "Password set successfully. You can now log in.");
+        } catch (RuntimeException e) {
+            return new UpdatedPasswordDTO(false, e.getMessage());
+        }
     }
 
     @Override
@@ -264,15 +258,17 @@ public class DriverServiceImpl implements DriverService {
 
         dto.setRecentHoursWorked(calculateRecentHoursWorked(email));
 
+        dto.setBlocked(driver.isBlocked());
+        if (driver.isBlocked()) {
+            blockNoteRepository.findByUserAndUnblockedAtIsNull(driver)
+                    .ifPresent(note -> dto.setBlockReason(note.getReason()));
+        }
+
         return dto;
     }
 
     @Override
     public UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO) {
-        if (!updatePasswordDTO.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
-            return new UpdatedPasswordDTO(false, "Passwords do not match");
-        }
-
         Driver driver = driverRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 
@@ -337,6 +333,13 @@ public class DriverServiceImpl implements DriverService {
             throw new RuntimeException("You already have a pending vehicle information change request");
         }
 
+        // Check if vehicle type is valid (can be custom validator in dto)
+        try {
+            VehicleType.valueOf(updateDTO.getVehicleType());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid vehicle type: " + updateDTO.getVehicleType());
+        }
+
         Vehicle vehicle = driver.getVehicle();
         if (vehicle == null) {
             throw new RuntimeException("Driver does not have a vehicle assigned");
@@ -382,10 +385,11 @@ public class DriverServiceImpl implements DriverService {
         Driver driver = driverRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Driver not found with id: " + email));
 
-        // Check for existing pending request
         if (avatarChangeRequestRepo.existsByDriverAndStatus(driver, RequestStatus.PENDING)) {
             throw new RuntimeException("You already have a pending profile picture change request");
         }
+
+        fileStorageService.validateImageFile(file);
 
         // Store file temporarily until approval/rejection
         String filename = fileStorageService.storeFile(file, "driver_pending_" + driver.getId());
@@ -460,135 +464,7 @@ public class DriverServiceImpl implements DriverService {
         return driver.getActive();
     }
 
-    @Override
-    public Driver findAvailableDriver(ActiveRide ride) {
-        WayPoint startPoint = ride.getRoute().getWaypoints().getFirst();
-        double lat = startPoint.getLatitude();
-        double lng = startPoint.getLongitude();
 
-        List<Driver> candidates = driverRepository.findByIsActive(true)
-                .stream()
-                .filter(d -> isVehicleTypeMatch(d, ride))
-                .filter(d -> !hasExceededWorkingHours(d))
-                .toList();
-        if (candidates.isEmpty()) return null;
-
-        // Try to assign the closest free driver
-        List<Driver> freeDrivers = candidates.stream()
-                .filter(this::isFree)
-                .toList();
-        if (!freeDrivers.isEmpty()) return findClosestDriver(freeDrivers, lat, lng);
-
-        // Try to assign the closest driver that's finishing his ride soon and is not reserved
-        List<Driver> finishingDrivers = candidates.stream()
-                .filter(this::canAcceptNextRideWhileFinishing)
-                .toList();
-        if (finishingDrivers.isEmpty()) return null;
-
-        return findClosestDriver(finishingDrivers, lat, lng);
-    }
-
-    private boolean isVehicleTypeMatch(Driver driver, ActiveRide ride) {
-        if (ride.getVehicleType() == null) {
-            return true;
-        }
-        return driver.getVehicle().getType() == ride.getVehicleType();
-    }
-
-    private boolean isFree(Driver driver) {
-        return !activeRideRepository
-                .existsByDriverAndStatusIn(
-                        driver,
-                        List.of(
-                                RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE,
-                                RideStatus.DRIVER_READY,
-                                RideStatus.DRIVER_INCOMING,
-                                RideStatus.DRIVER_ARRIVED,
-                                RideStatus.ACTIVE,
-                                RideStatus.DRIVER_ARRIVED_AT_DESTINATION
-                        )
-                );
-    }
-
-    private boolean canAcceptNextRideWhileFinishing(Driver driver) {
-
-        boolean hasActive = activeRideRepository
-                .existsByDriverAndStatus(driver, RideStatus.ACTIVE);
-
-        boolean hasFutureAssigned = activeRideRepository
-                .existsByDriverAndStatusIn(
-                        driver,
-                        List.of(
-                                RideStatus.DRIVER_FINISHING_PREVIOUS_RIDE,
-                                RideStatus.DRIVER_INCOMING,
-                                RideStatus.SCHEDULED
-                        )
-                );
-
-        return hasActive && !hasFutureAssigned && isFinishingSoon(driver);
-    }
-
-    private boolean isFinishingSoon(Driver driver) {
-        ActiveRide currentRide = activeRideRepository
-                .findByDriverAndStatus(driver, RideStatus.ACTIVE)
-                .orElse(null);
-        if (currentRide == null || currentRide.getActualStartTime() == null) {
-            return false; // Not in an active ride or hasn't started yet
-        }
-
-        // Calculate elapsed time
-        long elapsedMinutes = java.time.Duration.between(
-                currentRide.getActualStartTime(),
-                LocalDateTime.now()
-        ).toMinutes();
-
-        // Estimate remaining time
-        double estimatedTotalMinutes = currentRide.getRoute().getEstTimeMin();
-        double remainingMinutes = estimatedTotalMinutes - elapsedMinutes;
-
-        return remainingMinutes <= 10;
-    }
-
-    // Returns closest driver closest to target position
-    // 1) Driver free: calculate distance using current driver location
-    // 2) Driver finishing previous ride: calculate distance using position of the end of his current ride
-    private Driver findClosestDriver(List<Driver> drivers, double targetLat, double targetLng) {
-        Driver closest = null;
-        double minDistance = Double.MAX_VALUE;
-
-        for (Driver d : drivers) {
-            double srcLat;
-            double srcLng;
-
-            Optional<ActiveRide> active =
-                    activeRideRepository.findByDriverAndStatus(d, RideStatus.ACTIVE);
-
-            if (active.isPresent()) {
-                WayPoint end = active.get()
-                        .getRoute()
-                        .getWaypoints()
-                        .getLast();
-                srcLat = end.getLatitude();
-                srcLng = end.getLongitude();
-            } else {
-                if (d.getCurrentLatitude() == null || d.getCurrentLongitude() == null)
-                    continue;
-                srcLat = d.getCurrentLatitude();
-                srcLng = d.getCurrentLongitude();
-            }
-
-            double dLat = srcLat - targetLat;
-            double dLng = (srcLng - targetLng) * Math.cos(Math.toRadians(targetLat));
-            double dist = dLat * dLat + dLng * dLng;
-
-            if (dist < minDistance) {
-                minDistance = dist;
-                closest = d;
-            }
-        }
-
-        return closest;
-    }
 
     public double calculateRecentHoursWorked(String email) {
         Driver driver = driverRepository.findByEmail(email)
@@ -614,6 +490,7 @@ public class DriverServiceImpl implements DriverService {
         return Math.round((totalMinutes / 60.0) * 100.0) / 100.0;
     }
 
+    @Override
     public boolean hasExceededWorkingHours(Driver driver) {
         return calculateRecentHoursWorked(driver.getEmail()) >= 8.0;
     }

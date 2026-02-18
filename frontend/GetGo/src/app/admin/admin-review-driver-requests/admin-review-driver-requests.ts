@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs';
 import { AdminNavBarComponent } from '../../layout/admin-nav-bar/admin-nav-bar.component';
 import { AdminService } from '../service/admin.service';
+import { SnackBarService } from '../../service/snackBar/snackBar.service';
 import { environment } from '../../../env/environment';
 
 interface Change {
@@ -65,6 +66,7 @@ export class AdminReviewDriverRequests implements OnInit {
 
   constructor(
     private adminService: AdminService,
+    private snackBar: SnackBarService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -241,13 +243,13 @@ export class AdminReviewDriverRequests implements OnInit {
 
     approveObservable.subscribe({
       next: () => {
-        alert('Request approved successfully!');
+        this.snackBar.show('Request approved successfully!')
         this.loadTotals();
         this.loadRequests();
       },
       error: (error) => {
         console.error('Error approving request:', error);
-        alert('Failed to approve request');
+        this.snackBar.show('Failed to approve request')
       }
     });
   }
@@ -255,7 +257,7 @@ export class AdminReviewDriverRequests implements OnInit {
   onReject(request: RequestType): void {
     const reason = prompt(`Please enter the reason for rejecting this ${request.type} change request for ${request.driverName}:`);
     if (!reason?.trim()) {
-      alert('Rejection reason is required');
+      this.snackBar.show('Rejection reason is required')
       return;
     }
 
@@ -267,13 +269,13 @@ export class AdminReviewDriverRequests implements OnInit {
 
     rejectObservable.subscribe({
       next: () => {
-        alert('Request rejected successfully!');
+        this.snackBar.show('Request rejected successfully!')
         this.loadTotals();
         this.loadRequests();
       },
       error: (error) => {
         console.error('Error rejecting request:', error);
-        alert('Failed to reject request');
+        this.snackBar.show('Failed to reject request')
       }
     });
   }

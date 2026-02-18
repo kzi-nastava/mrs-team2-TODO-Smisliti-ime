@@ -88,6 +88,13 @@
           (click)="onRebookRide()">
           Book Again
         </button>
+
+        <button
+          *ngIf="ride()?.status === 'FINISHED'"
+          class="rate-button"
+          (click)="onRateRide()">
+          Rate Ride
+        </button>
       </div>
 
       <p *ngIf="favoriteSuccess()" class="success-message">✓ Ride added to favorites!</p>

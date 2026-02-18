@@ -35,6 +35,8 @@ export interface GetDriverDTO {
   vehicleHasBabySeats: boolean;
   vehicleAllowsPets: boolean;
   recentHoursWorked: number;
+  blocked: boolean;
+  blockReason: string | null;
 }
 
 export interface UpdateDriverPersonalDTO {

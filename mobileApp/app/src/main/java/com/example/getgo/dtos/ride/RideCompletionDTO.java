@@ -9,6 +9,7 @@ public class RideCompletionDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private long durationMinutes;
+    private String notificationMessage;
 
     public RideCompletionDTO() {}
 
@@ -59,5 +60,12 @@ public class RideCompletionDTO {
     public void setDurationMinutes(long durationMinutes) {
         this.durationMinutes = durationMinutes;
     }
-}
 
+    public String getNotificationMessage() {
+        return notificationMessage;
+    }
+
+    public void setNotificationMessage(String notificationMessage) {
+        this.notificationMessage = notificationMessage;
+    }
+}

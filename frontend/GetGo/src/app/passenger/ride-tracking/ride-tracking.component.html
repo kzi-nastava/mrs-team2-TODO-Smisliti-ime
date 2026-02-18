@@ -1,4 +1,4 @@
-<div class="page-bg" [ngStyle]="{ 'min-height': showReportForm ? '110vh' : '100vh' }">
+<div class="page-bg" [ngStyle]="{ 'min-height': showReportForm ? '117vh' : '107vh' }">
   <div class="main-container">
 
     <div class="ride-status">
@@ -29,6 +29,13 @@
           <div class="ride-address">
             <img src="assets/images/finish.png" class="finish-icon" alt="Finish" />
             {{ activeRide.endingPoint }}
+          </div>
+
+          <div *ngIf="activeRide.driverName" class="driver-info">
+            <img [src]="activeRide.driverProfilePictureUrl? apiHost + activeRide.driverProfilePictureUrl: 'assets/images/pfp.png'"
+                 alt="Driver Photo"
+                 class="ride-profile-pic" />
+            <p><strong>Driver:</strong> {{ activeRide.driverName }}</p>
           </div>
 
           <!-- Driver Info -->

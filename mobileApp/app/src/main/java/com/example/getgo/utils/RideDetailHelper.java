@@ -118,7 +118,7 @@ public class RideDetailHelper {
                     @Override
                     public void onCoordinatesFound(LatLng endLatLng) {
                         mapManager.addWaypointMarker(endLatLng, 100, "End");
-                        mapManager.drawRoute(java.util.Arrays.asList(startLatLng, endLatLng), null);
+                        mapManager.drawRouteOSRM(java.util.Arrays.asList(startLatLng, endLatLng), null);
                     }
 
                     @Override

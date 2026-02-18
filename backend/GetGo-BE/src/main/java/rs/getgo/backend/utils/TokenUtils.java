@@ -33,6 +33,7 @@ public class TokenUtils {
         return Jwts.builder()
                 .setIssuer(APP_NAME)
                 .setSubject(user.getEmail())
+                .claim("id", user.getId())
                 .claim("role", user.getRole().name())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRES_IN))

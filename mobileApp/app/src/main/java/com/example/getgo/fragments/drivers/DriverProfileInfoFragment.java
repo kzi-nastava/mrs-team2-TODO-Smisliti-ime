@@ -28,6 +28,7 @@ import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.example.getgo.R;
 import com.example.getgo.api.ApiClient;
+import com.example.getgo.api.services.VehicleApiService;
 import com.example.getgo.dtos.driver.GetDriverDTO;
 import com.example.getgo.dtos.request.CreatedDriverChangeRequestDTO;
 import com.example.getgo.dtos.request.UpdateDriverPersonalDTO;
@@ -41,6 +42,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -220,13 +222,25 @@ public class DriverProfileInfoFragment extends Fragment {
     }
 
     private void loadVehicleTypeDropdown() {
-        String[] vehicleTypes = new String[]{"STANDARD", "LUXURY", "VAN"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_dropdown_item_1line,
-                vehicleTypes
-        );
-        actvVehicleType.setAdapter(adapter);
+        executor.execute(() -> {
+            try {
+                VehicleApiService vehicleApi = ApiClient.getClient().create(VehicleApiService.class);
+                retrofit2.Response<List<String>> response = vehicleApi.getVehicleTypes().execute();
+
+                if (response.isSuccessful() && response.body() != null) {
+                    mainHandler.post(() -> {
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                                requireContext(),
+                                android.R.layout.simple_dropdown_item_1line,
+                                response.body()
+                        );
+                        actvVehicleType.setAdapter(adapter);
+                    });
+                }
+            } catch (Exception e) {
+                mainHandler.post(() -> showToast("Failed to load vehicle types"));
+            }
+        });
     }
 
     private void loadDriverData() {
@@ -250,6 +264,7 @@ public class DriverProfileInfoFragment extends Fragment {
 
                     tvRecentHours.setText(getString(R.string.recent_hours_format, driver.getRecentHoursWorked()));
 
+                    // Get profile picture by url
                     if (driver.getProfilePictureUrl() != null && !driver.getProfilePictureUrl().isEmpty()) {
                         String imageUrl = ApiClient.SERVER_URL + driver.getProfilePictureUrl();
                         Glide.with(requireContext())
@@ -258,6 +273,19 @@ public class DriverProfileInfoFragment extends Fragment {
                                 .error(R.drawable.unregistered_profile)
                                 .circleCrop()
                                 .into(ivProfilePicture);
+                    }
+
+                    // Show field with block message if driver is blocked
+                    View blockedBanner = getView().findViewById(R.id.cvBlockedBanner);
+                    TextView tvBlockedReason = getView().findViewById(R.id.tvBlockedReason);
+                    if (driver.getBlocked() != null && driver.getBlocked()) {
+                        blockedBanner.setVisibility(View.VISIBLE);
+                        if (driver.getBlockReason() != null && !driver.getBlockReason().isEmpty()) {
+                            tvBlockedReason.setText("Reason: " + driver.getBlockReason());
+                            tvBlockedReason.setVisibility(View.VISIBLE);
+                        }
+                    } else {
+                        blockedBanner.setVisibility(View.GONE);
                     }
                 });
             } catch (Exception e) {

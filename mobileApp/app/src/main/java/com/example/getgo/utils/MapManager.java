@@ -26,8 +26,10 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -52,6 +54,7 @@ public class MapManager {
     // ===== ROUTE =====
     private Polyline routePolyline;
     private List<LatLng> currentRoute = new ArrayList<>();
+    private final Map<Long, Marker> activeDriverMarkersMap = new HashMap<>();
 
     // ===== INTERFACES =====
     public interface AddressCallback {
@@ -189,19 +192,16 @@ public class MapManager {
 
     // ===== ACTIVE DRIVER MARKERS (for passengers viewing available drivers) =====
     public void updateDriverLocations(List<GetActiveDriverLocationDTO> drivers) {
-        // Clear old markers
-        for (Marker marker : activeDriverMarkers) {
-            if (marker != null) {
-                marker.remove();
-            }
-        }
-        activeDriverMarkers.clear();
-
-        // Add new markers
+        // Prolazimo kroz sve dolazne lokacije
         for (GetActiveDriverLocationDTO driver : drivers) {
-            if (driver.getLatitude() != null && driver.getLongitude() != null) {
-                LatLng position = new LatLng(driver.getLatitude(), driver.getLongitude());
+            if (driver.getLatitude() == null || driver.getLongitude() == null) continue;
 
+            LatLng position = new LatLng(driver.getLatitude(), driver.getLongitude());
+
+            Marker marker = activeDriverMarkersMap.get(driver.getDriverId());
+
+            if (marker == null) {
+                // Kreiraj novi marker ako ne postoji
                 int iconRes = driver.getIsAvailable() ? R.drawable.ic_car_green : R.drawable.ic_car_red;
                 BitmapDescriptor icon = ImageUtils.getBitmapDescriptorFromDrawable(context, iconRes);
 
@@ -212,10 +212,18 @@ public class MapManager {
                         .title(title)
                         .icon(icon);
 
-                Marker marker = map.addMarker(markerOptions);
-                activeDriverMarkers.add(marker);
+                marker = map.addMarker(markerOptions);
+                activeDriverMarkersMap.put(driver.getDriverId(), marker);
+            } else {
+                // Ažuriraj poziciju postojećeg markera
+                marker.setPosition(position);
             }
         }
+
+        // Opcionalno: ukloni markere koji više nisu aktivni
+        activeDriverMarkersMap.keySet().removeIf(driverId ->
+                drivers.stream().noneMatch(d -> d.getDriverId().equals(driverId))
+        );
     }
 
     public void clearActiveDrivers() {
@@ -256,35 +264,6 @@ public class MapManager {
     }
 
     // ===== ROUTING =====
-    public void drawRoute(List<LatLng> waypoints, RouteCallback callback) {
-        Log.d("ROUTE_DEBUG", "drawRoute STARTED");
-        Log.d(TAG, "drawRoute called with " + waypoints.size() + " waypoints");
-
-        if (waypoints == null || waypoints.size() < 2) {
-            if (callback != null) callback.onError("Need at least 2 waypoints");
-            Log.d(TAG, "Not enough waypoints, returning");
-            return;
-        }
-
-        clearRoute();
-
-        String url = buildDirectionsUrl(waypoints);
-        Log.d(TAG, "Directions API URL: " + url);
-
-        Request request = new Request.Builder().url(url).build();
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.e("ROUTE_DEBUG", "HTTP FAILURE", e);
-                handleRouteError(callback, "Failed to fetch route: " + e.getMessage());
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                handleRouteResponse(response, callback);
-            }
-        });
-    }
 
     public void clearRoute() {
         if (routePolyline != null) {
@@ -302,95 +281,6 @@ public class MapManager {
     }
 
     // ===== PRIVATE HELPERS - ROUTING =====
-    private String buildDirectionsUrl(List<LatLng> waypoints) {
-        StringBuilder url = new StringBuilder("https://maps.googleapis.com/maps/api/directions/json?");
-
-        LatLng origin = waypoints.get(0);
-        url.append("origin=").append(origin.latitude).append(",").append(origin.longitude);
-
-        LatLng destination = waypoints.get(waypoints.size() - 1);
-        url.append("&destination=").append(destination.latitude).append(",").append(destination.longitude);
-
-        if (waypoints.size() > 2) {
-            url.append("&waypoints=");
-            for (int i = 1; i < waypoints.size() - 1; i++) {
-                if (i > 1) url.append("|");
-                LatLng wp = waypoints.get(i);
-                url.append(wp.latitude).append(",").append(wp.longitude);
-            }
-        }
-
-        url.append("&key=").append(DIRECTIONS_API_KEY);
-        return url.toString();
-    }
-
-    private void handleRouteResponse(Response response, RouteCallback callback) throws IOException {
-        if (!response.isSuccessful()) {
-            handleRouteError(callback, "API error: " + response.code());
-            return;
-        }
-
-        try {
-            String responseBody = response.body().string();
-            JSONObject json = new JSONObject(responseBody);
-
-            Log.d("ROUTE_DEBUG", "Directions status: " + json.getString("status"));
-            Log.d("ROUTE_DEBUG", "Full response: " + responseBody);
-
-
-            if (!json.getString("status").equals("OK")) {
-                handleRouteError(callback, "Route not found: " + json.getString("status"));
-                return;
-            }
-
-            JSONArray routes = json.getJSONArray("routes");
-            if (routes.length() == 0) {
-                handleRouteError(callback, "No routes found");
-                return;
-            }
-
-            parseAndDrawRoute(routes.getJSONObject(0), callback);
-
-        } catch (Exception e) {
-            Log.e(TAG, "Error parsing directions response", e);
-            handleRouteError(callback, "Failed to parse route: " + e.getMessage());
-        }
-    }
-
-    private void parseAndDrawRoute(JSONObject route, RouteCallback callback) throws Exception {
-        String encodedPolyline = route.getJSONObject("overview_polyline").getString("points");
-        List<LatLng> decodedPath = decodePolyline(encodedPolyline);
-
-        int[] totals = calculateTotals(route.getJSONArray("legs"));
-
-        ((android.app.Activity) context).runOnUiThread(() -> {
-            currentRoute = new ArrayList<>(decodedPath);
-
-            PolylineOptions options = new PolylineOptions()
-                    .addAll(decodedPath)
-                    .color(Color.parseColor("#3B82F6"))
-                    .width(10f);
-
-            routePolyline = map.addPolyline(options);
-
-            if (callback != null) {
-                callback.onRouteFound(totals[0], totals[1]);
-            }
-        });
-    }
-
-    private int[] calculateTotals(JSONArray legs) throws Exception {
-        int totalDistance = 0;
-        int totalDuration = 0;
-
-        for (int i = 0; i < legs.length(); i++) {
-            JSONObject leg = legs.getJSONObject(i);
-            totalDistance += leg.getJSONObject("distance").getInt("value");
-            totalDuration += leg.getJSONObject("duration").getInt("value");
-        }
-
-        return new int[]{totalDistance, totalDuration};
-    }
 
     private void handleRouteError(RouteCallback callback, String error) {
         Log.e(TAG, "Route error: " + error);
@@ -565,6 +455,11 @@ public class MapManager {
         double segmentLength = distanceBetween(start, end);
         return distToStart + distToEnd <= segmentLength + threshold;
     }
+
+    public GoogleMap getGoogleMap() {
+        return map;
+    }
+
 
 }
 

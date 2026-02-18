@@ -1,7 +1,6 @@
 package rs.getgo.backend.services.impl;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +16,9 @@ import rs.getgo.backend.dtos.passenger.GetRidePassengerDTO;
 import rs.getgo.backend.dtos.request.*;
 import rs.getgo.backend.dtos.ride.GetReorderRideDTO;
 import rs.getgo.backend.dtos.ride.GetRideDTO;
+import rs.getgo.backend.dtos.user.BlockUserRequestDTO;
+import rs.getgo.backend.dtos.user.BlockUserResponseDTO;
+import rs.getgo.backend.dtos.user.UserEmailDTO;
 import rs.getgo.backend.model.entities.*;
 import rs.getgo.backend.model.enums.RequestStatus;
 import rs.getgo.backend.model.enums.UserRole;
@@ -41,12 +43,11 @@ public class AdminServiceImpl implements AdminService {
     private final VehicleChangeRequestRepository vehicleChangeRequestRepo;
     private final AvatarChangeRequestRepository avatarChangeRequestRepo;
     private final DriverActivationTokenRepository driverActivationTokenRepo;
+    private final BlockNoteRepository blockNoteRepository;
     private final FileStorageService fileStorageService;
     private final EmailService emailService;
     private final ModelMapper modelMapper;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final PassengerService passengerService;
-    private final DriverService driverService;
     private final CompletedRideRepository completedRideRepo;
     private final PassengerRepository passengerRepo;
     private final UserRepository userRepository;
@@ -60,10 +61,9 @@ public class AdminServiceImpl implements AdminService {
             VehicleChangeRequestRepository vehicleChangeRequestRepo,
             AvatarChangeRequestRepository avatarChangeRequestRepo,
             DriverActivationTokenRepository driverActivationTokenRepo,
+            BlockNoteRepository blockNoteRepository,
             FileStorageService fileStorageService,
             EmailService emailService,
-            PassengerServiceImpl passengerService,
-            DriverServiceImpl driverService,
             ModelMapper modelMapper,
             BCryptPasswordEncoder passwordEncoder,
             UserRepository userRepository
@@ -76,17 +76,20 @@ public class AdminServiceImpl implements AdminService {
         this.vehicleChangeRequestRepo = vehicleChangeRequestRepo;
         this.avatarChangeRequestRepo = avatarChangeRequestRepo;
         this.driverActivationTokenRepo = driverActivationTokenRepo;
+        this.blockNoteRepository = blockNoteRepository;
         this.fileStorageService = fileStorageService;
         this.emailService = emailService;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
-        this.passengerService = passengerService;
-        this.driverService = driverService;
         this.userRepository = userRepository;
     }
 
     @Override
     public CreatedAdminDTO createAdmin(CreateAdminDTO createAdminDTO) {
+        if (userRepository.findByEmail(createAdminDTO.getEmail()).isPresent()) {
+            throw new RuntimeException("User with email " + createAdminDTO.getEmail() + " already exists");
+        }
+
         Administrator admin = new Administrator();
         admin.setEmail(createAdminDTO.getEmail());
         admin.setPassword(passwordEncoder.encode(createAdminDTO.getPassword()));
@@ -104,15 +107,27 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public CreatedDriverDTO registerDriver(CreateDriverDTO createDriverDTO) {
+        if (userRepository.findByEmail(createDriverDTO.getEmail()).isPresent()) {
+            throw new RuntimeException("User with email " + createDriverDTO.getEmail() + " already exists");
+        }
+
+        // Validate vehicle type
+        try {
+            VehicleType.valueOf(createDriverDTO.getVehicleType());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid vehicle type: " + createDriverDTO.getVehicleType());
+        }
+
         Vehicle vehicle = fillVehicle(createDriverDTO);
         Driver driver = fillDriver(createDriverDTO, vehicle);
 
-        // Set base location and update so it's never null
-        driver.setCurrentLatitude(45.240806);  // 45°14'26.9"N
-        driver.setCurrentLongitude(19.828611); // 19°49'43.0"E
+        // Set base location so it's never null
+        driver.setCurrentLatitude(45.240806);
+        driver.setCurrentLongitude(19.828611);
         driver.setLastLocationUpdate(LocalDateTime.now());
 
-        Driver savedDriver = driverRepo.save(driver); // Should save both vehicle and driver due to CascadeType.ALL
+        // Should save both vehicle and driver due to CascadeType.ALL
+        Driver savedDriver = driverRepo.save(driver);
 
         DriverActivationToken token = createDriverActivationToken(savedDriver);
         driverActivationTokenRepo.save(token);
@@ -176,29 +191,18 @@ public class AdminServiceImpl implements AdminService {
         Administrator admin = adminRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
-        if (updateAdminDTO.getName() != null && !updateAdminDTO.getName().trim().isEmpty()) {
-            admin.setName(updateAdminDTO.getName().trim());
-        }
-        if (updateAdminDTO.getSurname() != null && !updateAdminDTO.getSurname().trim().isEmpty()) {
-            admin.setSurname(updateAdminDTO.getSurname().trim());
-        }
-        if (updateAdminDTO.getPhone() != null && !updateAdminDTO.getPhone().trim().isEmpty()) {
-            admin.setPhone(updateAdminDTO.getPhone().trim());
-        }
-        if (updateAdminDTO.getAddress() != null && !updateAdminDTO.getAddress().trim().isEmpty()) {
-            admin.setAddress(updateAdminDTO.getAddress().trim());
-        }
+        admin.setName(updateAdminDTO.getName().trim());
+        admin.setSurname(updateAdminDTO.getSurname().trim());
+        admin.setPhone(updateAdminDTO.getPhone().trim());
+        admin.setAddress(updateAdminDTO.getAddress().trim());
 
         Administrator savedAdmin = adminRepo.save(admin);
+
         return modelMapper.map(savedAdmin, UpdatedAdminDTO.class);
     }
 
     @Override
     public UpdatedPasswordDTO updatePassword(String email, UpdatePasswordDTO updatePasswordDTO) {
-        if (!updatePasswordDTO.getPassword().equals(updatePasswordDTO.getConfirmPassword())) {
-            return new UpdatedPasswordDTO(false, "Passwords do not match");
-        }
-
         Administrator admin = adminRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
@@ -261,14 +265,12 @@ public class AdminServiceImpl implements AdminService {
             dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
             // Current vehicle data
-            if (vehicle != null) {
-                dto.setCurrentVehicleModel(vehicle.getModel());
-                dto.setCurrentVehicleType(vehicle.getType().toString());
-                dto.setCurrentVehicleLicensePlate(vehicle.getLicensePlate());
-                dto.setCurrentVehicleSeats(vehicle.getNumberOfSeats());
-                dto.setCurrentVehicleHasBabySeats(vehicle.getIsBabyFriendly());
-                dto.setCurrentVehicleAllowsPets(vehicle.getIsPetFriendly());
-            }
+            dto.setCurrentVehicleModel(vehicle.getModel());
+            dto.setCurrentVehicleType(vehicle.getType().toString());
+            dto.setCurrentVehicleLicensePlate(vehicle.getLicensePlate());
+            dto.setCurrentVehicleSeats(vehicle.getNumberOfSeats());
+            dto.setCurrentVehicleHasBabySeats(vehicle.getIsBabyFriendly());
+            dto.setCurrentVehicleAllowsPets(vehicle.getIsPetFriendly());
 
             // Requested vehicle data
             dto.setRequestedVehicleModel(request.getRequestedVehicleModel());
@@ -355,14 +357,12 @@ public class AdminServiceImpl implements AdminService {
         dto.setDriverEmail(driver.getEmail());
         dto.setDriverName(driver.getName() + " " + driver.getSurname());
 
-        if (vehicle != null) {
-            dto.setCurrentVehicleModel(vehicle.getModel());
-            dto.setCurrentVehicleType(vehicle.getType().toString());
-            dto.setCurrentVehicleLicensePlate(vehicle.getLicensePlate());
-            dto.setCurrentVehicleSeats(vehicle.getNumberOfSeats());
-            dto.setCurrentVehicleHasBabySeats(vehicle.getIsBabyFriendly());
-            dto.setCurrentVehicleAllowsPets(vehicle.getIsPetFriendly());
-        }
+        dto.setCurrentVehicleModel(vehicle.getModel());
+        dto.setCurrentVehicleType(vehicle.getType().toString());
+        dto.setCurrentVehicleLicensePlate(vehicle.getLicensePlate());
+        dto.setCurrentVehicleSeats(vehicle.getNumberOfSeats());
+        dto.setCurrentVehicleHasBabySeats(vehicle.getIsBabyFriendly());
+        dto.setCurrentVehicleAllowsPets(vehicle.getIsPetFriendly());
 
         dto.setRequestedVehicleModel(request.getRequestedVehicleModel());
         dto.setRequestedVehicleType(request.getRequestedVehicleType());
@@ -404,6 +404,10 @@ public class AdminServiceImpl implements AdminService {
         PersonalChangeRequest request = personalChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Personal change request not found with id: " + requestId));
 
+        if (request.getStatus() != RequestStatus.PENDING) {
+            throw new RuntimeException("Request has already been reviewed");
+        }
+
         Administrator admin = adminRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
@@ -435,6 +439,10 @@ public class AdminServiceImpl implements AdminService {
     public AcceptDriverChangeRequestDTO approveVehicleChangeRequest(Long requestId, String email) {
         VehicleChangeRequest request = vehicleChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Vehicle change request not found with id: " + requestId));
+
+        if (request.getStatus() != RequestStatus.PENDING) {
+            throw new RuntimeException("Request has already been reviewed");
+        }
 
         Administrator admin = adminRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
@@ -474,6 +482,10 @@ public class AdminServiceImpl implements AdminService {
     public AcceptDriverChangeRequestDTO approveAvatarChangeRequest(Long requestId, String email) {
         AvatarChangeRequest request = avatarChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Avatar change request not found with id: " + requestId));
+
+        if (request.getStatus() != RequestStatus.PENDING) {
+            throw new RuntimeException("Request has already been reviewed");
+        }
 
         Administrator admin = adminRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
@@ -515,6 +527,10 @@ public class AdminServiceImpl implements AdminService {
         PersonalChangeRequest request = personalChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Personal change request not found with id: " + requestId));
 
+        if (request.getStatus() != RequestStatus.PENDING) {
+            throw new RuntimeException("Request has already been reviewed");
+        }
+
         Administrator admin = adminRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
@@ -537,6 +553,10 @@ public class AdminServiceImpl implements AdminService {
     public AcceptDriverChangeRequestDTO rejectVehicleChangeRequest(Long requestId, String email, RejectDriverChangeRequestDTO rejectDTO) {
         VehicleChangeRequest request = vehicleChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Vehicle change request not found with id: " + requestId));
+
+        if (request.getStatus() != RequestStatus.PENDING) {
+            throw new RuntimeException("Request has already been reviewed");
+        }
 
         Administrator admin = adminRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
@@ -561,6 +581,10 @@ public class AdminServiceImpl implements AdminService {
         AvatarChangeRequest request = avatarChangeRequestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Avatar change request not found with id: " + requestId));
 
+        if (request.getStatus() != RequestStatus.PENDING) {
+            throw new RuntimeException("Request has already been reviewed");
+        }
+
         Administrator admin = adminRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Admin not found with email: " + email));
 
@@ -583,27 +607,13 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public void blockUser() {
-        // TODO
-    }
-
-    @Override
-    public void unblockUser() {
-        // TODO
-    }
-
-    @Override
-    public void getReports() {
-        // TODO
-    }
-
-    @Override
     public Page<GetRideDTO> getPassengerRides(String email, LocalDate startDate, int page, int size, String sortBy, String direction) {
         Passenger passenger = passengerRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Passenger not found with email: " + email));
 
         Sort.Direction sortDirection = direction.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        String normalizedSort = normalizeSortField(sortBy);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, normalizedSort));
 
         Page<CompletedRide> ridesPage;
         if (startDate != null) {
@@ -645,7 +655,8 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("Driver not found with email: " + email));
 
         Sort.Direction sortDirection = direction.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        String normalizedSort = normalizeSortField(sortBy);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, normalizedSort));
 
         Page<CompletedRide> ridesPage;
         if (startDate != null) {
@@ -770,5 +781,103 @@ public class AdminServiceImpl implements AdminService {
                 cancelledUserEmail,
                 r.getCancelReason()
         );
+    }
+
+    @Override
+    public BlockUserResponseDTO blockUser(Long userId, String adminEmail, BlockUserRequestDTO dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Administrator admin = adminRepo.findByEmail(adminEmail)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        if (user.isBlocked()) {
+            throw new RuntimeException("User is already blocked");
+        }
+
+        user.setBlocked(true);
+        userRepository.save(user);
+
+        BlockNote note = new BlockNote();
+        note.setUser(user);
+        note.setAdmin(admin);
+        note.setReason(dto.getReason());
+        note.setBlockedAt(LocalDateTime.now());
+        blockNoteRepository.save(note);
+
+        return new BlockUserResponseDTO(
+                user.getId(),
+                user.getEmail(),
+                true,
+                dto.getReason(),
+                note.getBlockedAt()
+        );
+    }
+
+    @Override
+    public BlockUserResponseDTO unblockUser(Long userId, String adminEmail) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.isBlocked()) {
+            throw new RuntimeException("User is not blocked");
+        }
+
+        user.setBlocked(false);
+        userRepository.save(user);
+
+        BlockNote activeNote = blockNoteRepository.findByUserAndUnblockedAtIsNull(user)
+                .orElse(null);
+
+        if (activeNote != null) {
+            activeNote.setUnblockedAt(LocalDateTime.now());
+            blockNoteRepository.save(activeNote);
+        }
+
+        return new BlockUserResponseDTO(
+                user.getId(),
+                user.getEmail(),
+                false,
+                null,
+                null
+        );
+    }
+
+    @Override
+    public Page<UserEmailDTO> getUnblockedUsers(String search, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("email").ascending());
+        Page<User> users = search.isEmpty()
+                ? userRepository.findByIsBlocked(false, pageable)
+                : userRepository.findByIsBlockedAndEmailContaining(false, search, pageable);
+        return users.map(u -> new UserEmailDTO(u.getId(), u.getEmail(), u.getRole().toString()));
+    }
+
+    @Override
+    public Page<UserEmailDTO> getBlockedUsers(String search, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("email").ascending());
+        Page<User> users = search.isEmpty()
+                ? userRepository.findByIsBlocked(true, pageable)
+                : userRepository.findByIsBlockedAndEmailContaining(true, search, pageable);
+        return users.map(u -> new UserEmailDTO(u.getId(), u.getEmail(), u.getRole().toString()));
+    }
+
+    // Map allowed frontend sort keys to entity properties for admin endpoints
+    private String normalizeSortField(String sortBy) {
+        if (sortBy == null) return "startTime";
+        String key = sortBy.trim();
+        return switch (key) {
+            case "startTime", "startingTime", "Start Date/Time", "StartDate", "start_date" -> "startTime";
+            case "estimatedPrice", "price", "Price" -> "estimatedPrice";
+            case "estTime", "duration", "Duration" -> "estTime";
+            case "estDistanceKm", "distance", "Distance" -> "estDistanceKm";
+            default -> {
+                try { yield key; } catch (Exception e) { yield "startTime"; }
+            }
+        };
+    }
+  
+    @Override
+      public void getReports() {
+        // TODO
     }
 }

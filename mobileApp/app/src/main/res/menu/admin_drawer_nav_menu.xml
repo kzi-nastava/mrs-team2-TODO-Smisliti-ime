@@ -22,12 +22,8 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_drawer_panic"
-            android:icon="@drawable/ic_home"
-            android:title="@string/panic_notifications"/>
-        <item
             android:id="@+id/nav_drawer_pricing"
-            android:icon="@drawable/ic_settings"
+            android:icon="@drawable/ic_ride_pricing"
             android:title="@string/manage_pricing"/>
         <item
             android:id="@+id/nav_drawer_search"
@@ -42,6 +38,26 @@
             android:icon="@drawable/ic_settings"
             android:title="@string/driver_requests"
             />
+        <item
+            android:id="@+id/nav_drawer_active_rides"
+            android:icon="@drawable/ic_car"
+            android:title="Active rides"/>
+
+
+
+        <item
+            android:id="@+id/nav_register_driver"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/driver_register"
+            />
+
+        <item
+            android:id="@+id/nav_block_users"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/block_users"
+            />
+
+
     </group>
 
     <item android:title="@string/other">

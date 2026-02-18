@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,7 +22,9 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.example.getgo.R;
+import com.example.getgo.api.ApiClient;
 import com.example.getgo.dtos.ride.GetDriverActiveRideDTO;
 import com.example.getgo.dtos.ride.GetRideFinishedDTO;
 import com.example.getgo.dtos.ride.RideCompletionDTO;
@@ -30,6 +33,7 @@ import com.example.getgo.dtos.ride.StopRideDTO;
 import com.example.getgo.repositories.RideRepository;
 import com.example.getgo.utils.JwtUtils;
 import com.example.getgo.utils.MapManager;
+import com.example.getgo.utils.ToastHelper;
 import com.example.getgo.utils.WebSocketManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -37,7 +41,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -49,9 +52,23 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+// new imports for notifications
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.os.Build;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+
 public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
     private static final String TAG = "DriverHomeFragment";
     private static final String PREFS_NAME = "getgo_prefs";
+
+    // Notification constants
+    private static final String NOTIF_CHANNEL_ID = "getgo_general";
+    private static final int NOTIF_ID_PANIC = 2001;
+    private static final int NOTIF_ID_CANCEL = 2002;
 
     private GoogleMap mMap;
     private MapManager mapManager;
@@ -63,6 +80,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
     private TextView tvFinalPrice, tvDuration;
     private Button btnPrimaryAction, btnSecondaryAction, btnOk, btnConfirmCancel, btnDismissCancel;
     private EditText etCancelReason;
+    private ImageView ivPassengerPhoto;
 
     private GetDriverActiveRideDTO currentRide;
     private String driverEmail;
@@ -86,6 +104,9 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         setupWebSocket();
         loadActiveRide();
 
+        // ensure notification channel exists
+        createNotificationChannelIfNeeded();
+
         return root;
     }
 
@@ -102,6 +123,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         tvStartPoint = root.findViewById(R.id.tvStartPoint);
         tvDestination = root.findViewById(R.id.tvDestination);
         tvPassengerInfo = root.findViewById(R.id.tvPassengerInfo);
+        ivPassengerPhoto = root.findViewById(R.id.ivPassengerPhoto);
         tvPassengerCount = root.findViewById(R.id.tvPassengerCount);
         tvEstimatedTime = root.findViewById(R.id.tvEstimatedTime);
         tvEstimatedPrice = root.findViewById(R.id.tvEstimatedPrice);
@@ -135,14 +157,17 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
-        mapManager = new MapManager(requireContext(), mMap);
+        mapManager = new MapManager(requireActivity(), mMap);
 
         LatLng noviSad = new LatLng(45.2519, 19.8370);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(noviSad, 12f));
 
         if (pendingDrawRoute && currentRide != null) {
+            Log.d(TAG, "Map ready, drawing pending route");
+            pendingDrawRoute = false;
             drawRideRoute();
         }
+
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -176,23 +201,45 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
 
         webSocketManager.subscribeToRideAssigned(driverEmail, ride -> {
             requireActivity().runOnUiThread(() -> {
+                Log.d(TAG, "Ride assigned via WebSocket: " + ride.getRideId());
                 currentRide = ride;
                 updateUI();
-                drawRideRoute();
+                if (isMapReady()) {
+                    drawRideRoute();
+                } else {
+                    Log.d(TAG, "Map not ready, setting pendingDrawRoute flag");
+                    pendingDrawRoute = true;
+                }
             });
         });
 
         webSocketManager.subscribeToRideStatusUpdates(driverEmail, update -> {
             requireActivity().runOnUiThread(() -> {
                 if (currentRide != null && currentRide.getRideId().equals(update.getRideId())) {
+                    Log.d(TAG, "Status update: " + update.getStatus());
                     currentRide.setStatus(update.getStatus());
                     updateUI();
+
+                    // If the ride was canceled by someone else (passenger or driver), ensure any
+                    // open cancel form is dismissed and the driver UI resets to no-ride state.
+                    if ("CANCELED".equalsIgnoreCase(update.getStatus())) {
+                        dismissCancelForm();
+                        currentRide = null;
+                        showNoRide();
+                        String msg = null;
+                        try { msg = update.getMessage(); } catch (Exception ignored) {}
+                        if (msg == null || msg.isEmpty()) msg = "Ride cancelled";
+                        ToastHelper.showShort(requireContext(), msg);
+                    }
                 }
             });
         });
 
         webSocketManager.subscribeToRideFinished(driverEmail, finished -> {
-            requireActivity().runOnUiThread(() -> showRideCompleted(finished));
+            requireActivity().runOnUiThread(() -> {
+                Log.d(TAG, "Ride finished notification received");
+                showRideCompleted(finished);
+            });
         });
 
         webSocketManager.subscribeToDriverLocation(driverEmail, location -> {
@@ -203,6 +250,32 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                 }
             });
         });
+
+        // Subscribe to driver-specific ride cancelled events (server-notified)
+        webSocketManager.subscribeToDriverRideCancelled(driverEmail, cancelled -> {
+            requireActivity().runOnUiThread(() -> {
+                try {
+                    Log.d(TAG, "Driver ride cancelled event received for rideId=" + cancelled.getRideId());
+                    String by = cancelled.getCancelledBy() != null ? cancelled.getCancelledBy() : "Unknown";
+                    String reason = cancelled.getReason() != null ? cancelled.getReason() : "";
+                    String text = "Ride cancelled by " + by + (reason.isEmpty() ? "" : (": " + reason));
+                    ToastHelper.showShort(requireContext(), text);
+                    showSystemNotification("Ride cancelled", text, NOTIF_ID_CANCEL);
+
+                    // Reset UI
+                    dismissCancelForm();
+                    currentRide = null;
+                    showNoRide();
+                    if (mapManager != null) mapManager.reset();
+                } catch (Exception ex) {
+                    Log.e(TAG, "Error handling driver ride cancelled event", ex);
+                }
+            });
+        });
+    }
+
+    private boolean isMapReady() {
+        return mMap != null && mapManager != null;
     }
 
     private void loadActiveRide() {
@@ -213,6 +286,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
 
                 requireActivity().runOnUiThread(() -> {
                     if (ride != null) {
+                        Log.d(TAG, "Loaded active ride: " + ride.getRideId());
                         currentRide = ride;
 
                         if (ride.getStatus().equals("DRIVER_ARRIVED_AT_DESTINATION")) {
@@ -220,8 +294,14 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                         }
 
                         updateUI();
-                        drawRideRoute();
+                        if (isMapReady()) {
+                            drawRideRoute();
+                        } else {
+                            Log.d(TAG, "Map not ready, setting pendingDrawRoute flag");
+                            pendingDrawRoute = true;
+                        }
                     } else {
+                        Log.d(TAG, "No active ride found");
                         showNoRide();
                     }
                 });
@@ -249,6 +329,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         tvStartPoint.setText(currentRide.getStartingPoint());
         tvDestination.setText(currentRide.getEndingPoint());
         tvPassengerInfo.setText(currentRide.getPassengerName());
+        loadProfilePicture(currentRide.getPassengerProfilePictureUrl(), ivPassengerPhoto);
         tvPassengerCount.setText(String.valueOf(currentRide.getPassengerCount()));
         estimatedTime = (int) Math.round(currentRide.getEstimatedTimeMin());
         tvEstimatedTime.setText(getString(R.string.time_format, currentRide.getEstimatedTimeMin()));
@@ -309,8 +390,26 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                 break;
         }
     }
+
+    private void loadProfilePicture(String url, ImageView imageView) {
+        if (url != null && !url.isEmpty()) {
+            String fullUrl = ApiClient.SERVER_URL + url;
+            Glide.with(this)
+                    .load(fullUrl)
+                    .placeholder(R.drawable.unregistered_profile)
+                    .error(R.drawable.unregistered_profile)
+                    .circleCrop()
+                    .into(imageView);
+        } else {
+            imageView.setImageResource(R.drawable.unregistered_profile);
+        }
+    }
+
     private void drawRideRoute() {
-        if (currentRide == null) return;
+        if (currentRide == null) {
+            Log.w(TAG, "Cannot draw route: currentRide is null");
+            return;
+        }
 
         if (mapManager == null || mMap == null) {
             pendingDrawRoute = true;
@@ -320,7 +419,10 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         if (currentRide.getLatitudes() == null ||
                 currentRide.getLongitudes() == null ||
                 currentRide.getLatitudes().size() < 2) {
-            Log.w("ROUTE_DEBUG", "Not enough points to draw route");
+            Log.w(TAG, "Not enough points to draw route. Latitudes: " +
+                    (currentRide.getLatitudes() != null ? currentRide.getLatitudes().size() : "null") +
+                    ", Longitudes: " +
+                    (currentRide.getLongitudes() != null ? currentRide.getLongitudes().size() : "null"));
             return;
         }
 
@@ -332,20 +434,52 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
             ));
         }
 
-        mMap.clear();
+        mapManager.clearRoute();
+        mapManager.clearWaypoints();
 
-        mMap.addMarker(new MarkerOptions().position(waypoints.get(0)).title("Start"));
-        mMap.addMarker(new MarkerOptions().position(waypoints.get(waypoints.size() - 1)).title("Destination"));
+        for (int i = 0; i < waypoints.size(); i++) {
+            String title;
 
-        mapManager.drawRouteOSRM(waypoints, null);
+            if (i == 0) {
+                title = "Start";
+            } else if (i == waypoints.size() - 1) {
+                title = "Destination";
+            } else {
+                title = "Waypoint " + i;
+            }
 
-        LatLngBounds.Builder builder = new LatLngBounds.Builder();
-        for (LatLng point : waypoints) {
-            builder.include(point);
+            mapManager.addWaypointMarker(waypoints.get(i), i, title);
         }
-        LatLngBounds bounds = builder.build();
-        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)); // 100 = padding u px
-//        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(waypoints.get(0), 13f));
+
+        // Draw the route using OSRM
+        mapManager.drawRouteOSRM(waypoints, new MapManager.RouteCallback() {
+            @Override
+            public void onRouteFound(int distanceMeters, int durationSeconds) {
+                Log.d(TAG, "Route drawn successfully: " + distanceMeters + "m, " +
+                        durationSeconds + "s (" + (durationSeconds / 60) + " min)");
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Failed to draw route: " + error);
+                requireActivity().runOnUiThread(() ->
+                        Toast.makeText(requireContext(), "Failed to load route", Toast.LENGTH_SHORT).show()
+                );
+            }
+        });
+
+        // Fit camera to show all waypoints with padding
+        try {
+            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+            for (LatLng point : waypoints) {
+                builder.include(point);
+            }
+            LatLngBounds bounds = builder.build();
+            mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150));
+            Log.d(TAG, "Camera adjusted to show all waypoints");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to adjust camera bounds", e);
+        }
 
         pendingDrawRoute = false;
     }
@@ -377,14 +511,14 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         if (status.equals("ACTIVE")) {
             triggerPanic();
         } else {
-            showCancelForm();
+            // Immediately cancel the ride for the driver without asking for a reason
+            cancelByDriverImmediate();
         }
     }
 
     private void showCancelForm() {
-        layoutCancelForm.setVisibility(View.VISIBLE);
-        etCancelReason.setText("");
-        etCancelReason.requestFocus();
+        // Kept for compatibility but drivers no longer use the cancel form in the UI.
+        layoutCancelForm.setVisibility(View.GONE);
     }
 
     private void dismissCancelForm() {
@@ -393,60 +527,81 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void confirmCancelRide() {
-        String reason = etCancelReason.getText() != null ? etCancelReason.getText().toString().trim() : "";
+        // Kept for compatibility but drivers now use immediate cancel via cancelByDriverImmediate().
+        cancelByDriverImmediate();
+    }
 
-        if (reason.isEmpty()) {
-            Toast.makeText(requireContext(), "Please enter a reason for cancellation", Toast.LENGTH_SHORT).show();
-            return;
-        }
+    private void cancelByDriverImmediate() {
+        if (currentRide == null) return;
 
-        btnConfirmCancel.setEnabled(false);
-        btnDismissCancel.setEnabled(false);
+        btnSecondaryAction.setEnabled(false);
 
-        com.example.getgo.api.services.RideApiService service =
-                com.example.getgo.api.ApiClient.getClient().create(com.example.getgo.api.services.RideApiService.class);
+        String defaultReason = "Driver cancelled";
+        com.example.getgo.api.services.RideApiService service = com.example.getgo.api.ApiClient.getClient().create(com.example.getgo.api.services.RideApiService.class);
+        com.example.getgo.dtos.ride.CancelRideRequestDTO dto = new com.example.getgo.dtos.ride.CancelRideRequestDTO(defaultReason);
 
-        com.example.getgo.dtos.ride.CancelRideRequestDTO dto =
-                new com.example.getgo.dtos.ride.CancelRideRequestDTO(reason);
-
-        service.cancelRideByDriver(currentRide.getRideId(), dto).enqueue(new Callback<Void>() {
+        service.cancelRideByDriver(currentRide.getRideId(), dto).enqueue(new Callback<RideCompletionDTO>() {
             @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
+            public void onResponse(Call<RideCompletionDTO> call, Response<RideCompletionDTO> response) {
+                final Long rideIdForNotif = currentRide != null ? currentRide.getRideId() : null;
                 requireActivity().runOnUiThread(() -> {
-                    btnConfirmCancel.setEnabled(true);
-                    btnDismissCancel.setEnabled(true);
+                    btnSecondaryAction.setEnabled(true);
 
-                    if (response.isSuccessful()) {
-                        dismissCancelForm();
+                    if (response.isSuccessful() && response.body() != null) {
+                        RideCompletionDTO completion = response.body();
                         currentRide = null;
                         showNoRide();
-                        Toast.makeText(requireContext(), "Ride cancelled", Toast.LENGTH_SHORT).show();
+                        String serverMsg = completion.getNotificationMessage();
+                        if (serverMsg == null || serverMsg.isEmpty()) serverMsg = "Ride cancelled";
+                        Toast.makeText(requireContext(), serverMsg, Toast.LENGTH_SHORT).show();
                         if (mapManager != null) mapManager.reset();
+
+                        if (rideIdForNotif != null) {
+                            showSystemNotification("Ride cancelled", serverMsg, NOTIF_ID_CANCEL);
+                        }
+
+                        // Refresh notifications
+                        try {
+                            com.example.getgo.api.services.NotificationApiService notifService = com.example.getgo.api.ApiClient.getNotificationApiService();
+                            notifService.getNotifications().enqueue(new retrofit2.Callback<java.util.List<com.example.getgo.dtos.notification.NotificationDTO>>() {
+                                @Override
+                                public void onResponse(retrofit2.Call<java.util.List<com.example.getgo.dtos.notification.NotificationDTO>> call, retrofit2.Response<java.util.List<com.example.getgo.dtos.notification.NotificationDTO>> response) {
+                                    if (response.isSuccessful() && response.body() != null) {
+                                        java.util.List<com.example.getgo.dtos.notification.NotificationDTO> list = response.body();
+                                        if (!list.isEmpty()) {
+                                            android.util.Log.d("NOTIF_SYNC", "Latest notification (driver): " + list.get(0).getMessage());
+                                        }
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(retrofit2.Call<java.util.List<com.example.getgo.dtos.notification.NotificationDTO>> call, Throwable t) {
+                                    android.util.Log.e("NOTIF_SYNC", "Failed to refresh notifications (driver)", t);
+                                }
+                            });
+                        } catch (Exception ex) {
+                            android.util.Log.e("NOTIF_SYNC", "Error while refreshing notifications (driver)", ex);
+                        }
                     } else {
-                        Toast.makeText(requireContext(), "Failed to cancel ride", Toast.LENGTH_SHORT).show();
+                        ToastHelper.showShort(requireContext(), "Cancel failed");
                     }
                 });
             }
 
             @Override
-            public void onFailure(Call<Void> call, Throwable t) {
+            public void onFailure(Call<RideCompletionDTO> call, Throwable t) {
                 requireActivity().runOnUiThread(() -> {
-                    btnConfirmCancel.setEnabled(true);
-                    btnDismissCancel.setEnabled(true);
-                    Toast.makeText(requireContext(), "Failed to cancel ride", Toast.LENGTH_SHORT).show();
+                    btnSecondaryAction.setEnabled(true);
+                    ToastHelper.showShort(requireContext(), "Cancel failed");
                 });
             }
         });
     }
 
-    private void cancelRide() {
-        // Removed - now using showCancelForm()
-    }
-
     private void handleOkClick() {
         currentRide = null;
         showNoRide();
-        mapManager.reset();
+        if (mapManager != null) mapManager.reset();
     }
 
     private void acceptRide() {
@@ -455,19 +610,25 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         new Thread(() -> {
             try {
                 RideRepository repo = RideRepository.getInstance();
-                UpdatedRideDTO response = repo.acceptRide(currentRide.getRideId());
+                UpdatedRideDTO updated = repo.acceptRide(currentRide.getRideId());
 
                 requireActivity().runOnUiThread(() -> {
                     btnPrimaryAction.setEnabled(true);
-                    currentRide.setStatus(response.getStatus());
-                    updateUI();
-                    Toast.makeText(requireContext(), "Ride accepted", Toast.LENGTH_SHORT).show();
+
+                    if (updated != null && updated.getStatus() != null) {
+                        currentRide.setStatus(updated.getStatus());
+                        updateUI();
+                        ToastHelper.showShort(requireContext(), "Ride accepted");
+                    } else {
+                        ToastHelper.showShort(requireContext(), "Accept failed");
+                        showNoRide();
+                    }
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Failed to accept ride", e);
                 requireActivity().runOnUiThread(() -> {
                     btnPrimaryAction.setEnabled(true);
-                    Toast.makeText(requireContext(), "Failed to accept ride", Toast.LENGTH_SHORT).show();
+                    ToastHelper.showShort(requireContext(), "Accept failed");
                 });
             }
         }).start();
@@ -479,19 +640,24 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         new Thread(() -> {
             try {
                 RideRepository repo = RideRepository.getInstance();
-                UpdatedRideDTO response = repo.startRide(currentRide.getRideId());
+                UpdatedRideDTO updated = repo.startRide(currentRide.getRideId());
 
                 requireActivity().runOnUiThread(() -> {
                     btnPrimaryAction.setEnabled(true);
-                    currentRide.setStatus(response.getStatus());
-                    updateUI();
-                    Toast.makeText(requireContext(), "Ride started", Toast.LENGTH_SHORT).show();
+
+                    if (updated != null && updated.getStatus() != null) {
+                        currentRide.setStatus(updated.getStatus());
+                        updateUI();
+                        ToastHelper.showShort(requireContext(), "Ride started");
+                    } else {
+                        ToastHelper.showShort(requireContext(), "Start failed");
+                    }
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Failed to start ride", e);
                 requireActivity().runOnUiThread(() -> {
                     btnPrimaryAction.setEnabled(true);
-                    Toast.makeText(requireContext(), "Failed to start ride", Toast.LENGTH_SHORT).show();
+                    ToastHelper.showShort(requireContext(), "Start failed");
                 });
             }
         }).start();
@@ -539,7 +705,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                         showRideCompleted(completion);
                         currentRide = null;
                         if (mapManager != null) mapManager.reset();
-                        Toast.makeText(requireContext(), "Ride stopped", Toast.LENGTH_SHORT).show();
+                        ToastHelper.showShort(requireContext(), "Ride stopped");
                     } else {
                         Log.e(TAG, "Stop ride failed: " + response.code() + " " + response.message());
                         try {
@@ -548,7 +714,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                         } catch (Exception e) {
                             Log.e(TAG, "Cannot read error body", e);
                         }
-                        Toast.makeText(requireContext(), "Failed to stop ride: " + response.code(), Toast.LENGTH_SHORT).show();
+                        ToastHelper.showError(requireContext(), "Failed to stop ride", String.valueOf(response.code()));
                     }
                 });
             }
@@ -558,7 +724,7 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                 Log.e(TAG, "Stop ride network error", t);
                 requireActivity().runOnUiThread(() -> {
                     btnPrimaryAction.setEnabled(true);
-                    Toast.makeText(requireContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    ToastHelper.showError(requireContext(), "Failed to stop ride", t.getMessage());
                 });
             }
         });
@@ -570,17 +736,22 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
         new Thread(() -> {
             try {
                 RideRepository repo = RideRepository.getInstance();
-                UpdatedRideDTO response = repo.finishRide(currentRide.getRideId(), "FINISHED");
+                UpdatedRideDTO updated = repo.finishRide(currentRide.getRideId(), "FINISHED");
 
                 requireActivity().runOnUiThread(() -> {
                     btnPrimaryAction.setEnabled(true);
-                    Toast.makeText(requireContext(), "Ride finished", Toast.LENGTH_SHORT).show();
+                    if (updated != null && updated.getStatus() != null) {
+                        // Show completed UI / navigate as needed
+                        ToastHelper.showShort(requireContext(), "Ride finished");
+                    } else {
+                        ToastHelper.showShort(requireContext(), "Finish failed");
+                    }
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Failed to finish ride", e);
                 requireActivity().runOnUiThread(() -> {
                     btnPrimaryAction.setEnabled(true);
-                    Toast.makeText(requireContext(), "Failed to finish ride", Toast.LENGTH_SHORT).show();
+                    ToastHelper.showShort(requireContext(), "Finish failed");
                 });
             }
         }).start();
@@ -608,8 +779,10 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                                 btnSecondaryAction.setEnabled(true);
                                 if (response.isSuccessful()) {
                                     Toast.makeText(requireContext(), "Emergency alert sent!", Toast.LENGTH_LONG).show();
+                                    // Post OS notification for panic
+                                    showSystemNotification("Emergency alert sent", "Panic alert sent for ride #" + currentRide.getRideId(), NOTIF_ID_PANIC);
                                 } else {
-                                    Toast.makeText(requireContext(), "Failed to send panic alert", Toast.LENGTH_SHORT).show();
+                                    ToastHelper.showShort(requireContext(), "Panic failed");
                                 }
                             });
                         }
@@ -619,13 +792,56 @@ public class DriverHomeFragment extends Fragment implements OnMapReadyCallback {
                             Log.e(TAG, "Failed to trigger panic", t);
                             requireActivity().runOnUiThread(() -> {
                                 btnSecondaryAction.setEnabled(true);
-                                Toast.makeText(requireContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                ToastHelper.showError(requireContext(), "Failed to send panic alert", t.getMessage());
                             });
                         }
                     });
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    // Helper: create notification channel for API 26+
+    private void createNotificationChannelIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "General";
+            String description = "General app notifications";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(NOTIF_CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = requireContext().getSystemService(NotificationManager.class);
+            if (notificationManager != null) notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    // Helper: show system notification (skips if POST_NOTIFICATIONS missing on Android 13+)
+    private void showSystemNotification(String title, String text, int id) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    Log.w(TAG, "No POST_NOTIFICATIONS permission - skipping system notification");
+                    return;
+                }
+            }
+
+            Intent intent = new Intent(requireContext(), com.example.getgo.activities.MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent pendingIntent = PendingIntent.getActivity(requireContext(), id, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(requireContext(), NOTIF_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_car)
+                    .setContentTitle(title)
+                    .setContentText(text)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent);
+
+            NotificationManagerCompat.from(requireContext()).notify(id, builder.build());
+        } catch (Exception ex) {
+            Log.e(TAG, "Failed to show system notification", ex);
+        }
     }
 
     private void showNoRide() {

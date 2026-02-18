@@ -49,13 +49,9 @@ export class InRideComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     try {
-      await this.webSocketService.connect();
-      console.log('WebSocket connected');
-
       this.loadActiveRide();
-
     } catch (error) {
-      console.error('Failed to connect to WebSocket:', error);
+      console.error('Failed to subscribe to web socket functions:', error);
       this.errorMessage = 'Failed to connect to real-time updates';
       this.isLoading = false;
     }
@@ -65,8 +61,6 @@ export class InRideComponent implements OnInit, OnDestroy {
     if (this.locationSubscription) this.locationSubscription.unsubscribe();
     if (this.statusSubscription) this.statusSubscription.unsubscribe();
     if (this.completionSubscription) this.completionSubscription.unsubscribe();
-
-    this.webSocketService.disconnect();
   }
 
   loadActiveRide() {

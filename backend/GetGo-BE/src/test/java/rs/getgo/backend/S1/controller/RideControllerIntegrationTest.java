@@ -1,11 +1,12 @@
 package rs.getgo.backend.S1.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -22,8 +23,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -43,30 +44,29 @@ public class RideControllerIntegrationTest {
     @Autowired
     private ActiveRideRepository activeRideRepository;
 
-    @MockBean
+    @SpyBean
     private MapboxRoutingService routingService;
 
-    private void mockRoutingService() {
-        MapboxRoutingService.RouteResponse routeResponse = new MapboxRoutingService.RouteResponse(
+    @BeforeEach
+    void setupMapboxMock() {
+        MapboxRoutingService.RouteResponse mockResponse = new MapboxRoutingService.RouteResponse(
                 List.of(
                         new MapboxRoutingService.Coordinate(45.252814, 19.847549),
                         new MapboxRoutingService.Coordinate(45.241073, 19.821839)
                 ),
-                100.0,
-                1,
+                300.0,
+                5,
                 5.0
         );
-        when(routingService.getRoute(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
-                .thenReturn(routeResponse);
-        when(routingService.convertCoordinatesToJson(anyList()))
-                .thenReturn("[[45.252814,19.847549],[45.241073,19.821839]]");
+
+        doReturn(mockResponse)
+                .when(routingService)
+                .getRoute(anyDouble(), anyDouble(), anyDouble(), anyDouble());
     }
 
     @Test
     @WithMockUser(username = "p@gmail.com", roles = {"PASSENGER"})
     void should_orderRideSuccessfully_when_allValid() throws Exception {
-        mockRoutingService();
-
         CreateRideRequestDTO request = new CreateRideRequestDTO();
         request.setLatitudes(List.of(45.252814, 45.241073));
         request.setLongitudes(List.of(19.847549, 19.821839));
@@ -76,6 +76,7 @@ public class RideControllerIntegrationTest {
         request.setVehicleType(null);
 
         mockMvc.perform(post("/api/rides/order")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())

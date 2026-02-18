@@ -4,6 +4,7 @@ import {Observable} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
 import 'leaflet-routing-machine';
 import { DriverService, GetActiveDriverLocationDTO } from '../../service/driver/driver.service';
+import { SnackBarService } from '../../service/snackBar/snackBar.service';
 
 @Component({
   selector: 'app-ride-tracking-map',
@@ -26,6 +27,7 @@ export class RideTrackingMapComponent implements AfterViewInit {
   constructor(
       private http: HttpClient,
       private driverService: DriverService,
+      private snackBar: SnackBarService,
       private elementRef: ElementRef<HTMLElement>
     ) {
 
@@ -230,7 +232,7 @@ export class RideTrackingMapComponent implements AfterViewInit {
         'You clicked the map at latitude: ' + lat + ' and longitude: ' + lng
       );
       const mp = new L.Marker([lat, lng]).addTo(this.map);
-      alert(mp.getLatLng());
+
     });
   }
 
@@ -244,16 +246,19 @@ export class RideTrackingMapComponent implements AfterViewInit {
     const routeControl = L.Routing.control({
       waypoints: [L.latLng(57.74, 11.94), L.latLng(57.6792, 11.949)],
       router: L.routing.mapbox('pk.eyJ1IjoibWVyaXMxMCIsImEiOiJjbWpxandnNmIwd2piM2dzYzVlc3N6NXExIn0.-OX2bzr7c8eGfjaUX-gwZw', {profile: 'mapbox/driving'})
-//         router: L.routing.mapbox('DODATI SVOJ API KEY', {profile: 'mapbox/driving'})
     }).addTo(this.map);
 
-    routeControl.on('routesfound', function(e : any) {
-      var routes = e.routes;
-      var summary = routes[0].summary;
-      alert('Total distance is ' + summary.totalDistance / 1000 + ' km and total time is ' + Math.round(summary.totalTime % 3600 / 60) + ' minutes');
+    routeControl.on('routesfound', (e: any) => {
+      const routes = e.routes;
+      const summary = routes[0].summary;
+
+      this.snackBar.show(
+        'Total distance is ' +
+        (summary.totalDistance / 1000).toFixed(2) +
+        ' km and total time is ' +
+        Math.round((summary.totalTime % 3600) / 60) +
+        ' minutes'
+      );
     });
   }
-
-
-
 }

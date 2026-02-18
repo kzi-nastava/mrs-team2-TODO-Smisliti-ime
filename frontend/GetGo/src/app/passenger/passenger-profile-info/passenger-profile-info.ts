@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { UserNavBarComponent } from '../../layout/user-nav-bar/user-nav-bar.component';
 import { PassengerService, GetPassengerDTO, UpdatePassengerDTO, UpdatedPassengerDTO, UpdatedProfilePictureDTO } from '../service/passenger.service';
+import { SnackBarService } from '../../service/snackBar/snackBar.service';
 import { switchMap, of } from 'rxjs';
 import { environment } from "../../../env/environment"
 
@@ -29,7 +30,8 @@ export class PassengerProfileInfo implements OnInit {
 
   constructor(
     private passengerService: PassengerService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private snackBar: SnackBarService
   ) {}
 
   ngOnInit(): void {
@@ -107,11 +109,11 @@ export class PassengerProfileInfo implements OnInit {
         }
 
         this.cdr.detectChanges();
-        alert('Profile updated successfully!');
+        this.snackBar.show('Profile updated successfully!')
       },
       error: (error: any) => {
         console.error('Error updating profile:', error);
-        alert('Failed to update profile. Please try again.');
+        this.snackBar.show('Failed to update profile. Please try again.')
       }
     });
   }

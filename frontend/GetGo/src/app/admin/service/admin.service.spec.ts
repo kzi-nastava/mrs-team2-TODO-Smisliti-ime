@@ -22,10 +22,6 @@ describe('AdminService', () => {
     httpMock.verify();
   });
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
-  });
-
   it('should call registerDriver and return CreatedDriverDTO', () => {
     const driverData: CreateDriverDTO = {
       email: 'driver@test.com',
@@ -56,7 +52,6 @@ describe('AdminService', () => {
       method: 'POST',
       url: `${apiUrl}/drivers/register`
     });
-    expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(driverData);
 
     req.flush(mockResponse);

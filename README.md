@@ -127,7 +127,7 @@ Team
 
 - Meris Bilalović SV1/2023
 - Dalibor Nikolić SV13/2023
-- Anastazija Petrović SV26/2023
+- Anastazija Petrov SV26/2023
 
 Notes
 -----
